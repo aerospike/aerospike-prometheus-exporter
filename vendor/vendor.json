@@ -1,0 +1,187 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "LsFQbTQzH9EcWOZwojR48xzXWDU=",
+			"path": "github.com/aerospike/aerospike-client-go",
+			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
+			"revisionTime": "2019-06-08T10:02:22Z"
+		},
+		{
+			"checksumSHA1": "If0sGtMkYc7kZomMqwivv2oqpbo=",
+			"path": "github.com/aerospike/aerospike-client-go/internal/atomic",
+			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
+			"revisionTime": "2019-06-08T10:02:22Z"
+		},
+		{
+			"checksumSHA1": "0xeQhZGlFDLPHz22AhRM1E5day4=",
+			"path": "github.com/aerospike/aerospike-client-go/internal/lua",
+			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
+			"revisionTime": "2019-06-08T10:02:22Z"
+		},
+		{
+			"checksumSHA1": "mhOhdJllVuYdvd3M4Oqp4zebFCY=",
+			"path": "github.com/aerospike/aerospike-client-go/internal/lua/resources",
+			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
+			"revisionTime": "2019-06-08T10:02:22Z"
+		},
+		{
+			"checksumSHA1": "2mmTgxFdOSZCm77sM1GtVCVS3oY=",
+			"path": "github.com/aerospike/aerospike-client-go/internal/particle_type",
+			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
+			"revisionTime": "2019-06-08T10:02:22Z"
+		},
+		{
+			"checksumSHA1": "Z+CwG/NDYx/e9wo7yGZfsRZABJc=",
+			"path": "github.com/aerospike/aerospike-client-go/logger",
+			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
+			"revisionTime": "2019-06-08T10:02:22Z"
+		},
+		{
+			"checksumSHA1": "W19k/UVPrMdsV1KM0VgDRLv1EvU=",
+			"path": "github.com/aerospike/aerospike-client-go/pkg/bcrypt",
+			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
+			"revisionTime": "2019-06-08T10:02:22Z"
+		},
+		{
+			"checksumSHA1": "HbzUx5DlBO8erbGl2h2/55xzue8=",
+			"path": "github.com/aerospike/aerospike-client-go/pkg/ripemd160",
+			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
+			"revisionTime": "2019-06-08T10:02:22Z"
+		},
+		{
+			"checksumSHA1": "MI+Ag03hKcoIxijko2bkurFdA9g=",
+			"path": "github.com/aerospike/aerospike-client-go/types",
+			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
+			"revisionTime": "2019-06-08T10:02:22Z"
+		},
+		{
+			"checksumSHA1": "4HExncTB5LogQlmChr1AgZIwRqQ=",
+			"path": "github.com/aerospike/aerospike-client-go/types/rand",
+			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
+			"revisionTime": "2019-06-08T10:02:22Z"
+		},
+		{
+			"checksumSHA1": "WZaUfU8DYSw5yDcXmPqc0dwCiBo=",
+			"path": "github.com/aerospike/aerospike-client-go/utils/buffer",
+			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
+			"revisionTime": "2019-06-08T10:02:22Z"
+		},
+		{
+			"checksumSHA1": "0rido7hYHQtfq3UJzVT5LClLAWc=",
+			"path": "github.com/beorn7/perks/quantile",
+			"revision": "4b2b341e8d7715fae06375aa633dbb6e91b3fb46",
+			"revisionTime": "2019-04-14T22:11:40Z"
+		},
+		{
+			"checksumSHA1": "CGj8VcI/CpzxaNqlqpEVM7qElD4=",
+			"path": "github.com/golang/protobuf/proto",
+			"revision": "b285ee9cfc6c881bb20c0d8dc73370ea9b9ec90f",
+			"revisionTime": "2019-05-17T06:12:10Z"
+		},
+		{
+			"checksumSHA1": "KyV6k5PvKOV3TpzdZjfYz/o7nxY=",
+			"path": "github.com/jameskeane/bcrypt",
+			"revision": "c3cd44c1e20fec46baad45b108a45be93394dc8d",
+			"revisionTime": "2012-04-20T03:26:55Z"
+		},
+		{
+			"checksumSHA1": "bKMZjd2wPw13VwoE7mBeSv5djFA=",
+			"path": "github.com/matttproud/golang_protobuf_extensions/pbutil",
+			"revision": "c182affec369e30f25d3eb8cd8a478dee585ae7d",
+			"revisionTime": "2018-12-31T17:19:20Z"
+		},
+		{
+			"checksumSHA1": "XvY9JiJxIgT3O+PJYJcepzUCkFk=",
+			"path": "github.com/prometheus/client_golang/prometheus",
+			"revision": "ea8c935f204cc57302b4e43bc10777e6a16dfcf7",
+			"revisionTime": "2019-06-05T15:42:15Z"
+		},
+		{
+			"checksumSHA1": "UBqhkyjCz47+S19MVTigxJ2VjVQ=",
+			"path": "github.com/prometheus/client_golang/prometheus/internal",
+			"revision": "ea8c935f204cc57302b4e43bc10777e6a16dfcf7",
+			"revisionTime": "2019-06-05T15:42:15Z"
+		},
+		{
+			"checksumSHA1": "GBDBVh7IjXgI4qsYXoJfh5PRbGI=",
+			"path": "github.com/prometheus/client_golang/prometheus/promhttp",
+			"revision": "ea8c935f204cc57302b4e43bc10777e6a16dfcf7",
+			"revisionTime": "2019-06-05T15:42:15Z"
+		},
+		{
+			"checksumSHA1": "V8xkqgmP66sq2ZW4QO5wi9a4oZE=",
+			"path": "github.com/prometheus/client_model/go",
+			"revision": "fd36f4220a901265f90734c3183c5f0c91daa0b8",
+			"revisionTime": "2019-01-29T23:31:27Z"
+		},
+		{
+			"checksumSHA1": "ljxJzXiQ7dNsmuRIUhqqP+qjRWc=",
+			"path": "github.com/prometheus/common/expfmt",
+			"revision": "17f5ca1748182ddf24fc33a5a7caaaf790a52fcc",
+			"revisionTime": "2019-05-16T16:00:40Z"
+		},
+		{
+			"checksumSHA1": "1Mhfofk+wGZ94M0+Bd98K8imPD4=",
+			"path": "github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg",
+			"revision": "17f5ca1748182ddf24fc33a5a7caaaf790a52fcc",
+			"revisionTime": "2019-05-16T16:00:40Z"
+		},
+		{
+			"checksumSHA1": "ccmMs+h9Jo8kE7izqsUkWShD4d0=",
+			"path": "github.com/prometheus/common/model",
+			"revision": "17f5ca1748182ddf24fc33a5a7caaaf790a52fcc",
+			"revisionTime": "2019-05-16T16:00:40Z"
+		},
+		{
+			"checksumSHA1": "EDji3h0hAUcDJXziPU/xoZ2ajAQ=",
+			"path": "github.com/prometheus/procfs",
+			"revision": "a4ac0826abceb44c40fc71daed2b301db498b93e",
+			"revisionTime": "2019-06-04T17:23:16Z"
+		},
+		{
+			"checksumSHA1": "Kmjs49lbjGmlgUPx3pks0tVDed0=",
+			"path": "github.com/prometheus/procfs/internal/fs",
+			"revision": "a4ac0826abceb44c40fc71daed2b301db498b93e",
+			"revisionTime": "2019-06-04T17:23:16Z"
+		},
+		{
+			"checksumSHA1": "VqfozzXSA1zS53tDzG7R7C9XhuQ=",
+			"path": "github.com/yuin/gopher-lua",
+			"revision": "eb1c7299435cc746b72514f37f74a5154dfe460f",
+			"revisionTime": "2017-09-15T03:51:07Z"
+		},
+		{
+			"checksumSHA1": "yNGEI9BMDbGwabUnaHvV9ZZm/a0=",
+			"path": "github.com/yuin/gopher-lua/ast",
+			"revision": "eb1c7299435cc746b72514f37f74a5154dfe460f",
+			"revisionTime": "2017-09-15T03:51:07Z"
+		},
+		{
+			"checksumSHA1": "jL/Xn8U1QShceAAs7GezOfjLQ6o=",
+			"path": "github.com/yuin/gopher-lua/parse",
+			"revision": "eb1c7299435cc746b72514f37f74a5154dfe460f",
+			"revisionTime": "2017-09-15T03:51:07Z"
+		},
+		{
+			"checksumSHA1": "pOY+AESgLoqczVCXNCvmPtJyUXE=",
+			"path": "github.com/yuin/gopher-lua/pm",
+			"revision": "eb1c7299435cc746b72514f37f74a5154dfe460f",
+			"revisionTime": "2017-09-15T03:51:07Z"
+		},
+		{
+			"checksumSHA1": "GtamqiJoL7PGHsN454AoffBFMa8=",
+			"path": "golang.org/x/net/context",
+			"revision": "d28f0bde5980168871434b95cfc858db9f2a7a99",
+			"revisionTime": "2019-06-13T09:12:16Z"
+		},
+		{
+			"checksumSHA1": "S0DP7Pn7sZUmXc55IzZnNvERu6s=",
+			"path": "golang.org/x/sync/errgroup",
+			"revision": "1d60e4601c6fd243af51cc01ddf169918a5407ca",
+			"revisionTime": "2018-03-14T17:21:19Z"
+		}
+	],
+	"rootPath": "github.com/aerospike/aeromon"
+}

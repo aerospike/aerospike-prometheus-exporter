@@ -1,0 +1,83 @@
+groups:
+- name: aerospike.rules
+  rules:
+  - alert: NodeDown
+    expr: up{job="aerospike"} == 0
+    for: 30s
+    labels:
+      severity: "2"
+    annotations:
+      description: '{{ $labels.instance }} has been down for more than 30 seconds.'
+      summary: Node {{ $labels.instance }} down
+  - alert: NodeDown
+    expr: aerospike_node_up{job="aerospike"} == 0
+    for: 30s
+    labels:
+      severity: "2"
+    annotations:
+      description: '{{ $labels.instance }} node is down.'
+      summary: Node {{ $labels.instance }} down
+  - alert: TransactionQueueTooFull
+    expr: aerospike_node_stats_tsvc_queue{job="aerospike"} > 10000
+    for: 30s
+    labels:
+      severity: "1"
+    annotations:
+      description: 'Transaction queue for node {{ $labels.instance }} is longer than 10000.'
+      summary: Transaction queue too full for node {{ $labels.instance }}
+  - alert: DiskAlmostFull
+    expr: aerospike_namespace_device_used_bytes{job="aerospike"}/aerospike_namespace_device_total_bytes{job="aerospike"} >= 0.90
+    for: 30s
+    labels:
+      severity: "1"
+    annotations:
+      description: 'Disk space for node {{ $labels.instance }} is 90% full.'
+      summary: Disk almost full for node {{ $labels.instance }}
+  - alert: MemoryAlmostFull
+    expr: aerospike_namespace_memory_used_bytes{job="aerospike"}/aerospike_namespace_memory_size{job="aerospike"} >= 0.90
+    for: 30s
+    labels:
+      severity: "1"
+    annotations:
+      description: 'Memory for node {{ $labels.instance }} is 90% full.'
+      summary: Memory almost full for node {{ $labels.instance }}
+  - alert: OutOfContagiousDiskSpace
+    expr: aerospike_namespace_device_available_pct{job="aerospike"} <= 10
+    for: 30s
+    labels:
+      severity: "1"
+    annotations:
+      description: 'Contiguous Disk space available for new writes on namespace {{ $labels.ns }} in node {{ $labels.instance }} is below 10%.'
+      summary: Contiguous Disk space running out for node {{ $labels.instance }}/{{ $labels.ns }}
+  - alert: DiskUsageOverHighWaterMark
+    expr: (100 - aerospike_namespace_device_free_pct{job="aerospike"}) > aerospike_namespace_high_water_disk_pct{job="aerospike"}
+    for: 30s
+    labels:
+      severity: "1"
+    annotations:
+      description: 'Used Disk space for namespace {{ $labels.ns }} in node {{ $labels.instance }} is above high watermark.'
+      summary: Disk usage above high watermark for {{ $labels.instance }}/{{ $labels.ns }}
+  - alert: MemoryUsageOverHighWaterMark
+    expr: (100 - aerospike_namespace_memory_free_pct{job="aerospike"}) > aerospike_namespace_high_water_memory_pct{job="aerospike"}
+    for: 30s
+    labels:
+      severity: "1"
+    annotations:
+      description: 'Used Memory space for namespace {{ $labels.ns }} in node {{ $labels.instance }} is above high watermark.'
+      summary: Memory usage above high watermark for {{ $labels.instance }}/{{ $labels.ns }}
+  - alert: NamespaceDiskStopWrites
+    expr: aerospike_namespace_stop_writes{job="aerospike"} == 1
+    for: 30s
+    labels:
+      severity: "1"
+    annotations:
+      description: 'Used diskspace for namespace {{ $labels.ns }} in node {{ $labels.instance }} is above stop writes limit.'
+      summary: Stop Writes for {{ $labels.instance }}/{{ $labels.ns }}
+  - alert: NamespaceMemoryStopWrites
+    expr: (100 - aerospike_namespace_memory_free_pct{job="aerospike"}) > aerospike_namespace_stop_writes_pct{job="aerospike"}
+    for: 30s
+    labels:
+      severity: "1"
+    annotations:
+      description: 'Used Memory space for namespace {{ $labels.ns }} in node {{ $labels.instance }} is above stop writes limit.'
+      summary: Stop Writes for {{ $labels.instance }}/{{ $labels.ns }}
