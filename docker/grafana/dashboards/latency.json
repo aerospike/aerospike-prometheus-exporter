@@ -192,15 +192,15 @@
       {
         "allValue": null,
         "current": {
-          "text": "All",
-          "value": "$__all"
+          "text": "null",
+          "value": "null"
         },
         "datasource": "Aerospike Prometheus",
         "definition": "label_values(aerospike_namespace_objects{job=\"aerospike\", cluster_name=~\"$cluster|$^\", service=~\"$node|$^\" },ns)",
         "hide": 0,
-        "includeAll": true,
+        "includeAll": false,
         "label": "Namespace",
-        "multi": true,
+        "multi": false,
         "name": "namespace",
         "options": [],
         "query": "label_values(aerospike_namespace_objects{job=\"aerospike\", cluster_name=~\"$cluster|$^\", service=~\"$node|$^\" },ns)",
