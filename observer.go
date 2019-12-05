@@ -28,14 +28,6 @@ var (
 )
 
 func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) {
-	// var hashedPass []byte
-	// if user != "" {
-	// 	hashedPass, err = hashPassword(pass)
-	// 	if err != nil {
-	// 		return nil, errors.New("Hashing the password failed")
-	// 	}
-	// }
-
 	// use all cpus in the system for concurrency
 	*authMode = strings.ToLower(strings.TrimSpace(*authMode))
 	if *authMode != "internal" && *authMode != "external" {
@@ -59,11 +51,11 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 			return nil, err
 		}
 
-		// if user != "" {
-		// 	if err := conn.Authenticate(user, hashedPass); err != nil {
-		// 		return nil, err
-		// 	}
-		// }
+		if clientPolicy.RequiresAuthentication() {
+			if err := conn.Login(clientPolicy); err != nil {
+				return nil, err
+			}
+		}
 
 		return conn, nil
 	}

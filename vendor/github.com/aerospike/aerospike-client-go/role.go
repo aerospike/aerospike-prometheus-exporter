@@ -20,7 +20,6 @@ type Role struct {
 	Name string
 
 	Privileges []Privilege
-	Whitelist  []string
 }
 
 // Pre-defined user roles.
@@ -42,4 +41,7 @@ const (
 
 	// Read allows read transactions with the database.
 	Read privilegeCode = "read"
+
+	// Write allows write transactions with the database.
+	Write privilegeCode = "write"
 )

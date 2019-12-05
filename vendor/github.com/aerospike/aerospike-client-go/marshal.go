@@ -105,12 +105,12 @@ func valueToInterface(f reflect.Value, clusterSupportsFloat bool) interface{} {
 	}
 }
 
-func fieldIsMetadata(f *reflect.StructField) bool {
+func fieldIsMetadata(f reflect.StructField) bool {
 	meta := f.Tag.Get(aerospikeMetaTag)
 	return strings.Trim(meta, " ") != ""
 }
 
-func fieldAlias(f *reflect.StructField) string {
+func fieldAlias(f reflect.StructField) string {
 	alias := f.Tag.Get(aerospikeTag)
 	if alias != "" {
 		alias = strings.Trim(alias, " ")
@@ -134,19 +134,17 @@ func structToMap(s reflect.Value, clusterSupportsFloat bool) BinMap {
 
 	var binMap BinMap
 	for i := 0; i < numFields; i++ {
-		field := typeOfT.Field(i)
-
 		// skip unexported fields
-		if field.PkgPath != "" {
+		if typeOfT.Field(i).PkgPath != "" {
 			continue
 		}
 
-		if fieldIsMetadata(&field) {
+		if fieldIsMetadata(typeOfT.Field(i)) {
 			continue
 		}
 
 		// skip transient fields tagged `-`
-		alias := fieldAlias(&field)
+		alias := fieldAlias(typeOfT.Field(i))
 		if alias == "" {
 			continue
 		}

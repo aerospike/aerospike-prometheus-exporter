@@ -16,11 +16,11 @@ import (
 
 var (
 	bind       = flag.String("b", ":9145", "AeroProm bind address")
-	host       = flag.String("h", "127.0.0.1", "Aerospike server seed hostnames or IP addresses")
+	host       = flag.String("h", "127.0.0.1", "Aerospike server seed hostname or IP address")
 	port       = flag.Int("p", 3000, "Aerospike server seed hostname or IP address port number")
 	user       = flag.String("U", "", "User name")
 	pass       = flag.String("P", "", "User password")
-	authMode   = flag.String("A", "internal", "Authentication mode: internal | external")
+	authMode   = flag.String("A", "internal", "Authentication mode: internal | external (e.g. LDAP)")
 	timeout    = flag.Int("T", 5000, "Connection timeout to the server node in milliseconds")
 	showUsage  = flag.Bool("u", false, "Show usage information")
 	resolution = flag.Int("r", 5, "Database info calls (seconds)")
