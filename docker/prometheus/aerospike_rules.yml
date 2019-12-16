@@ -1,53 +1,37 @@
 groups:
 - name: aerospike.rules
   rules:
-  - alert: NodeDown
+  - alert: NodeExporterDown
     expr: up{job="aerospike"} == 0
     for: 30s
     labels:
       severity: "2"
     annotations:
       description: '{{ $labels.instance }} has been down for more than 30 seconds.'
-      summary: Node {{ $labels.instance }} down
-  - alert: NodeDown
+      summary: Node exporter {{ $labels.instance }} down
+  - alert: NodeAerospikeDown
     expr: aerospike_node_up{job="aerospike"} == 0
     for: 30s
     labels:
       severity: "2"
     annotations:
-      description: '{{ $labels.instance }} node is down.'
+      description: 'Node {{ $labels.instance }} is down.'
       summary: Node {{ $labels.instance }} down
-  - alert: TransactionQueueTooFull
-    expr: aerospike_node_stats_tsvc_queue{job="aerospike"} > 10000
+  - alert: DiskHalfFull
+    expr: aerospike_namespace_device_used_bytes{job="aerospike"}/aerospike_namespace_device_total_bytes{job="aerospike"} >= 0.50
     for: 30s
     labels:
       severity: "1"
     annotations:
-      description: 'Transaction queue for node {{ $labels.instance }} is longer than 10000.'
-      summary: Transaction queue too full for node {{ $labels.instance }}
-  - alert: DiskAlmostFull
-    expr: aerospike_namespace_device_used_bytes{job="aerospike"}/aerospike_namespace_device_total_bytes{job="aerospike"} >= 0.90
+      description: 'Disk space for node {{ $labels.instance }} is 50% full.'
+      summary: Disk almost above 50% threshold for node {{ $labels.instance }}
+  - alert: OutOfContiguousDiskSpace
+    expr: aerospike_namespace_device_available_pct{job="aerospike"} <= 15
     for: 30s
     labels:
-      severity: "1"
+      severity: "2"
     annotations:
-      description: 'Disk space for node {{ $labels.instance }} is 90% full.'
-      summary: Disk almost full for node {{ $labels.instance }}
-  - alert: MemoryAlmostFull
-    expr: aerospike_namespace_memory_used_bytes{job="aerospike"}/aerospike_namespace_memory_size{job="aerospike"} >= 0.90
-    for: 30s
-    labels:
-      severity: "1"
-    annotations:
-      description: 'Memory for node {{ $labels.instance }} is 90% full.'
-      summary: Memory almost full for node {{ $labels.instance }}
-  - alert: OutOfContagiousDiskSpace
-    expr: aerospike_namespace_device_available_pct{job="aerospike"} <= 10
-    for: 30s
-    labels:
-      severity: "1"
-    annotations:
-      description: 'Contiguous Disk space available for new writes on namespace {{ $labels.ns }} in node {{ $labels.instance }} is below 10%.'
+      description: 'Contiguous Disk space available for new writes on namespace {{ $labels.ns }} in node {{ $labels.instance }} is below 15%.'
       summary: Contiguous Disk space running out for node {{ $labels.instance }}/{{ $labels.ns }}
   - alert: DiskUsageOverHighWaterMark
     expr: (100 - aerospike_namespace_device_free_pct{job="aerospike"}) > aerospike_namespace_high_water_disk_pct{job="aerospike"}
