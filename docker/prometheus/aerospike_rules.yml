@@ -17,22 +17,6 @@ groups:
     annotations:
       description: 'Node {{ $labels.instance }} is down.'
       summary: Node {{ $labels.instance }} down
-  - alert: DiskHalfFull
-    expr: aerospike_namespace_device_used_bytes{job="aerospike"}/aerospike_namespace_device_total_bytes{job="aerospike"} >= 0.50
-    for: 30s
-    labels:
-      severity: "1"
-    annotations:
-      description: 'Disk space for node {{ $labels.instance }} is 50% full.'
-      summary: Disk almost above 50% threshold for node {{ $labels.instance }}
-  - alert: OutOfContiguousDiskSpace
-    expr: aerospike_namespace_device_available_pct{job="aerospike"} <= 15
-    for: 30s
-    labels:
-      severity: "2"
-    annotations:
-      description: 'Contiguous Disk space available for new writes on namespace {{ $labels.ns }} in node {{ $labels.instance }} is below 15%.'
-      summary: Contiguous Disk space running out for node {{ $labels.instance }}/{{ $labels.ns }}
   - alert: DiskUsageOverHighWaterMark
     expr: (100 - aerospike_namespace_device_free_pct{job="aerospike"}) > aerospike_namespace_high_water_disk_pct{job="aerospike"}
     for: 30s
