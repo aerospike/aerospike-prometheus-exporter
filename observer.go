@@ -1,6 +1,9 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"io/ioutil"
 	"log"
 	"strings"
 	"time"
@@ -27,15 +30,53 @@ var (
 	gService, gClusterName, gBuild string
 )
 
-func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) {
-	// var hashedPass []byte
-	// if user != "" {
-	// 	hashedPass, err = hashPassword(pass)
-	// 	if err != nil {
-	// 		return nil, errors.New("Hashing the password failed")
-	// 	}
-	// }
+func initTLS() *tls.Config {
+	if len(*rootCA) == 0 && len(*certFile) == 0 && len(*keyFile) == 0 {
+		return nil
+	}
 
+	// Try to load system CA certs, otherwise just make an empty pool
+	serverPool, err := x509.SystemCertPool()
+	if serverPool == nil || err != nil {
+		log.Printf("Adding system certificates to the cert pool failed: %s", err)
+		serverPool = x509.NewCertPool()
+	}
+
+	if len(*rootCA) > 0 {
+		// Try to load system CA certs and add them to the system cert pool
+		caCert, err := ioutil.ReadFile(*rootCA)
+		if err != nil {
+			log.Fatalf("FAILED: Adding server certificate `%s` to the pool failed: %s", *rootCA, err)
+		}
+
+		log.Printf("Adding server certificate `%s` to the pool...", *rootCA)
+		serverPool.AppendCertsFromPEM(caCert)
+	}
+
+	var clientPool []tls.Certificate
+	if len(*certFile) > 0 || len(*keyFile) > 0 {
+		// client Cert
+		cert, err := tls.LoadX509KeyPair(*certFile, *keyFile)
+		if err != nil {
+			log.Fatalf("FAILED: Adding client certificate `%s` to the pool failed: `%s`", *certFile, err)
+		}
+
+		log.Printf("Adding client certificate `%s` to the pool...\n", *certFile)
+		clientPool = append(clientPool, cert)
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates:             clientPool,
+		RootCAs:                  serverPool,
+		InsecureSkipVerify:       false,
+		PreferServerCipherSuites: true,
+	}
+	tlsConfig.BuildNameToCertificate()
+
+	return tlsConfig
+}
+
+func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) {
 	// use all cpus in the system for concurrency
 	*authMode = strings.ToLower(strings.TrimSpace(*authMode))
 	if *authMode != "internal" && *authMode != "external" {
@@ -53,17 +94,19 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 	clientPolicy.ConnectionQueueSize = 1
 	clientPolicy.Timeout = time.Duration(*timeout) * time.Millisecond
 
+	clientPolicy.TlsConfig = initTLS()
+
 	newConnGen := func() (*aero.Connection, error) {
 		conn, err := aero.NewConnection(clientPolicy, server)
 		if err != nil {
 			return nil, err
 		}
 
-		// if user != "" {
-		// 	if err := conn.Authenticate(user, hashedPass); err != nil {
-		// 		return nil, err
-		// 	}
-		// }
+		if clientPolicy.RequiresAuthentication() {
+			if err := conn.Login(clientPolicy); err != nil {
+				return nil, err
+			}
+		}
 
 		return conn, nil
 	}

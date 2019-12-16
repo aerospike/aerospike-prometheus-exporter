@@ -3,70 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "LsFQbTQzH9EcWOZwojR48xzXWDU=",
+			"checksumSHA1": "zJ5o/tBqd22TN80yjnSnvwD44V8=",
 			"path": "github.com/aerospike/aerospike-client-go",
-			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
-			"revisionTime": "2019-06-08T10:02:22Z"
-		},
-		{
-			"checksumSHA1": "If0sGtMkYc7kZomMqwivv2oqpbo=",
-			"path": "github.com/aerospike/aerospike-client-go/internal/atomic",
-			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
-			"revisionTime": "2019-06-08T10:02:22Z"
-		},
-		{
-			"checksumSHA1": "0xeQhZGlFDLPHz22AhRM1E5day4=",
-			"path": "github.com/aerospike/aerospike-client-go/internal/lua",
-			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
-			"revisionTime": "2019-06-08T10:02:22Z"
-		},
-		{
-			"checksumSHA1": "mhOhdJllVuYdvd3M4Oqp4zebFCY=",
-			"path": "github.com/aerospike/aerospike-client-go/internal/lua/resources",
-			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
-			"revisionTime": "2019-06-08T10:02:22Z"
-		},
-		{
-			"checksumSHA1": "2mmTgxFdOSZCm77sM1GtVCVS3oY=",
-			"path": "github.com/aerospike/aerospike-client-go/internal/particle_type",
-			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
-			"revisionTime": "2019-06-08T10:02:22Z"
-		},
-		{
-			"checksumSHA1": "Z+CwG/NDYx/e9wo7yGZfsRZABJc=",
-			"path": "github.com/aerospike/aerospike-client-go/logger",
-			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
-			"revisionTime": "2019-06-08T10:02:22Z"
-		},
-		{
-			"checksumSHA1": "W19k/UVPrMdsV1KM0VgDRLv1EvU=",
-			"path": "github.com/aerospike/aerospike-client-go/pkg/bcrypt",
-			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
-			"revisionTime": "2019-06-08T10:02:22Z"
-		},
-		{
-			"checksumSHA1": "HbzUx5DlBO8erbGl2h2/55xzue8=",
-			"path": "github.com/aerospike/aerospike-client-go/pkg/ripemd160",
-			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
-			"revisionTime": "2019-06-08T10:02:22Z"
-		},
-		{
-			"checksumSHA1": "MI+Ag03hKcoIxijko2bkurFdA9g=",
-			"path": "github.com/aerospike/aerospike-client-go/types",
-			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
-			"revisionTime": "2019-06-08T10:02:22Z"
-		},
-		{
-			"checksumSHA1": "4HExncTB5LogQlmChr1AgZIwRqQ=",
-			"path": "github.com/aerospike/aerospike-client-go/types/rand",
-			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
-			"revisionTime": "2019-06-08T10:02:22Z"
-		},
-		{
-			"checksumSHA1": "WZaUfU8DYSw5yDcXmPqc0dwCiBo=",
-			"path": "github.com/aerospike/aerospike-client-go/utils/buffer",
-			"revision": "77d09ca2e3b80fcb9eed797cfc365b28744b2ee5",
-			"revisionTime": "2019-06-08T10:02:22Z"
+			"revision": "4d97155e14136ee94e01ae159bb5076746a78834",
+			"revisionTime": "2019-12-05T15:39:14Z"
 		},
 		{
 			"checksumSHA1": "0rido7hYHQtfq3UJzVT5LClLAWc=",

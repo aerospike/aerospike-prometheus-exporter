@@ -15,16 +15,20 @@ import (
 )
 
 var (
-	bind       = flag.String("b", ":9145", "AeroProm bind address")
-	host       = flag.String("h", "127.0.0.1", "Aerospike server seed hostnames or IP addresses")
-	port       = flag.Int("p", 3000, "Aerospike server seed hostname or IP address port number")
-	user       = flag.String("U", "", "User name")
-	pass       = flag.String("P", "", "User password")
-	authMode   = flag.String("A", "internal", "Authentication mode: internal | external")
-	timeout    = flag.Int("T", 5000, "Connection timeout to the server node in milliseconds")
-	showUsage  = flag.Bool("u", false, "Show usage information")
-	resolution = flag.Int("r", 5, "Database info calls (seconds)")
-	tags       = flag.String("tags", "", "Tags to pass to prometheus in labels. Useful for querying for grafana or alerting")
+	bind        = flag.String("b", ":9145", "AeroProm bind address")
+	host        = flag.String("h", "127.0.0.1", "Aerospike server seed hostname or IP address")
+	port        = flag.Int("p", 3000, "Aerospike server seed hostname or IP address port number")
+	user        = flag.String("U", "", "User name")
+	pass        = flag.String("P", "", "User password")
+	authMode    = flag.String("A", "internal", "Authentication mode: internal | external (e.g. LDAP)")
+	certFile    = flag.String("certFile", "", "Cert File")
+	keyFile     = flag.String("keyFile", "", "Key File")
+	nodeTLSName = flag.String("tlsName", "", "Node TLS Name")
+	rootCA      = flag.String("rootCA", "", "Server Certificate")
+	timeout     = flag.Int("T", 5000, "Connection timeout to the server node in milliseconds")
+	showUsage   = flag.Bool("u", false, "Show usage information")
+	resolution  = flag.Int("r", 5, "Database info calls (seconds)")
+	tags        = flag.String("tags", "", "Tags to pass to prometheus in labels. Useful for querying for grafana or alerting")
 
 	logger   *log.Logger
 	fullHost string
@@ -32,6 +36,10 @@ var (
 
 func main() {
 	flag.Parse()
+	if *showUsage {
+		flag.Usage()
+		os.Exit(0)
+	}
 
 	fullHost = *host + ":" + strconv.Itoa(*port)
 
@@ -46,6 +54,7 @@ func main() {
 	}
 
 	host := aero.NewHost(*host, *port)
+	host.TLSName = *nodeTLSName
 	observer, err := newObserver(host, *user, *pass)
 	if err != nil {
 		log.Fatalln(err)
