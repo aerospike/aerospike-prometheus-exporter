@@ -1415,8 +1415,8 @@
       {
         "allValue": null,
         "current": {
-          "text": "aeromon-demo",
-          "value": "aeromon-demo"
+          "text": "aerospike-monitoring-demo",
+          "value": "aerospike-monitoring-demo"
         },
         "datasource": "Aerospike Prometheus",
         "definition": "label_values(aerospike_node_stats_uptime{job=\"aerospike\"},cluster_name)",
