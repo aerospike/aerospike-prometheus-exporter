@@ -11,7 +11,7 @@ then
     exit
 fi
 
-PROM_TEMPLATE=$(readlink -f $1)
+PROM_TEMPLATE=$(realpath $1)
 shift
 
 cd $(dirname $0)
@@ -31,7 +31,7 @@ then
 fi
 
 #https://unix.stackexchange.com/questions/55913/whats-the-easiest-way-to-find-an-unused-local-port
-PORT_STR=$(comm -23 <(seq "$FROM" "$TO" | sort) <(ss -tan | awk '{print $4}' | cut -d':' -f2 | grep '[0-9]\{1,5\}' | sort) | head -n "$HOWMANY")
+PORT_STR=$(comm -23 <(seq "$FROM" "$TO" | sort) <(netstat -tan | awk '{print $4}' | cut -d':' -f2 | grep '[0-9]\{1,5\}' | sort) | head -n "$HOWMANY")
 RANDOM_PORTS=($PORT_STR)
 
 echo $PORT_STR
