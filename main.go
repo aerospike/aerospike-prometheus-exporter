@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
 	aero "github.com/aerospike/aerospike-client-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -46,12 +45,6 @@ func main() {
 	var buf bytes.Buffer
 	logger = log.New(&buf, "", log.LstdFlags|log.Lshortfile)
 	logger.SetOutput(os.Stdout)
-
-	// use all cpus in the system for concurrency
-	*authMode = strings.ToLower(strings.TrimSpace(*authMode))
-	if *authMode != "internal" && *authMode != "external" {
-		log.Fatalln("Invalid auth mode: only `internal` and `external` values are accepted.")
-	}
 
 	host := aero.NewHost(*host, *port)
 	host.TLSName = *nodeTLSName

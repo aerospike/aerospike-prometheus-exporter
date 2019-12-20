@@ -2,20 +2,22 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 )
 
+// InfoParser provides a reader for Aerospike cluster's response for any of the metric
 type InfoParser struct {
 	*bufio.Reader
 }
 
+// NewInfoParser provides an instance of the InfoParser
 func NewInfoParser(s string) *InfoParser {
 	return &InfoParser{bufio.NewReader(strings.NewReader(s))}
 }
 
+// Expect validates the expected value against the one returned by the InfoParser
 func (ip *InfoParser) Expect(s string) error {
 	bytes := make([]byte, len(s))
 	v, err := ip.Read(bytes)
@@ -23,11 +25,12 @@ func (ip *InfoParser) Expect(s string) error {
 		return err
 	}
 	if string(bytes) != s {
-		return errors.New(fmt.Sprintf("InfoParser: Wring value. Expected %s, found %s", s, v))
+		return fmt.Errorf(fmt.Sprintf("InfoParser: Wrong value. Expected %s, found %s", s, v))
 	}
 	return nil
 }
 
+// ReadUntil reads bytes from the InfoParser by handeling some edge-cases
 func (ip *InfoParser) ReadUntil(delim byte) (string, error) {
 	v, err := ip.ReadBytes(delim)
 
@@ -43,6 +46,7 @@ func (ip *InfoParser) ReadUntil(delim byte) (string, error) {
 	return string(v[:len(v)-1]), err
 }
 
+// ReadFloat reads from the InfoParser and converts the result to Float
 func (ip *InfoParser) ReadFloat(delim byte) (float64, error) {
 	s, err := ip.ReadUntil(delim)
 	if err != nil {
