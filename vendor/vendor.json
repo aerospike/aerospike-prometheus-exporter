@@ -123,5 +123,5 @@
 			"revisionTime": "2018-03-14T17:21:19Z"
 		}
 	],
-	"rootPath": "github.com/aerospike/aerospike-monitoring"
+	"rootPath": "github.com/aerospike/aerospike-prometheus-agent"
 }
