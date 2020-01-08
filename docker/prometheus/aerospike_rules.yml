@@ -113,7 +113,7 @@ groups:
     annotations:
       description: 'High water mark has breached for namespace {{ $labels.ns }} in node {{ $labels.instance }}'
       summary: Eviction will start to make the space available
-- alert: UnavailablePartitions
+  - alert: UnavailablePartitions
     expr: aerospike_namespace_unavailable_partitions{job="aerospike"} > 0
     for: 30s
     labels:
@@ -121,7 +121,7 @@ groups:
     annotations:
       description: 'Some of the partition(s) is not available for namespace {{ $labels.ns }} in node {{ $labels.instance }}'
       summary: Server could not found some partition(s). Check for the network issues and make sure cluster forms properly
-- alert: XDRTimelag
+  - alert: XDRTimelag
     expr: aerospike_node_stats_xdr_timelag{job="aerospike"} > 10 # user can configure the seconds. Refer XDR throttling
     for: 30s
     labels:
@@ -129,3 +129,35 @@ groups:
     annotations:
       description: 'There seems some lag in XDR for namespace {{ $labels.ns }} in node {{ $labels.instance }}'
       summary: Lag can be there in XDR due to network connectivity issues or errors writing at a destination cluster
+  - alert: DeviceDefragWarning
+    expr: aerospike_namespace_device_available_pct{job="aerospike"} < 20
+    for: 30s
+    labels:
+      severity: "1"
+    annotations:
+      description: 'Device available percentage has dropped below 20 for namespace {{ $labels.ns }} in node {{ $labels.instance }}'
+      summary: Defrag is unable to keep up with the current load {{ $labels.instance }}/{{ $labels.ns }}
+  - alert: DeviceStopWritesWarning
+    expr: aerospike_namespace_device_available_pct{job="aerospike"} < 15
+    for: 30s
+    labels:
+      severity: "1"
+    annotations:
+      description: 'Device available percentage has dropped below 15 for namespace {{ $labels.ns }} in node {{ $labels.instance }}'
+      summary: Usable disk resources are critically low which may result in a stop-writes if available percentage goes below 5
+  - alert: PmemDefragWarning
+    expr: aerospike_namespace_pmem_available_pct{job="aerospike"} < 20
+    for: 30s
+    labels:
+      severity: "1"
+    annotations:
+      description: 'Pmem available percentage has dropped below 20 for namespace {{ $labels.ns }} in node {{ $labels.instance }}'
+      summary: Defrag is unable to keep up with the current load {{ $labels.instance }}/{{ $labels.ns }}
+  - alert: PmemStopWritesWarning
+    expr: aerospike_namespace_pmem_available_pct{job="aerospike"} < 15
+    for: 30s
+    labels:
+      severity: "1"
+    annotations:
+      description: 'Pmem available percentage has dropped below 15 for namespace {{ $labels.ns }} in node {{ $labels.instance }}'
+      summary: Usable Pmem resource is critically low which may result in a stop-writes if available percentage goes below 5
