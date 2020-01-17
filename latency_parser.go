@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -80,7 +81,7 @@ func parseLatencyInfo(s string) map[string]StatsMap {
 		}
 
 		if len(buckets) != len(valBuckets) {
-			fmt.Errorf(fmt.Sprintf("Error parsing latency values for node: `%s`. Bucket mismatch: buckets: `%s`, values: `%s`.", fullHost, bucketsStr, valBucketsStr))
+			errors.New(fmt.Sprintf("Error parsing latency values for node: `%s`. Bucket mismatch: buckets: `%s`, values: `%s`.", fullHost, bucketsStr, valBucketsStr))
 			break
 		}
 
