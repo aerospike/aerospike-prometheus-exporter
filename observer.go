@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -152,6 +153,24 @@ func (o *Observer) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, gClusterName, gService, gBuild)
 }
 
+func (o *Observer) requestInfo(conn *aero.Connection, infoKeys []string) (map[string]string, error) {
+	// request first round of keys
+	rawMetrics, err := aero.RequestInfo(conn, infoKeys...)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rawMetrics) == 1 {
+		for k, _ := range rawMetrics {
+			if strings.HasPrefix(strings.ToUpper(k), "ERROR:") {
+				return nil, errors.New(k)
+			}
+		}
+	}
+
+	return rawMetrics, nil
+}
+
 func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, error) {
 	log.Println("Trying to refresh the node...")
 
@@ -176,7 +195,7 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	}
 
 	// request first round of keys
-	rawMetrics, err := aero.RequestInfo(conn, infoKeys...)
+	rawMetrics, err := o.requestInfo(conn, infoKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +213,7 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	// log.Println(infoKeys)
 
 	// request second round of keys
-	nRawMetrics, err := aero.RequestInfo(conn, infoKeys...)
+	nRawMetrics, err := o.requestInfo(conn, infoKeys)
 	if err != nil {
 		return rawMetrics, err
 	}
