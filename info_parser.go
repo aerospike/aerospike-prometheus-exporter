@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -26,7 +25,7 @@ func (ip *InfoParser) Expect(s string) error {
 		return err
 	}
 	if string(bytes) != s {
-		return errors.New(fmt.Sprintf("InfoParser: Wrong value. Expected %s, found %s", s, v))
+		return fmt.Errorf("InfoParser: Wrong value. Expected %s, found %s", s, v)
 	}
 	return nil
 }
