@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// Observer communicates with Aerospike and helps collecting metrices
 type Observer struct {
 	conn     *aero.Connection
 	connGen  func() (*aero.Connection, error)
@@ -130,10 +131,12 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 	return o, nil
 }
 
+// Describe function of Prometheus' Collector interface
 func (o *Observer) Describe(ch chan<- *prometheus.Desc) {
 	return
 }
 
+// Collect function of Prometheus' Collector interface
 func (o *Observer) Collect(ch chan<- prometheus.Metric) {
 	o.ticks.Inc()
 	ch <- o.ticks
