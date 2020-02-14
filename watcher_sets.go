@@ -1,8 +1,9 @@
 package main
 
 import (
-	"log"
 	"strings"
+
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -32,7 +33,7 @@ func (sw *SetWatcher) detailKeys(rawMetrics map[string]string) []string {
 
 func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
 	setStats := strings.Split(rawMetrics["sets"], ";")
-	log.Println(setStats)
+	log.Debug("Set Stats:", setStats)
 	for i := range setStats {
 		setObserver := make(MetricMap, len(setRawMetrics))
 		for m, t := range setRawMetrics {
@@ -52,7 +53,7 @@ func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, a
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], stats["ns"], stats["set"], *tags)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], stats["ns"], stats["set"], config.AeroProm.tags)
 		}
 	}
 

@@ -1,8 +1,7 @@
 package main
 
 import (
-	"log"
-
+	log "github.com/Sirupsen/logrus"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -153,7 +152,7 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 			continue
 		}
 
-		ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], *tags)
+		ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], config.AeroProm.tags)
 	}
 
 	// send node labels for grafana
@@ -185,7 +184,7 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 		1.0,
 		rawMetrics["cluster-name"],
 		rawMetrics["service"],
-		*tags,
+		config.AeroProm.tags,
 		rawMetrics["build"],
 		stats["cluster_size"],
 		stats["cluster_visibility"],
@@ -200,7 +199,7 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 		accuv["accu_xdr_tx"],
 	)
 
-	log.Println(accu)
+	log.Debug("Accumulated Stats:", accu)
 
 	return nil
 }

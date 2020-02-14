@@ -295,7 +295,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName, *tags)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName, config.AeroProm.tags)
 		}
 
 		for stat, value := range stats {
@@ -314,7 +314,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName, *tags, metricIndex)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName, config.AeroProm.tags, metricIndex)
 		}
 
 		// here accumulate the values

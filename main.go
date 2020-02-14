@@ -1,34 +1,26 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
-	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
+	log "github.com/Sirupsen/logrus"
 	aero "github.com/aerospike/aerospike-client-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
-	bind        = flag.String("b", ":9145", "Bind address to listen for Prometheus")
-	host        = flag.String("h", "127.0.0.1", "Aerospike server seed hostname or IP address")
-	port        = flag.Int("p", 3000, "Aerospike server seed hostname or IP address port number")
-	user        = flag.String("U", "", "User name")
-	pass        = flag.String("P", "", "User password")
-	authMode    = flag.String("A", "internal", "Authentication mode: internal | external (e.g. LDAP)")
-	certFile    = flag.String("certFile", "", "Cert File")
-	keyFile     = flag.String("keyFile", "", "Key File")
-	nodeTLSName = flag.String("tlsName", "", "Node TLS Name")
-	rootCA      = flag.String("rootCA", "", "Server Certificate")
-	timeout     = flag.Int("T", 5000, "Connection timeout to the server node in milliseconds")
-	showUsage   = flag.Bool("u", false, "Show usage information")
-	resolution  = flag.Int("r", 5, "Database info calls (seconds)")
-	tags        = flag.String("tags", "", "Tags to pass to prometheus in labels. Useful for querying for grafana or alerting")
+	configFile = flag.String("config", "/etc/aerospike/aeroprom.conf", "Config File")
+	showUsage  = flag.Bool("u", false, "Show usage information")
 
 	fullHost string
+	config   *Config
 )
 
 func main() {
@@ -38,13 +30,16 @@ func main() {
 		os.Exit(0)
 	}
 
-	fullHost = *host + ":" + strconv.Itoa(*port)
+	// log.SetFlags(log.LstdFlags | log.Lshortfile)
+	config = new(Config)
+	InitConfig(*configFile, config)
+	config.validateAndUpdate()
 
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	fullHost = net.JoinHostPort(config.Aerospike.Host, strconv.Itoa(int(config.Aerospike.Port)))
 
-	host := aero.NewHost(*host, *port)
-	host.TLSName = *nodeTLSName
-	observer, err := newObserver(host, *user, *pass)
+	host := aero.NewHost(config.Aerospike.Host, int(config.Aerospike.Port))
+	host.TLSName = config.Aerospike.NodeTLSName
+	observer, err := newObserver(host, config.Aerospike.User, config.Aerospike.Password)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -52,9 +47,61 @@ func main() {
 	promReg := prometheus.NewRegistry()
 	promReg.MustRegister(observer)
 
-	http.Handle("/metrics", promhttp.HandlerFor(promReg, promhttp.HandlerOpts{}))
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.HandlerFor(promReg, promhttp.HandlerOpts{}))
 
-	log.Println("Welcome Aerospike's Prometheus exporter!")
-	log.Printf("Listening for Prometheus on: %s\n", *bind)
-	log.Fatalln(http.ListenAndServe(*bind, nil))
+	cfg := &tls.Config{
+		MinVersion:               tls.VersionTLS12,
+		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+		PreferServerCipherSuites: true,
+		// CipherSuites: []uint16{
+		// 	tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+		// 	tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+		// 	tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+		// 	tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+		// },
+	}
+
+	srv := &http.Server{
+		ReadTimeout:  time.Duration(config.AeroProm.Timeout) * time.Second,
+		WriteTimeout: time.Duration(config.AeroProm.Timeout) * time.Second,
+		Addr:         config.AeroProm.Bind,
+		Handler:      mux,
+		TLSConfig:    cfg,
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+	}
+
+	log.Infoln("Welcome Aerospike's Prometheus exporter!")
+	log.Infof("Listening for Prometheus on: %s\n", config.AeroProm.Bind)
+
+	if config.AeroProm.CertFile != "" && config.AeroProm.KeyFile != "" {
+		log.Infoln("Using Cert and Key files to enable TLS...")
+		log.Fatalln(srv.ListenAndServeTLS(config.AeroProm.CertFile, config.AeroProm.KeyFile))
+		// } else if config.AeroProm.UseLetsEncrypt {
+		// 	autocert.
+		// 		log.Infoln("Using Let's Encrypt to enable TLS...")
+		// 	m := autocert.Manager{
+		// 		Prompt: autocert.AcceptTOS,
+		// 		// HostPolicy: autocert.HostWhitelist("", ""),
+		// 	}
+
+		// 	cacheDir := os.TempDir() + "aeroprom"
+		// 	log.Info(cacheDir)
+		// 	if err := os.MkdirAll(cacheDir, 0700); err != nil {
+		// 		log.Warn("autocert.NewListener not using a cache: %v", err)
+		// 	} else {
+		// 		m.Cache = autocert.DirCache(cacheDir)
+		// 	}
+
+		// 	s := &http.Server{
+		// 		Addr:      ":https",
+		// 		TLSConfig: m.TLSConfig(),
+		// 		Handler:   mux,
+		// 	}
+
+		// 	go http.ListenAndServe(":http", m.HTTPHandler(nil))
+		// 	log.Fatalln(s.ListenAndServeTLS("", ""))
+	}
+
+	log.Fatalln(srv.ListenAndServe())
 }

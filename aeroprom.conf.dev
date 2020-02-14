@@ -1,0 +1,45 @@
+[Agent]
+update_interval = 5
+# File paths should be double quoted.
+# Certificate file for the metric servers for prometheus
+#cert_file = "cert.pem"
+# Key file for the metric servers for prometheus
+#key_file = "key.pem"
+
+# tags to append to the prometheus metrics
+tags=[]
+
+bind_host = ""
+bind_port = 9145
+
+# metrics server timeout in seconds
+timeout = 10
+
+# debug level can be info|warning,warn|error,err|debug
+log_level = "debug"
+
+[Aerospike]
+db_host="vmu1804"
+db_port=3000
+
+# certificate file
+cert_file=""
+# key file
+key_file=""
+# node TLS name for authentication
+node_tls_name=""
+# root certificate file
+root_ca=""
+
+# authentication mode: internal (for server), external (LDAP, etc.)
+auth_mode=""
+# database user
+user=""
+# database password
+password=""
+
+# ticker interval for requesting stats fro mthe database node
+resolution=5
+
+# timeout for sending commands to the server node in seconds
+timeout=5

@@ -5,10 +5,10 @@ import (
 	"crypto/x509"
 	"errors"
 	"io/ioutil"
-	"log"
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	aero "github.com/aerospike/aerospike-client-go"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -33,37 +33,37 @@ var (
 )
 
 func initTLS() *tls.Config {
-	if len(*rootCA) == 0 && len(*certFile) == 0 && len(*keyFile) == 0 {
+	if len(config.Aerospike.RootCA) == 0 && len(config.Aerospike.CertFile) == 0 && len(config.Aerospike.KeyFile) == 0 {
 		return nil
 	}
 
 	// Try to load system CA certs, otherwise just make an empty pool
 	serverPool, err := x509.SystemCertPool()
 	if serverPool == nil || err != nil {
-		log.Printf("Adding system certificates to the cert pool failed: %s", err)
+		log.Infof("Adding system certificates to the cert pool failed: %s", err)
 		serverPool = x509.NewCertPool()
 	}
 
-	if len(*rootCA) > 0 {
+	if len(config.Aerospike.RootCA) > 0 {
 		// Try to load system CA certs and add them to the system cert pool
-		caCert, err := ioutil.ReadFile(*rootCA)
+		caCert, err := ioutil.ReadFile(config.Aerospike.RootCA)
 		if err != nil {
-			log.Fatalf("FAILED: Adding server certificate `%s` to the pool failed: %s", *rootCA, err)
+			log.Fatalf("FAILED: Adding server certificate `%s` to the pool failed: %s", config.Aerospike.RootCA, err)
 		}
 
-		log.Printf("Adding server certificate `%s` to the pool...", *rootCA)
+		log.Infof("Adding server certificate `%s` to the pool...", config.Aerospike.RootCA)
 		serverPool.AppendCertsFromPEM(caCert)
 	}
 
 	var clientPool []tls.Certificate
-	if len(*certFile) > 0 || len(*keyFile) > 0 {
+	if len(config.Aerospike.CertFile) > 0 || len(config.Aerospike.KeyFile) > 0 {
 		// client Cert
-		cert, err := tls.LoadX509KeyPair(*certFile, *keyFile)
+		cert, err := tls.LoadX509KeyPair(config.Aerospike.CertFile, config.Aerospike.KeyFile)
 		if err != nil {
-			log.Fatalf("FAILED: Adding client certificate `%s` to the pool failed: `%s`", *certFile, err)
+			log.Fatalf("FAILED: Adding client certificate `%s` to the pool failed: `%s`", config.Aerospike.CertFile, err)
 		}
 
-		log.Printf("Adding client certificate `%s` to the pool...\n", *certFile)
+		log.Infof("Adding client certificate `%s` to the pool...\n", config.Aerospike.CertFile)
 		clientPool = append(clientPool, cert)
 	}
 
@@ -80,21 +80,21 @@ func initTLS() *tls.Config {
 
 func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) {
 	// use all cpus in the system for concurrency
-	*authMode = strings.ToLower(strings.TrimSpace(*authMode))
-	if *authMode != "internal" && *authMode != "external" {
+	authMode := strings.ToLower(strings.TrimSpace(config.Aerospike.AuthMode))
+	if authMode != "internal" && authMode != "external" {
 		log.Fatalln("Invalid auth mode: only `internal` and `external` values are accepted.")
 	}
 
 	clientPolicy := aero.NewClientPolicy()
 	clientPolicy.User = user
 	clientPolicy.Password = pass
-	if *authMode == "external" {
+	if authMode == "external" {
 		clientPolicy.AuthMode = aero.AuthModeExternal
 	}
 
 	// allow only ONE connection
 	clientPolicy.ConnectionQueueSize = 1
-	clientPolicy.Timeout = time.Duration(*timeout) * time.Millisecond
+	clientPolicy.Timeout = time.Duration(config.Aerospike.Timeout) * time.Second
 
 	clientPolicy.TlsConfig = initTLS()
 

@@ -3,10 +3,10 @@
 This repo contains Aerospike's monitoring agent for Prometheus.
 
 1. Install Go v1.12+, and Docker for your platform.
-2. Run `go get github.com/citrusleaf/aerospike-monitoring` and cd to it via: `cd $GOPATH/src/github.com/citrusleaf/aerospike-monitoring`
-3. `go build -o aerospike-prometheus-exporter . && ./aerospike-prometheus-exporter -h <server_node> -p 3000 -b :9145 -tags agent1,very_nice` builds and runs the agent.
+2. Run `go get github.com/citrusleaf/aerospike-prometheus-exporter` and cd to it via: `cd $GOPATH/src/github.com/citrusleaf/aerospike-prometheus-exporter`
+3. `go build -o aerospike-prometheus-exporter . && ./aerospike-prometheus-exporter -config <full path of the config file>` builds and runs the agent.
 
-    3.1. for a second agent on the same machine, bind it to a different port: `go build . && ./aerospike-prometheus-exporter -h <server_node> -p 3000 -b :9146 -tags agent1,very_nice`
+    3.1. for a second agent on the same machine, bind it to a different port: `go build . && ./aerospike-prometheus-exporter -config <full path of the config file>`
 4. Edit `docker/prometheus/prometheus.yml` and change the target IPs to aerospike-prometheus-exporter installations.
 5. Run `docker-compose up` to download, build and run the docker images. To stop the containers, run `docker-compose down`
 6. Go to your browser and use the URL: `http://localhost:3000`. User/Pass is `admin/pass`
@@ -16,8 +16,10 @@ This repo contains Aerospike's monitoring agent for Prometheus.
 
 1. Install Go v1.12+
 1. Run `go get github.com/citrusleaf/aerospike-prometheus-exporter` and cd to it via: `cd $GOPATH/src/github.com/citrusleaf/aerospike-prometheus-exporter`
-1. `go build -o aerospike-prometheus-exporter . && ./aerospike-prometheus-exporter -h <server_node> -p 3000 -b :9145 -tags agent1,very_nice` builds and runs the agent.
-    1. for a second agent on the same machine, bind it to a different port: `go build . && ./aerospike-prometheus-exporter -h <server_node> -p 3000 -b :9146 -tags agent1,very_nice`
+1. `go build -o aerospike-prometheus-exporter . && ./aerospike-prometheus-exporter -config <full path of the config file>` builds and runs the agent.
+    1. for a second agent on the same machine, bind it to a different port.
+1. You can generate certificates and set them in the config file in `key_file` and `cert_file` of the `[Agent]` section.
+    1. You need to set the `scheme: 'https'` in `scrape_configs:` to be able to ping an agent with TLS enabled.
 
 ## Build Docker Image
 
