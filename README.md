@@ -22,7 +22,7 @@ This repo contains Aerospike's monitoring agent for Prometheus.
   ```
 - Example run
   ```
-  docker run -itd --name exporter1  aerospike/aerospike-prometheus-exporter:latest -e AS_HOST=172.17.0.2 -e AS_PORT=3000 -e AGENT_TAGS='"agent1","aero_cluster"'
+  docker run -itd --name exporter1 -e AS_HOST=172.17.0.2 -e AS_PORT=3000 -e AGENT_TAGS='"agent1","aero_cluster"' aerospike/aerospike-prometheus-exporter:latest
   ```
 
 Enjoy!
