@@ -1,7 +1,10 @@
 # Aerospike Prometheus Exporter
 
 This repo contains Aerospike's monitoring agent for Prometheus.
+This is now in **beta**. If you're an enterprise customer feel free to reach out to support with any questions.
+We appreciate feedback from community members on the [issues](https://github.com/aerospike/aerospike-prometheus-exporter/issues).
 
+## Install
 1. Install Go v1.12+
 1. Run `go get github.com/citrusleaf/aerospike-prometheus-exporter` and cd to it via: `cd $GOPATH/src/github.com/citrusleaf/aerospike-prometheus-exporter`
 1. `go build -o aerospike-prometheus-exporter . && ./aerospike-prometheus-exporter -config <full path of the config file>` builds and runs the agent.
