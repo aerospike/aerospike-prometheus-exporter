@@ -7,7 +7,7 @@ We appreciate feedback from community members on the [issues](https://github.com
 
 ## Install
 1. Install Go v1.12+
-1. Run `go get github.com/citrusleaf/aerospike-prometheus-exporter` and cd to it via: `cd $GOPATH/src/github.com/citrusleaf/aerospike-prometheus-exporter`
+1. Run `go get github.com/aerospike/aerospike-prometheus-exporter` and cd to it via: `cd $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter`
 1. `go build -o aerospike-prometheus-exporter . && ./aerospike-prometheus-exporter -config <full path of the config file>` builds and runs the agent.
     1. for a second agent on the same machine, bind it to a different port.
 1. You can generate certificates and set them in the config file in `key_file` and `cert_file` of the `[Agent]` section.
