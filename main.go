@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	configFile = flag.String("config", "/etc/aerospike/aeroprom.conf", "Config File")
+	configFile = flag.String("config", "/etc/aerospike-prometheus-exporter/ape.toml", "Config File")
 	showUsage  = flag.Bool("u", false, "Show usage information")
 
 	fullHost string
@@ -48,7 +48,22 @@ func main() {
 	promReg.MustRegister(observer)
 
 	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.HandlerFor(promReg, promhttp.HandlerOpts{}))
+
+	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		if config.AeroProm.BasicAuthUsername != "" {
+			if validateBasicAuth(w, r, config.AeroProm.BasicAuthUsername, config.AeroProm.BasicAuthPassword) {
+				promhttp.HandlerFor(promReg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
+				return
+			}
+			log.Warnf("Request from %s - Unauthorized", r.RemoteAddr)
+
+			w.Header().Set("WWW-Authenticate", `Basic realm="AEROSPIKE-PROMETHEUS-EXPORTER-REALM"`)
+			w.WriteHeader(401)
+			w.Write([]byte("401 Unauthorized\n"))
+		} else {
+			promhttp.HandlerFor(promReg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
+		}
+	})
 
 	cfg := &tls.Config{
 		MinVersion:               tls.VersionTLS12,

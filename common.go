@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/subtle"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -88,4 +90,16 @@ func hashPassword(password string) ([]byte, error) {
 		return nil, err
 	}
 	return []byte(hashedPassword), nil
+}
+
+// Check HTTP Basic Authentication.
+// Validate username, password from the http request against the configured values.
+func validateBasicAuth(w http.ResponseWriter, r *http.Request, username string, password string) bool {
+	user, pass, ok := r.BasicAuth()
+
+	if !ok || subtle.ConstantTimeCompare([]byte(user), []byte(username)) != 1 || subtle.ConstantTimeCompare([]byte(pass), []byte(password)) != 1 {
+		return false
+	}
+
+	return true
 }

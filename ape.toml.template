@@ -9,14 +9,16 @@ key_file = "${AGENT_KEY_FILE}"
 # tags to append to the prometheus metrics
 tags=[${AGENT_TAGS}]
 
-bind_host = "${AGENT_BIND_HOST}"
-bind_port = ${AGENT_BIND_PORT}
+bind = "${AGENT_BIND_HOST}:${AGENT_BIND_PORT}"
 
 # metrics server timeout in seconds
 timeout = ${AGENT_TIMEOUT}
 
 # debug level can be info|warning,warn|error,err|debug
 log_level = "${AGENT_LOG_LEVEL}"
+
+basic_auth_username="${BASIC_AUTH_USERNAME}"
+basic_auth_password="${BASIC_AUTH_PASSWORD}"
 
 [Aerospike]
 db_host="${AS_HOST}"
