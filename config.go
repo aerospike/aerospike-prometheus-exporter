@@ -26,6 +26,9 @@ type Config struct {
 		LogFile  string `toml:"log_file"`
 		LogLevel string `toml:"log_level"`
 
+		BasicAuthUsername string `toml:"basic_auth_username"`
+		BasicAuthPassword string `toml:"basic_auth_password"`
+
 		tags string
 	} `toml:"Agent"`
 
