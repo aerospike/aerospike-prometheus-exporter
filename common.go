@@ -103,3 +103,20 @@ func validateBasicAuth(w http.ResponseWriter, r *http.Request, username string, 
 
 	return true
 }
+
+// Filter metrics based on configured whitelist.
+func getWhitelistedMetrics(rawMetrics map[string]metricType, whitelist []string, whitelistEnabled bool) map[string]metricType {
+	if whitelistEnabled {
+		whitelistedMetrics := make(map[string]metricType)
+
+		for _, stat := range whitelist {
+			if val, ok := rawMetrics[stat]; ok {
+				whitelistedMetrics[stat] = val
+			}
+		}
+
+		return whitelistedMetrics
+	}
+
+	return rawMetrics
+}

@@ -138,6 +138,13 @@ func (sw *StatsWatcher) detailKeys(rawMetrics map[string]string) []string {
 }
 
 func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
+	nodeMetrics := getWhitelistedMetrics(statsRawMetrics, config.AeroProm.NodeMetricsWhitelist, config.AeroProm.NodeMetricsWhitelistEnabled)
+	statsObserver = make(MetricMap, len(nodeMetrics))
+
+	for m, t := range nodeMetrics {
+		statsObserver[m] = makeMetric("aerospike_node_stats", m, t, "cluster_name", "service", "tags")
+	}
+
 	stats := parseStats(rawMetrics["statistics"], ";")
 
 	for stat, pm := range statsObserver {
@@ -202,11 +209,4 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 	log.Debug("Accumulated Stats:", accu)
 
 	return nil
-}
-
-func init() {
-	statsObserver = make(MetricMap, len(statsRawMetrics))
-	for m, t := range statsRawMetrics {
-		statsObserver[m] = makeMetric("aerospike_node_stats", m, t, "cluster_name", "service", "tags")
-	}
 }

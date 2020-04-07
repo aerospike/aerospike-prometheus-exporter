@@ -249,6 +249,25 @@ var namespaceRawMetrics = map[string]metricType{
 	"storage-engine.serialize-tomb-raider":     mtGauge, //=false
 	"storage-engine.tomb-raider-sleep":         mtGauge, //=1000
 
+	"storage-engine.file.age":            mtGauge,
+	"storage-engine.file.defrag_q":       mtGauge,
+	"storage-engine.file.defrag_reads":   mtGauge,
+	"storage-engine.file.defrag_writes":  mtGauge,
+	"storage-engine.file.free_wblocks":   mtGauge,
+	"storage-engine.file.shadow_write_q": mtGauge,
+	"storage-engine.file.used_bytes":     mtGauge,
+	"storage-engine.file.write_q":        mtGauge,
+	"storage-engine.file.writes":         mtGauge,
+
+	"storage-engine.device.age":            mtGauge,
+	"storage-engine.device.defrag_q":       mtGauge,
+	"storage-engine.device.defrag_reads":   mtGauge,
+	"storage-engine.device.defrag_writes":  mtGauge,
+	"storage-engine.device.free_wblocks":   mtGauge,
+	"storage-engine.device.shadow_write_q": mtGauge,
+	"storage-engine.device.used_bytes":     mtGauge,
+	"storage-engine.device.write_q":        mtGauge,
+	"storage-engine.device.writes":         mtGauge,
 }
 
 type NamespaceWatcher struct{}
@@ -280,8 +299,10 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 	for _, ns := range infoKeys {
 		nsName := strings.ReplaceAll(ns, "namespace/", "")
 
-		namespaceObserver := make(MetricMap, len(namespaceRawMetrics))
-		for m, t := range namespaceRawMetrics {
+		namespaceMetrics := getWhitelistedMetrics(namespaceRawMetrics, config.AeroProm.NamespaceMetricsWhitelist, config.AeroProm.NamespaceMetricsWhitelistEnabled)
+
+		namespaceObserver := make(MetricMap, len(namespaceMetrics))
+		for m, t := range namespaceMetrics {
 			namespaceObserver[m] = makeMetric("aerospike_namespace", m, t, "cluster_name", "service", "ns", "tags")
 		}
 
@@ -310,6 +331,11 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 			metricType := match[1]
 			metricIndex := match[2]
 			metricName := match[3]
+
+			_, exists := namespaceMetrics["storage-engine."+metricType+"."+metricName]
+			if !exists {
+				continue
+			}
 
 			pm := makeMetric("aerospike_namespace", "storage-engine_"+metricType+"_"+metricName, mtGauge, "cluster_name", "service", "ns", "tags", metricType+"_index")
 			pv, err := tryConvert(value)

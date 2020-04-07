@@ -17,8 +17,18 @@ timeout = ${AGENT_TIMEOUT}
 # debug level can be info|warning,warn|error,err|debug
 log_level = "${AGENT_LOG_LEVEL}"
 
+# Basic HTTP authentication for '/metrics'.
 basic_auth_username="${BASIC_AUTH_USERNAME}"
 basic_auth_password="${BASIC_AUTH_PASSWORD}"
+
+# Namespace metrics whitelist
+# namespace_metrics_whitelist=[${NAMESPACE_METRICS_WHITELIST}]
+
+# Set metrics whitelist
+# set_metrics_whitelist=[${SET_METRICS_WHITELIST}]
+
+# Node metrics whitelist
+# node_metrics_whitelist=[${NODE_METRICS_WHITELIST}]
 
 [Aerospike]
 db_host="${AS_HOST}"

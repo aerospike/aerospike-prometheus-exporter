@@ -29,6 +29,14 @@ type Config struct {
 		BasicAuthUsername string `toml:"basic_auth_username"`
 		BasicAuthPassword string `toml:"basic_auth_password"`
 
+		NamespaceMetricsWhitelist []string `toml:"namespace_metrics_whitelist"`
+		SetMetricsWhitelist       []string `toml:"set_metrics_whitelist"`
+		NodeMetricsWhitelist      []string `toml:"node_metrics_whitelist"`
+
+		NamespaceMetricsWhitelistEnabled bool
+		SetMetricsWhitelistEnabled       bool
+		NodeMetricsWhitelistEnabled      bool
+
 		tags string
 	} `toml:"Agent"`
 
@@ -89,9 +97,14 @@ func InitConfig(configFile string, config *Config) {
 		log.Fatalln(err)
 	}
 
-	if _, err := toml.Decode(string(blob), &config); err != nil {
+	md, err := toml.Decode(string(blob), &config)
+	if err != nil {
 		log.Fatalln(err)
 	}
+
+	config.AeroProm.NamespaceMetricsWhitelistEnabled = md.IsDefined("Agent", "namespace_metrics_whitelist")
+	config.AeroProm.SetMetricsWhitelistEnabled = md.IsDefined("Agent", "set_metrics_whitelist")
+	config.AeroProm.NodeMetricsWhitelistEnabled = md.IsDefined("Agent", "node_metrics_whitelist")
 
 	config.LogFile = setLogFile(config.AeroProm.LogFile)
 
