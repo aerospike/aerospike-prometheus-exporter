@@ -292,14 +292,19 @@ func (nw *NamespaceWatcher) detailKeys(rawMetrics map[string]string) []string {
 	return infoKeys
 }
 
+var namespaceMetrics map[string]metricType
+
 var seDynamicExtractor = regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 
 func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
 	var xdrRX, xdrTX, memTotal, memUsed, diskTotal, diskUsed int
+
+	if namespaceMetrics == nil {
+		namespaceMetrics = getWhitelistedMetrics(namespaceRawMetrics, config.Aerospike.NamespaceMetricsWhitelist, config.Aerospike.NamespaceMetricsWhitelistEnabled)
+	}
+
 	for _, ns := range infoKeys {
 		nsName := strings.ReplaceAll(ns, "namespace/", "")
-
-		namespaceMetrics := getWhitelistedMetrics(namespaceRawMetrics, config.Aerospike.NamespaceMetricsWhitelist, config.Aerospike.NamespaceMetricsWhitelistEnabled)
 
 		namespaceObserver := make(MetricMap, len(namespaceMetrics))
 		for m, t := range namespaceMetrics {

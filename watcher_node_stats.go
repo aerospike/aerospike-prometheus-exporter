@@ -137,10 +137,14 @@ func (sw *StatsWatcher) detailKeys(rawMetrics map[string]string) []string {
 	return []string{"statistics"}
 }
 
-func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
-	nodeMetrics := getWhitelistedMetrics(statsRawMetrics, config.Aerospike.NodeMetricsWhitelist, config.Aerospike.NodeMetricsWhitelistEnabled)
-	statsObserver = make(MetricMap, len(nodeMetrics))
+var nodeMetrics map[string]metricType
 
+func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
+	if nodeMetrics == nil {
+		nodeMetrics = getWhitelistedMetrics(statsRawMetrics, config.Aerospike.NodeMetricsWhitelist, config.Aerospike.NodeMetricsWhitelistEnabled)
+	}
+
+	statsObserver = make(MetricMap, len(nodeMetrics))
 	for m, t := range nodeMetrics {
 		statsObserver[m] = makeMetric("aerospike_node_stats", m, t, "cluster_name", "service", "tags")
 	}

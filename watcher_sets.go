@@ -31,12 +31,17 @@ func (sw *SetWatcher) detailKeys(rawMetrics map[string]string) []string {
 	return []string{"sets"}
 }
 
+var setMetrics map[string]metricType
+
 func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
 	setStats := strings.Split(rawMetrics["sets"], ";")
 	log.Debug("Set Stats:", setStats)
-	for i := range setStats {
-		setMetrics := getWhitelistedMetrics(setRawMetrics, config.Aerospike.SetMetricsWhitelist, config.Aerospike.SetMetricsWhitelistEnabled)
 
+	if setMetrics == nil {
+		setMetrics = getWhitelistedMetrics(setRawMetrics, config.Aerospike.SetMetricsWhitelist, config.Aerospike.SetMetricsWhitelistEnabled)
+	}
+
+	for i := range setStats {
 		setObserver := make(MetricMap, len(setMetrics))
 		for m, t := range setMetrics {
 			setObserver[m] = makeMetric("aerospike_sets", m, t, "cluster_name", "service", "ns", "set", "tags")
