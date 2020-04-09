@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// Set Raw metrics
 var setRawMetrics = map[string]metricType{
 	"objects":           mtGauge,
 	"tombstones":        mtGauge,
@@ -31,12 +32,20 @@ func (sw *SetWatcher) detailKeys(rawMetrics map[string]string) []string {
 	return []string{"sets"}
 }
 
+// Filtered set metrics. Populated by getWhitelistedMetrics() based on config.Aerospike.SetMetricsWhitelist and setRawMetrics.
+var setMetrics map[string]metricType
+
 func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
 	setStats := strings.Split(rawMetrics["sets"], ";")
 	log.Debug("Set Stats:", setStats)
+
+	if setMetrics == nil {
+		setMetrics = getWhitelistedMetrics(setRawMetrics, config.Aerospike.SetMetricsWhitelist, config.Aerospike.SetMetricsWhitelistEnabled)
+	}
+
 	for i := range setStats {
-		setObserver := make(MetricMap, len(setRawMetrics))
-		for m, t := range setRawMetrics {
+		setObserver := make(MetricMap, len(setMetrics))
+		for m, t := range setMetrics {
 			setObserver[m] = makeMetric("aerospike_sets", m, t, "cluster_name", "service", "ns", "set", "tags")
 		}
 

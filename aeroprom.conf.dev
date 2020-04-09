@@ -18,6 +18,10 @@ timeout = 10
 # debug level can be info|warning,warn|error,err|debug
 log_level = "debug"
 
+# Basic HTTP authentication for '/metrics'.
+basic_auth_username=""
+basic_auth_password=""
+
 [Aerospike]
 db_host="vmu1804"
 db_port=3000
@@ -43,3 +47,15 @@ resolution=5
 
 # timeout for sending commands to the server node in seconds
 timeout=5
+
+# Metrics Whitelist - If specified, only these metrics will be scraped. An empty list will exclude all metrics.
+# Commenting out the below whitelist configs will disable whitelisting (i.e. all metrics will be scraped).
+
+# Namespace metrics whitelist
+# namespace_metrics_whitelist=[]
+
+# Set metrics whitelist
+# set_metrics_whitelist=[]
+
+# Node metrics whitelist
+# node_metrics_whitelist=[]

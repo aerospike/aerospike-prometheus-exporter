@@ -5,6 +5,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// Node raw metrics
 // gauge: true, counter: false
 var statsRawMetrics = map[string]metricType{
 	"cluster_size": mtGauge,
@@ -137,7 +138,19 @@ func (sw *StatsWatcher) detailKeys(rawMetrics map[string]string) []string {
 	return []string{"statistics"}
 }
 
+// Filtered node statistics. Populated by getWhitelistedMetrics() based on config.Aerospike.NodeMetricsWhitelist and statsRawMetrics.
+var nodeMetrics map[string]metricType
+
 func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
+	if nodeMetrics == nil {
+		nodeMetrics = getWhitelistedMetrics(statsRawMetrics, config.Aerospike.NodeMetricsWhitelist, config.Aerospike.NodeMetricsWhitelistEnabled)
+	}
+
+	statsObserver = make(MetricMap, len(nodeMetrics))
+	for m, t := range nodeMetrics {
+		statsObserver[m] = makeMetric("aerospike_node_stats", m, t, "cluster_name", "service", "tags")
+	}
+
 	stats := parseStats(rawMetrics["statistics"], ";")
 
 	for stat, pm := range statsObserver {
@@ -202,11 +215,4 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 	log.Debug("Accumulated Stats:", accu)
 
 	return nil
-}
-
-func init() {
-	statsObserver = make(MetricMap, len(statsRawMetrics))
-	for m, t := range statsRawMetrics {
-		statsObserver[m] = makeMetric("aerospike_node_stats", m, t, "cluster_name", "service", "tags")
-	}
 }

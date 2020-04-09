@@ -47,6 +47,14 @@ type Config struct {
 
 		Resolution uint8 `toml:"resolution"`
 		Timeout    uint8 `toml:"timeout"`
+
+		NamespaceMetricsWhitelist []string `toml:"namespace_metrics_whitelist"`
+		SetMetricsWhitelist       []string `toml:"set_metrics_whitelist"`
+		NodeMetricsWhitelist      []string `toml:"node_metrics_whitelist"`
+
+		NamespaceMetricsWhitelistEnabled bool
+		SetMetricsWhitelistEnabled       bool
+		NodeMetricsWhitelistEnabled      bool
 	} `toml:"Aerospike"`
 
 	serverPool *x509.CertPool
@@ -89,9 +97,14 @@ func InitConfig(configFile string, config *Config) {
 		log.Fatalln(err)
 	}
 
-	if _, err := toml.Decode(string(blob), &config); err != nil {
+	md, err := toml.Decode(string(blob), &config)
+	if err != nil {
 		log.Fatalln(err)
 	}
+
+	config.Aerospike.NamespaceMetricsWhitelistEnabled = md.IsDefined("Aerospike", "namespace_metrics_whitelist")
+	config.Aerospike.SetMetricsWhitelistEnabled = md.IsDefined("Aerospike", "set_metrics_whitelist")
+	config.Aerospike.NodeMetricsWhitelistEnabled = md.IsDefined("Aerospike", "node_metrics_whitelist")
 
 	config.LogFile = setLogFile(config.AeroProm.LogFile)
 
