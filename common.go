@@ -4,9 +4,11 @@ import (
 	"crypto/subtle"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/gobwas/glob"
 	"github.com/jameskeane/bcrypt"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -104,14 +106,27 @@ func validateBasicAuth(w http.ResponseWriter, r *http.Request, username string, 
 	return true
 }
 
+// To check if whitelist contains standard wildcards (globbing pattern)
+var globbingPattern = regexp.MustCompile(`[|]|\*|\?|{|}|\\|!`)
+
 // Filter metrics based on configured whitelist.
 func getWhitelistedMetrics(rawMetrics map[string]metricType, whitelist []string, whitelistEnabled bool) map[string]metricType {
 	if whitelistEnabled {
 		whitelistedMetrics := make(map[string]metricType)
 
 		for _, stat := range whitelist {
-			if val, ok := rawMetrics[stat]; ok {
-				whitelistedMetrics[stat] = val
+			if globbingPattern.MatchString(stat) {
+				ge := glob.MustCompile(stat)
+
+				for k, v := range rawMetrics {
+					if ge.Match(k) {
+						whitelistedMetrics[k] = v
+					}
+				}
+			} else {
+				if val, ok := rawMetrics[stat]; ok {
+					whitelistedMetrics[stat] = val
+				}
 			}
 		}
 

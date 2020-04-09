@@ -29,14 +29,6 @@ type Config struct {
 		BasicAuthUsername string `toml:"basic_auth_username"`
 		BasicAuthPassword string `toml:"basic_auth_password"`
 
-		NamespaceMetricsWhitelist []string `toml:"namespace_metrics_whitelist"`
-		SetMetricsWhitelist       []string `toml:"set_metrics_whitelist"`
-		NodeMetricsWhitelist      []string `toml:"node_metrics_whitelist"`
-
-		NamespaceMetricsWhitelistEnabled bool
-		SetMetricsWhitelistEnabled       bool
-		NodeMetricsWhitelistEnabled      bool
-
 		tags string
 	} `toml:"Agent"`
 
@@ -55,6 +47,14 @@ type Config struct {
 
 		Resolution uint8 `toml:"resolution"`
 		Timeout    uint8 `toml:"timeout"`
+
+		NamespaceMetricsWhitelist []string `toml:"namespace_metrics_whitelist"`
+		SetMetricsWhitelist       []string `toml:"set_metrics_whitelist"`
+		NodeMetricsWhitelist      []string `toml:"node_metrics_whitelist"`
+
+		NamespaceMetricsWhitelistEnabled bool
+		SetMetricsWhitelistEnabled       bool
+		NodeMetricsWhitelistEnabled      bool
 	} `toml:"Aerospike"`
 
 	serverPool *x509.CertPool
@@ -102,9 +102,9 @@ func InitConfig(configFile string, config *Config) {
 		log.Fatalln(err)
 	}
 
-	config.AeroProm.NamespaceMetricsWhitelistEnabled = md.IsDefined("Agent", "namespace_metrics_whitelist")
-	config.AeroProm.SetMetricsWhitelistEnabled = md.IsDefined("Agent", "set_metrics_whitelist")
-	config.AeroProm.NodeMetricsWhitelistEnabled = md.IsDefined("Agent", "node_metrics_whitelist")
+	config.Aerospike.NamespaceMetricsWhitelistEnabled = md.IsDefined("Aerospike", "namespace_metrics_whitelist")
+	config.Aerospike.SetMetricsWhitelistEnabled = md.IsDefined("Aerospike", "set_metrics_whitelist")
+	config.Aerospike.NodeMetricsWhitelistEnabled = md.IsDefined("Aerospike", "node_metrics_whitelist")
 
 	config.LogFile = setLogFile(config.AeroProm.LogFile)
 

@@ -21,17 +21,6 @@ log_level = "${AGENT_LOG_LEVEL}"
 basic_auth_username="${BASIC_AUTH_USERNAME}"
 basic_auth_password="${BASIC_AUTH_PASSWORD}"
 
-# Metrics Whitelist - If specified, only these metrics will be scraped. An empty list will exclude all metrics.
-
-# Namespace metrics whitelist
-# namespace_metrics_whitelist=[${NAMESPACE_METRICS_WHITELIST}]
-
-# Set metrics whitelist
-# set_metrics_whitelist=[${SET_METRICS_WHITELIST}]
-
-# Node metrics whitelist
-# node_metrics_whitelist=[${NODE_METRICS_WHITELIST}]
-
 [Aerospike]
 db_host="${AS_HOST}"
 db_port=${AS_PORT}
@@ -57,3 +46,15 @@ resolution=${TICKER_INTERVAL}
 
 # timeout for sending commands to the server node in seconds
 timeout=${TICKER_TIMEOUT}
+
+# Metrics Whitelist - If specified, only these metrics will be scraped. An empty list will exclude all metrics.
+# Commenting out the below whitelist configs will disable whitelisting (i.e. all metrics will be scraped).
+
+# Namespace metrics whitelist
+# namespace_metrics_whitelist=[${NAMESPACE_METRICS_WHITELIST}]
+
+# Set metrics whitelist
+# set_metrics_whitelist=[${SET_METRICS_WHITELIST}]
+
+# Node metrics whitelist
+# node_metrics_whitelist=[${NODE_METRICS_WHITELIST}]

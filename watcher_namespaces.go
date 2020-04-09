@@ -299,7 +299,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 	for _, ns := range infoKeys {
 		nsName := strings.ReplaceAll(ns, "namespace/", "")
 
-		namespaceMetrics := getWhitelistedMetrics(namespaceRawMetrics, config.AeroProm.NamespaceMetricsWhitelist, config.AeroProm.NamespaceMetricsWhitelistEnabled)
+		namespaceMetrics := getWhitelistedMetrics(namespaceRawMetrics, config.Aerospike.NamespaceMetricsWhitelist, config.Aerospike.NamespaceMetricsWhitelistEnabled)
 
 		namespaceObserver := make(MetricMap, len(namespaceMetrics))
 		for m, t := range namespaceMetrics {

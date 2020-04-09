@@ -35,7 +35,7 @@ func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, a
 	setStats := strings.Split(rawMetrics["sets"], ";")
 	log.Debug("Set Stats:", setStats)
 	for i := range setStats {
-		setMetrics := getWhitelistedMetrics(setRawMetrics, config.AeroProm.SetMetricsWhitelist, config.AeroProm.SetMetricsWhitelistEnabled)
+		setMetrics := getWhitelistedMetrics(setRawMetrics, config.Aerospike.SetMetricsWhitelist, config.Aerospike.SetMetricsWhitelistEnabled)
 
 		setObserver := make(MetricMap, len(setMetrics))
 		for m, t := range setMetrics {

@@ -138,7 +138,7 @@ func (sw *StatsWatcher) detailKeys(rawMetrics map[string]string) []string {
 }
 
 func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
-	nodeMetrics := getWhitelistedMetrics(statsRawMetrics, config.AeroProm.NodeMetricsWhitelist, config.AeroProm.NodeMetricsWhitelistEnabled)
+	nodeMetrics := getWhitelistedMetrics(statsRawMetrics, config.Aerospike.NodeMetricsWhitelist, config.Aerospike.NodeMetricsWhitelistEnabled)
 	statsObserver = make(MetricMap, len(nodeMetrics))
 
 	for m, t := range nodeMetrics {
