@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// Namespace raw metrics
 var namespaceRawMetrics = map[string]metricType{
 	"allow-nonxdr-writes":        mtGauge,
 	"allow-xdr-writes":           mtGauge,
@@ -292,8 +293,10 @@ func (nw *NamespaceWatcher) detailKeys(rawMetrics map[string]string) []string {
 	return infoKeys
 }
 
+// Filtered namespace metrics. Populated by getWhitelistedMetrics() based on the config.Aerospike.NamespaceMetricsWhitelist and namespaceRawMetrics.
 var namespaceMetrics map[string]metricType
 
+// Regex for identifying storage-engine stats.
 var seDynamicExtractor = regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 
 func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {

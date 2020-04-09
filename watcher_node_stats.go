@@ -5,6 +5,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// Node raw metrics
 // gauge: true, counter: false
 var statsRawMetrics = map[string]metricType{
 	"cluster_size": mtGauge,
@@ -137,6 +138,7 @@ func (sw *StatsWatcher) detailKeys(rawMetrics map[string]string) []string {
 	return []string{"statistics"}
 }
 
+// Filtered node statistics. Populated by getWhitelistedMetrics() based on config.Aerospike.NodeMetricsWhitelist and statsRawMetrics.
 var nodeMetrics map[string]metricType
 
 func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {

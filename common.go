@@ -106,7 +106,7 @@ func validateBasicAuth(w http.ResponseWriter, r *http.Request, username string, 
 	return true
 }
 
-// To check if whitelist contains standard wildcards (globbing pattern)
+// Regex for indentifying globbing patterns (or standard wildcards) in the whitelist.
 var globbingPattern = regexp.MustCompile(`[|]|\*|\?|{|}|\\|!`)
 
 // Filter metrics based on configured whitelist.
