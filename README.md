@@ -7,11 +7,11 @@ We appreciate feedback from community members on the [issues](https://github.com
 
 ## Install
 1. Install Go v1.12+
-1. Run `go get github.com/aerospike/aerospike-prometheus-exporter` and cd to it via: `cd $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter`
-1. `go build -o aerospike-prometheus-exporter . && ./aerospike-prometheus-exporter -config <full path of the config file>` builds and runs the agent.
-    1. for a second agent on the same machine, bind it to a different port.
-1. You can generate certificates and set them in the config file in `key_file` and `cert_file` of the `[Agent]` section.
-    1. You need to set the `scheme: 'https'` in `scrape_configs:` to be able to ping an agent with TLS enabled.
+2. Run `go get github.com/aerospike/aerospike-prometheus-exporter` and cd to it via: `cd $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter`
+3. `go build -o aerospike-prometheus-exporter . && ./aerospike-prometheus-exporter -config <full path of the config file>` builds and runs the agent.
+    - for a second agent on the same machine, bind it to a different port.
+4. You can generate certificates and set them in the config file in `key_file` and `cert_file` of the `[Agent]` section.
+    - You need to set the `scheme: 'https'` in `scrape_configs:` to be able to ping an agent with TLS enabled.
 
 ## Build Docker Image
 
@@ -29,4 +29,102 @@ We appreciate feedback from community members on the [issues](https://github.com
   docker run -itd --name exporter1 -e AS_HOST=172.17.0.2 -e AS_PORT=3000 -e AGENT_TAGS='"agent1","aero_cluster"' aerospike/aerospike-prometheus-exporter:latest
   ```
 
-Enjoy!
+## Aerospike Prometheus Exporter Configuration
+
+- Aerospike Prometheus Exporter requires a configuration file to run. Check [sample configuration file](aeroprom.conf.dev).
+    ```
+    mkdir -p /etc/aerospike-prometheus-exporter
+    curl https://raw.githubusercontent.com/aerospike/aerospike-prometheus-exporter/master/aeroprom.conf.dev -o /etc/aerospike-prometheus-exporter/ape.toml
+    ```
+
+- As a minimum required configuration, edit `/etc/aerospike-prometheus-exporter/ape.toml` to add `db_host` and `db_port` to point to an Aerospike server IP and port.
+    ```toml
+    [Aerospike]
+
+    db_host="localhost"
+    db_port=3000
+    ```
+- Update Aerospike security and TLS configurations (if applicable),
+    ```toml
+    [Aerospike]
+
+    # certificate file
+    cert_file=""
+
+    # key file
+    key_file=""
+
+    # node TLS name for authentication
+    node_tls_name=""
+
+    # root certificate file
+    root_ca=""
+
+    # authentication mode: internal (for server), external (LDAP, etc.)
+    auth_mode=""
+
+    # database user
+    user=""
+
+    # database password
+    password=""
+    ```
+
+- Update exporter's bind address and port (default: `0.0.0.0:9145`), and add tags.
+    ```toml
+    [Agent]
+
+    bind=":9145"
+    tags=['agent', 'aerospike']
+    ```
+
+- Use metrics whitelist to filter out required metrics (optional). The whitelist supports standard wildcards (globbing patterns which include - `? (question mark)`, `* (asterisk)`, `[ ] (square brackets)`, `{ } (curly brackets)`, `[!]` and `\ (backslash)`) for bulk whitelisting. For example,
+    ```toml
+    [Aerospike]
+
+    # Metrics Whitelist - If specified, only these metrics will be scraped. An empty list will exclude all metrics.
+    # Commenting out the below whitelist configs will disable whitelisting (all metrics will be scraped).
+
+    # Namespace metrics whitelist
+    namespace_metrics_whitelist=[
+    "client_read_[a-z]*",
+    "stop_writes",
+    "storage-engine.file.defrag_q",
+    "client_write_success",
+    "memory_*_bytes",
+    "objects",
+    "*_available_pct"
+    ]
+
+    # Set metrics whitelist
+    set_metrics_whitelist=[
+    "objects",
+    "tombstones"
+    ]
+
+    # Node metrics whitelist
+    node_metrics_whitelist=[
+    "uptime",
+    "cluster_size",
+    "batch_index_*",
+    "xdr_ship_*"
+    ]
+    ```
+
+- To enable basic HTTP authentication and/or enable HTTPS between the Prometheus server and the exporter, use the below configurations keys (optional),
+
+  ```toml
+  [Agent]
+
+  # File paths should be double quoted.
+
+  # Certificate file for the metric servers for prometheus
+  cert_file = ""
+
+  # Key file for the metric servers for prometheus
+  key_file = ""
+
+  # Basic HTTP authentication for '/metrics'.
+  basic_auth_username=""
+  basic_auth_password=""
+  ```
