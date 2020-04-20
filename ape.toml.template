@@ -58,3 +58,6 @@ timeout=${TICKER_TIMEOUT}
 
 # Node metrics whitelist
 # node_metrics_whitelist=[${NODE_METRICS_WHITELIST}]
+
+# XDR metrics whitelist (only for server versions 5.0 and above)
+# xdr_metrics_whitelist=[${XDR_METRICS_WHITELIST}]

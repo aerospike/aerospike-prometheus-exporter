@@ -59,3 +59,6 @@ timeout=5
 
 # Node metrics whitelist
 # node_metrics_whitelist=[]
+
+# XDR metrics whitelist (only for server versions 5.0 and above)
+# xdr_metrics_whitelist=[]

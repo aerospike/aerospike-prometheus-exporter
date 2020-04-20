@@ -39,18 +39,13 @@ func (xw *XdrWatcher) infoKeys() []string {
 
 func (xw *XdrWatcher) detailKeys(rawMetrics map[string]string) []string {
 	res := rawMetrics["get-config:context=xdr"]
-	list := strings.Split(res, ";")
+	list := parseStats(res, ";")
+	dcsList := strings.Split(list["dcs"], ",")
 
 	var infoKeys []string
-	for _, ele := range list {
-		if strings.Contains(ele, "dcs=") {
-			dcs := strings.SplitN(ele, "=", 2)
-			dcsList := strings.Split(dcs[1], ",")
-
-			for _, dc := range dcsList {
-				infoKeys = append(infoKeys, "get-stats:context=xdr;dc="+dc)
-			}
-			break
+	for _, dc := range dcsList {
+		if dc != "" {
+			infoKeys = append(infoKeys, "get-stats:context=xdr;dc="+dc)
 		}
 	}
 
