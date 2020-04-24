@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/gobwas/glob"
 	"github.com/jameskeane/bcrypt"
 	"github.com/prometheus/client_golang/prometheus"
@@ -172,4 +173,16 @@ func getKeyFilePassphrase(keyFilePassphraseConfig string) ([]byte, error) {
 	}
 
 	return []byte(keyFilePassphraseConfig), nil
+}
+
+// Read certificate file and abort if any errors
+// Returns file content as byte array
+func readCertFile(filename string) []byte {
+	dataBytes, err := ioutil.ReadFile(filename)
+
+	if err != nil {
+		log.Fatalf("Failed to read certificate or key file `%s` : `%s`", filename, err)
+	}
+
+	return dataBytes
 }

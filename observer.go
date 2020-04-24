@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"io/ioutil"
 	"strings"
 	"time"
 
@@ -47,10 +46,7 @@ func initTLS() *tls.Config {
 
 	if len(config.Aerospike.RootCA) > 0 {
 		// Try to load system CA certs and add them to the system cert pool
-		caCert, err := ioutil.ReadFile(config.Aerospike.RootCA)
-		if err != nil {
-			log.Fatalf("FAILED: Adding server certificate `%s` to the pool failed: %s", config.Aerospike.RootCA, err)
-		}
+		caCert := readCertFile(config.Aerospike.RootCA)
 
 		log.Infof("Adding server certificate `%s` to the pool...", config.Aerospike.RootCA)
 		serverPool.AppendCertsFromPEM(caCert)
@@ -59,17 +55,9 @@ func initTLS() *tls.Config {
 	var clientPool []tls.Certificate
 	if len(config.Aerospike.CertFile) > 0 || len(config.Aerospike.KeyFile) > 0 {
 
-		// Read Key file
-		keyFileBytes, err := ioutil.ReadFile(config.Aerospike.KeyFile)
-		if err != nil {
-			log.Fatalf("Failed to read key file `%s` : `%s`", config.Aerospike.KeyFile, err)
-		}
-
-		// Read Cert file
-		certFileBytes, err := ioutil.ReadFile(config.Aerospike.CertFile)
-		if err != nil {
-			log.Fatalf("Failed to read cert file `%s` : `%s`", config.Aerospike.CertFile, err)
-		}
+		// Read Cert and Key files
+		certFileBytes := readCertFile(config.Aerospike.CertFile)
+		keyFileBytes := readCertFile(config.Aerospike.KeyFile)
 
 		// Decode PEM data
 		keyBlock, _ := pem.Decode([]byte(keyFileBytes))
