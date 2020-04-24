@@ -3,8 +3,8 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"errors"
-	"io/ioutil"
 	"strings"
 	"time"
 
@@ -46,10 +46,7 @@ func initTLS() *tls.Config {
 
 	if len(config.Aerospike.RootCA) > 0 {
 		// Try to load system CA certs and add them to the system cert pool
-		caCert, err := ioutil.ReadFile(config.Aerospike.RootCA)
-		if err != nil {
-			log.Fatalf("FAILED: Adding server certificate `%s` to the pool failed: %s", config.Aerospike.RootCA, err)
-		}
+		caCert := readCertFile(config.Aerospike.RootCA)
 
 		log.Infof("Adding server certificate `%s` to the pool...", config.Aerospike.RootCA)
 		serverPool.AppendCertsFromPEM(caCert)
@@ -57,10 +54,47 @@ func initTLS() *tls.Config {
 
 	var clientPool []tls.Certificate
 	if len(config.Aerospike.CertFile) > 0 || len(config.Aerospike.KeyFile) > 0 {
-		// client Cert
-		cert, err := tls.LoadX509KeyPair(config.Aerospike.CertFile, config.Aerospike.KeyFile)
+
+		// Read Cert and Key files
+		certFileBytes := readCertFile(config.Aerospike.CertFile)
+		keyFileBytes := readCertFile(config.Aerospike.KeyFile)
+
+		// Decode PEM data
+		keyBlock, _ := pem.Decode([]byte(keyFileBytes))
+		certBlock, _ := pem.Decode([]byte(certFileBytes))
+
+		if keyBlock == nil || certBlock == nil {
+			log.Fatalf("Unable to decode PEM data for `%s` or `%s`", config.Aerospike.KeyFile, config.Aerospike.CertFile)
+		}
+
+		// Check and Decrypt the the Key Block using passphrase
+		if x509.IsEncryptedPEMBlock(keyBlock) {
+			keyFilePassphraseBytes, err := getKeyFilePassphrase(config.Aerospike.KeyFilePassphrase)
+			if err != nil {
+				log.Fatalf("Failed to get Key file passphrase for `%s` : `%s`", config.Aerospike.KeyFile, err)
+			}
+
+			decryptedDERBytes, err := x509.DecryptPEMBlock(keyBlock, keyFilePassphraseBytes)
+			if err != nil {
+				log.Fatalf("Failed to decrypt PEM Block: `%s`", err)
+			}
+
+			keyBlock.Bytes = decryptedDERBytes
+			keyBlock.Headers = nil
+		}
+
+		// Encode PEM data
+		keyPEM := pem.EncodeToMemory(keyBlock)
+		certPEM := pem.EncodeToMemory(certBlock)
+
+		if keyPEM == nil || certPEM == nil {
+			log.Fatalf("Unable to encode PEM data for `%s` or `%s`", config.Aerospike.KeyFile, config.Aerospike.CertFile)
+		}
+
+		cert, err := tls.X509KeyPair(certPEM, keyPEM)
+
 		if err != nil {
-			log.Fatalf("FAILED: Adding client certificate `%s` to the pool failed: `%s`", config.Aerospike.CertFile, err)
+			log.Fatalf("FAILED: Adding client certificate `%s` and key file `%s` to the pool failed: `%s`", config.Aerospike.CertFile, config.Aerospike.KeyFile, err)
 		}
 
 		log.Infof("Adding client certificate `%s` to the pool...\n", config.Aerospike.CertFile)

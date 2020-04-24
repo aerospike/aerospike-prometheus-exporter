@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -36,10 +34,11 @@ type Config struct {
 		Host string `toml:"db_host"`
 		Port uint16 `toml:"db_port"`
 
-		CertFile    string `toml:"cert_file"`
-		KeyFile     string `toml:"key_file"`
-		NodeTLSName string `toml:"node_tls_name"`
-		RootCA      string `toml:"root_ca"`
+		CertFile          string `toml:"cert_file"`
+		KeyFile           string `toml:"key_file"`
+		KeyFilePassphrase string `toml:"key_file_passphrase"`
+		NodeTLSName       string `toml:"node_tls_name"`
+		RootCA            string `toml:"root_ca"`
 
 		AuthMode string `toml:"auth_mode"`
 		User     string `toml:"user"`
@@ -58,9 +57,6 @@ type Config struct {
 		NodeMetricsWhitelistEnabled      bool
 		XdrMetricsWhitelistEnabled       bool
 	} `toml:"Aerospike"`
-
-	serverPool *x509.CertPool
-	clientPool []tls.Certificate
 
 	LogFile *os.File
 }
@@ -115,21 +111,6 @@ func InitConfig(configFile string, config *Config) {
 		config.Aerospike.Resolution = 5
 	} else if config.Aerospike.Resolution > 10 {
 		config.Aerospike.Resolution = 10
-	}
-
-	// Try to load system CA certs, otherwise just make an empty pool
-	serverPool, err := x509.SystemCertPool()
-	config.serverPool = serverPool
-
-	if config.Aerospike.CertFile != "" && config.Aerospike.KeyFile != "" {
-		// Try to load system CA certs and add them to the system cert pool
-		cert, err := tls.LoadX509KeyPair(config.Aerospike.CertFile, config.Aerospike.KeyFile)
-		if err != nil {
-			log.Errorf("FAILED: Adding client certificate %s to the pool failed: %s", config.Aerospike.CertFile, err)
-		}
-
-		log.Debugf("Adding client certificate %s to the pool...", config.Aerospike.CertFile)
-		config.clientPool = append(config.clientPool, cert)
 	}
 
 	aslog.Logger.SetLogger(log.StandardLogger())
