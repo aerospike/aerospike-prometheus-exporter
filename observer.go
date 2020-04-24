@@ -75,7 +75,6 @@ func initTLS() *tls.Config {
 			}
 
 			decryptedDERBytes, err := x509.DecryptPEMBlock(keyBlock, keyFilePassphraseBytes)
-
 			if err != nil {
 				log.Fatalf("Failed to decrypt PEM Block: `%s`", err)
 			}

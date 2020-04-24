@@ -152,7 +152,6 @@ func getKeyFilePassphrase(keyFilePassphraseConfig string) ([]byte, error) {
 	if len(keyFilePassphraseSource) == 2 {
 		if keyFilePassphraseSource[0] == "file" {
 			dataBytes, err := ioutil.ReadFile(keyFilePassphraseSource[1])
-
 			if err != nil {
 				return nil, err
 			}
@@ -179,7 +178,6 @@ func getKeyFilePassphrase(keyFilePassphraseConfig string) ([]byte, error) {
 // Returns file content as byte array
 func readCertFile(filename string) []byte {
 	dataBytes, err := ioutil.ReadFile(filename)
-
 	if err != nil {
 		log.Fatalf("Failed to read certificate or key file `%s` : `%s`", filename, err)
 	}
