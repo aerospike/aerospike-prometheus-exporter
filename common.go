@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"crypto/subtle"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -134,4 +138,38 @@ func getWhitelistedMetrics(rawMetrics map[string]metricType, whitelist []string,
 	}
 
 	return rawMetrics
+}
+
+// Get key file passphrase from environment variable or from a file or directly from the config variable
+// keyFilePassphraseConfig can be one of the following,
+// 1. "<passphrase>"
+// 2. "file:<file-that-contains-passphrase>"
+// 3. "env:<environment-variable-that-contains-passphrase>"
+func getKeyFilePassphrase(keyFilePassphraseConfig string) ([]byte, error) {
+	keyFilePassphraseSource := strings.SplitN(keyFilePassphraseConfig, ":", 2)
+
+	if len(keyFilePassphraseSource) == 2 {
+		if keyFilePassphraseSource[0] == "file" {
+			dataBytes, err := ioutil.ReadFile(keyFilePassphraseSource[1])
+
+			if err != nil {
+				return nil, err
+			}
+
+			keyPassphrase := bytes.TrimSuffix(dataBytes, []byte("\n"))
+
+			return keyPassphrase, nil
+		}
+
+		if keyFilePassphraseSource[0] == "env" {
+			keyPassphrase, ok := os.LookupEnv(keyFilePassphraseSource[1])
+			if !ok {
+				return nil, errors.New("Environment variable " + keyFilePassphraseSource[1] + " not set")
+			}
+
+			return []byte(keyPassphrase), nil
+		}
+	}
+
+	return []byte(keyFilePassphraseConfig), nil
 }
