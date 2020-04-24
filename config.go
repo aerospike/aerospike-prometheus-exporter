@@ -51,10 +51,12 @@ type Config struct {
 		NamespaceMetricsWhitelist []string `toml:"namespace_metrics_whitelist"`
 		SetMetricsWhitelist       []string `toml:"set_metrics_whitelist"`
 		NodeMetricsWhitelist      []string `toml:"node_metrics_whitelist"`
+		XdrMetricsWhitelist       []string `toml:"xdr_metrics_whitelist"`
 
 		NamespaceMetricsWhitelistEnabled bool
 		SetMetricsWhitelistEnabled       bool
 		NodeMetricsWhitelistEnabled      bool
+		XdrMetricsWhitelistEnabled       bool
 	} `toml:"Aerospike"`
 
 	serverPool *x509.CertPool
@@ -105,6 +107,7 @@ func InitConfig(configFile string, config *Config) {
 	config.Aerospike.NamespaceMetricsWhitelistEnabled = md.IsDefined("Aerospike", "namespace_metrics_whitelist")
 	config.Aerospike.SetMetricsWhitelistEnabled = md.IsDefined("Aerospike", "set_metrics_whitelist")
 	config.Aerospike.NodeMetricsWhitelistEnabled = md.IsDefined("Aerospike", "node_metrics_whitelist")
+	config.Aerospike.XdrMetricsWhitelistEnabled = md.IsDefined("Aerospike", "xdr_metrics_whitelist")
 
 	config.LogFile = setLogFile(config.AeroProm.LogFile)
 

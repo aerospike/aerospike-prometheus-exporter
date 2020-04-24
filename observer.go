@@ -126,7 +126,8 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 			&NamespaceWatcher{},
 			&SetWatcher{},
 			&LatencyWatcher{},
-			&StatsWatcher{}}, // the order is important here
+			&StatsWatcher{},
+			&XdrWatcher{}}, // the order is important here
 	}
 
 	return o, nil
