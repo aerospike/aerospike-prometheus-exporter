@@ -54,6 +54,12 @@ We appreciate feedback from community members on the [issues](https://github.com
     # key file
     key_file=""
 
+    # Passphrase for encrypted key_file. Supports below formats,
+    # 1. Passphrase directly                 - "<passphrase>"
+    # 2. Passphrase via file                 - "file:<file-that-contains-passphrase>"
+    # 3. Passphrase via environment variable - "env:<environment-variable-that-holds-passphrase>"
+    key_file_passphrase=""
+
     # node TLS name for authentication
     node_tls_name=""
 
@@ -108,6 +114,14 @@ We appreciate feedback from community members on the [issues](https://github.com
     "cluster_size",
     "batch_index_*",
     "xdr_ship_*"
+    ]
+
+    # XDR metrics whitelist (only for server versions 5.0 and above)
+    xdr_metrics_whitelist=[
+    "success",
+    "latency_ms",
+    "throughput",
+    "lap_us"
     ]
     ```
 
