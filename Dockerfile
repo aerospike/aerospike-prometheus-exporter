@@ -1,7 +1,7 @@
 FROM golang:alpine AS builder
 
-ADD . $GOPATH/src/github.com/citrusleaf/aerospike-prometheus-exporter
-WORKDIR $GOPATH/src/github.com/citrusleaf/aerospike-prometheus-exporter
+ADD . $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter
+WORKDIR $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter
 RUN apk add git \
 	&& go get ./... \
 	&& go build -o aerospike-prometheus-exporter . \
