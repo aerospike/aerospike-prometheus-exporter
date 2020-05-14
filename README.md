@@ -17,7 +17,7 @@ We appreciate feedback from community members on the [issues](https://github.com
 
 - Clone the repo
   ```
-  git clone https://github.com/citrusleaf/aerospike-prometheus-exporter.git
+  git clone https://github.com/aerospike/aerospike-prometheus-exporter.git
   cd aerospike-prometheus-exporter
   ```
 - Build the docker image
