@@ -9,7 +9,6 @@ import (
 )
 
 type LatencyWatcher struct {
-	lastTimestamp map[string]string // op => timestamp
 }
 
 func (lw *LatencyWatcher) describe(ch chan<- *prometheus.Desc) {
@@ -27,18 +26,10 @@ func (lw *LatencyWatcher) detailKeys(rawMetrics map[string]string) []string {
 func (lw *LatencyWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
 	rawStats := parseLatencyInfo(rawMetrics["latency:"])
 
-	if lw.lastTimestamp == nil {
-		lw.lastTimestamp = make(map[string]string, 16)
-	}
-
 	for ns, stats := range rawStats {
 		for opType, statsDetails := range stats {
-			if lw.lastTimestamp[opType] == statsDetails.(StatsMap)["timestamp"].(string) {
-				break
-			}
-			lw.lastTimestamp[opType] = statsDetails.(StatsMap)["timestamp"].(string)
-
 			total := 0.0
+
 			for i, label := range statsDetails.(StatsMap)["buckets"].([]string) {
 				total += statsDetails.(StatsMap)["valBuckets"].([]float64)[i]
 				metricName := "gt_" + strings.Trim(label, "><=")
