@@ -37,7 +37,7 @@ func parseLatencyInfo(s string) map[string]StatsMap {
 			break
 		}
 
-		timestamp, err := ip.ReadUntil(',')
+		_, err = ip.ReadUntil(',')
 		if err != nil {
 			break
 		}
@@ -92,7 +92,6 @@ func parseLatencyInfo(s string) map[string]StatsMap {
 
 		stats := StatsMap{
 			"tps":        opsCount,
-			"timestamp":  timestamp,
 			"buckets":    buckets,
 			"valBuckets": valBucketsFloat,
 		}
