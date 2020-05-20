@@ -62,7 +62,11 @@ func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, a
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], stats["ns"], stats["set"], config.AeroProm.tags)
+			clusterName := sanitizeLabelValue(rawMetrics["cluster-name"])
+			service := sanitizeLabelValue(rawMetrics["service"])
+			ns := sanitizeLabelValue(rawMetrics["ns"])
+			set := sanitizeLabelValue(rawMetrics["set"])
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, clusterName, service, ns, set, config.AeroProm.tags)
 		}
 	}
 

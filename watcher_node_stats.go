@@ -153,6 +153,9 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 
 	stats := parseStats(rawMetrics["statistics"], ";")
 
+	clusterName := sanitizeLabelValue(rawMetrics["cluster-name"])
+	service := sanitizeLabelValue(rawMetrics["service"])
+
 	for stat, pm := range statsObserver {
 		v, exists := stats[stat]
 		if !exists {
@@ -165,7 +168,8 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 			continue
 		}
 
-		ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], config.AeroProm.tags)
+
+		ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, clusterName, service, config.AeroProm.tags)
 	}
 
 	// send node labels for grafana
@@ -195,8 +199,8 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 		nodeGrafanaInfoMetric.desc,
 		nodeGrafanaInfoMetric.valueType,
 		1.0,
-		rawMetrics["cluster-name"],
-		rawMetrics["service"],
+		clusterName,
+		service,
 		config.AeroProm.tags,
 		rawMetrics["build"],
 		stats["cluster_size"],
