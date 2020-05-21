@@ -70,10 +70,6 @@ func (xw *XdrWatcher) refresh(infoKeys []string, rawMetrics map[string]string, a
 		}
 
 		stats := parseStats(rawMetrics[dc], ";")
-
-		clusterName := sanitizeLabelValue(rawMetrics["cluster-name"])
-		service := sanitizeLabelValue(rawMetrics["service"])
-
 		for stat, pm := range xdrObserver {
 			v, exists := stats[stat]
 			if !exists {
@@ -86,7 +82,7 @@ func (xw *XdrWatcher) refresh(infoKeys []string, rawMetrics map[string]string, a
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, clusterName, service, dcName, config.AeroProm.tags)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], dcName, config.AeroProm.tags)
 		}
 	}
 

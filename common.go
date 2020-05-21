@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"unicode/utf8"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gobwas/glob"
@@ -184,18 +183,4 @@ func readCertFile(filename string) []byte {
 	}
 
 	return dataBytes
-}
-
-func sanitizeLabelValue(lv string) string {
-	if utf8.ValidString(lv) {
-		return lv
-	}
-	fixUtf := func(r rune) rune {
-		if r == utf8.RuneError {
-			return 65533
-		}
-		return r
-	}
-
-	return strings.Map(fixUtf, lv)
 }

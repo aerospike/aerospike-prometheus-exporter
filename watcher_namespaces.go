@@ -307,7 +307,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 	}
 
 	for _, ns := range infoKeys {
-		nsName := sanitizeLabelValue(strings.ReplaceAll(ns, "namespace/", ""))
+		nsName := strings.ReplaceAll(ns, "namespace/", "")
 
 		namespaceObserver := make(MetricMap, len(namespaceMetrics))
 		for m, t := range namespaceMetrics {
@@ -327,9 +327,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 				continue
 			}
 
-			clusterName := sanitizeLabelValue(rawMetrics["cluster-name"])
-			service := sanitizeLabelValue(rawMetrics["service"])
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, clusterName, service, nsName, config.AeroProm.tags)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName, config.AeroProm.tags)
 		}
 
 		for stat, value := range stats {
@@ -353,9 +351,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 				continue
 			}
 
-			clusterName := sanitizeLabelValue(rawMetrics["cluster-name"])
-			service := sanitizeLabelValue(rawMetrics["service"])
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, clusterName, service, nsName, config.AeroProm.tags, metricIndex)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName, config.AeroProm.tags, metricIndex)
 		}
 
 		// here accumulate the values
