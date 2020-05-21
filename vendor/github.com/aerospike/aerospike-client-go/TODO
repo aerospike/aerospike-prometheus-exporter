@@ -1,0 +1,69 @@
+v2.1:
+ ☐ Fix the connection heap size, and remove the % from logic
+
+BREAKING:
+ ☐ Fix Log methods and the way they take params
+
+
+
+
+
+
+
+ ☐ write tests for lua packages
+   ✔ map @done (16-01-12 14:16)
+   ✔ list @done (16-01-12 14:16)
+   ☐ stream
+   ✔ aerospike @done (16-01-12 14:16)
+   ☐ bytes
+ ✔ talk to wei-ling about get udf @done (16-01-12 14:16)
+ ☐ improve parallelism by having an interpreter per node
+ ☐ Add CDT operations xxx_from
+ ☐ move lua code completely out of other parts / no dependency on yuin/gopher-lua outside of the internal/lua package
+ ☐ update dates to 2016
+ ☐ update timeout mechanism for hard limit
+ ✔ clean up value.go from Lua functions @done (16-01-12 14:23)
+ ✔ clean up lua API comments @done (16-01-12 16:19)
+ ☐ fetch UDFs from the server
+ ✔ implement SetLuaPath @done (16-01-12 16:02)
+ ✔ add examples @done (16-01-12 16:02)
+ ☐ add documentation
+ ✔ fix github reports @done (16-01-12 16:27)
+
+ ✔ Add query/Scan Marshalling @done (15-11-30 17:17)
+ ☐ Add Scan Priority
+   ✔ Implement @done (15-12-3 13:14)
+   ☐ Add tests
+   ☐ Add docs
+ ☐ Fix Retry Logic
+ ✔ Change Generation / TTL to uint32 @done (15-12-10 17:46)
+ ☐ Do the 32bit version
+ ☐ Complete the documentation
+ ☐ Fix the panic bug in batchcommand that makes the stream stuck
+ ✔ rename query/scan_record_object_command @done (15-11-30 17:17)
+ ☐ CDT
+   ✔ Do the implementation @done (15-12-11 14:19)
+   ✔ Do the tests @done (15-12-11 17:01)
+   ✔ Do the commenting docs @done (15-12-14 13:39)
+   ☐ Do the website docs
+ ☐ GeoQuery
+   ✔ Rename the func names @done (15-12-14 14:11)
+   ✔ add and clean up the comments docs @done (15-12-14 14:12)
+   ☐ add the website docs
+ ☐ Add IncludeLDT
+   ✔ Implement @done (15-12-14 14:25)
+   ✔ test @done (15-12-14 14:25)
+   ☐ document
+ ✔ fix the documentation using the closed PR @done (15-12-14 14:25)
+ ☐ Test nodeCount > 2 reliability
+
+ CDT Notes
+   ☐ Empty vs nil
+   ☐ Get All ([0, -1])
+   ☐ Ranges with count == 1
+     ☐ Pop
+     ☐ Remove
+     ☐ GetRange works with 1
+     ☐ GetRange, RemoveRange with only index is ugly, I prefer -1 as the end
+
+ ☐ IncludeLDT flag == false returns the name of the LDT bins and the control bin with <nil> values, which violates the idea of Not having NULL bins

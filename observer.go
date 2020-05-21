@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 	aero "github.com/aerospike/aerospike-client-go"
 	"github.com/prometheus/client_golang/prometheus"
 )

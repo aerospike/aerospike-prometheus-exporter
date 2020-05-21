@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	log "github.com/sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 	aslog "github.com/aerospike/aerospike-client-go/logger"
 )
 

@@ -3,7 +3,7 @@ package main
 import (
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/prometheus/client_golang/prometheus"
 )

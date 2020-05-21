@@ -25,7 +25,7 @@ func (ip *InfoParser) Expect(s string) error {
 		return err
 	}
 	if string(bytes) != s {
-		return fmt.Errorf("InfoParser: Wrong value. Expected %s, found %d", s, v)
+		return fmt.Errorf("InfoParser: Wrong value. Expected %s, found %s", s, v)
 	}
 	return nil
 }

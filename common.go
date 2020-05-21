@@ -13,7 +13,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	log "github.com/sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 	"github.com/gobwas/glob"
 	"github.com/jameskeane/bcrypt"
 	"github.com/prometheus/client_golang/prometheus"
