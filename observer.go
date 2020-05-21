@@ -203,6 +203,10 @@ func (o *Observer) requestInfo(conn *aero.Connection, infoKeys []string) (map[st
 		}
 	}
 
+	for k, v := range rawMetrics {
+		rawMetrics[k] = sanitizeLabelValue(v)
+	}
+
 	return rawMetrics, nil
 }
 
