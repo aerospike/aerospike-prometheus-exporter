@@ -13,10 +13,10 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/gobwas/glob"
 	"github.com/jameskeane/bcrypt"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 )
 
 func makeMetric(namespace, name string, t metricType, labels ...string) promMetric {
@@ -186,7 +186,7 @@ func readCertFile(filename string) []byte {
 	return dataBytes
 }
 
-func sanitizeLabelValue(lv string) string {
+func sanitizeUTF8(lv string) string {
 	if utf8.ValidString(lv) {
 		return lv
 	}

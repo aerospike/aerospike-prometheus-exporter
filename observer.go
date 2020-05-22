@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	aero "github.com/aerospike/aerospike-client-go"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 )
 
 // Observer communicates with Aerospike and helps collecting metrices
@@ -203,10 +203,6 @@ func (o *Observer) requestInfo(conn *aero.Connection, infoKeys []string) (map[st
 		}
 	}
 
-	for k, v := range rawMetrics {
-		rawMetrics[k] = sanitizeLabelValue(v)
-	}
-
 	return rawMetrics, nil
 }
 
@@ -249,8 +245,6 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 		}
 	}
 
-	// log.Println(infoKeys)
-
 	// request second round of keys
 	nRawMetrics, err := o.requestInfo(conn, infoKeys)
 	if err != nil {
@@ -258,7 +252,11 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	}
 
 	rawMetrics = nRawMetrics
-	// log.Println(rawMetrics)
+
+	// sanitize the utf8 strings before sending them to watchers
+	for k, v := range rawMetrics {
+		rawMetrics[k] = sanitizeUTF8(v)
+	}
 
 	accu := make(map[string]interface{}, 16)
 	for i, c := range o.watchers {
