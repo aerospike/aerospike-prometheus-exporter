@@ -26,7 +26,7 @@ We appreciate feedback from community members on the [issues](https://github.com
   ```
 - Example run
   ```
-  docker run -itd --name exporter1 -e AS_HOST=172.17.0.2 -e AS_PORT=3000 -e AGENT_LABELS="type='development',source='aerospike'" aerospike/aerospike-prometheus-exporter:latest
+  docker run -itd --name exporter1 -e AS_HOST=172.17.0.2 -e AS_PORT=3000 -e METRIC_LABELS="type='development',source='aerospike'" aerospike/aerospike-prometheus-exporter:latest
   ```
 
 ## Aerospike Prometheus Exporter Configuration

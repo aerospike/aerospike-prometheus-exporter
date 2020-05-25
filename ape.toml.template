@@ -9,7 +9,7 @@ cert_file = "${AGENT_CERT_FILE}"
 key_file = "${AGENT_KEY_FILE}"
 
 # labels to add to the prometheus metrics for e.g. labels={zone="asia-south1-a", platform="google compute engine"}
-labels = {${AGENT_LABELS}}
+labels = {${METRIC_LABELS}}
 
 bind = "${AGENT_BIND_HOST}:${AGENT_BIND_PORT}"
 
