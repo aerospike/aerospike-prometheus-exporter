@@ -1,8 +1,8 @@
 package main
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 )
 
 // Node raw metrics
@@ -148,7 +148,7 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 
 	statsObserver = make(MetricMap, len(nodeMetrics))
 	for m, t := range nodeMetrics {
-		statsObserver[m] = makeMetric("aerospike_node_stats", m, t, "cluster_name", "service", "tags")
+		statsObserver[m] = makeMetric("aerospike_node_stats", m, t, config.AeroProm.MetricLabels, "cluster_name", "service")
 	}
 
 	stats := parseStats(rawMetrics["statistics"], ";")
@@ -165,7 +165,7 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 			continue
 		}
 
-		ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], config.AeroProm.tags)
+		ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"])
 	}
 
 	// send node labels for grafana
@@ -173,9 +173,9 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 		"aerospike",
 		"node_info",
 		mtGauge,
+		config.AeroProm.MetricLabels,
 		"cluster_name",
 		"service",
-		"tags",
 		"build_version",
 		"cluster_size",
 		"cluster_visibility",
@@ -197,7 +197,6 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 		1.0,
 		rawMetrics["cluster-name"],
 		rawMetrics["service"],
-		config.AeroProm.tags,
 		rawMetrics["build"],
 		stats["cluster_size"],
 		stats["cluster_visibility"],

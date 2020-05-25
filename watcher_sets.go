@@ -46,7 +46,7 @@ func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, a
 	for i := range setStats {
 		setObserver := make(MetricMap, len(setMetrics))
 		for m, t := range setMetrics {
-			setObserver[m] = makeMetric("aerospike_sets", m, t, "cluster_name", "service", "ns", "set", "tags")
+			setObserver[m] = makeMetric("aerospike_sets", m, t, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", "set")
 		}
 
 		stats := parseStats(setStats[i], ":")
@@ -62,7 +62,7 @@ func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, a
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], stats["ns"], stats["set"], config.AeroProm.tags)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], stats["ns"], stats["set"])
 		}
 	}
 

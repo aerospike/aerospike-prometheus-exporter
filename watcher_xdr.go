@@ -66,7 +66,7 @@ func (xw *XdrWatcher) refresh(infoKeys []string, rawMetrics map[string]string, a
 		xdrObserver := make(MetricMap, len(xdrMetrics))
 
 		for m, t := range xdrMetrics {
-			xdrObserver[m] = makeMetric("aerospike_xdr", m, t, "cluster_name", "service", "dc", "tags")
+			xdrObserver[m] = makeMetric("aerospike_xdr", m, t, config.AeroProm.MetricLabels, "cluster_name", "service", "dc")
 		}
 
 		stats := parseStats(rawMetrics[dc], ";")
@@ -82,7 +82,7 @@ func (xw *XdrWatcher) refresh(infoKeys []string, rawMetrics map[string]string, a
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], dcName, config.AeroProm.tags)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], dcName)
 		}
 	}
 

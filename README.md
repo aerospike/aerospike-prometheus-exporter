@@ -26,7 +26,7 @@ We appreciate feedback from community members on the [issues](https://github.com
   ```
 - Example run
   ```
-  docker run -itd --name exporter1 -e AS_HOST=172.17.0.2 -e AS_PORT=3000 -e AGENT_TAGS='"agent1","aero_cluster"' aerospike/aerospike-prometheus-exporter:latest
+  docker run -itd --name exporter1 -e AS_HOST=172.17.0.2 -e AS_PORT=3000 -e METRIC_LABELS="type='development',source='aerospike'" aerospike/aerospike-prometheus-exporter:latest
   ```
 
 ## Aerospike Prometheus Exporter Configuration
@@ -76,12 +76,12 @@ We appreciate feedback from community members on the [issues](https://github.com
     password=""
     ```
 
-- Update exporter's bind address and port (default: `0.0.0.0:9145`), and add tags.
+- Update exporter's bind address and port (default: `0.0.0.0:9145`), and add labels.
     ```toml
     [Agent]
 
     bind=":9145"
-    tags=['agent', 'aerospike']
+    labels={zone="asia-south1-a", platform="google compute engine"}
     ```
 
 - Use metrics whitelist to filter out required metrics (optional). The whitelist supports standard wildcards (globbing patterns which include - `? (question mark)`, `* (asterisk)`, `[ ] (square brackets)`, `{ } (curly brackets)`, `[!]` and `\ (backslash)`) for bulk whitelisting. For example,

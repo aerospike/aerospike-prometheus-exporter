@@ -16,7 +16,7 @@ type Config struct {
 		KeyFile  string `toml:"key_file"`
 		// UseLetsEncrypt bool   `toml:"use_lets_encrypt"`
 
-		Tags []string `toml:"tags"`
+		MetricLabels map[string]string `toml:"labels"`
 
 		Bind    string `toml:"bind"`
 		Timeout uint8  `toml:"timeout"`
@@ -26,8 +26,6 @@ type Config struct {
 
 		BasicAuthUsername string `toml:"basic_auth_username"`
 		BasicAuthPassword string `toml:"basic_auth_password"`
-
-		tags string
 	} `toml:"Agent"`
 
 	Aerospike struct {
@@ -81,8 +79,6 @@ func (c *Config) validateAndUpdate() {
 	if c.Aerospike.Timeout == 0 {
 		c.Aerospike.Timeout = 5
 	}
-
-	c.AeroProm.tags = strings.Join(c.AeroProm.Tags, ",")
 }
 
 func InitConfig(configFile string, config *Config) {

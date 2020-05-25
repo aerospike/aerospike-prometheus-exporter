@@ -34,19 +34,19 @@ func (lw *LatencyWatcher) refresh(infoKeys []string, rawMetrics map[string]strin
 				total += statsDetails.(StatsMap)["valBuckets"].([]float64)[i]
 				metricName := "gt_" + strings.Trim(label, "><=")
 				labelValue := strings.Trim(label, "><=ms ")
-				pm := makeMetric("aerospike_latencies", metricName, mtGauge, "cluster_name", "service", "ns", "op_type", "quartile", "quartile_sorted", "tags")
-				ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, math.Floor(statsDetails.(StatsMap)["valBuckets"].([]float64)[i]), rawMetrics["cluster-name"], rawMetrics["service"], ns, opType, label, fmt.Sprintf("> %4s", labelValue), config.AeroProm.tags)
+				pm := makeMetric("aerospike_latencies", metricName, mtGauge, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", "op_type", "quartile", "quartile_sorted")
+				ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, math.Floor(statsDetails.(StatsMap)["valBuckets"].([]float64)[i]), rawMetrics["cluster-name"], rawMetrics["service"], ns, opType, label, fmt.Sprintf("> %4s", labelValue))
 			}
 
-			pm := makeMetric("aerospike_latencies", "lt_"+strings.Trim(statsDetails.(StatsMap)["buckets"].([]string)[0], "><="), mtGauge, "cluster_name", "service", "ns", "op_type", "quartile", "quartile_sorted", "tags")
+			pm := makeMetric("aerospike_latencies", "lt_"+strings.Trim(statsDetails.(StatsMap)["buckets"].([]string)[0], "><="), mtGauge, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", "op_type", "quartile", "quartile_sorted")
 			val := math.Floor(statsDetails.(StatsMap)["tps"].(float64) - total)
 			metricName := "<" + strings.Trim(statsDetails.(StatsMap)["buckets"].([]string)[0], "<>=")
 			metricValue := strings.Trim(metricName, "><=ms ")
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, val, rawMetrics["cluster-name"], rawMetrics["service"], ns, opType, metricName, fmt.Sprintf("< %4s", metricValue), config.AeroProm.tags)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, val, rawMetrics["cluster-name"], rawMetrics["service"], ns, opType, metricName, fmt.Sprintf("< %4s", metricValue))
 
-			pm = makeMetric("aerospike_latencies", "total", mtGauge, "cluster_name", "service", "ns", "op_type", "quartile", "quartile_sorted", "tags")
+			pm = makeMetric("aerospike_latencies", "total", mtGauge, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", "op_type", "quartile", "quartile_sorted")
 			val = math.Floor(statsDetails.(StatsMap)["tps"].(float64))
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, val, rawMetrics["cluster-name"], rawMetrics["service"], ns, opType, "Total", "total", config.AeroProm.tags)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, val, rawMetrics["cluster-name"], rawMetrics["service"], ns, opType, "Total", "total")
 		}
 	}
 
