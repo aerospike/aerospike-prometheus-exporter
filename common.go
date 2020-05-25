@@ -19,12 +19,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func makeMetric(namespace, name string, t metricType, labels ...string) promMetric {
+func makeMetric(namespace, name string, t metricType, constLabels map[string]string, labels ...string) promMetric {
 	promDesc := prometheus.NewDesc(
 		namespace+"_"+normalizeMetric(name),
 		normalizeDesc(name),
 		labels,
-		nil,
+		constLabels,
 	)
 
 	switch t {

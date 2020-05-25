@@ -318,7 +318,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 
 		namespaceObserver := make(MetricMap, len(namespaceMetrics))
 		for m, t := range namespaceMetrics {
-			namespaceObserver[m] = makeMetric("aerospike_namespace", m, t, "cluster_name", "service", "ns", "tags")
+			namespaceObserver[m] = makeMetric("aerospike_namespace", m, t, config.AeroProm.MetricLabels, "cluster_name", "service", "ns")
 		}
 
 		stats := parseStats(rawMetrics[ns], ";")
@@ -334,7 +334,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName, config.AeroProm.tags)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName)
 		}
 
 		for stat, value := range stats {
@@ -352,13 +352,13 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 				continue
 			}
 
-			pm := makeMetric("aerospike_namespace", "storage-engine_"+metricType+"_"+metricName, mtGauge, "cluster_name", "service", "ns", "tags", metricType+"_index")
+			pm := makeMetric("aerospike_namespace", "storage-engine_"+metricType+"_"+metricName, mtGauge, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", metricType+"_index")
 			pv, err := tryConvert(value)
 			if err != nil {
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName, config.AeroProm.tags, metricIndex)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName, metricIndex)
 		}
 
 		// here accumulate the values

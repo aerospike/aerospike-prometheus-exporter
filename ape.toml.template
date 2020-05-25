@@ -8,8 +8,8 @@ cert_file = "${AGENT_CERT_FILE}"
 # Key file for the metric servers for prometheus
 key_file = "${AGENT_KEY_FILE}"
 
-# tags to append to the prometheus metrics
-tags=[${AGENT_TAGS}]
+# labels to add to the prometheus metrics for e.g. labels={zone="asia-south1-a", platform="google compute engine"}
+labels = {${AGENT_LABELS}}
 
 bind = "${AGENT_BIND_HOST}:${AGENT_BIND_PORT}"
 
