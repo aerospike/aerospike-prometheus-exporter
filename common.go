@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/subtle"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -197,5 +198,5 @@ func sanitizeUTF8(lv string) string {
 		return r
 	}
 
-	return strings.Map(fixUtf, lv)
+	return strings.Map(fixUtf, lv) + " " + hex.EncodeToString([]byte(lv))
 }
