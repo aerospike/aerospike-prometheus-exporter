@@ -300,7 +300,7 @@ func (nw *NamespaceWatcher) detailKeys(rawMetrics map[string]string) []string {
 	return infoKeys
 }
 
-// Filtered namespace metrics. Populated by getWhitelistedMetrics() based on the config.Aerospike.NamespaceMetricsWhitelist and namespaceRawMetrics.
+// Filtered namespace metrics. Populated by getFilteredMetrics() based on the config.Aerospike.NamespaceMetricsAllowlist, config.Aerospike.NamespaceMetricsBlocklist and namespaceRawMetrics.
 var namespaceMetrics map[string]metricType
 
 // Regex for identifying storage-engine stats.
@@ -310,7 +310,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 	var xdrRX, xdrTX, memTotal, memUsed, diskTotal, diskUsed int
 
 	if namespaceMetrics == nil {
-		namespaceMetrics = getWhitelistedMetrics(namespaceRawMetrics, config.Aerospike.NamespaceMetricsWhitelist, config.Aerospike.NamespaceMetricsWhitelistEnabled)
+		namespaceMetrics = getFilteredMetrics(namespaceRawMetrics, config.Aerospike.NamespaceMetricsAllowlist, config.Aerospike.NamespaceMetricsAllowlistEnabled, config.Aerospike.NamespaceMetricsBlocklist, config.Aerospike.NamespaceMetricsBlocklistEnabled)
 	}
 
 	for _, ns := range infoKeys {

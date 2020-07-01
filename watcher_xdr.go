@@ -52,13 +52,13 @@ func (xw *XdrWatcher) detailKeys(rawMetrics map[string]string) []string {
 	return infoKeys
 }
 
-// Filtered XDR metrics. Populated by getWhitelistedMetrics() based on the config.Aerospike.XdrMetricsWhitelist and xdrRawMetrics.
+// Filtered XDR metrics. Populated by getFilteredMetrics() based on the config.Aerospike.XdrMetricsAllowlist, config.Aerospike.XdrMetricsBlocklist and xdrRawMetrics.
 var xdrMetrics map[string]metricType
 
 func (xw *XdrWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
 
 	if xdrMetrics == nil {
-		xdrMetrics = getWhitelistedMetrics(xdrRawMetrics, config.Aerospike.XdrMetricsWhitelist, config.Aerospike.XdrMetricsWhitelistEnabled)
+		xdrMetrics = getFilteredMetrics(xdrRawMetrics, config.Aerospike.XdrMetricsAllowlist, config.Aerospike.XdrMetricsAllowlistEnabled, config.Aerospike.XdrMetricsBlocklist, config.Aerospike.XdrMetricsBlocklistEnabled)
 	}
 
 	for _, dc := range infoKeys {

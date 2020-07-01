@@ -1,6 +1,4 @@
 [Agent]
-update_interval = 5
-
 # File paths should be double quoted.
 # Certificate file for the metric servers for prometheus
 #cert_file = "cert.pem"
@@ -16,7 +14,10 @@ bind = ":9145"
 # metrics server timeout in seconds
 timeout = 10
 
-# debug level can be info|warning,warn|error,err|debug
+# Exporter logging configuration
+# Log file path (optional, logs to console by default)
+# Level can be info|warning,warn|error,err|debug
+log_file = ""
 log_level = "debug"
 
 # Basic HTTP authentication for '/metrics'.
@@ -24,7 +25,7 @@ basic_auth_username=""
 basic_auth_password=""
 
 [Aerospike]
-db_host="vmu1804"
+db_host="localhost"
 db_port=3000
 
 # certificate file
@@ -37,7 +38,7 @@ key_file=""
 # 1. Passphrase directly                 - "<passphrase>"
 # 2. Passphrase via file                 - "file:<file-that-contains-passphrase>"
 # 3. Passphrase via environment variable - "env:<environment-variable-that-holds-passphrase>"
-key_file_passphrase="${AS_KEY_FILE_PASSPHRASE}"
+key_file_passphrase=""
 
 # node TLS name for authentication
 node_tls_name=""
@@ -54,23 +55,34 @@ user=""
 # database password
 password=""
 
-# ticker interval for requesting stats fro mthe database node
-resolution=5
-
 # timeout for sending commands to the server node in seconds
 timeout=5
 
-# Metrics Whitelist - If specified, only these metrics will be scraped. An empty list will exclude all metrics.
-# Commenting out the below whitelist configs will disable whitelisting (i.e. all metrics will be scraped).
+# Metrics Allowlist - If specified, only these metrics will be scraped. An empty list will exclude all metrics.
+# Commenting out the below allowlist configs will disable metrics filtering (i.e. all metrics will be scraped).
 
-# Namespace metrics whitelist
-# namespace_metrics_whitelist=[]
+# Namespace metrics allowlist
+# namespace_metrics_allowlist=[]
 
-# Set metrics whitelist
-# set_metrics_whitelist=[]
+# Set metrics allowlist
+# set_metrics_allowlist=[]
 
-# Node metrics whitelist
-# node_metrics_whitelist=[]
+# Node metrics allowlist
+# node_metrics_allowlist=[]
 
-# XDR metrics whitelist (only for server versions 5.0 and above)
-# xdr_metrics_whitelist=[]
+# XDR metrics allowlist (only for server versions 5.0 and above)
+# xdr_metrics_allowlist=[]
+
+# Metrics Blocklist - If specified, these metrics will be NOT be scraped.
+
+# Namespace metrics blocklist
+# namespace_metrics_blocklist=[]
+
+# Set metrics blocklist
+# set_metrics_blocklist=[]
+
+# Node metrics blocklist
+# node_metrics_blocklist=[]
+
+# XDR metrics blocklist (only for server versions 5.0 and above)
+# xdr_metrics_blocklist=[]

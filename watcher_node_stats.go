@@ -138,12 +138,12 @@ func (sw *StatsWatcher) detailKeys(rawMetrics map[string]string) []string {
 	return []string{"statistics"}
 }
 
-// Filtered node statistics. Populated by getWhitelistedMetrics() based on config.Aerospike.NodeMetricsWhitelist and statsRawMetrics.
+// Filtered node statistics. Populated by getFilteredMetrics() based on config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsBlocklist and statsRawMetrics.
 var nodeMetrics map[string]metricType
 
 func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
 	if nodeMetrics == nil {
-		nodeMetrics = getWhitelistedMetrics(statsRawMetrics, config.Aerospike.NodeMetricsWhitelist, config.Aerospike.NodeMetricsWhitelistEnabled)
+		nodeMetrics = getFilteredMetrics(statsRawMetrics, config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsAllowlistEnabled, config.Aerospike.NodeMetricsBlocklist, config.Aerospike.NodeMetricsBlocklistEnabled)
 	}
 
 	statsObserver = make(MetricMap, len(nodeMetrics))

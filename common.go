@@ -112,34 +112,64 @@ func validateBasicAuth(w http.ResponseWriter, r *http.Request, username string, 
 	return true
 }
 
-// Regex for indentifying globbing patterns (or standard wildcards) in the whitelist.
+// Regex for indentifying globbing patterns (or standard wildcards) in the metrics allowlist and blocklist.
 var globbingPattern = regexp.MustCompile(`[|]|\*|\?|{|}|\\|!`)
 
-// Filter metrics based on configured whitelist.
-func getWhitelistedMetrics(rawMetrics map[string]metricType, whitelist []string, whitelistEnabled bool) map[string]metricType {
-	if whitelistEnabled {
-		whitelistedMetrics := make(map[string]metricType)
+// Filter metrics
+// Runs the raw metrics through allowlist first and the resulting metrics through blocklist
+func getFilteredMetrics(rawMetrics map[string]metricType, allowlist []string, allowlistEnabled bool, blocklist []string, blocklistEnabled bool) map[string]metricType {
+	filteredMetrics := filterAllowedMetrics(rawMetrics, allowlist, allowlistEnabled)
+	filterBlockedMetrics(filteredMetrics, blocklist, blocklistEnabled)
 
-		for _, stat := range whitelist {
+	return filteredMetrics
+}
+
+// Filter metrics based on configured allowlist.
+func filterAllowedMetrics(rawMetrics map[string]metricType, allowlist []string, allowlistEnabled bool) map[string]metricType {
+	if allowlistEnabled {
+		filteredMetrics := make(map[string]metricType)
+
+		for _, stat := range allowlist {
 			if globbingPattern.MatchString(stat) {
 				ge := glob.MustCompile(stat)
 
 				for k, v := range rawMetrics {
 					if ge.Match(k) {
-						whitelistedMetrics[k] = v
+						filteredMetrics[k] = v
 					}
 				}
 			} else {
 				if val, ok := rawMetrics[stat]; ok {
-					whitelistedMetrics[stat] = val
+					filteredMetrics[stat] = val
 				}
 			}
 		}
 
-		return whitelistedMetrics
+		return filteredMetrics
 	}
 
 	return rawMetrics
+}
+
+// Filter metrics based on configured blocklist.
+func filterBlockedMetrics(filteredMetrics map[string]metricType, blocklist []string, blocklistEnabled bool) {
+	if blocklistEnabled {
+		for _, stat := range blocklist {
+			if globbingPattern.MatchString(stat) {
+				ge := glob.MustCompile(stat)
+
+				for k := range filteredMetrics {
+					if ge.Match(k) {
+						delete(filteredMetrics, k)
+					}
+				}
+			} else {
+				if _, ok := filteredMetrics[stat]; ok {
+					delete(filteredMetrics, stat)
+				}
+			}
+		}
+	}
 }
 
 // Get key file passphrase from environment variable or from a file or directly from the config variable

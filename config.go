@@ -42,18 +42,27 @@ type Config struct {
 		User     string `toml:"user"`
 		Password string `toml:"password"`
 
-		Resolution uint8 `toml:"resolution"`
-		Timeout    uint8 `toml:"timeout"`
+		Timeout uint8 `toml:"timeout"`
 
-		NamespaceMetricsWhitelist []string `toml:"namespace_metrics_whitelist"`
-		SetMetricsWhitelist       []string `toml:"set_metrics_whitelist"`
-		NodeMetricsWhitelist      []string `toml:"node_metrics_whitelist"`
-		XdrMetricsWhitelist       []string `toml:"xdr_metrics_whitelist"`
+		NamespaceMetricsAllowlist []string `toml:"namespace_metrics_allowlist"`
+		SetMetricsAllowlist       []string `toml:"set_metrics_allowlist"`
+		NodeMetricsAllowlist      []string `toml:"node_metrics_allowlist"`
+		XdrMetricsAllowlist       []string `toml:"xdr_metrics_allowlist"`
 
-		NamespaceMetricsWhitelistEnabled bool
-		SetMetricsWhitelistEnabled       bool
-		NodeMetricsWhitelistEnabled      bool
-		XdrMetricsWhitelistEnabled       bool
+		NamespaceMetricsAllowlistEnabled bool
+		SetMetricsAllowlistEnabled       bool
+		NodeMetricsAllowlistEnabled      bool
+		XdrMetricsAllowlistEnabled       bool
+
+		NamespaceMetricsBlocklist []string `toml:"namespace_metrics_blocklist"`
+		SetMetricsBlocklist       []string `toml:"set_metrics_blocklist"`
+		NodeMetricsBlocklist      []string `toml:"node_metrics_blocklist"`
+		XdrMetricsBlocklist       []string `toml:"xdr_metrics_blocklist"`
+
+		NamespaceMetricsBlocklistEnabled bool
+		SetMetricsBlocklistEnabled       bool
+		NodeMetricsBlocklistEnabled      bool
+		XdrMetricsBlocklistEnabled       bool
 	} `toml:"Aerospike"`
 
 	LogFile *os.File
@@ -66,10 +75,6 @@ func (c *Config) validateAndUpdate() {
 
 	if c.AeroProm.Timeout == 0 {
 		c.AeroProm.Timeout = 5
-	}
-
-	if c.Aerospike.Resolution == 0 {
-		c.Aerospike.Resolution = 5
 	}
 
 	if c.Aerospike.AuthMode == "" {
@@ -96,18 +101,17 @@ func InitConfig(configFile string, config *Config) {
 		log.Fatalln(err)
 	}
 
-	config.Aerospike.NamespaceMetricsWhitelistEnabled = md.IsDefined("Aerospike", "namespace_metrics_whitelist")
-	config.Aerospike.SetMetricsWhitelistEnabled = md.IsDefined("Aerospike", "set_metrics_whitelist")
-	config.Aerospike.NodeMetricsWhitelistEnabled = md.IsDefined("Aerospike", "node_metrics_whitelist")
-	config.Aerospike.XdrMetricsWhitelistEnabled = md.IsDefined("Aerospike", "xdr_metrics_whitelist")
+	config.Aerospike.NamespaceMetricsAllowlistEnabled = md.IsDefined("Aerospike", "namespace_metrics_allowlist")
+	config.Aerospike.SetMetricsAllowlistEnabled = md.IsDefined("Aerospike", "set_metrics_allowlist")
+	config.Aerospike.NodeMetricsAllowlistEnabled = md.IsDefined("Aerospike", "node_metrics_allowlist")
+	config.Aerospike.XdrMetricsAllowlistEnabled = md.IsDefined("Aerospike", "xdr_metrics_allowlist")
+
+	config.Aerospike.NamespaceMetricsBlocklistEnabled = md.IsDefined("Aerospike", "namespace_metrics_blocklist")
+	config.Aerospike.SetMetricsBlocklistEnabled = md.IsDefined("Aerospike", "set_metrics_blocklist")
+	config.Aerospike.NodeMetricsBlocklistEnabled = md.IsDefined("Aerospike", "node_metrics_blocklist")
+	config.Aerospike.XdrMetricsBlocklistEnabled = md.IsDefined("Aerospike", "xdr_metrics_blocklist")
 
 	config.LogFile = setLogFile(config.AeroProm.LogFile)
-
-	if config.Aerospike.Resolution < 1 {
-		config.Aerospike.Resolution = 5
-	} else if config.Aerospike.Resolution > 10 {
-		config.Aerospike.Resolution = 10
-	}
 
 	aslog.Logger.SetLogger(log.StandardLogger())
 	setLogLevel(config.AeroProm.LogLevel)
