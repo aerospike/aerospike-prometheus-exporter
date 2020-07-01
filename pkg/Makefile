@@ -70,11 +70,14 @@ tar: prep
 
 .PHONY: prep
 prep:
-	cp $(TOP_DIR)/aerospike-prometheus-exporter $(BUILD_DIR)/usr/bin/aerospike-prometheus-exporter
-	cp $(TOP_DIR)/ape.toml $(BUILD_DIR)/etc/aerospike-prometheus-exporter/ape.toml
+	install -d $(TARGET_DIR)
+	install -d $(BUILD_DIR)/usr/bin
+	install -d $(BUILD_DIR)/etc/aerospike-prometheus-exporter
+	install -pm 755 $(TOP_DIR)/aerospike-prometheus-exporter $(BUILD_DIR)/usr/bin/aerospike-prometheus-exporter
+	install -pm 644 $(TOP_DIR)/ape.toml $(BUILD_DIR)/etc/aerospike-prometheus-exporter/ape.toml
 
 .PHONY: clean
 clean:
-	rm -rf $(TARGET_DIR)/*
-	rm -rf $(BUILD_DIR)/etc/aerospike-prometheus-exporter/ape.toml
-	rm -rf $(BUILD_DIR)/usr/bin/aerospike-prometheus-exporter
+	rm -rf $(TARGET_DIR)
+	rm -rf $(BUILD_DIR)/etc
+	rm -rf $(BUILD_DIR)/usr/bin
