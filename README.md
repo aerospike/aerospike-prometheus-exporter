@@ -95,6 +95,7 @@ We appreciate feedback from community members on the [issues](https://github.com
     namespace_metrics_whitelist=[
     "client_read_[a-z]*",
     "stop_writes",
+    "clock_skew_stop_writes",
     "storage-engine.file.defrag_q",
     "client_write_success",
     "memory_*_bytes",
