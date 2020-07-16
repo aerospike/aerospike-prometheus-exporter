@@ -1,8 +1,9 @@
 # Aerospike Prometheus Exporter
 
-This repo contains Aerospike's monitoring agent for Prometheus.
+This repo contains Aerospike's monitoring agent for Prometheus. The exporter is part of the [Aerospike Monitoring Stack](https://www.aerospike.com/docs/tools/monitorstack/index.html).
 
-This is now in **beta**. If you're an enterprise customer feel free to reach out to support with any questions.
+The Aerospike Prometheus Exporter is now **generally available** (GA).
+If you're an enterprise customer feel free to reach out to support with any questions.
 We appreciate feedback from community members on the [issues](https://github.com/aerospike/aerospike-prometheus-exporter/issues).
 
 ## Install
