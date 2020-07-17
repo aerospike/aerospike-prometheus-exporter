@@ -196,7 +196,7 @@ func (o *Observer) requestInfo(conn *aero.Connection, infoKeys []string) (map[st
 	}
 
 	if len(rawMetrics) == 1 {
-		for k, _ := range rawMetrics {
+		for k := range rawMetrics {
 			if strings.HasPrefix(strings.ToUpper(k), "ERROR:") {
 				return nil, errors.New(k)
 			}
