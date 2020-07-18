@@ -189,8 +189,8 @@ func (o *Observer) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, gClusterName, gService, gBuild)
 }
 
-func (o *Observer) requestInfo(conn *aero.Connection, infoKeys []string) (map[string]string, error) {
-	rawMetrics, err := aero.RequestInfo(conn, infoKeys...)
+func (o *Observer) requestInfo(infoKeys []string) (map[string]string, error) {
+	rawMetrics, err := aero.RequestInfo(o.conn, infoKeys...)
 	if err != nil {
 		return nil, err
 	}
@@ -212,10 +212,8 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	var err error
 
 	// prepare a connection
-	conn := o.conn
-	if conn == nil || !conn.IsConnected() {
-		o.conn = nil
-		conn, err = o.connGen()
+	if o.conn == nil || !o.conn.IsConnected() {
+		o.conn, err = o.connGen()
 		if err != nil {
 			return nil, err
 		}
@@ -230,7 +228,7 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	}
 
 	// request first round of keys
-	rawMetrics, err := o.requestInfo(conn, infoKeys)
+	rawMetrics, err := o.requestInfo(infoKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +244,7 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	}
 
 	// request second round of keys
-	nRawMetrics, err := o.requestInfo(conn, infoKeys)
+	nRawMetrics, err := o.requestInfo(infoKeys)
 	if err != nil {
 		return rawMetrics, err
 	}

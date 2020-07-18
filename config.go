@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Config represents the aerospike-prometheus-exporter configuration
 type Config struct {
 	AeroProm struct {
 		CertFile string `toml:"cert_file"`
@@ -86,7 +87,7 @@ func (c *Config) validateAndUpdate() {
 	}
 }
 
-func InitConfig(configFile string, config *Config) {
+func initConfig(configFile string, config *Config) {
 	// to print everything out regarding reading the config in app init
 	log.SetLevel(log.DebugLevel)
 

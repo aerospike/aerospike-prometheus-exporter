@@ -34,13 +34,14 @@ func main() {
 	log.Infoln("Welcome to Aerospike Prometheus Exporter!")
 
 	config = new(Config)
-	InitConfig(*configFile, config)
+	initConfig(*configFile, config)
 	config.validateAndUpdate()
 
 	fullHost = net.JoinHostPort(config.Aerospike.Host, strconv.Itoa(int(config.Aerospike.Port)))
 
 	host := aero.NewHost(config.Aerospike.Host, int(config.Aerospike.Port))
 	host.TLSName = config.Aerospike.NodeTLSName
+
 	observer, err := newObserver(host, config.Aerospike.User, config.Aerospike.Password)
 	if err != nil {
 		log.Fatalln(err)
