@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 )
 
 // Node raw metrics
@@ -141,7 +140,7 @@ func (sw *StatsWatcher) detailKeys(rawMetrics map[string]string) []string {
 // Filtered node statistics. Populated by getFilteredMetrics() based on config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsBlocklist and statsRawMetrics.
 var nodeMetrics map[string]metricType
 
-func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
+func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	if nodeMetrics == nil {
 		nodeMetrics = getFilteredMetrics(statsRawMetrics, config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsAllowlistEnabled, config.Aerospike.NodeMetricsBlocklist, config.Aerospike.NodeMetricsBlocklistEnabled)
 	}
@@ -167,51 +166,6 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 
 		ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"])
 	}
-
-	// send node labels for grafana
-	nodeGrafanaInfoMetric := makeMetric(
-		"aerospike",
-		"node_info",
-		mtGauge,
-		config.AeroProm.MetricLabels,
-		"cluster_name",
-		"service",
-		"build_version",
-		"cluster_size",
-		"cluster_visibility",
-		"disk_total",
-		"disk_used",
-		"ram_total",
-		"ram_used",
-		"master_and_replica_objects",
-		"master_and_replica_tombstones",
-		"client_connections",
-		"migrates_incoming_partitions_remaining",
-		"migrates_outgoing_partitions_remaining",
-	)
-
-	accuv := accu[rawMetrics["service"]].(map[string]string)
-	ch <- prometheus.MustNewConstMetric(
-		nodeGrafanaInfoMetric.desc,
-		nodeGrafanaInfoMetric.valueType,
-		1.0,
-		rawMetrics["cluster-name"],
-		rawMetrics["service"],
-		rawMetrics["build"],
-		stats["cluster_size"],
-		stats["cluster_visibility"],
-		accuv["accu_disk_total"],
-		accuv["accu_disk_used"],
-		accuv["accu_mem_total"],
-		accuv["accu_mem_used"],
-		stats["objects"],
-		stats["tombstones"],
-		stats["client_connections"],
-		accuv["accu_xdr_rx"],
-		accuv["accu_xdr_tx"],
-	)
-
-	log.Debug("Accumulated Stats:", accu)
 
 	return nil
 }

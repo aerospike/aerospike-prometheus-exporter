@@ -19,7 +19,7 @@ func (lw *LatencyWatcher) detailKeys(rawMetrics map[string]string) []string {
 	return []string{"latency:"}
 }
 
-func (lw *LatencyWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
+func (lw *LatencyWatcher) refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	latencyStats := parseLatencyInfo(rawMetrics["latency:"])
 
 	for namespaceName, nsLatencyStats := range latencyStats {

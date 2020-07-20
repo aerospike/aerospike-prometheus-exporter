@@ -14,7 +14,7 @@ const (
 type Watcher interface {
 	infoKeys() []string
 	detailKeys(rawMetrics map[string]string) []string
-	refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error
+	refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error
 	describe(ch chan<- *prometheus.Desc)
 }
 

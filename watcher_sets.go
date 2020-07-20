@@ -35,7 +35,7 @@ func (sw *SetWatcher) detailKeys(rawMetrics map[string]string) []string {
 // Filtered set metrics. Populated by getFilteredMetrics() based on config.Aerospike.SetMetricsAllowlist, config.Aerospike.SetMetricsBlocklist and setRawMetrics.
 var setMetrics map[string]metricType
 
-func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
+func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	setStats := strings.Split(rawMetrics["sets"], ";")
 	log.Debug("Set Stats:", setStats)
 
