@@ -164,7 +164,7 @@ Packages will be generated under `./pkg/target/` directory.
     labels={zone="asia-south1-a", platform="google compute engine"}
     ```
 
-- Use metrics allowlist to filter out required metrics (optional). The allowlist supports standard wildcards (globbing patterns which include - `? (question mark)`, `* (asterisk)`, `[ ] (square brackets)`, `{ } (curly brackets)`, `[!]` and `\ (backslash)`) for bulk allowlisting. For example,
+- Use allowlist and blocklist to filter out required metrics (optional). The allowlist and blocklist supports standard wildcards (globbing patterns which include - `? (question mark)`, `* (asterisk)`, `[ ] (square brackets)`, `{ } (curly brackets)`, `[!]` and `\ (backslash)`) for bulk metrics filtering. For example,
     ```toml
     [Aerospike]
 
@@ -196,13 +196,32 @@ Packages will be generated under `./pkg/target/` directory.
     "xdr_ship_*"
     ]
 
-    # XDR metrics allowlist (only for server versions 5.0 and above)
+    # XDR metrics allowlist (only for Aerospike versions 5.0 and above)
     xdr_metrics_allowlist=[
     "success",
     "latency_ms",
     "throughput",
     "lap_us"
     ]
+
+    # Metrics Blocklist - If specified, these metrics will be NOT be scraped.
+
+    # Namespace metrics blocklist
+    namespace_metrics_blocklist=[
+    "memory_used_sindex_bytes",
+    "client_read_success"
+    ]
+
+    # Set metrics blocklist
+    # set_metrics_blocklist=[]
+
+    # Node metrics blocklist
+    node_metrics_blocklist=[
+    "batch_index_*_buffers"
+    ]
+
+    # XDR metrics blocklist (only for Aerospike versions 5.0 and above)
+    # xdr_metrics_blocklist=[]
     ```
 
 - To enable basic HTTP authentication and/or enable HTTPS between the Prometheus server and the exporter, use the below configurations keys,

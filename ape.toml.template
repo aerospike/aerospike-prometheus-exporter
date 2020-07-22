@@ -70,7 +70,7 @@ timeout=${TICKER_TIMEOUT}
 # Node metrics allowlist
 # node_metrics_allowlist=[${NODE_METRICS_ALLOWLIST}]
 
-# XDR metrics allowlist (only for server versions 5.0 and above)
+# XDR metrics allowlist (only for Aerospike versions 5.0 and above)
 # xdr_metrics_allowlist=[${XDR_METRICS_ALLOWLIST}]
 
 # Metrics Blocklist - If specified, these metrics will be NOT be scraped.
@@ -84,5 +84,5 @@ timeout=${TICKER_TIMEOUT}
 # Node metrics blocklist
 # node_metrics_blocklist=[${NODE_METRICS_BLOCKLIST}]
 
-# XDR metrics blocklist (only for server versions 5.0 and above)
+# XDR metrics blocklist (only for Aerospike versions 5.0 and above)
 # xdr_metrics_blocklist=[${XDR_METRICS_BLOCKLIST}]
