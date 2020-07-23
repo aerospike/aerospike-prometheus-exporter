@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Namespace raw metrics
@@ -312,6 +314,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 
 	for _, ns := range infoKeys {
 		nsName := strings.ReplaceAll(ns, "namespace/", "")
+		log.Tracef("namespace-stats:%s:%s", nsName, rawMetrics[ns])
 
 		namespaceObserver := make(MetricMap, len(namespaceMetrics))
 		for m, t := range namespaceMetrics {

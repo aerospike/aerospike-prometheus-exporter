@@ -16,7 +16,7 @@ timeout = ${AGENT_TIMEOUT}
 
 # Exporter logging configuration
 # Log file path (optional, logs to console by default)
-# Level can be info|warning,warn|error,err|debug
+# Level can be info|warning,warn|error,err|debug|trace ('info' by default)
 log_file = "${AGENT_LOG_FILE}"
 log_level = "${AGENT_LOG_LEVEL}"
 

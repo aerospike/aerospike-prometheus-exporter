@@ -9,10 +9,11 @@ import (
 	"strconv"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-	aero "github.com/aerospike/aerospike-client-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	aero "github.com/aerospike/aerospike-client-go"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -30,7 +31,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	// log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.Infoln("Welcome to Aerospike Prometheus Exporter!")
+
 	config = new(Config)
 	InitConfig(*configFile, config)
 	config.validateAndUpdate()
@@ -69,12 +71,6 @@ func main() {
 		MinVersion:               tls.VersionTLS12,
 		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
 		PreferServerCipherSuites: true,
-		// CipherSuites: []uint16{
-		// 	tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-		// 	tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-		// 	tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
-		// 	tls.TLS_RSA_WITH_AES_256_CBC_SHA,
-		// },
 	}
 
 	srv := &http.Server{
@@ -86,36 +82,12 @@ func main() {
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
 	}
 
-	log.Infoln("Welcome Aerospike's Prometheus exporter!")
 	log.Infof("Listening for Prometheus on: %s\n", config.AeroProm.Bind)
 
 	if config.AeroProm.CertFile != "" && config.AeroProm.KeyFile != "" {
-		log.Infoln("Using Cert and Key files to enable TLS...")
+		log.Infoln("Enabling HTTPS ...")
+		log.Debugf("Using cert file %s and key file %s", config.AeroProm.CertFile, config.AeroProm.KeyFile)
 		log.Fatalln(srv.ListenAndServeTLS(config.AeroProm.CertFile, config.AeroProm.KeyFile))
-		// } else if config.AeroProm.UseLetsEncrypt {
-		// 	autocert.
-		// 		log.Infoln("Using Let's Encrypt to enable TLS...")
-		// 	m := autocert.Manager{
-		// 		Prompt: autocert.AcceptTOS,
-		// 		// HostPolicy: autocert.HostWhitelist("", ""),
-		// 	}
-
-		// 	cacheDir := os.TempDir() + "aeroprom"
-		// 	log.Info(cacheDir)
-		// 	if err := os.MkdirAll(cacheDir, 0700); err != nil {
-		// 		log.Warn("autocert.NewListener not using a cache: %v", err)
-		// 	} else {
-		// 		m.Cache = autocert.DirCache(cacheDir)
-		// 	}
-
-		// 	s := &http.Server{
-		// 		Addr:      ":https",
-		// 		TLSConfig: m.TLSConfig(),
-		// 		Handler:   mux,
-		// 	}
-
-		// 	go http.ListenAndServe(":http", m.HTTPHandler(nil))
-		// 	log.Fatalln(s.ListenAndServeTLS("", ""))
 	}
 
 	log.Fatalln(srv.ListenAndServe())

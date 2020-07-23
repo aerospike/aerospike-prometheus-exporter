@@ -3,9 +3,9 @@ package main
 import (
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/prometheus/client_golang/prometheus"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Set Raw metrics
@@ -37,7 +37,7 @@ var setMetrics map[string]metricType
 
 func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	setStats := strings.Split(rawMetrics["sets"], ";")
-	log.Debug("Set Stats:", setStats)
+	log.Tracef("set-stats:%v", setStats)
 
 	if setMetrics == nil {
 		setMetrics = getFilteredMetrics(setRawMetrics, config.Aerospike.SetMetricsAllowlist, config.Aerospike.SetMetricsAllowlistEnabled, config.Aerospike.SetMetricsBlocklist, config.Aerospike.SetMetricsBlocklistEnabled)

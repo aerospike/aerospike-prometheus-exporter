@@ -2,9 +2,10 @@ package main
 
 import (
 	"io"
-	"log"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func parseLatencyInfo(s string) map[string]StatsMap {
@@ -72,7 +73,7 @@ func parseLatencyInfo(s string) map[string]StatsMap {
 
 		// Sanity check
 		if len(bucketLabels) != len(bucketValuesFloat) {
-			log.Printf("Error parsing latency values for node: `%s`. Bucket mismatch: buckets: `%s`, values: `%s`", fullHost, bucketLabelsStr, bucketValuesStr)
+			log.Errorf("Error parsing latency values for node: `%s`. Bucket mismatch: buckets: `%s`, values: `%s`", fullHost, bucketLabelsStr, bucketValuesStr)
 			break
 		}
 

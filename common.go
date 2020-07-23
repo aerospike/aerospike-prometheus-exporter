@@ -16,6 +16,7 @@ import (
 	"github.com/gobwas/glob"
 	"github.com/jameskeane/bcrypt"
 	"github.com/prometheus/client_golang/prometheus"
+
 	log "github.com/sirupsen/logrus"
 )
 

@@ -16,9 +16,9 @@ timeout = 10
 
 # Exporter logging configuration
 # Log file path (optional, logs to console by default)
-# Level can be info|warning,warn|error,err|debug
+# Level can be info|warning,warn|error,err|debug|trace ('info' by default)
 log_file = ""
-log_level = "debug"
+log_level = ""
 
 # Basic HTTP authentication for '/metrics'.
 basic_auth_username=""

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+
 	aslog "github.com/aerospike/aerospike-client-go/logger"
 	log "github.com/sirupsen/logrus"
 )
@@ -14,7 +15,6 @@ type Config struct {
 	AeroProm struct {
 		CertFile string `toml:"cert_file"`
 		KeyFile  string `toml:"key_file"`
-		// UseLetsEncrypt bool   `toml:"use_lets_encrypt"`
 
 		MetricLabels map[string]string `toml:"labels"`
 
@@ -90,7 +90,7 @@ func InitConfig(configFile string, config *Config) {
 	// to print everything out regarding reading the config in app init
 	log.SetLevel(log.DebugLevel)
 
-	log.Info("Reading config file...")
+	log.Infof("Loading configuration file %s", configFile)
 	blob, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		log.Fatalln(err)
@@ -121,7 +121,7 @@ func setLogFile(filepath string) *os.File {
 	if len(strings.TrimSpace(filepath)) > 0 {
 		out, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
-			log.Fatalf("error opening file: %v", err)
+			log.Fatalf("Error opening file: %v", err)
 		}
 		log.SetOutput(out)
 		return out
@@ -132,8 +132,6 @@ func setLogFile(filepath string) *os.File {
 
 func setLogLevel(level string) {
 	level = strings.ToLower(level)
-	log.SetLevel(log.InfoLevel)
-	aslog.Logger.SetLevel(aslog.INFO)
 
 	switch level {
 	case "info":
@@ -147,6 +145,9 @@ func setLogLevel(level string) {
 		aslog.Logger.SetLevel(aslog.ERR)
 	case "debug":
 		log.SetLevel(log.DebugLevel)
+		aslog.Logger.SetLevel(aslog.DEBUG)
+	case "trace":
+		log.SetLevel(log.TraceLevel)
 		aslog.Logger.SetLevel(aslog.DEBUG)
 	default:
 		log.SetLevel(log.InfoLevel)

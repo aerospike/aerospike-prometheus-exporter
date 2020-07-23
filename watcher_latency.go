@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type LatencyWatcher struct {
@@ -21,6 +23,7 @@ func (lw *LatencyWatcher) detailKeys(rawMetrics map[string]string) []string {
 
 func (lw *LatencyWatcher) refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	latencyStats := parseLatencyInfo(rawMetrics["latency:"])
+	log.Tracef("latency-stats:%+v", latencyStats)
 
 	for namespaceName, nsLatencyStats := range latencyStats {
 		for operation, opLatencyStats := range nsLatencyStats {

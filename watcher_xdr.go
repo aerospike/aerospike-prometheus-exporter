@@ -4,6 +4,8 @@ import (
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // XDR raw metrics
@@ -63,8 +65,9 @@ func (xw *XdrWatcher) refresh(infoKeys []string, rawMetrics map[string]string, c
 
 	for _, dc := range infoKeys {
 		dcName := strings.ReplaceAll(dc, "get-stats:context=xdr;dc=", "")
-		xdrObserver := make(MetricMap, len(xdrMetrics))
+		log.Tracef("xdr-stats:%s:%s", dcName, rawMetrics[dc])
 
+		xdrObserver := make(MetricMap, len(xdrMetrics))
 		for m, t := range xdrMetrics {
 			xdrObserver[m] = makeMetric("aerospike_xdr", m, t, config.AeroProm.MetricLabels, "cluster_name", "service", "dc")
 		}

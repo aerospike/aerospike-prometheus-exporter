@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Node raw metrics
@@ -141,6 +143,8 @@ func (sw *StatsWatcher) detailKeys(rawMetrics map[string]string) []string {
 var nodeMetrics map[string]metricType
 
 func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
+	log.Tracef("node-stats:%s", rawMetrics["statistics"])
+
 	if nodeMetrics == nil {
 		nodeMetrics = getFilteredMetrics(statsRawMetrics, config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsAllowlistEnabled, config.Aerospike.NodeMetricsBlocklist, config.Aerospike.NodeMetricsBlocklistEnabled)
 	}
