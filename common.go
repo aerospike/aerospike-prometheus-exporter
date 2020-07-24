@@ -114,7 +114,7 @@ func validateBasicAuth(w http.ResponseWriter, r *http.Request, username string, 
 }
 
 // Regex for indentifying globbing patterns (or standard wildcards) in the metrics allowlist and blocklist.
-var globbingPattern = regexp.MustCompile(`[|]|\*|\?|{|}|\\|!`)
+var globbingPattern = regexp.MustCompile(`\[|\]|\*|\?|\{|\}|\\|!`)
 
 // Filter metrics
 // Runs the raw metrics through allowlist first and the resulting metrics through blocklist
@@ -127,47 +127,49 @@ func getFilteredMetrics(rawMetrics map[string]metricType, allowlist []string, al
 
 // Filter metrics based on configured allowlist.
 func filterAllowedMetrics(rawMetrics map[string]metricType, allowlist []string, allowlistEnabled bool) map[string]metricType {
-	if allowlistEnabled {
-		filteredMetrics := make(map[string]metricType)
-
-		for _, stat := range allowlist {
-			if globbingPattern.MatchString(stat) {
-				ge := glob.MustCompile(stat)
-
-				for k, v := range rawMetrics {
-					if ge.Match(k) {
-						filteredMetrics[k] = v
-					}
-				}
-			} else {
-				if val, ok := rawMetrics[stat]; ok {
-					filteredMetrics[stat] = val
-				}
-			}
-		}
-
-		return filteredMetrics
+	if !allowlistEnabled {
+		return rawMetrics
 	}
 
-	return rawMetrics
+	filteredMetrics := make(map[string]metricType)
+
+	for _, stat := range allowlist {
+		if globbingPattern.MatchString(stat) {
+			ge := glob.MustCompile(stat)
+
+			for k, v := range rawMetrics {
+				if ge.Match(k) {
+					filteredMetrics[k] = v
+				}
+			}
+		} else {
+			if val, ok := rawMetrics[stat]; ok {
+				filteredMetrics[stat] = val
+			}
+		}
+	}
+
+	return filteredMetrics
 }
 
 // Filter metrics based on configured blocklist.
 func filterBlockedMetrics(filteredMetrics map[string]metricType, blocklist []string, blocklistEnabled bool) {
-	if blocklistEnabled {
-		for _, stat := range blocklist {
-			if globbingPattern.MatchString(stat) {
-				ge := glob.MustCompile(stat)
+	if !blocklistEnabled {
+		return
+	}
 
-				for k := range filteredMetrics {
-					if ge.Match(k) {
-						delete(filteredMetrics, k)
-					}
+	for _, stat := range blocklist {
+		if globbingPattern.MatchString(stat) {
+			ge := glob.MustCompile(stat)
+
+			for k := range filteredMetrics {
+				if ge.Match(k) {
+					delete(filteredMetrics, k)
 				}
-			} else {
-				if _, ok := filteredMetrics[stat]; ok {
-					delete(filteredMetrics, stat)
-				}
+			}
+		} else {
+			if _, ok := filteredMetrics[stat]; ok {
+				delete(filteredMetrics, stat)
 			}
 		}
 	}
