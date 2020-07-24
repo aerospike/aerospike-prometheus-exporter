@@ -2,10 +2,11 @@ package main
 
 import (
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Namespace raw metrics
@@ -300,21 +301,20 @@ func (nw *NamespaceWatcher) detailKeys(rawMetrics map[string]string) []string {
 	return infoKeys
 }
 
-// Filtered namespace metrics. Populated by getWhitelistedMetrics() based on the config.Aerospike.NamespaceMetricsWhitelist and namespaceRawMetrics.
+// Filtered namespace metrics. Populated by getFilteredMetrics() based on the config.Aerospike.NamespaceMetricsAllowlist, config.Aerospike.NamespaceMetricsBlocklist and namespaceRawMetrics.
 var namespaceMetrics map[string]metricType
 
 // Regex for identifying storage-engine stats.
 var seDynamicExtractor = regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 
-func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
-	var xdrRX, xdrTX, memTotal, memUsed, diskTotal, diskUsed int
-
+func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	if namespaceMetrics == nil {
-		namespaceMetrics = getWhitelistedMetrics(namespaceRawMetrics, config.Aerospike.NamespaceMetricsWhitelist, config.Aerospike.NamespaceMetricsWhitelistEnabled)
+		namespaceMetrics = getFilteredMetrics(namespaceRawMetrics, config.Aerospike.NamespaceMetricsAllowlist, config.Aerospike.NamespaceMetricsAllowlistEnabled, config.Aerospike.NamespaceMetricsBlocklist, config.Aerospike.NamespaceMetricsBlocklistEnabled)
 	}
 
 	for _, ns := range infoKeys {
 		nsName := strings.ReplaceAll(ns, "namespace/", "")
+		log.Tracef("namespace-stats:%s:%s", nsName, rawMetrics[ns])
 
 		namespaceObserver := make(MetricMap, len(namespaceMetrics))
 		for m, t := range namespaceMetrics {
@@ -360,30 +360,6 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 
 			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName, metricIndex)
 		}
-
-		// here accumulate the values
-		pv, _ := tryConvert(stats["migrate_rx_partitions_remaining"])
-		xdrRX += int(pv)
-		pv, _ = tryConvert(stats["migrate_tx_partitions_remaining"])
-		xdrTX += int(pv)
-		pv, _ = tryConvert(stats["memory-size"])
-		memTotal += int(pv)
-		pv, _ = tryConvert(stats["memory_used_bytes"])
-		memUsed += int(pv)
-		pv, _ = tryConvert(stats["device_total_bytes"])
-		diskTotal += int(pv)
-		pv, _ = tryConvert(stats["device_used_bytes"])
-		diskUsed += int(pv)
-	}
-
-	// store the accumulated values for use in statsWatcher
-	accu[rawMetrics["service"]] = map[string]string{
-		"accu_xdr_tx":     strconv.Itoa(xdrTX),
-		"accu_xdr_rx":     strconv.Itoa(xdrRX),
-		"accu_mem_total":  strconv.Itoa(memTotal),
-		"accu_mem_used":   strconv.Itoa(memUsed),
-		"accu_disk_total": strconv.Itoa(diskTotal),
-		"accu_disk_used":  strconv.Itoa(diskUsed),
 	}
 
 	return nil

@@ -6,46 +6,125 @@ The Aerospike Prometheus Exporter is now **generally available** (GA).
 If you're an enterprise customer feel free to reach out to support with any questions.
 We appreciate feedback from community members on the [issues](https://github.com/aerospike/aerospike-prometheus-exporter/issues).
 
-## Install
-1. Install Go v1.12+
-2. Run `go get github.com/aerospike/aerospike-prometheus-exporter` and cd to it via: `cd $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter`
-3. `go build -o aerospike-prometheus-exporter . && ./aerospike-prometheus-exporter -config <full path of the config file>` builds and runs the agent.
-    - for a second agent on the same machine, bind it to a different port.
-4. You can generate certificates and set them in the config file in `key_file` and `cert_file` of the `[Agent]` section.
-    - You need to set the `scheme: 'https'` in `scrape_configs:` to be able to ping an agent with TLS enabled.
+## Build Instructions
 
-## Build Docker Image
+### Aerospike Prometheus Exporter Binary
 
-- Clone the repo
-  ```
-  git clone https://github.com/aerospike/aerospike-prometheus-exporter.git
-  cd aerospike-prometheus-exporter
-  ```
+#### Pre Requisites
+
+- Install Go v1.12+
+
+#### Steps
+
+1. Clone or fetch this repository
+    ```bash
+    git clone https://github.com/aerospike/aerospike-prometheus-exporter.git
+    cd aerospike-prometheus-exporter/
+
+    # or
+
+    # go get github.com/aerospike/aerospike-prometheus-exporter
+    # cd $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter
+    ```
+2. Build the exporter binary,
+    ```bash
+    go build -o aerospike-prometheus-exporter .
+    ```
+    or,
+
+    ```bash
+    make
+    ```
+
+3. Run the exporter
+     ```bash
+     ./aerospike-prometheus-exporter --config <full-path-of-the-config-file>
+     ```
+
+### Aerospike Prometheus Exporter Docker Image
+
 - Build the docker image
-  ```
+  ```bash
   docker build . -t aerospike/aerospike-prometheus-exporter:latest
   ```
-- Example run
+  or,
+
+  ```bash
+  make docker
   ```
+- Run the exporter as a container
+  ```bash
   docker run -itd --name exporter1 -e AS_HOST=172.17.0.2 -e AS_PORT=3000 -e METRIC_LABELS="type='development',source='aerospike'" aerospike/aerospike-prometheus-exporter:latest
   ```
 
+### `RPM`, `DEB` and `tar` Package
+
+####  Pre Requisites
+
+- FPM Package manager
+    - https://fpm.readthedocs.io/en/latest/installing.html
+    - For instance, on Debian-derived systems (Debian, Ubuntu, etc),
+        ```bash
+        apt install ruby ruby-dev rubygems build-essential -y
+        ```
+        ```bash
+        gem install --no-document fpm
+        ```
+
+#### Steps
+
+Build the exporter go binary and package it into `rpm`, `deb` or `tar`.
+
+- Build `deb` package,
+    ```bash
+    make deb
+    ```
+
+- Build `rpm` package,
+    ```bash
+    make rpm
+    ```
+
+- Build linux tarball,
+    ```bash
+    make tar
+    ```
+
+Packages will be generated under `./pkg/target/` directory.
+
+#### Install Exporter Using `DEB` and `RPM` Packages
+
+- Install `deb` package
+    ```bash
+    dpkg -i ./pkg/target/aerospike-prometheus-exporter-*.deb
+    ```
+
+- Install `rpm` package
+    ```bash
+    rpm -Uvh ./pkg/target/aerospike-prometheus-exporter-*.rpm
+    ```
+
+- Run the exporter
+    ```bash
+    systemctl start aerospike-prometheus-exporter.service
+    ```
+
 ## Aerospike Prometheus Exporter Configuration
 
-- Aerospike Prometheus Exporter requires a configuration file to run. Check [sample configuration file](aeroprom.conf.dev).
-    ```
+- Aerospike Prometheus Exporter requires a configuration file to run. Check [default configuration file](ape.toml).
+    ```bash
     mkdir -p /etc/aerospike-prometheus-exporter
-    curl https://raw.githubusercontent.com/aerospike/aerospike-prometheus-exporter/master/aeroprom.conf.dev -o /etc/aerospike-prometheus-exporter/ape.toml
+    curl https://raw.githubusercontent.com/aerospike/aerospike-prometheus-exporter/master/ape.toml -o /etc/aerospike-prometheus-exporter/ape.toml
     ```
 
-- As a minimum required configuration, edit `/etc/aerospike-prometheus-exporter/ape.toml` to add `db_host` and `db_port` to point to an Aerospike server IP and port.
+- Edit `/etc/aerospike-prometheus-exporter/ape.toml` to add `db_host` (default `localhost`) and `db_port` (default `3000`) to point to an Aerospike server IP and port.
     ```toml
     [Aerospike]
 
     db_host="localhost"
     db_port=3000
     ```
-- Update Aerospike security and TLS configurations (if applicable),
+- Update Aerospike security and TLS configurations (optional),
     ```toml
     [Aerospike]
 
@@ -85,15 +164,15 @@ We appreciate feedback from community members on the [issues](https://github.com
     labels={zone="asia-south1-a", platform="google compute engine"}
     ```
 
-- Use metrics whitelist to filter out required metrics (optional). The whitelist supports standard wildcards (globbing patterns which include - `? (question mark)`, `* (asterisk)`, `[ ] (square brackets)`, `{ } (curly brackets)`, `[!]` and `\ (backslash)`) for bulk whitelisting. For example,
+- Use allowlist and blocklist to filter out required metrics (optional). The allowlist and blocklist supports standard wildcards (globbing patterns which include - `? (question mark)`, `* (asterisk)`, `[ ] (square brackets)`, `{ } (curly brackets)`, `[!]` and `\ (backslash)`) for bulk metrics filtering. For example,
     ```toml
     [Aerospike]
 
-    # Metrics Whitelist - If specified, only these metrics will be scraped. An empty list will exclude all metrics.
-    # Commenting out the below whitelist configs will disable whitelisting (all metrics will be scraped).
+    # Metrics Allowlist - If specified, only these metrics will be scraped. An empty list will exclude all metrics.
+    # Commenting out the below allowlist configs will disable metrics filtering (i.e. all metrics will be scraped).
 
-    # Namespace metrics whitelist
-    namespace_metrics_whitelist=[
+    # Namespace metrics allowlist
+    namespace_metrics_allowlist=[
     "client_read_[a-z]*",
     "stop_writes",
     "storage-engine.file.defrag_q",
@@ -103,30 +182,49 @@ We appreciate feedback from community members on the [issues](https://github.com
     "*_available_pct"
     ]
 
-    # Set metrics whitelist
-    set_metrics_whitelist=[
+    # Set metrics allowlist
+    set_metrics_allowlist=[
     "objects",
     "tombstones"
     ]
 
-    # Node metrics whitelist
-    node_metrics_whitelist=[
+    # Node metrics allowlist
+    node_metrics_allowlist=[
     "uptime",
     "cluster_size",
     "batch_index_*",
     "xdr_ship_*"
     ]
 
-    # XDR metrics whitelist (only for server versions 5.0 and above)
-    xdr_metrics_whitelist=[
+    # XDR metrics allowlist (only for Aerospike versions 5.0 and above)
+    xdr_metrics_allowlist=[
     "success",
     "latency_ms",
     "throughput",
     "lap_us"
     ]
+
+    # Metrics Blocklist - If specified, these metrics will be NOT be scraped.
+
+    # Namespace metrics blocklist
+    namespace_metrics_blocklist=[
+    "memory_used_sindex_bytes",
+    "client_read_success"
+    ]
+
+    # Set metrics blocklist
+    # set_metrics_blocklist=[]
+
+    # Node metrics blocklist
+    node_metrics_blocklist=[
+    "batch_index_*_buffers"
+    ]
+
+    # XDR metrics blocklist (only for Aerospike versions 5.0 and above)
+    # xdr_metrics_blocklist=[]
     ```
 
-- To enable basic HTTP authentication and/or enable HTTPS between the Prometheus server and the exporter, use the below configurations keys (optional),
+- To enable basic HTTP authentication and/or enable HTTPS between the Prometheus server and the exporter, use the below configurations keys,
 
   ```toml
   [Agent]

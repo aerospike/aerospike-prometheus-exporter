@@ -3,9 +3,9 @@ package main
 import (
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/prometheus/client_golang/prometheus"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Set Raw metrics
@@ -32,15 +32,15 @@ func (sw *SetWatcher) detailKeys(rawMetrics map[string]string) []string {
 	return []string{"sets"}
 }
 
-// Filtered set metrics. Populated by getWhitelistedMetrics() based on config.Aerospike.SetMetricsWhitelist and setRawMetrics.
+// Filtered set metrics. Populated by getFilteredMetrics() based on config.Aerospike.SetMetricsAllowlist, config.Aerospike.SetMetricsBlocklist and setRawMetrics.
 var setMetrics map[string]metricType
 
-func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, accu map[string]interface{}, ch chan<- prometheus.Metric) error {
+func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	setStats := strings.Split(rawMetrics["sets"], ";")
-	log.Debug("Set Stats:", setStats)
+	log.Tracef("set-stats:%v", setStats)
 
 	if setMetrics == nil {
-		setMetrics = getWhitelistedMetrics(setRawMetrics, config.Aerospike.SetMetricsWhitelist, config.Aerospike.SetMetricsWhitelistEnabled)
+		setMetrics = getFilteredMetrics(setRawMetrics, config.Aerospike.SetMetricsAllowlist, config.Aerospike.SetMetricsAllowlistEnabled, config.Aerospike.SetMetricsBlocklist, config.Aerospike.SetMetricsBlocklistEnabled)
 	}
 
 	for i := range setStats {

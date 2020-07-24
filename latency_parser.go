@@ -2,10 +2,10 @@ package main
 
 import (
 	"io"
-	"log"
-	"math"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func parseLatencyInfo(s string) map[string]StatsMap {
@@ -23,7 +23,8 @@ func parseLatencyInfo(s string) map[string]StatsMap {
 			continue
 		}
 
-		ns, err := ip.ReadUntil('}')
+		// Get namespace name
+		namespaceName, err := ip.ReadUntil('}')
 		if err != nil {
 			break
 		}
@@ -32,76 +33,71 @@ func parseLatencyInfo(s string) map[string]StatsMap {
 			break
 		}
 
-		op, err := ip.ReadUntil(':')
+		// Get operation (read, write etc.)
+		operation, err := ip.ReadUntil(':')
 		if err != nil {
 			break
 		}
 
+		// Ignore timestamp
 		_, err = ip.ReadUntil(',')
 		if err != nil {
 			break
 		}
 
-		if _, err := ip.ReadUntil(','); err != nil {
-			break
-		}
-
-		bucketsStr, err := ip.ReadUntil(';')
+		// Read bucket labels including ops/sec
+		bucketLabelsStr, err := ip.ReadUntil(';')
 		if err != nil {
 			break
 		}
-		buckets := strings.Split(bucketsStr, ",")
+		bucketLabels := strings.Split(bucketLabelsStr, ",")
 
+		// Ignore timestamp
 		_, err = ip.ReadUntil(',')
 		if err != nil {
 			break
 		}
 
-		opsCount, err := ip.ReadFloat(',')
-		if err != nil {
-			break
-		}
-
-		valBucketsStr, err := ip.ReadUntil(';')
+		// Read bucket values
+		bucketValuesStr, err := ip.ReadUntil(';')
 		if err != nil && err != io.EOF {
 			break
 		}
-		valBuckets := strings.Split(valBucketsStr, ",")
-		valBucketsFloat := make([]float64, len(valBuckets))
-		for i := range valBuckets {
-			valBucketsFloat[i], _ = strconv.ParseFloat(valBuckets[i], 64)
+		bucketValues := strings.Split(bucketValuesStr, ",")
+
+		// Convert bucket values to float64
+		bucketValuesFloat := make([]float64, len(bucketValues))
+		for i := range bucketValues {
+			bucketValuesFloat[i], _ = strconv.ParseFloat(bucketValues[i], 64)
 		}
 
-		// calc precise in-between percents
-		lineAggPct := float64(0)
-		for i := len(valBucketsFloat) - 1; i > 0; i-- {
-			lineAggPct += valBucketsFloat[i]
-			valBucketsFloat[i-1] = math.Max(0, valBucketsFloat[i-1]-lineAggPct)
-		}
-
-		if len(buckets) != len(valBuckets) {
-			log.Printf("error parsing latency values for node: `%s`. Bucket mismatch: buckets: `%s`, values: `%s`", fullHost, bucketsStr, valBucketsStr)
+		// Sanity check
+		if len(bucketLabels) != len(bucketValuesFloat) {
+			log.Errorf("Error parsing latency values for node: `%s`. Bucket mismatch: buckets: `%s`, values: `%s`", fullHost, bucketLabelsStr, bucketValuesStr)
 			break
 		}
 
-		// log.Println(s)
-		for i := range valBucketsFloat {
-			// log.Println(">>>>>>>>", ns, op, buckets[i], valBucketsFloat[i], opsCount)
-			valBucketsFloat[i] *= (opsCount / 100)
+		// Replace 'ops/sec' with '+Inf' for Prometheus histograms
+		bucketLabels[0] = "+Inf"
+
+		// Set bucket labels and convert bucket values from percentage to exact ops count.
+		// Compute 'less than or equal to' bucket values for Prometheus histograms.
+		for i := 1; i < len(bucketValuesFloat); i++ {
+			bucketLabels[i] = strings.Trim(bucketLabels[i], "><=ms")
+			bucketValuesFloat[i] = bucketValuesFloat[0] - ((bucketValuesFloat[i] * bucketValuesFloat[0]) / 100)
 		}
 
 		stats := StatsMap{
-			"tps":        opsCount,
-			"buckets":    buckets,
-			"valBuckets": valBucketsFloat,
+			"bucketLabels": bucketLabels,
+			"bucketValues": bucketValuesFloat,
 		}
 
-		if res[ns] == nil {
-			res[ns] = StatsMap{
-				op: stats,
+		if res[namespaceName] == nil {
+			res[namespaceName] = StatsMap{
+				operation: stats,
 			}
 		} else {
-			res[ns][op] = stats
+			res[namespaceName][operation] = stats
 		}
 	}
 

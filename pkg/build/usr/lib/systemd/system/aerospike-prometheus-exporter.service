@@ -1,0 +1,11 @@
+[Unit]
+Description=Aerospike Prometheus Exporter Service
+Documentation=https://github.com/aerospike/aerospike-prometheus-exporter
+Wants=network.target
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/aerospike-prometheus-exporter --config /etc/aerospike-prometheus-exporter/ape.toml
+
+[Install]
+WantedBy=multi-user.target

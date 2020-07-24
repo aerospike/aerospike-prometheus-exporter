@@ -8,8 +8,9 @@ import (
 	"strings"
 	"time"
 
-	aero "github.com/aerospike/aerospike-client-go"
 	"github.com/prometheus/client_golang/prometheus"
+
+	aero "github.com/aerospike/aerospike-client-go"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,7 +25,7 @@ type Observer struct {
 var (
 	nodeActiveDesc = prometheus.NewDesc(
 		"aerospike_node_up",
-		"Wether node is active",
+		"Aerospike node active status",
 		[]string{"cluster_name", "service", "build"},
 		nil,
 	)
@@ -40,7 +41,7 @@ func initTLS() *tls.Config {
 	// Try to load system CA certs, otherwise just make an empty pool
 	serverPool, err := x509.SystemCertPool()
 	if serverPool == nil || err != nil {
-		log.Infof("Adding system certificates to the cert pool failed: %s", err)
+		log.Debugf("Adding system certificates to the cert pool failed: %s", err)
 		serverPool = x509.NewCertPool()
 	}
 
@@ -48,7 +49,7 @@ func initTLS() *tls.Config {
 		// Try to load system CA certs and add them to the system cert pool
 		caCert := readCertFile(config.Aerospike.RootCA)
 
-		log.Infof("Adding server certificate `%s` to the pool...", config.Aerospike.RootCA)
+		log.Debugf("Adding server certificate `%s` to the pool...", config.Aerospike.RootCA)
 		serverPool.AppendCertsFromPEM(caCert)
 	}
 
@@ -97,7 +98,7 @@ func initTLS() *tls.Config {
 			log.Fatalf("FAILED: Adding client certificate `%s` and key file `%s` to the pool failed: `%s`", config.Aerospike.CertFile, config.Aerospike.KeyFile, err)
 		}
 
-		log.Infof("Adding client certificate `%s` to the pool...\n", config.Aerospike.CertFile)
+		log.Debugf("Adding client certificate `%s` to the pool...\n", config.Aerospike.CertFile)
 		clientPool = append(clientPool, cert)
 	}
 
@@ -179,7 +180,7 @@ func (o *Observer) Collect(ch chan<- prometheus.Metric) {
 
 	stats, err := o.refresh(ch)
 	if err != nil {
-		log.Println(err)
+		log.Errorln(err)
 		ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 0.0, gClusterName, gService, gBuild)
 		return
 	}
@@ -189,14 +190,13 @@ func (o *Observer) Collect(ch chan<- prometheus.Metric) {
 }
 
 func (o *Observer) requestInfo(conn *aero.Connection, infoKeys []string) (map[string]string, error) {
-	// request first round of keys
 	rawMetrics, err := aero.RequestInfo(conn, infoKeys...)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(rawMetrics) == 1 {
-		for k, _ := range rawMetrics {
+		for k := range rawMetrics {
 			if strings.HasPrefix(strings.ToUpper(k), "ERROR:") {
 				return nil, errors.New(k)
 			}
@@ -207,7 +207,7 @@ func (o *Observer) requestInfo(conn *aero.Connection, infoKeys []string) (map[st
 }
 
 func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, error) {
-	log.Println("Trying to refresh the node...")
+	log.Debugf("Refreshing node %s", fullHost)
 
 	var err error
 
@@ -258,14 +258,13 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 		rawMetrics[k] = sanitizeUTF8(v)
 	}
 
-	accu := make(map[string]interface{}, 16)
 	for i, c := range o.watchers {
-		if err := c.refresh(watcherInfoKeys[i], rawMetrics, accu, ch); err != nil {
+		if err := c.refresh(watcherInfoKeys[i], rawMetrics, ch); err != nil {
 			return rawMetrics, err
 		}
 	}
 
-	log.Println("Refreshing node was successful.")
+	log.Debugf("Refreshing node was successful")
 
 	return rawMetrics, nil
 }
