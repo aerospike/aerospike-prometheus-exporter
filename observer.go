@@ -145,6 +145,10 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 			}
 		}
 
+		// Set no connection deadline to re-use connection, but socketTimeout will be in effect
+		var deadline time.Time
+		conn.SetTimeout(deadline, clientPolicy.Timeout)
+
 		return conn, nil
 	}
 
