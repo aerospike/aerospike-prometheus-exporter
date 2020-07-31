@@ -83,7 +83,7 @@ func main() {
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
 	}
 
-	log.Infof("Listening for Prometheus on: %s\n", config.AeroProm.Bind)
+	log.Infof("Listening for Prometheus on: %s", config.AeroProm.Bind)
 
 	if config.AeroProm.CertFile != "" && config.AeroProm.KeyFile != "" {
 		log.Infoln("Enabling HTTPS ...")
