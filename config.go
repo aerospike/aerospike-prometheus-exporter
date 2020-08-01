@@ -64,11 +64,23 @@ type Config struct {
 		SetMetricsBlocklistEnabled       bool
 		NodeMetricsBlocklistEnabled      bool
 		XdrMetricsBlocklistEnabled       bool
+
+		// Tolerate older whitelist and blacklist configurations for a while
+		NamespaceMetricsWhitelist []string `toml:"namespace_metrics_whitelist"`
+		SetMetricsWhitelist       []string `toml:"set_metrics_whitelist"`
+		NodeMetricsWhitelist      []string `toml:"node_metrics_whitelist"`
+		XdrMetricsWhitelist       []string `toml:"xdr_metrics_whitelist"`
+
+		NamespaceMetricsBlacklist []string `toml:"namespace_metrics_blacklist"`
+		SetMetricsBlacklist       []string `toml:"set_metrics_blacklist"`
+		NodeMetricsBlacklist      []string `toml:"node_metrics_blacklist"`
+		XdrMetricsBlacklist       []string `toml:"xdr_metrics_blacklist"`
 	} `toml:"Aerospike"`
 
 	LogFile *os.File
 }
 
+// Validate and update exporter configuration
 func (c *Config) validateAndUpdate() {
 	if c.AeroProm.Bind == "" {
 		c.AeroProm.Bind = ":9145"
@@ -87,6 +99,7 @@ func (c *Config) validateAndUpdate() {
 	}
 }
 
+// Initialize exporter configuration
 func initConfig(configFile string, config *Config) {
 	// to print everything out regarding reading the config in app init
 	log.SetLevel(log.DebugLevel)
@@ -102,15 +115,7 @@ func initConfig(configFile string, config *Config) {
 		log.Fatalln(err)
 	}
 
-	config.Aerospike.NamespaceMetricsAllowlistEnabled = md.IsDefined("Aerospike", "namespace_metrics_allowlist")
-	config.Aerospike.SetMetricsAllowlistEnabled = md.IsDefined("Aerospike", "set_metrics_allowlist")
-	config.Aerospike.NodeMetricsAllowlistEnabled = md.IsDefined("Aerospike", "node_metrics_allowlist")
-	config.Aerospike.XdrMetricsAllowlistEnabled = md.IsDefined("Aerospike", "xdr_metrics_allowlist")
-
-	config.Aerospike.NamespaceMetricsBlocklistEnabled = md.IsDefined("Aerospike", "namespace_metrics_blocklist")
-	config.Aerospike.SetMetricsBlocklistEnabled = md.IsDefined("Aerospike", "set_metrics_blocklist")
-	config.Aerospike.NodeMetricsBlocklistEnabled = md.IsDefined("Aerospike", "node_metrics_blocklist")
-	config.Aerospike.XdrMetricsBlocklistEnabled = md.IsDefined("Aerospike", "xdr_metrics_blocklist")
+	initAllowlistAndBlocklistConfigs(config, md)
 
 	config.LogFile = setLogFile(config.AeroProm.LogFile)
 
@@ -118,6 +123,7 @@ func initConfig(configFile string, config *Config) {
 	setLogLevel(config.AeroProm.LogLevel)
 }
 
+// Set log file path
 func setLogFile(filepath string) *os.File {
 	if len(strings.TrimSpace(filepath)) > 0 {
 		out, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -131,6 +137,7 @@ func setLogFile(filepath string) *os.File {
 	return nil
 }
 
+// Set logging level
 func setLogLevel(level string) {
 	level = strings.ToLower(level)
 
@@ -153,5 +160,95 @@ func setLogLevel(level string) {
 	default:
 		log.SetLevel(log.InfoLevel)
 		aslog.Logger.SetLevel(aslog.INFO)
+	}
+}
+
+// Initialize Allowlist and Blocklist configurations
+func initAllowlistAndBlocklistConfigs(config *Config, md toml.MetaData) {
+	// Initialize AllowlistEnabled config
+	config.Aerospike.NamespaceMetricsAllowlistEnabled = md.IsDefined("Aerospike", "namespace_metrics_allowlist")
+	config.Aerospike.SetMetricsAllowlistEnabled = md.IsDefined("Aerospike", "set_metrics_allowlist")
+	config.Aerospike.NodeMetricsAllowlistEnabled = md.IsDefined("Aerospike", "node_metrics_allowlist")
+	config.Aerospike.XdrMetricsAllowlistEnabled = md.IsDefined("Aerospike", "xdr_metrics_allowlist")
+
+	// Initialize BlocklistEnabled config
+	config.Aerospike.NamespaceMetricsBlocklistEnabled = md.IsDefined("Aerospike", "namespace_metrics_blocklist")
+	config.Aerospike.SetMetricsBlocklistEnabled = md.IsDefined("Aerospike", "set_metrics_blocklist")
+	config.Aerospike.NodeMetricsBlocklistEnabled = md.IsDefined("Aerospike", "node_metrics_blocklist")
+	config.Aerospike.XdrMetricsBlocklistEnabled = md.IsDefined("Aerospike", "xdr_metrics_blocklist")
+
+	// Tolerate older whitelist and blacklist configurations for a while.
+	// If whitelist and blacklist configs are defined copy them into allowlist and blocklist.
+	// Error out if both configurations are used at the same time.
+	if md.IsDefined("Aerospike", "namespace_metrics_whitelist") {
+		if config.Aerospike.NamespaceMetricsAllowlistEnabled {
+			log.Fatalf("namespace_metrics_whitelist and namespace_metrics_allowlist are mutually exclusive!")
+		}
+
+		config.Aerospike.NamespaceMetricsAllowlistEnabled = true
+		config.Aerospike.NamespaceMetricsAllowlist = config.Aerospike.NamespaceMetricsWhitelist
+	}
+
+	if md.IsDefined("Aerospike", "set_metrics_whitelist") {
+		if config.Aerospike.SetMetricsAllowlistEnabled {
+			log.Fatalf("set_metrics_whitelist and set_metrics_allowlist are mutually exclusive!")
+		}
+
+		config.Aerospike.SetMetricsAllowlistEnabled = true
+		config.Aerospike.SetMetricsAllowlist = config.Aerospike.SetMetricsWhitelist
+	}
+
+	if md.IsDefined("Aerospike", "node_metrics_whitelist") {
+		if config.Aerospike.NodeMetricsAllowlistEnabled {
+			log.Fatalf("node_metrics_whitelist and node_metrics_allowlist are mutually exclusive!")
+		}
+
+		config.Aerospike.NodeMetricsAllowlistEnabled = true
+		config.Aerospike.NodeMetricsAllowlist = config.Aerospike.NodeMetricsWhitelist
+	}
+
+	if md.IsDefined("Aerospike", "xdr_metrics_whitelist") {
+		if config.Aerospike.XdrMetricsAllowlistEnabled {
+			log.Fatalf("xdr_metrics_whitelist and xdr_metrics_allowlist are mutually exclusive!")
+		}
+
+		config.Aerospike.XdrMetricsAllowlistEnabled = true
+		config.Aerospike.XdrMetricsAllowlist = config.Aerospike.XdrMetricsWhitelist
+	}
+
+	if md.IsDefined("Aerospike", "namespace_metrics_blacklist") {
+		if config.Aerospike.NamespaceMetricsBlocklistEnabled {
+			log.Fatalf("namespace_metrics_blacklist and namespace_metrics_blocklist are mutually exclusive!")
+		}
+
+		config.Aerospike.NamespaceMetricsBlocklistEnabled = true
+		config.Aerospike.NamespaceMetricsBlocklist = config.Aerospike.NamespaceMetricsBlacklist
+	}
+
+	if md.IsDefined("Aerospike", "set_metrics_blacklist") {
+		if config.Aerospike.SetMetricsBlocklistEnabled {
+			log.Fatalf("set_metrics_blacklist and set_metrics_blocklist are mutually exclusive!")
+		}
+
+		config.Aerospike.SetMetricsBlocklistEnabled = true
+		config.Aerospike.SetMetricsBlocklist = config.Aerospike.SetMetricsBlacklist
+	}
+
+	if md.IsDefined("Aerospike", "node_metrics_blacklist") {
+		if config.Aerospike.NodeMetricsBlocklistEnabled {
+			log.Fatalf("node_metrics_blacklist and node_metrics_blocklist are mutually exclusive!")
+		}
+
+		config.Aerospike.NodeMetricsBlocklistEnabled = true
+		config.Aerospike.NodeMetricsBlocklist = config.Aerospike.NodeMetricsBlacklist
+	}
+
+	if md.IsDefined("Aerospike", "xdr_metrics_blacklist") {
+		if config.Aerospike.XdrMetricsBlocklistEnabled {
+			log.Fatalf("xdr_metrics_blacklist and xdr_metrics_blocklist are mutually exclusive!")
+		}
+
+		config.Aerospike.XdrMetricsBlocklistEnabled = true
+		config.Aerospike.XdrMetricsBlocklist = config.Aerospike.XdrMetricsBlacklist
 	}
 }

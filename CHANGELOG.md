@@ -2,6 +2,12 @@
 
 This file documents all notable changes to Aerospike Prometheus Exporter
 
+## [v1.1.1](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.1.1)
+
+### Fixes
+- Tolerate older configurations - metrics' `_whitelist` and `_blacklist`
+
+
 ## [v1.1.0](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.1.0)
 
 ### Features
@@ -25,6 +31,7 @@ This file documents all notable changes to Aerospike Prometheus Exporter
     - Remove `update_interval` unused config.
     - Fix `password` config.
 - Cleanup unused configurations
+
 
 ## [v1.0.0](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.0.0)
 
