@@ -16,13 +16,14 @@ import (
 
 // Observer communicates with Aerospike and helps collecting metrices
 type Observer struct {
-	conn     *aero.Connection
-	connGen  func() (*aero.Connection, error)
-	ticks    prometheus.Counter
-	watchers []Watcher
+	conn          *aero.Connection
+	newConnection func() (*aero.Connection, error)
+	ticks         prometheus.Counter
+	watchers      []Watcher
 }
 
 var (
+	// Metric for Aerospike node active status
 	nodeActiveDesc = prometheus.NewDesc(
 		"aerospike_node_up",
 		"Aerospike node active status",
@@ -30,7 +31,12 @@ var (
 		nil,
 	)
 
+	// Node service endpoint, cluster name and build version
 	gService, gClusterName, gBuild string
+
+	// Connection idle timeout and deadline
+	connIdleTimeout  time.Duration
+	connIdleDeadline time.Time
 )
 
 func initTLS() *tls.Config {
@@ -130,10 +136,11 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 	// allow only ONE connection
 	clientPolicy.ConnectionQueueSize = 1
 	clientPolicy.Timeout = time.Duration(config.Aerospike.Timeout) * time.Second
+	connIdleTimeout = time.Duration(config.Aerospike.ConnIdleTimeout) * time.Second
 
 	clientPolicy.TlsConfig = initTLS()
 
-	newConnGen := func() (*aero.Connection, error) {
+	createNewConnection := func() (*aero.Connection, error) {
 		conn, err := aero.NewConnection(clientPolicy, server)
 		if err != nil {
 			return nil, err
@@ -153,7 +160,7 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 	}
 
 	o = &Observer{
-		connGen: newConnGen,
+		newConnection: createNewConnection,
 		ticks: prometheus.NewCounter(
 			prometheus.CounterOpts{
 				Namespace: "aerospike",
@@ -213,14 +220,9 @@ func (o *Observer) requestInfo(infoKeys []string) (map[string]string, error) {
 func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, error) {
 	log.Debugf("Refreshing node %s", fullHost)
 
-	var err error
-
-	// prepare a connection
-	if o.conn == nil || !o.conn.IsConnected() {
-		o.conn, err = o.connGen()
-		if err != nil {
-			return nil, err
-		}
+	err := o.maintainConnection()
+	if err != nil {
+		return nil, err
 	}
 
 	// get first keys
@@ -269,4 +271,38 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	log.Debugf("Refreshing node was successful")
 
 	return rawMetrics, nil
+}
+
+// Maintain Connection to Aerospike node
+// Check if existing connection can be re-used or create a new one
+func (o *Observer) maintainConnection() error {
+	var err error
+
+	// Validate existing connection
+	if o.conn == nil || !o.conn.IsConnected() || isConnectionIdle(o.conn, connIdleDeadline) {
+		// Create new connection
+		o.conn, err = o.newConnection()
+		if err != nil {
+			return err
+		}
+	}
+
+	// Set or extend connection idle deadline
+	if connIdleTimeout > 0 {
+		connIdleDeadline = time.Now().Add(connIdleTimeout)
+	}
+
+	return nil
+}
+
+// Check if idle deadline for the connection is expired.
+// If the deadline is expired, close the connection.
+func isConnectionIdle(conn *aero.Connection, idleDeadline time.Time) bool {
+	if !idleDeadline.IsZero() && time.Now().After(idleDeadline) {
+		// Close the connection
+		conn.Close()
+		return true
+	}
+
+	return false
 }

@@ -58,6 +58,9 @@ password="${AS_AUTH_PASSWORD}"
 # timeout for sending commands to the server node in seconds
 timeout=${TICKER_TIMEOUT}
 
+# connection idle timeout in seconds. If configured, it must be set lower than `proto-fd-idle-ms` on Aerospike server.
+connection_idle_timeout=${CONNECTION_IDLE_TIMEOUT}
+
 # Metrics Allowlist - If specified, only these metrics will be scraped. An empty list will exclude all metrics.
 # Commenting out the below allowlist configs will disable metrics filtering (i.e. all metrics will be scraped).
 

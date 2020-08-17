@@ -43,7 +43,8 @@ type Config struct {
 		User     string `toml:"user"`
 		Password string `toml:"password"`
 
-		Timeout uint8 `toml:"timeout"`
+		Timeout         uint8 `toml:"timeout"`
+		ConnIdleTimeout uint8 `toml:"connection_idle_timeout"`
 
 		NamespaceMetricsAllowlist []string `toml:"namespace_metrics_allowlist"`
 		SetMetricsAllowlist       []string `toml:"set_metrics_allowlist"`
