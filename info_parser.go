@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"strconv"
 	"strings"
 )
 
@@ -17,16 +16,35 @@ func NewInfoParser(s string) *InfoParser {
 	return &InfoParser{bufio.NewReader(strings.NewReader(s))}
 }
 
+// PeekAndExpect checks if the expected value is present without advancing the reader
+func (ip *InfoParser) PeekAndExpect(s string) error {
+	bytes, err := ip.Peek(len(s))
+	if err != nil {
+		return err
+	}
+
+	v := string(bytes)
+	if v != s {
+		return fmt.Errorf("InfoParser: Wrong value. Peek expected %s, but found %s", s, v)
+	}
+
+	return nil
+}
+
 // Expect validates the expected value against the one returned by the InfoParser
+// This advances the reader by length of the input string.
 func (ip *InfoParser) Expect(s string) error {
 	bytes := make([]byte, len(s))
+
 	v, err := ip.Read(bytes)
 	if err != nil {
 		return err
 	}
+
 	if string(bytes) != s {
 		return fmt.Errorf("InfoParser: Wrong value. Expected %s, found %d", s, v)
 	}
+
 	return nil
 }
 
@@ -43,15 +61,6 @@ func (ip *InfoParser) ReadUntil(delim byte) (string, error) {
 		}
 		return string(v), err
 	}
+
 	return string(v[:len(v)-1]), err
-}
-
-// ReadFloat reads from the InfoParser and converts the result to Float
-func (ip *InfoParser) ReadFloat(delim byte) (float64, error) {
-	s, err := ip.ReadUntil(delim)
-	if err != nil {
-		return 0, err
-	}
-
-	return strconv.ParseFloat(s, 64)
 }

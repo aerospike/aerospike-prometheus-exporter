@@ -16,13 +16,14 @@ import (
 
 // Observer communicates with Aerospike and helps collecting metrices
 type Observer struct {
-	conn     *aero.Connection
-	connGen  func() (*aero.Connection, error)
-	ticks    prometheus.Counter
-	watchers []Watcher
+	conn          *aero.Connection
+	newConnection func() (*aero.Connection, error)
+	ticks         prometheus.Counter
+	watchers      []Watcher
 }
 
 var (
+	// Metric for node active status
 	nodeActiveDesc = prometheus.NewDesc(
 		"aerospike_node_up",
 		"Aerospike node active status",
@@ -30,7 +31,11 @@ var (
 		nil,
 	)
 
+	// Node service endpoint, cluster name and build version
 	gService, gClusterName, gBuild string
+
+	// Number of retries on info request
+	retryCount = 3
 )
 
 func initTLS() *tls.Config {
@@ -133,7 +138,7 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 
 	clientPolicy.TlsConfig = initTLS()
 
-	newConnGen := func() (*aero.Connection, error) {
+	createNewConnection := func() (*aero.Connection, error) {
 		conn, err := aero.NewConnection(clientPolicy, server)
 		if err != nil {
 			return nil, err
@@ -153,7 +158,7 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 	}
 
 	o = &Observer{
-		connGen: newConnGen,
+		newConnection: createNewConnection,
 		ticks: prometheus.NewCounter(
 			prometheus.CounterOpts{
 				Namespace: "aerospike",
@@ -193,10 +198,31 @@ func (o *Observer) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, gClusterName, gService, gBuild)
 }
 
-func (o *Observer) requestInfo(infoKeys []string) (map[string]string, error) {
-	rawMetrics, err := aero.RequestInfo(o.conn, infoKeys...)
-	if err != nil {
-		return nil, err
+func (o *Observer) requestInfo(retryCount int, infoKeys []string) (map[string]string, error) {
+	var err error
+	rawMetrics := make(map[string]string)
+
+	// Retry for connection, timeout, network errors
+	// including errors from RequestInfo()
+	for i := 0; i < retryCount; i++ {
+		// Validate existing connection
+		if o.conn == nil || !o.conn.IsConnected() {
+			// Create new connection
+			o.conn, err = o.newConnection()
+			if err != nil {
+				log.Debug(err)
+				continue
+			}
+		}
+
+		// Info request
+		rawMetrics, err = aero.RequestInfo(o.conn, infoKeys...)
+		if err != nil {
+			log.Debug(err)
+			continue
+		}
+
+		break
 	}
 
 	if len(rawMetrics) == 1 {
@@ -207,21 +233,11 @@ func (o *Observer) requestInfo(infoKeys []string) (map[string]string, error) {
 		}
 	}
 
-	return rawMetrics, nil
+	return rawMetrics, err
 }
 
 func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, error) {
 	log.Debugf("Refreshing node %s", fullHost)
-
-	var err error
-
-	// prepare a connection
-	if o.conn == nil || !o.conn.IsConnected() {
-		o.conn, err = o.connGen()
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	// get first keys
 	var infoKeys []string
@@ -232,7 +248,7 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	}
 
 	// request first round of keys
-	rawMetrics, err := o.requestInfo(infoKeys)
+	rawMetrics, err := o.requestInfo(retryCount, infoKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +264,7 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	}
 
 	// request second round of keys
-	nRawMetrics, err := o.requestInfo(infoKeys)
+	nRawMetrics, err := o.requestInfo(retryCount, infoKeys)
 	if err != nil {
 		return rawMetrics, err
 	}
