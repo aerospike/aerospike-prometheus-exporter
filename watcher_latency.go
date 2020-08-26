@@ -18,14 +18,14 @@ func (lw *LatencyWatcher) infoKeys() []string {
 }
 
 func (lw *LatencyWatcher) detailKeys(rawMetrics map[string]string) []string {
-	return []string{"latency:", "latencies:"}
+	return []string{"latencies:", "latency:"}
 }
 
 func (lw *LatencyWatcher) refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	latencyStats := make(map[string]StatsMap)
 
 	if rawMetrics["latencies:"] != "" {
-		latencyStats = parseLatencyInfoNew(rawMetrics["latencies:"])
+		latencyStats = parseLatencyInfo(rawMetrics["latencies:"])
 	} else {
 		latencyStats = parseLatencyInfoLegacy(rawMetrics["latency:"])
 	}

@@ -23,6 +23,7 @@ type Observer struct {
 }
 
 var (
+	// Metric for node active status
 	nodeActiveDesc = prometheus.NewDesc(
 		"aerospike_node_up",
 		"Aerospike node active status",
@@ -30,8 +31,10 @@ var (
 		nil,
 	)
 
+	// Node service endpoint, cluster name and build version
 	gService, gClusterName, gBuild string
 
+	// Number of retries on info request
 	retryCount = 3
 )
 
@@ -218,6 +221,8 @@ func (o *Observer) requestInfo(retryCount int, infoKeys []string) (map[string]st
 			log.Debug(err)
 			continue
 		}
+
+		break
 	}
 
 	if len(rawMetrics) == 1 {

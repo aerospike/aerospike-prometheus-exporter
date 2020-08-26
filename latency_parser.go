@@ -138,7 +138,7 @@ func parseLatencyInfoLegacy(s string) map[string]StatsMap {
 // Format (with and without latency data)
 // {test}-write:msec,4234.9,28.75,7.40,1.63,0.26,0.03,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00;
 // {test}-read:;
-func parseLatencyInfoNew(s string) map[string]StatsMap {
+func parseLatencyInfo(s string) map[string]StatsMap {
 	ip := NewInfoParser(s)
 	res := map[string]StatsMap{}
 
