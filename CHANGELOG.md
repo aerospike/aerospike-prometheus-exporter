@@ -2,6 +2,16 @@
 
 This file documents all notable changes to Aerospike Prometheus Exporter
 
+## [v1.1.2](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.1.2)
+
+### Improvements
+- Optimize latency data export - use only non-zero buckets.
+- Use `latencies` info command against Aerospike versions 5.1 and above.
+
+### Fixes
+- Retry for connection, network or timeout errors.
+
+
 ## [v1.1.1](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.1.1)
 
 ### Fixes
