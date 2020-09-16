@@ -52,6 +52,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	// Handle "/metrics" url
 	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
 		if config.AeroProm.BasicAuthUsername != "" {
 			if validateBasicAuth(w, r, config.AeroProm.BasicAuthUsername, config.AeroProm.BasicAuthPassword) {
@@ -66,6 +67,23 @@ func main() {
 		} else {
 			promhttp.HandlerFor(promReg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 		}
+	})
+
+	// Handle "/health" url
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`OK`))
+	})
+
+	// Handle "/" root url
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`<html>
+			<head><title>Aerospike Prometheus Exporter</title></head>
+			<body>
+			<h1>Aerospike Prometheus Exporter</h1>
+			<p>Go to <a href='` + "/metrics" + `'>Metrics</a></p>
+			</body>
+			</html>
+		`))
 	})
 
 	cfg := &tls.Config{
