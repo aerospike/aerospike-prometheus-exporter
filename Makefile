@@ -30,5 +30,5 @@ clean:
 # Builds exporter docker image
 # Requires docker
 .PHONY: docker
-docker:
+docker: exporter
 	docker build . -t aerospike/aerospike-prometheus-exporter:latest
