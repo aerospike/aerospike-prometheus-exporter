@@ -16,6 +16,7 @@ import (
 
 // Observer communicates with Aerospike and helps collecting metrices
 type Observer struct {
+	conn          *aero.Connection
 	newConnection func() (*aero.Connection, error)
 	ticks         prometheus.Counter
 	watchers      []Watcher
@@ -197,11 +198,31 @@ func (o *Observer) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, gClusterName, gService, gBuild)
 }
 
-func (o *Observer) requestInfo(conn *aero.Connection, retryCount int, infoKeys []string) (map[string]string, error) {
-	// Info request
-	rawMetrics, err := aero.RequestInfo(conn, infoKeys...)
-	if err != nil {
-		return nil, err
+func (o *Observer) requestInfo(retryCount int, infoKeys []string) (map[string]string, error) {
+	var err error
+	rawMetrics := make(map[string]string)
+
+	// Retry for connection, timeout, network errors
+	// including errors from RequestInfo()
+	for i := 0; i < retryCount; i++ {
+		// Validate existing connection
+		if o.conn == nil || !o.conn.IsConnected() {
+			// Create new connection
+			o.conn, err = o.newConnection()
+			if err != nil {
+				log.Debug(err)
+				continue
+			}
+		}
+
+		// Info request
+		rawMetrics, err = aero.RequestInfo(o.conn, infoKeys...)
+		if err != nil {
+			log.Debug(err)
+			continue
+		}
+
+		break
 	}
 
 	if len(rawMetrics) == 1 {
@@ -218,78 +239,50 @@ func (o *Observer) requestInfo(conn *aero.Connection, retryCount int, infoKeys [
 func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, error) {
 	log.Debugf("Refreshing node %s", fullHost)
 
-	var err error
-	var rawMetrics map[string]string
-	var conn *aero.Connection
-
-	for i := 0; i < retryCount; i++ {
-		// Create new connection
-		if conn == nil || !conn.IsConnected() {
-			conn, err = o.newConnection()
-			if err != nil {
-				log.Warnf("Error while creating connection: %v", err)
-				continue
-			}
+	// get first keys
+	var infoKeys []string
+	for _, c := range o.watchers {
+		if keys := c.infoKeys(); len(keys) > 0 {
+			infoKeys = append(infoKeys, keys...)
 		}
-
-		// get first keys
-		var infoKeys []string
-		for _, c := range o.watchers {
-			if keys := c.infoKeys(); len(keys) > 0 {
-				infoKeys = append(infoKeys, keys...)
-			}
-		}
-
-		// request first round of keys
-		rawMetrics, err = o.requestInfo(conn, retryCount, infoKeys)
-		if err != nil {
-			log.Warnf("Error while requesting first set of keys: %v", err)
-			continue
-		}
-
-		// get first keys
-		infoKeys = []string{"cluster-name", "service", "build"}
-		watcherInfoKeys := make([][]string, len(o.watchers))
-		for i, c := range o.watchers {
-			if keys := c.detailKeys(rawMetrics); len(keys) > 0 {
-				infoKeys = append(infoKeys, keys...)
-				watcherInfoKeys[i] = keys
-			}
-		}
-
-		// request second round of keys
-		nRawMetrics, err := o.requestInfo(conn, retryCount, infoKeys)
-		if err != nil {
-			log.Warnf("Error while requesting second set of keys: %v", err)
-			continue
-		}
-
-		rawMetrics = nRawMetrics
-
-		// sanitize the utf8 strings before sending them to watchers
-		for k, v := range rawMetrics {
-			rawMetrics[k] = sanitizeUTF8(v)
-		}
-
-		for i, c := range o.watchers {
-			if err = c.refresh(watcherInfoKeys[i], rawMetrics, ch); err != nil {
-				log.Error(err)
-				break
-			}
-		}
-
-		break
 	}
 
-	defer func() {
-		if conn != nil {
-			conn.Close()
-		}
-	}()
-
-	if err == nil {
-		log.Debugf("Refreshing node was successful")
+	// request first round of keys
+	rawMetrics, err := o.requestInfo(retryCount, infoKeys)
+	if err != nil {
+		return nil, err
 	}
 
-	return rawMetrics, err
+	// get first keys
+	infoKeys = []string{"cluster-name", "service", "build"}
+	watcherInfoKeys := make([][]string, len(o.watchers))
+	for i, c := range o.watchers {
+		if keys := c.detailKeys(rawMetrics); len(keys) > 0 {
+			infoKeys = append(infoKeys, keys...)
+			watcherInfoKeys[i] = keys
+		}
+	}
+
+	// request second round of keys
+	nRawMetrics, err := o.requestInfo(retryCount, infoKeys)
+	if err != nil {
+		return rawMetrics, err
+	}
+
+	rawMetrics = nRawMetrics
+
+	// sanitize the utf8 strings before sending them to watchers
+	for k, v := range rawMetrics {
+		rawMetrics[k] = sanitizeUTF8(v)
+	}
+
+	for i, c := range o.watchers {
+		if err := c.refresh(watcherInfoKeys[i], rawMetrics, ch); err != nil {
+			return rawMetrics, err
+		}
+	}
+
+	log.Debugf("Refreshing node was successful")
+
+	return rawMetrics, nil
 }

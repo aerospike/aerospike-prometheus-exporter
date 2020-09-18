@@ -5,7 +5,7 @@ WORKDIR $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter
 RUN go build -o aerospike-prometheus-exporter . \
 	&& cp aerospike-prometheus-exporter /aerospike-prometheus-exporter
 
-FROM alpine:latest
+FROM golang:alpine
 
 COPY --from=builder /aerospike-prometheus-exporter /usr/bin/aerospike-prometheus-exporter
 COPY ape.toml.template /etc/aerospike-prometheus-exporter/ape.toml.template
