@@ -27,6 +27,7 @@ var xdrRawMetrics = map[string]metricType{
 	"retry_dest":         mtCounter,
 	"recoveries":         mtCounter,
 	"hot_keys":           mtCounter,
+	"retry_no_node":      mtCounter,
 }
 
 type XdrWatcher struct{}

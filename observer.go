@@ -6,6 +6,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -20,6 +21,7 @@ type Observer struct {
 	newConnection func() (*aero.Connection, error)
 	ticks         prometheus.Counter
 	watchers      []Watcher
+	mutex         sync.Mutex
 }
 
 var (
@@ -184,6 +186,10 @@ func (o *Observer) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect function of Prometheus' Collector interface
 func (o *Observer) Collect(ch chan<- prometheus.Metric) {
+	// Protect against concurrent scrapes
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
 	o.ticks.Inc()
 	ch <- o.ticks
 
