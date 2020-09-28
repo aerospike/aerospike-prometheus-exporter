@@ -2,6 +2,18 @@
 
 This file documents all notable changes to Aerospike Prometheus Exporter
 
+
+## [v1.1.3](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.1.3)
+
+### Improvements
+- Add `/health` and `/` url endpoints
+- Add some missing namespace, node and xdr statistics
+
+### Fixes
+- Fix concurrent map writes
+- Add mutex to protect against concurrent collection
+
+
 ## [v1.1.2](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.1.2)
 
 ### Improvements
