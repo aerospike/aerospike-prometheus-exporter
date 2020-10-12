@@ -13,6 +13,7 @@ var setRawMetrics = map[string]metricType{
 	"objects":           mtGauge,
 	"tombstones":        mtGauge,
 	"memory_data_bytes": mtGauge,
+	"device_data_bytes": mtGauge,
 	"truncate_lut":      mtGauge,
 	"stop-writes-count": mtCounter,
 	"disable-eviction":  mtGauge,

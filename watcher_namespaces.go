@@ -72,6 +72,8 @@ var namespaceRawMetrics = map[string]metricType{
 	"truncate-threads":                       mtGauge,
 	"xdr-tomb-raider-period":                 mtGauge,
 	"xdr-tomb-raider-threads":                mtGauge,
+	"xdr-bin-tombstone-ttl":                  mtGauge,
+	"ignore-migrate-fill-delay":              mtGauge,
 
 	"clock_skew_stop_writes":                 mtGauge,
 	"dead_partitions":                        mtGauge,
