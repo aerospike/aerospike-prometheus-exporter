@@ -3,6 +3,16 @@
 This file documents all notable changes to Aerospike Prometheus Exporter
 
 
+## [v1.1.4](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.1.4)
+
+### Improvements
+- Add new metrics and configs introduced in Aerospike 5.2
+    - `device_data_bytes`
+    - `xdr-bin-tombstone-ttl`
+    - `ignore-migrate-fill-delay`
+- Add `--version` command line option
+
+
 ## [v1.1.3](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.1.3)
 
 ### Improvements
