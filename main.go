@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -17,11 +18,14 @@ import (
 )
 
 var (
-	configFile = flag.String("config", "/etc/aerospike-prometheus-exporter/ape.toml", "Config File")
-	showUsage  = flag.Bool("u", false, "Show usage information")
+	configFile  = flag.String("config", "/etc/aerospike-prometheus-exporter/ape.toml", "Config File")
+	showUsage   = flag.Bool("u", false, "Show usage information")
+	showVersion = flag.Bool("version", false, "Print version")
 
 	fullHost string
 	config   *Config
+
+	version = "v1.1.4"
 )
 
 func main() {
@@ -31,7 +35,12 @@ func main() {
 		os.Exit(0)
 	}
 
-	log.Infoln("Welcome to Aerospike Prometheus Exporter!")
+	if *showVersion {
+		fmt.Println(version)
+		os.Exit(0)
+	}
+
+	log.Infof("Welcome to Aerospike Prometheus Exporter %s", version)
 
 	config = new(Config)
 	initConfig(*configFile, config)
