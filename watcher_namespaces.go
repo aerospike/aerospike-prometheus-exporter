@@ -378,11 +378,11 @@ func (nw *NamespaceWatcher) describe(ch chan<- *prometheus.Desc) {
 	return
 }
 
-func (nw *NamespaceWatcher) infoKeys() []string {
+func (nw *NamespaceWatcher) passOneKeys() []string {
 	return []string{"namespaces"}
 }
 
-func (nw *NamespaceWatcher) detailKeys(rawMetrics map[string]string) []string {
+func (nw *NamespaceWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	s := rawMetrics["namespaces"]
 	list := strings.Split(s, ";")
 
@@ -427,7 +427,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[defaultInfoKeys[0]], rawMetrics[defaultInfoKeys[1]], nsName)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName)
 		}
 
 		for stat, value := range stats {
@@ -453,7 +453,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[defaultInfoKeys[0]], rawMetrics[defaultInfoKeys[1]], nsName, metricIndex, deviceOrFileName)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, metricIndex, deviceOrFileName)
 		}
 	}
 

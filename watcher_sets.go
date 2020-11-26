@@ -25,11 +25,11 @@ func (sw *SetWatcher) describe(ch chan<- *prometheus.Desc) {
 	return
 }
 
-func (sw *SetWatcher) infoKeys() []string {
+func (sw *SetWatcher) passOneKeys() []string {
 	return nil
 }
 
-func (sw *SetWatcher) detailKeys(rawMetrics map[string]string) []string {
+func (sw *SetWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	return []string{"sets"}
 }
 
@@ -63,7 +63,7 @@ func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, c
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[defaultInfoKeys[0]], rawMetrics[defaultInfoKeys[1]], stats["ns"], stats["set"])
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], stats["ns"], stats["set"])
 		}
 	}
 

@@ -34,8 +34,10 @@ var (
 	// Number of retries on info request
 	retryCount = 3
 
-	// Default info commands (order is important here)
-	defaultInfoKeys = []string{"cluster-name", "service-clear-std", "build"}
+	// Default info commands
+	ikClusterName = "cluster-name"
+	ikService     = "service-clear-std"
+	ikBuild       = "build"
 )
 
 func initTLS() *tls.Config {
@@ -147,7 +149,7 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 	clientPolicy.TlsConfig = initTLS()
 
 	if clientPolicy.TlsConfig != nil {
-		defaultInfoKeys[1] = "service-tls-std"
+		ikService = "service-tls-std"
 	}
 
 	createNewConnection := func() (*aero.Connection, error) {
@@ -210,7 +212,7 @@ func (o *Observer) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	gClusterName, gService, gBuild = stats[defaultInfoKeys[0]], stats[defaultInfoKeys[1]], stats[defaultInfoKeys[2]]
+	gClusterName, gService, gBuild = stats[ikClusterName], stats[ikService], stats[ikBuild]
 	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, gClusterName, gService, gBuild)
 }
 
@@ -258,7 +260,7 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	// fetch first set of info keys
 	var infoKeys []string
 	for _, c := range o.watchers {
-		if keys := c.infoKeys(); len(keys) > 0 {
+		if keys := c.passOneKeys(); len(keys) > 0 {
 			infoKeys = append(infoKeys, keys...)
 		}
 	}
@@ -270,10 +272,10 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	}
 
 	// fetch second second set of info keys
-	infoKeys = defaultInfoKeys
+	infoKeys = []string{ikClusterName, ikService, ikBuild}
 	watcherInfoKeys := make([][]string, len(o.watchers))
 	for i, c := range o.watchers {
-		if keys := c.detailKeys(rawMetrics); len(keys) > 0 {
+		if keys := c.passTwoKeys(rawMetrics); len(keys) > 0 {
 			infoKeys = append(infoKeys, keys...)
 			watcherInfoKeys[i] = keys
 		}
