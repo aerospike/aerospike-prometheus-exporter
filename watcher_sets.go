@@ -63,7 +63,7 @@ func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, c
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], stats["ns"], stats["set"])
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[defaultInfoKeys[0]], rawMetrics[defaultInfoKeys[1]], stats["ns"], stats["set"])
 		}
 	}
 

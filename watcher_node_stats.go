@@ -168,7 +168,7 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 			continue
 		}
 
-		ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"])
+		ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[defaultInfoKeys[0]], rawMetrics[defaultInfoKeys[1]])
 	}
 
 	return nil

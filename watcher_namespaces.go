@@ -427,7 +427,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[defaultInfoKeys[0]], rawMetrics[defaultInfoKeys[1]], nsName)
 		}
 
 		for stat, value := range stats {
@@ -453,7 +453,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName, metricIndex, deviceOrFileName)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[defaultInfoKeys[0]], rawMetrics[defaultInfoKeys[1]], nsName, metricIndex, deviceOrFileName)
 		}
 	}
 
