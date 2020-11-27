@@ -3,6 +3,17 @@
 This file documents all notable changes to Aerospike Prometheus Exporter
 
 
+## [v1.1.5](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.1.5)
+
+### Improvements
+- [TOOLS-1603] - Use latency info commands based on Aerospike build version.
+- [TOOLS-1602] - Add device or file name as a label in `storage-engine` statistics.
+
+### Fixes
+- [TOOLS-1595] - Fix info commands to get address and port for TLS and non-TLS service
+- [TOOLS-1601] - Add constant labels to `aerospike_node_up` metric
+
+
 ## [v1.1.4](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.1.4)
 
 ### Improvements
