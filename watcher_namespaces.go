@@ -378,11 +378,11 @@ func (nw *NamespaceWatcher) describe(ch chan<- *prometheus.Desc) {
 	return
 }
 
-func (nw *NamespaceWatcher) infoKeys() []string {
+func (nw *NamespaceWatcher) passOneKeys() []string {
 	return []string{"namespaces"}
 }
 
-func (nw *NamespaceWatcher) detailKeys(rawMetrics map[string]string) []string {
+func (nw *NamespaceWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	s := rawMetrics["namespaces"]
 	list := strings.Split(s, ";")
 
@@ -427,7 +427,7 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName)
 		}
 
 		for stat, value := range stats {
@@ -445,13 +445,15 @@ func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]str
 				continue
 			}
 
-			pm := makeMetric("aerospike_namespace", "storage-engine_"+metricType+"_"+metricName, mtGauge, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", metricType+"_index")
+			deviceOrFileName := stats["storage-engine."+metricType+"["+metricIndex+"]"]
+			pm := makeMetric("aerospike_namespace", "storage-engine_"+metricType+"_"+metricName, mtGauge, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", metricType+"_index", metricType)
+
 			pv, err := tryConvert(value)
 			if err != nil {
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], nsName, metricIndex)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, metricIndex, deviceOrFileName)
 		}
 	}
 

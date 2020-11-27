@@ -36,11 +36,11 @@ func (xw *XdrWatcher) describe(ch chan<- *prometheus.Desc) {
 	return
 }
 
-func (xw *XdrWatcher) infoKeys() []string {
+func (xw *XdrWatcher) passOneKeys() []string {
 	return []string{"get-config:context=xdr"}
 }
 
-func (xw *XdrWatcher) detailKeys(rawMetrics map[string]string) []string {
+func (xw *XdrWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	res := rawMetrics["get-config:context=xdr"]
 	list := parseStats(res, ";")
 	dcsList := strings.Split(list["dcs"], ",")
@@ -86,7 +86,7 @@ func (xw *XdrWatcher) refresh(infoKeys []string, rawMetrics map[string]string, c
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"], dcName)
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], dcName)
 		}
 	}
 

@@ -131,11 +131,11 @@ func (sw *StatsWatcher) describe(ch chan<- *prometheus.Desc) {
 	return
 }
 
-func (sw *StatsWatcher) infoKeys() []string {
+func (sw *StatsWatcher) passOneKeys() []string {
 	return nil
 }
 
-func (sw *StatsWatcher) detailKeys(rawMetrics map[string]string) []string {
+func (sw *StatsWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	return []string{"statistics"}
 }
 
@@ -168,7 +168,7 @@ func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string,
 			continue
 		}
 
-		ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics["cluster-name"], rawMetrics["service"])
+		ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService])
 	}
 
 	return nil

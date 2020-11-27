@@ -25,19 +25,19 @@ type Observer struct {
 }
 
 var (
-	// Metric for node active status
-	nodeActiveDesc = prometheus.NewDesc(
-		"aerospike_node_up",
-		"Aerospike node active status",
-		[]string{"cluster_name", "service", "build"},
-		nil,
-	)
+	// aerospike_node_up metric descriptor
+	nodeActiveDesc *prometheus.Desc
 
 	// Node service endpoint, cluster name and build version
 	gService, gClusterName, gBuild string
 
 	// Number of retries on info request
 	retryCount = 3
+
+	// Default info commands
+	ikClusterName = "cluster-name"
+	ikService     = "service-clear-std"
+	ikBuild       = "build"
 )
 
 func initTLS() *tls.Config {
@@ -121,6 +121,14 @@ func initTLS() *tls.Config {
 }
 
 func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) {
+	// initialize aerospike_node_up metric descriptor
+	nodeActiveDesc = prometheus.NewDesc(
+		"aerospike_node_up",
+		"Aerospike node active status",
+		[]string{"cluster_name", "service", "build"},
+		config.AeroProm.MetricLabels,
+	)
+
 	// use all cpus in the system for concurrency
 	authMode := strings.ToLower(strings.TrimSpace(config.Aerospike.AuthMode))
 	if authMode != "internal" && authMode != "external" {
@@ -139,6 +147,10 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 	clientPolicy.Timeout = time.Duration(config.Aerospike.Timeout) * time.Second
 
 	clientPolicy.TlsConfig = initTLS()
+
+	if clientPolicy.TlsConfig != nil {
+		ikService = "service-tls-std"
+	}
 
 	createNewConnection := func() (*aero.Connection, error) {
 		conn, err := aero.NewConnection(clientPolicy, server)
@@ -200,7 +212,7 @@ func (o *Observer) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	gClusterName, gService, gBuild = stats["cluster-name"], stats["service"], stats["build"]
+	gClusterName, gService, gBuild = stats[ikClusterName], stats[ikService], stats[ikBuild]
 	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, gClusterName, gService, gBuild)
 }
 
@@ -245,31 +257,31 @@ func (o *Observer) requestInfo(retryCount int, infoKeys []string) (map[string]st
 func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, error) {
 	log.Debugf("Refreshing node %s", fullHost)
 
-	// get first keys
+	// fetch first set of info keys
 	var infoKeys []string
 	for _, c := range o.watchers {
-		if keys := c.infoKeys(); len(keys) > 0 {
+		if keys := c.passOneKeys(); len(keys) > 0 {
 			infoKeys = append(infoKeys, keys...)
 		}
 	}
 
-	// request first round of keys
+	// info request for first set of info keys
 	rawMetrics, err := o.requestInfo(retryCount, infoKeys)
 	if err != nil {
 		return nil, err
 	}
 
-	// get first keys
-	infoKeys = []string{"cluster-name", "service", "build"}
+	// fetch second second set of info keys
+	infoKeys = []string{ikClusterName, ikService, ikBuild}
 	watcherInfoKeys := make([][]string, len(o.watchers))
 	for i, c := range o.watchers {
-		if keys := c.detailKeys(rawMetrics); len(keys) > 0 {
+		if keys := c.passTwoKeys(rawMetrics); len(keys) > 0 {
 			infoKeys = append(infoKeys, keys...)
 			watcherInfoKeys[i] = keys
 		}
 	}
 
-	// request second round of keys
+	// info request for second set of info keys
 	nRawMetrics, err := o.requestInfo(retryCount, infoKeys)
 	if err != nil {
 		return rawMetrics, err
