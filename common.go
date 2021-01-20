@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/subtle"
-	"errors"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -16,8 +16,6 @@ import (
 	"github.com/gobwas/glob"
 	"github.com/jameskeane/bcrypt"
 	"github.com/prometheus/client_golang/prometheus"
-
-	log "github.com/sirupsen/logrus"
 )
 
 func makeMetric(namespace, name string, t metricType, constLabels map[string]string, labels ...string) promMetric {
@@ -175,48 +173,102 @@ func filterBlockedMetrics(filteredMetrics map[string]metricType, blocklist []str
 	}
 }
 
-// Get key file passphrase from environment variable or from a file or directly from the config variable
-// keyFilePassphraseConfig can be one of the following,
-// 1. "<passphrase>"
-// 2. "file:<file-that-contains-passphrase>"
-// 3. "env:<environment-variable-that-contains-passphrase>"
-func getKeyFilePassphrase(keyFilePassphraseConfig string) ([]byte, error) {
-	keyFilePassphraseSource := strings.SplitN(keyFilePassphraseConfig, ":", 2)
+// Get secret
+// secretConfig can be one of the following,
+// 1. "<secret>" (secret directly)
+// 2. "file:<file-that-contains-secret>" (file containing secret)
+// 3. "env:<environment-variable-that-contains-secret>" (environment variable containing secret)
+// 4. "env-b64:<environment-variable-that-contains-base64-encoded-secret>" (environment variable containing base64 encoded secret)
+// 5. "b64:<base64-encoded-secret>" (base64 encoded secret)
+func getSecret(secretConfig string) ([]byte, error) {
+	secretSource := strings.SplitN(secretConfig, ":", 2)
 
-	if len(keyFilePassphraseSource) == 2 {
-		if keyFilePassphraseSource[0] == "file" {
-			dataBytes, err := ioutil.ReadFile(keyFilePassphraseSource[1])
-			if err != nil {
-				return nil, err
-			}
+	if len(secretSource) == 2 {
+		switch secretSource[0] {
+		case "file":
+			return readFromFile(secretSource[1])
 
-			keyPassphrase := bytes.TrimSuffix(dataBytes, []byte("\n"))
-
-			return keyPassphrase, nil
-		}
-
-		if keyFilePassphraseSource[0] == "env" {
-			keyPassphrase, ok := os.LookupEnv(keyFilePassphraseSource[1])
+		case "env":
+			secret, ok := os.LookupEnv(secretSource[1])
 			if !ok {
-				return nil, errors.New("Environment variable " + keyFilePassphraseSource[1] + " not set")
+				return nil, fmt.Errorf("Environment variable %s not set", secretSource[1])
 			}
 
-			return []byte(keyPassphrase), nil
+			return []byte(secret), nil
+
+		case "env-b64":
+			return getValueFromBase64EnvVar(secretSource[1])
+
+		case "b64":
+			return getValueFromBase64(secretSource[1])
+
+		default:
+			return nil, fmt.Errorf("Invalid source: %s", secretSource[0])
 		}
 	}
 
-	return []byte(keyFilePassphraseConfig), nil
+	return []byte(secretConfig), nil
 }
 
-// Read certificate file and abort if any errors
-// Returns file content as byte array
-func readCertFile(filename string) []byte {
-	dataBytes, err := ioutil.ReadFile(filename)
-	if err != nil {
-		log.Fatalf("Failed to read certificate or key file `%s` : `%s`", filename, err)
+// Get certificate
+// certConfig can be one of the following,
+// 1. "<file-path>" (certificate file path directly)
+// 2. "file:<file-path>" (certificate file path)
+// 3. "env-b64:<environment-variable-that-contains-base64-encoded-certificate>" (environment variable containing base64 encoded certificate)
+// 4. "b64:<base64-encoded-certificate>" (base64 encoded certificate)
+func getCertificate(certConfig string) ([]byte, error) {
+	certificateSource := strings.SplitN(certConfig, ":", 2)
+
+	if len(certificateSource) == 2 {
+		switch certificateSource[0] {
+		case "file":
+			return readFromFile(certificateSource[1])
+
+		case "env-b64":
+			return getValueFromBase64EnvVar(certificateSource[1])
+
+		case "b64":
+			return getValueFromBase64(certificateSource[1])
+
+		default:
+			return nil, fmt.Errorf("Invalid source %s", certificateSource[0])
+		}
 	}
 
-	return dataBytes
+	// Assume certConfig is a file path (backward compatible)
+	return readFromFile(certConfig)
+}
+
+// Read content from file
+func readFromFile(filePath string) ([]byte, error) {
+	dataBytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read from file `%s`: `%v`", filePath, err)
+	}
+
+	data := bytes.TrimSuffix(dataBytes, []byte("\n"))
+
+	return data, nil
+}
+
+// Get decoded base64 value from environment variable
+func getValueFromBase64EnvVar(envVar string) ([]byte, error) {
+	b64Value, ok := os.LookupEnv(envVar)
+	if !ok {
+		return nil, fmt.Errorf("Environment variable %s not set", envVar)
+	}
+
+	return getValueFromBase64(b64Value)
+}
+
+// Get decoded base64 value
+func getValueFromBase64(b64Value string) ([]byte, error) {
+	value, err := base64.StdEncoding.DecodeString(b64Value)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to decode base64 value: %v", err)
+	}
+
+	return value, nil
 }
 
 func sanitizeUTF8(lv string) string {

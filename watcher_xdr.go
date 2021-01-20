@@ -19,6 +19,7 @@ var xdrRawMetrics = map[string]metricType{
 	"throughput":         mtGauge,
 	"latency_ms":         mtGauge,
 	"lap_us":             mtGauge,
+	"nodes":              mtGauge,
 	"success":            mtCounter,
 	"abandoned":          mtCounter,
 	"not_found":          mtCounter,
