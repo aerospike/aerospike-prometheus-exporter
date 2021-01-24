@@ -68,8 +68,8 @@ func initTLS() *tls.Config {
 		keyFileBytes := readCertFile(config.Aerospike.KeyFile)
 
 		// Decode PEM data
-		keyBlock, _ := pem.Decode([]byte(keyFileBytes))
-		certBlock, _ := pem.Decode([]byte(certFileBytes))
+		keyBlock, _ := pem.Decode(keyFileBytes)
+		certBlock, _ := pem.Decode(certFileBytes)
 
 		if keyBlock == nil || certBlock == nil {
 			log.Fatalf("Unable to decode PEM data for `%s` or `%s`", config.Aerospike.KeyFile, config.Aerospike.CertFile)
@@ -166,7 +166,10 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 
 		// Set no connection deadline to re-use connection, but socketTimeout will be in effect
 		var deadline time.Time
-		conn.SetTimeout(deadline, clientPolicy.Timeout)
+		err = conn.SetTimeout(deadline, clientPolicy.Timeout)
+		if err != nil {
+			return nil, err
+		}
 
 		return conn, nil
 	}
