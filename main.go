@@ -121,7 +121,7 @@ func main() {
 		Addr:         config.AeroProm.Bind,
 		Handler:      mux,
 		TLSConfig:    cfg,
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
 	log.Infof("Listening for Prometheus on: %s", config.AeroProm.Bind)

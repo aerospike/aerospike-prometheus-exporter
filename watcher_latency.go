@@ -48,7 +48,7 @@ func (lw *LatencyWatcher) passTwoKeys(rawMetrics map[string]string) (latencyComm
 }
 
 func (lw *LatencyWatcher) refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
-	latencyStats := make(map[string]StatsMap)
+	var latencyStats map[string]StatsMap
 
 	if rawMetrics["latencies:"] != "" {
 		latencyStats = parseLatencyInfo(rawMetrics["latencies:"])
