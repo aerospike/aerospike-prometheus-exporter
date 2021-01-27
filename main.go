@@ -78,7 +78,7 @@ func main() {
 	// Handle "/metrics" url
 	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
 		if httpBasicAuthUsername != "" {
-			if validateBasicAuth(w, r, httpBasicAuthUsername, httpBasicAuthPassword) {
+			if validateBasicAuth(r, httpBasicAuthUsername, httpBasicAuthPassword) {
 				promhttp.HandlerFor(promReg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 				return
 			}
