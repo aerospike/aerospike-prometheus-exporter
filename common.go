@@ -103,7 +103,7 @@ func hashPassword(password string) ([]byte, error) {
 
 // Check HTTP Basic Authentication.
 // Validate username, password from the http request against the configured values.
-func validateBasicAuth(w http.ResponseWriter, r *http.Request, username string, password string) bool {
+func validateBasicAuth(_ http.ResponseWriter, r *http.Request, username string, password string) bool {
 	user, pass, ok := r.BasicAuth()
 
 	if !ok || subtle.ConstantTimeCompare([]byte(user), []byte(username)) != 1 || subtle.ConstantTimeCompare([]byte(pass), []byte(password)) != 1 {
@@ -168,9 +168,7 @@ func filterBlockedMetrics(filteredMetrics map[string]metricType, blocklist []str
 				}
 			}
 		} else {
-			if _, ok := filteredMetrics[stat]; ok {
-				delete(filteredMetrics, stat)
-			}
+			delete(filteredMetrics, stat)
 		}
 	}
 }
