@@ -54,32 +54,43 @@ func initTLS() *tls.Config {
 
 	if len(config.Aerospike.RootCA) > 0 {
 		// Try to load system CA certs and add them to the system cert pool
-		caCert := readCertFile(config.Aerospike.RootCA)
+		caCert, err := getCertificate(config.Aerospike.RootCA)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-		log.Debugf("Adding server certificate `%s` to the pool...", config.Aerospike.RootCA)
+		log.Debugf("Adding CA certificate to the pool...")
 		serverPool.AppendCertsFromPEM(caCert)
 	}
 
 	var clientPool []tls.Certificate
 	if len(config.Aerospike.CertFile) > 0 || len(config.Aerospike.KeyFile) > 0 {
 
-		// Read Cert and Key files
-		certFileBytes := readCertFile(config.Aerospike.CertFile)
-		keyFileBytes := readCertFile(config.Aerospike.KeyFile)
+		// Read cert file
+		certFileBytes, err := getCertificate(config.Aerospike.CertFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Read key file
+		keyFileBytes, err := getCertificate(config.Aerospike.KeyFile)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		// Decode PEM data
 		keyBlock, _ := pem.Decode(keyFileBytes)
 		certBlock, _ := pem.Decode(certFileBytes)
 
 		if keyBlock == nil || certBlock == nil {
-			log.Fatalf("Unable to decode PEM data for `%s` or `%s`", config.Aerospike.KeyFile, config.Aerospike.CertFile)
+			log.Fatalf("Failed to decode PEM data for key or certificate")
 		}
 
 		// Check and Decrypt the the Key Block using passphrase
 		if x509.IsEncryptedPEMBlock(keyBlock) {
-			keyFilePassphraseBytes, err := getKeyFilePassphrase(config.Aerospike.KeyFilePassphrase)
+			keyFilePassphraseBytes, err := getSecret(config.Aerospike.KeyFilePassphrase)
 			if err != nil {
-				log.Fatalf("Failed to get Key file passphrase for `%s` : `%s`", config.Aerospike.KeyFile, err)
+				log.Fatalf("Failed to get key passphrase: `%s`", err)
 			}
 
 			decryptedDERBytes, err := x509.DecryptPEMBlock(keyBlock, keyFilePassphraseBytes)
@@ -96,16 +107,16 @@ func initTLS() *tls.Config {
 		certPEM := pem.EncodeToMemory(certBlock)
 
 		if keyPEM == nil || certPEM == nil {
-			log.Fatalf("Unable to encode PEM data for `%s` or `%s`", config.Aerospike.KeyFile, config.Aerospike.CertFile)
+			log.Fatalf("Failed to encode PEM data for key or certificate")
 		}
 
 		cert, err := tls.X509KeyPair(certPEM, keyPEM)
 
 		if err != nil {
-			log.Fatalf("FAILED: Adding client certificate `%s` and key file `%s` to the pool failed: `%s`", config.Aerospike.CertFile, config.Aerospike.KeyFile, err)
+			log.Fatalf("Failed to add client certificate and key to the pool: `%s`", err)
 		}
 
-		log.Debugf("Adding client certificate `%s` to the pool...\n", config.Aerospike.CertFile)
+		log.Debugf("Adding client certificate and key to the pool...")
 		clientPool = append(clientPool, cert)
 	}
 
@@ -135,9 +146,21 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 		log.Fatalln("Invalid auth mode: only `internal` and `external` values are accepted.")
 	}
 
+	// Get aerospike auth username
+	username, err := getSecret(user)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Get aerospike auth password
+	password, err := getSecret(pass)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	clientPolicy := aero.NewClientPolicy()
-	clientPolicy.User = user
-	clientPolicy.Password = pass
+	clientPolicy.User = string(username)
+	clientPolicy.Password = string(password)
 	if authMode == "external" {
 		clientPolicy.AuthMode = aero.AuthModeExternal
 	}

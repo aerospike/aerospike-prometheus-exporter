@@ -61,10 +61,24 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	// Get http basic auth username
+	httpBasicAuthUsernameBytes, err := getSecret(config.AeroProm.BasicAuthUsername)
+	if err != nil {
+		log.Fatal(err)
+	}
+	httpBasicAuthUsername := string(httpBasicAuthUsernameBytes)
+
+	// Get http basic auth password
+	httpBasicAuthPasswordBytes, err := getSecret(config.AeroProm.BasicAuthPassword)
+	if err != nil {
+		log.Fatal(err)
+	}
+	httpBasicAuthPassword := string(httpBasicAuthPasswordBytes)
+
 	// Handle "/metrics" url
 	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		if config.AeroProm.BasicAuthUsername != "" {
-			if validateBasicAuth(w, r, config.AeroProm.BasicAuthUsername, config.AeroProm.BasicAuthPassword) {
+		if httpBasicAuthUsername != "" {
+			if validateBasicAuth(r, httpBasicAuthUsername, httpBasicAuthPassword) {
 				promhttp.HandlerFor(promReg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 				return
 			}

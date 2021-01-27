@@ -21,12 +21,28 @@ log_file = "${AGENT_LOG_FILE}"
 log_level = "${AGENT_LOG_LEVEL}"
 
 # Basic HTTP authentication for '/metrics'.
+# Supports below formats,
+# 1. Credential directly                                                      - "<credential>"
+# 2. Credential via file                                                      - "file:<file-that-contains-credential>"
+# 3. Credential via environment variable                                      - "env:<environment-variable-that-contains-credential>"
+# 4. Credential via environment variable containing base64 encoded credential - "env-b64:<environment-variable-that-contains-base64-encoded-credential>"
+# 5. Credential in base64 encoded form                                        - "b64:<base64-encoded-credential>"
 basic_auth_username="${BASIC_AUTH_USERNAME}"
 basic_auth_password="${BASIC_AUTH_PASSWORD}"
 
 [Aerospike]
 db_host="${AS_HOST}"
 db_port=${AS_PORT}
+
+# TLS certificates.
+# Supports below formats,
+# 2. Certificate file path                                      - "file:<file-path>"
+# 3. Environment variable containing base64 encoded certificate - "env-b64:<environment-variable-that-contains-base64-encoded-certificate>"
+# 4. Base64 encoded certificate                                 - "b64:<base64-encoded-certificate>"
+# Applicable to 'root_ca', 'cert_file' and 'key_file' configurations.
+
+# root certificate file
+root_ca="${AS_ROOT_CA}"
 
 # certificate file
 cert_file="${AS_CERT_FILE}"
@@ -35,25 +51,33 @@ cert_file="${AS_CERT_FILE}"
 key_file="${AS_KEY_FILE}"
 
 # Passphrase for encrypted key_file. Supports below formats,
-# 1. Passphrase directly                 - "<passphrase>"
-# 2. Passphrase via file                 - "file:<file-that-contains-passphrase>"
-# 3. Passphrase via environment variable - "env:<environment-variable-that-holds-passphrase>"
+# 1. Passphrase directly                                                      - "<passphrase>"
+# 2. Passphrase via file                                                      - "file:<file-that-contains-passphrase>"
+# 3. Passphrase via environment variable                                      - "env:<environment-variable-that-holds-passphrase>"
+# 4. Passphrase via environment variable containing base64 encoded passphrase - "env-b64:<environment-variable-that-contains-base64-encoded-passphrase>"
+# 5. Passphrase in base64 encoded form                                        - "b64:<base64-encoded-passphrase>"
 key_file_passphrase="${AS_KEY_FILE_PASSPHRASE}"
 
 # node TLS name for authentication
 node_tls_name="${AS_NODE_TLS_NAME}"
 
-# root certificate file
-root_ca="${AS_ROOT_CA}"
-
-# authentication mode: internal (for server), external (LDAP, etc.)
-auth_mode="${AS_AUTH_MODE}"
+# Aerospike cluster security credentials.
+# Supports below formats,
+# 1. Credential directly                                                      - "<credential>"
+# 2. Credential via file                                                      - "file:<file-that-contains-credential>"
+# 3. Credential via environment variable                                      - "env:<environment-variable-that-contains-credential>"
+# 4. Credential via environment variable containing base64 encoded credential - "env-b64:<environment-variable-that-contains-base64-encoded-credential>"
+# 5. Credential in base64 encoded form                                        - "b64:<base64-encoded-credential>"
+# Applicable to 'user' and 'password' configurations.
 
 # database user
 user="${AS_AUTH_USER}"
 
 # database password
 password="${AS_AUTH_PASSWORD}"
+
+# authentication mode: internal (for server), external (LDAP, etc.)
+auth_mode="${AS_AUTH_MODE}"
 
 # timeout for sending commands to the server node in seconds
 timeout=${TICKER_TIMEOUT}
