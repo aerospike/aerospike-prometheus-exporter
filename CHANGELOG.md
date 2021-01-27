@@ -3,6 +3,13 @@
 This file documents all notable changes to Aerospike Prometheus Exporter
 
 
+## [v1.1.6](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.1.6)
+
+### Improvements
+- [TOOLS-1614] - Fetch credentials and certificates via file, environment variables and in base64 encoded form.
+- Added new XDR (per DC) metric - `nodes`.
+
+
 ## [v1.1.5](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.1.5)
 
 ### Improvements
