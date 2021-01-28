@@ -128,6 +128,16 @@ Packages will be generated under `./pkg/target/` directory.
     ```toml
     [Aerospike]
 
+    # TLS certificates.
+    # Supports below formats,
+    # 2. Certificate file path                                      - "file:<file-path>"
+    # 3. Environment variable containing base64 encoded certificate - "env-b64:<environment-variable-that-contains-base64-encoded-certificate>"
+    # 4. Base64 encoded certificate                                 - "b64:<base64-encoded-certificate>"
+    # Applicable to 'root_ca', 'cert_file' and 'key_file' configurations.
+
+    # root certificate file
+    root_ca=""
+
     # certificate file
     cert_file=""
 
@@ -135,25 +145,33 @@ Packages will be generated under `./pkg/target/` directory.
     key_file=""
 
     # Passphrase for encrypted key_file. Supports below formats,
-    # 1. Passphrase directly                 - "<passphrase>"
-    # 2. Passphrase via file                 - "file:<file-that-contains-passphrase>"
-    # 3. Passphrase via environment variable - "env:<environment-variable-that-holds-passphrase>"
+    # 1. Passphrase directly                                                      - "<passphrase>"
+    # 2. Passphrase via file                                                      - "file:<file-that-contains-passphrase>"
+    # 3. Passphrase via environment variable                                      - "env:<environment-variable-that-holds-passphrase>"
+    # 4. Passphrase via environment variable containing base64 encoded passphrase - "env-b64:<environment-variable-that-contains-base64-encoded-passphrase>"
+    # 5. Passphrase in base64 encoded form                                        - "b64:<base64-encoded-passphrase>"
     key_file_passphrase=""
 
     # node TLS name for authentication
     node_tls_name=""
 
-    # root certificate file
-    root_ca=""
-
-    # authentication mode: internal (for server), external (LDAP, etc.)
-    auth_mode=""
+    # Aerospike cluster security credentials.
+    # Supports below formats,
+    # 1. Credential directly                                                      - "<credential>"
+    # 2. Credential via file                                                      - "file:<file-that-contains-credential>"
+    # 3. Credential via environment variable                                      - "env:<environment-variable-that-contains-credential>"
+    # 4. Credential via environment variable containing base64 encoded credential - "env-b64:<environment-variable-that-contains-base64-encoded-credential>"
+    # 5. Credential in base64 encoded form                                        - "b64:<base64-encoded-credential>"
+    # Applicable to 'user' and 'password' configurations.
 
     # database user
     user=""
 
     # database password
     password=""
+
+    # authentication mode: internal (for server), external (LDAP, etc.)
+    auth_mode=""
     ```
 
 - Update exporter's bind address and port (default: `0.0.0.0:9145`), and add labels.
@@ -225,19 +243,22 @@ Packages will be generated under `./pkg/target/` directory.
     ```
 
 - To enable basic HTTP authentication and/or enable HTTPS between the Prometheus server and the exporter, use the below configurations keys,
+    ```toml
+    [Agent]
 
-  ```toml
-  [Agent]
+    # File paths should be double quoted.
+    # Certificate file for the metric servers for prometheus
+    cert_file = ""
+    # Key file for the metric servers for prometheus
+    key_file = ""
 
-  # File paths should be double quoted.
-
-  # Certificate file for the metric servers for prometheus
-  cert_file = ""
-
-  # Key file for the metric servers for prometheus
-  key_file = ""
-
-  # Basic HTTP authentication for '/metrics'.
-  basic_auth_username=""
-  basic_auth_password=""
-  ```
+    # Basic HTTP authentication for '/metrics'.
+    # Supports below formats,
+    # 1. Credential directly                                                      - "<credential>"
+    # 2. Credential via file                                                      - "file:<file-that-contains-credential>"
+    # 3. Credential via environment variable                                      - "env:<environment-variable-that-contains-credential>"
+    # 4. Credential via environment variable containing base64 encoded credential - "env-b64:<environment-variable-that-contains-base64-encoded-credential>"
+    # 5. Credential in base64 encoded form                                        - "b64:<base64-encoded-credential>"
+    basic_auth_username=""
+    basic_auth_password=""
+    ```
