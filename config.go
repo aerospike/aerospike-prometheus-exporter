@@ -14,8 +14,10 @@ import (
 // Config represents the aerospike-prometheus-exporter configuration
 type Config struct {
 	AeroProm struct {
-		CertFile string `toml:"cert_file"`
-		KeyFile  string `toml:"key_file"`
+		CertFile          string `toml:"cert_file"`
+		KeyFile           string `toml:"key_file"`
+		RootCA            string `toml:"root_ca"`
+		KeyFilePassphrase string `toml:"key_file_passphrase"`
 
 		MetricLabels map[string]string `toml:"labels"`
 
