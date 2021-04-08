@@ -245,12 +245,20 @@ Packages will be generated under `./pkg/target/` directory.
 - To enable basic HTTP authentication and/or enable HTTPS between the Prometheus server and the exporter, use the below configurations keys,
     ```toml
     [Agent]
+    # Exporter HTTPS (TLS) configuration
+    # HTTPS between Prometheus and Exporter
 
-    # File paths should be double quoted.
-    # Certificate file for the metric servers for prometheus
+    # Server certificate
     cert_file = ""
-    # Key file for the metric servers for prometheus
+
+    # Private key associated with server certificate
     key_file = ""
+
+    # Root CA to validate client certificates (for mutual TLS)
+    root_ca = ""
+
+    # Passphrase for encrypted key file
+    key_file_passphrase = ""
 
     # Basic HTTP authentication for '/metrics'.
     # Supports below formats,
