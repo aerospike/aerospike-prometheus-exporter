@@ -245,12 +245,32 @@ Packages will be generated under `./pkg/target/` directory.
 - To enable basic HTTP authentication and/or enable HTTPS between the Prometheus server and the exporter, use the below configurations keys,
     ```toml
     [Agent]
+    # Exporter HTTPS (TLS) configuration
+    # HTTPS between Prometheus and Exporter
 
-    # File paths should be double quoted.
-    # Certificate file for the metric servers for prometheus
+    # TLS certificates.
+    # Supports below formats,
+    # 1. Certificate file path                                      - "file:<file-path>"
+    # 2. Environment variable containing base64 encoded certificate - "env-b64:<environment-variable-that-contains-base64-encoded-certificate>"
+    # 3. Base64 encoded certificate                                 - "b64:<base64-encoded-certificate>"
+    # Applicable to 'root_ca', 'cert_file' and 'key_file' configurations.
+
+    # Server certificate
     cert_file = ""
-    # Key file for the metric servers for prometheus
+
+    # Private key associated with server certificate
     key_file = ""
+
+    # Root CA to validate client certificates (for mutual TLS)
+    root_ca = ""
+
+    # Passphrase for encrypted key_file. Supports below formats,
+    # 1. Passphrase directly                                                      - "<passphrase>"
+    # 2. Passphrase via file                                                      - "file:<file-that-contains-passphrase>"
+    # 3. Passphrase via environment variable                                      - "env:<environment-variable-that-holds-passphrase>"
+    # 4. Passphrase via environment variable containing base64 encoded passphrase - "env-b64:<environment-variable-that-contains-base64-encoded-passphrase>"
+    # 5. Passphrase in base64 encoded form                                        - "b64:<base64-encoded-passphrase>"
+    key_file_passphrase = ""
 
     # Basic HTTP authentication for '/metrics'.
     # Supports below formats,

@@ -3,7 +3,10 @@ package main
 import (
 	"bytes"
 	"crypto/subtle"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -267,6 +270,86 @@ func getValueFromBase64(b64Value string) ([]byte, error) {
 	}
 
 	return value, nil
+}
+
+// loadCACert returns CA set of certificates (cert pool)
+// reads CA certificate based on the certConfig and adds it to the pool
+func loadCACert(certConfig string) (*x509.CertPool, error) {
+	certificates, err := x509.SystemCertPool()
+	if certificates == nil || err != nil {
+		certificates = x509.NewCertPool()
+	}
+
+	if len(certConfig) > 0 {
+		caCert, err := getCertificate(certConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		certificates.AppendCertsFromPEM(caCert)
+	}
+
+	return certificates, nil
+}
+
+// loadServerCertAndKey reads server certificate and associated key file based on certConfig and keyConfig
+// returns parsed server certificate
+// if the private key is encrypted, it will be decrypted using key file passphrase
+func loadServerCertAndKey(certConfig, keyConfig, keyPassConfig string) ([]tls.Certificate, error) {
+	var certificates []tls.Certificate
+
+	// Read cert file
+	certFileBytes, err := getCertificate(certConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read key file
+	keyFileBytes, err := getCertificate(keyConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// Decode PEM data
+	keyBlock, _ := pem.Decode(keyFileBytes)
+	certBlock, _ := pem.Decode(certFileBytes)
+
+	if keyBlock == nil || certBlock == nil {
+		return nil, fmt.Errorf("Failed to decode PEM data for key or certificate")
+	}
+
+	// Check and Decrypt the the Key Block using passphrase
+	if x509.IsEncryptedPEMBlock(keyBlock) {
+		keyFilePassphraseBytes, err := getSecret(keyPassConfig)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to get key passphrase: `%s`", err)
+		}
+
+		decryptedDERBytes, err := x509.DecryptPEMBlock(keyBlock, keyFilePassphraseBytes)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to decrypt PEM Block: `%s`", err)
+		}
+
+		keyBlock.Bytes = decryptedDERBytes
+		keyBlock.Headers = nil
+	}
+
+	// Encode PEM data
+	keyPEM := pem.EncodeToMemory(keyBlock)
+	certPEM := pem.EncodeToMemory(certBlock)
+
+	if keyPEM == nil || certPEM == nil {
+		return nil, fmt.Errorf("Failed to encode PEM data for key or certificate")
+	}
+
+	cert, err := tls.X509KeyPair(certPEM, keyPEM)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to add certificate and key to the pool: `%s`", err)
+	}
+
+	certificates = append(certificates, cert)
+
+	return certificates, nil
 }
 
 func sanitizeUTF8(lv string) string {

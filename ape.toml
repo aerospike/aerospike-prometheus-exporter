@@ -1,10 +1,30 @@
 [Agent]
-# File paths should be double quoted.
-# Certificate file for the metric servers for prometheus
-#cert_file = "cert.pem"
+# Exporter HTTPS (TLS) configuration
+# HTTPS between Prometheus and Exporter
 
-# Key file for the metric servers for prometheus
-#key_file = "key.pem"
+# TLS certificates.
+# Supports below formats,
+# 1. Certificate file path                                      - "file:<file-path>"
+# 2. Environment variable containing base64 encoded certificate - "env-b64:<environment-variable-that-contains-base64-encoded-certificate>"
+# 3. Base64 encoded certificate                                 - "b64:<base64-encoded-certificate>"
+# Applicable to 'root_ca', 'cert_file' and 'key_file' configurations.
+
+# Server certificate
+cert_file = ""
+
+# Private key associated with server certificate
+key_file = ""
+
+# Root CA to validate client certificates (for mutual TLS)
+root_ca = ""
+
+# Passphrase for encrypted key_file. Supports below formats,
+# 1. Passphrase directly                                                      - "<passphrase>"
+# 2. Passphrase via file                                                      - "file:<file-that-contains-passphrase>"
+# 3. Passphrase via environment variable                                      - "env:<environment-variable-that-holds-passphrase>"
+# 4. Passphrase via environment variable containing base64 encoded passphrase - "env-b64:<environment-variable-that-contains-base64-encoded-passphrase>"
+# 5. Passphrase in base64 encoded form                                        - "b64:<base64-encoded-passphrase>"
+key_file_passphrase = ""
 
 # labels to add to the prometheus metrics for e.g. labels={zone="asia-south1-a", platform="google compute engine"}
 labels={}
@@ -36,9 +56,9 @@ db_port=3000
 
 # TLS certificates.
 # Supports below formats,
-# 2. Certificate file path                                      - "file:<file-path>"
-# 3. Environment variable containing base64 encoded certificate - "env-b64:<environment-variable-that-contains-base64-encoded-certificate>"
-# 4. Base64 encoded certificate                                 - "b64:<base64-encoded-certificate>"
+# 1. Certificate file path                                      - "file:<file-path>"
+# 2. Environment variable containing base64 encoded certificate - "env-b64:<environment-variable-that-contains-base64-encoded-certificate>"
+# 3. Base64 encoded certificate                                 - "b64:<base64-encoded-certificate>"
 # Applicable to 'root_ca', 'cert_file' and 'key_file' configurations.
 
 # root certificate file

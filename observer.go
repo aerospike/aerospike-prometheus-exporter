@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/pem"
 	"errors"
 	"strings"
 	"sync"
@@ -40,84 +39,25 @@ var (
 	ikBuild       = "build"
 )
 
-func initTLS() *tls.Config {
+func initAerospikeTLS() *tls.Config {
 	if len(config.Aerospike.RootCA) == 0 && len(config.Aerospike.CertFile) == 0 && len(config.Aerospike.KeyFile) == 0 {
 		return nil
 	}
 
-	// Try to load system CA certs, otherwise just make an empty pool
-	serverPool, err := x509.SystemCertPool()
-	if serverPool == nil || err != nil {
-		log.Debugf("Adding system certificates to the cert pool failed: %s", err)
-		serverPool = x509.NewCertPool()
-	}
-
-	if len(config.Aerospike.RootCA) > 0 {
-		// Try to load system CA certs and add them to the system cert pool
-		caCert, err := getCertificate(config.Aerospike.RootCA)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		log.Debugf("Adding CA certificate to the pool...")
-		serverPool.AppendCertsFromPEM(caCert)
-	}
-
 	var clientPool []tls.Certificate
+	var serverPool *x509.CertPool
+	var err error
+
+	serverPool, err = loadCACert(config.Aerospike.RootCA)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	if len(config.Aerospike.CertFile) > 0 || len(config.Aerospike.KeyFile) > 0 {
-
-		// Read cert file
-		certFileBytes, err := getCertificate(config.Aerospike.CertFile)
+		clientPool, err = loadServerCertAndKey(config.Aerospike.CertFile, config.Aerospike.KeyFile, config.Aerospike.KeyFilePassphrase)
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		// Read key file
-		keyFileBytes, err := getCertificate(config.Aerospike.KeyFile)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// Decode PEM data
-		keyBlock, _ := pem.Decode(keyFileBytes)
-		certBlock, _ := pem.Decode(certFileBytes)
-
-		if keyBlock == nil || certBlock == nil {
-			log.Fatalf("Failed to decode PEM data for key or certificate")
-		}
-
-		// Check and Decrypt the the Key Block using passphrase
-		if x509.IsEncryptedPEMBlock(keyBlock) {
-			keyFilePassphraseBytes, err := getSecret(config.Aerospike.KeyFilePassphrase)
-			if err != nil {
-				log.Fatalf("Failed to get key passphrase: `%s`", err)
-			}
-
-			decryptedDERBytes, err := x509.DecryptPEMBlock(keyBlock, keyFilePassphraseBytes)
-			if err != nil {
-				log.Fatalf("Failed to decrypt PEM Block: `%s`", err)
-			}
-
-			keyBlock.Bytes = decryptedDERBytes
-			keyBlock.Headers = nil
-		}
-
-		// Encode PEM data
-		keyPEM := pem.EncodeToMemory(keyBlock)
-		certPEM := pem.EncodeToMemory(certBlock)
-
-		if keyPEM == nil || certPEM == nil {
-			log.Fatalf("Failed to encode PEM data for key or certificate")
-		}
-
-		cert, err := tls.X509KeyPair(certPEM, keyPEM)
-
-		if err != nil {
-			log.Fatalf("Failed to add client certificate and key to the pool: `%s`", err)
-		}
-
-		log.Debugf("Adding client certificate and key to the pool...")
-		clientPool = append(clientPool, cert)
 	}
 
 	tlsConfig := &tls.Config{
@@ -169,7 +109,7 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 	clientPolicy.ConnectionQueueSize = 1
 	clientPolicy.Timeout = time.Duration(config.Aerospike.Timeout) * time.Second
 
-	clientPolicy.TlsConfig = initTLS()
+	clientPolicy.TlsConfig = initAerospikeTLS()
 
 	if clientPolicy.TlsConfig != nil {
 		ikService = "service-tls-std"

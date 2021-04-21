@@ -109,28 +109,50 @@ func main() {
 		`))
 	})
 
-	cfg := &tls.Config{
-		MinVersion:               tls.VersionTLS12,
-		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
-		PreferServerCipherSuites: true,
-	}
-
 	srv := &http.Server{
 		ReadTimeout:  time.Duration(config.AeroProm.Timeout) * time.Second,
 		WriteTimeout: time.Duration(config.AeroProm.Timeout) * time.Second,
 		Addr:         config.AeroProm.Bind,
 		Handler:      mux,
-		TLSConfig:    cfg,
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
 	log.Infof("Listening for Prometheus on: %s", config.AeroProm.Bind)
 
-	if config.AeroProm.CertFile != "" && config.AeroProm.KeyFile != "" {
-		log.Infoln("Enabling HTTPS ...")
-		log.Debugf("Using cert file %s and key file %s", config.AeroProm.CertFile, config.AeroProm.KeyFile)
-		log.Fatalln(srv.ListenAndServeTLS(config.AeroProm.CertFile, config.AeroProm.KeyFile))
+	if len(config.AeroProm.CertFile) > 0 && len(config.AeroProm.KeyFile) > 0 {
+		log.Info("Enabling HTTPS ...")
+		srv.TLSConfig = initExporterTLS()
+		log.Fatalln(srv.ListenAndServeTLS("", ""))
 	}
 
 	log.Fatalln(srv.ListenAndServe())
+}
+
+// initExporterTLS initializes and returns TLS config to be used to serve metrics over HTTPS
+func initExporterTLS() *tls.Config {
+	serverPool, err := loadServerCertAndKey(config.AeroProm.CertFile, config.AeroProm.KeyFile, config.AeroProm.KeyFilePassphrase)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates:             serverPool,
+		MinVersion:               tls.VersionTLS12,
+		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+		PreferServerCipherSuites: true,
+		InsecureSkipVerify:       false,
+	}
+
+	// if root CA provided, client validation is enabled (mutual TLS)
+	if len(config.AeroProm.RootCA) > 0 {
+		caPool, err := loadCACert(config.AeroProm.RootCA)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		tlsConfig.ClientCAs = caPool
+		tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
+	}
+
+	return tlsConfig
 }
