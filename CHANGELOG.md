@@ -3,6 +3,26 @@
 This file documents all notable changes to Aerospike Prometheus Exporter
 
 
+
+## [v1.2.0](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.2.0)
+
+### Features
+- [TOOLS-1686] - Added support for mutual authentication and encrypted key file for HTTPS between Prometheus and Exporter.
+
+### Improvements
+- [PROD-1660] - When starting under systemd, wait for network to be online.
+- Add new metrics,
+  - `dup_res_ask`
+  - `dup_res_respond_read`
+  - `dup_res_respond_no_read`
+  - `xdr_bin_cemeteries`
+  - `conflict-resolve-writes`
+
+### Other Changes
+- Aerospike Prometheus Exporter is now built with Go 1.16.
+    - The deprecated, legacy behavior of treating the CommonName field on X.509 serving certificates as a host name when no Subject Alternative Names are present is now disabled by default. It can be temporarily re-enabled by adding the value `x509ignoreCN=0` to the `GODEBUG` environment variable.
+
+
 ## [v1.1.6](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.1.6)
 
 ### Improvements
