@@ -13,7 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	aero "github.com/aerospike/aerospike-client-go"
+	aero "github.com/aerospike/aerospike-client-go/v5"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,7 +25,7 @@ var (
 	fullHost string
 	config   *Config
 
-	version = "v1.1.6"
+	version = "v1.2.1"
 )
 
 func main() {
