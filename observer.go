@@ -10,7 +10,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	aero "github.com/aerospike/aerospike-client-go"
+	aero "github.com/aerospike/aerospike-client-go/v5"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -200,7 +200,7 @@ func (o *Observer) requestInfo(retryCount int, infoKeys []string) (map[string]st
 		}
 
 		// Info request
-		rawMetrics, err = aero.RequestInfo(o.conn, infoKeys...)
+		rawMetrics, err = o.conn.RequestInfo(infoKeys...)
 		if err != nil {
 			log.Debug(err)
 			continue

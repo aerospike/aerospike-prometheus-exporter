@@ -38,6 +38,12 @@ var statsRawMetrics = map[string]metricType{
 	"client_connections":                    mtGauge,
 	"heartbeat_connections":                 mtGauge,
 	"fabric_connections":                    mtGauge,
+	"client_connections_opened":             mtCounter,
+	"client_connections_closed":             mtCounter,
+	"heartbeat_connections_opened":          mtCounter,
+	"heartbeat_connections_closed":          mtCounter,
+	"fabric_connections_opened":             mtCounter,
+	"fabric_connections_closed":             mtCounter,
 	"batch_index_proto_uncompressed_pct":    mtGauge,
 	"batch_index_proto_compression_ratio":   mtGauge,
 	"heartbeat_received_self":               mtCounter,
@@ -123,6 +129,10 @@ var statsRawMetrics = map[string]metricType{
 	"xdr_timelag":                           mtGauge,
 	"xdr_throughput":                        mtGauge,
 	"xdr_global_lastshiptime":               mtGauge,
+	"threads_joinable":                      mtGauge,
+	"threads_detached":                      mtGauge,
+	"threads_pool_total":                    mtGauge,
+	"threads_pool_active":                   mtGauge,
 }
 
 type StatsWatcher struct{}
