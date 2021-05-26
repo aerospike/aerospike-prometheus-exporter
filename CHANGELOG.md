@@ -3,6 +3,29 @@
 This file documents all notable changes to Aerospike Prometheus Exporter
 
 
+## [v1.2.1](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.2.1)
+
+### Improvements
+- Use Aerospike Go client v5 to support Aerospike server 5.6.
+- [PROD-1774] - Add new connections opened/closed statistics introduced in 5.6
+    - `client_connections_opened`
+    - `client_connections_closed`
+    - `heartbeat_connections_opened`
+    - `heartbeat_connections_closed`
+    - `fabric_connections_opened`
+    - `fabric_connections_closed`
+- [PROD-1775] - Add new all flash statistics introduced in 5.6
+    - `index_flash_alloc_bytes`
+    - `index_flash_alloc_pct`
+- Add other new metrics introduced in 5.6,
+    - `memory_used_set_index_bytes`
+    - `fail_client_lost_conflict`
+    - `fail_xdr_lost_conflict`
+    - `threads_joinable`
+    - `threads_detached`
+    - `threads_pool_total`
+    - `threads_pool_active`
+
 
 ## [v1.2.0](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.2.0)
 
