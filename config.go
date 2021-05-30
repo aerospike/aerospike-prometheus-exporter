@@ -47,6 +47,12 @@ type Config struct {
 
 		Timeout uint8 `toml:"timeout"`
 
+		UserMetricsUsersAllowlist []string `toml:"user_metrics_users_allowlist"`
+		UserMetricsUsersBlocklist []string `toml:"user_metrics_users_blocklist"`
+
+		UserMetricsUsersAllowlistEnabled bool
+		UserMetricsUsersBlocklistEnabled bool
+
 		NamespaceMetricsAllowlist []string `toml:"namespace_metrics_allowlist"`
 		SetMetricsAllowlist       []string `toml:"set_metrics_allowlist"`
 		NodeMetricsAllowlist      []string `toml:"node_metrics_allowlist"`
@@ -172,6 +178,8 @@ func initAllowlistAndBlocklistConfigs(config *Config, md toml.MetaData) {
 	config.Aerospike.SetMetricsAllowlistEnabled = md.IsDefined("Aerospike", "set_metrics_allowlist")
 	config.Aerospike.NodeMetricsAllowlistEnabled = md.IsDefined("Aerospike", "node_metrics_allowlist")
 	config.Aerospike.XdrMetricsAllowlistEnabled = md.IsDefined("Aerospike", "xdr_metrics_allowlist")
+	config.Aerospike.UserMetricsUsersAllowlistEnabled = md.IsDefined("Aerospike", "user_metrics_users_allowlist")
+	config.Aerospike.UserMetricsUsersBlocklistEnabled = md.IsDefined("Aerospike", "user_metrics_users_blocklist")
 
 	// Initialize BlocklistEnabled config
 	config.Aerospike.NamespaceMetricsBlocklistEnabled = md.IsDefined("Aerospike", "namespace_metrics_blocklist")

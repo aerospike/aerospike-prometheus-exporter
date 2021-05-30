@@ -137,9 +137,7 @@ var statsRawMetrics = map[string]metricType{
 
 type StatsWatcher struct{}
 
-func (sw *StatsWatcher) describe(ch chan<- *prometheus.Desc) {
-	return
-}
+func (sw *StatsWatcher) describe(ch chan<- *prometheus.Desc) {}
 
 func (sw *StatsWatcher) passOneKeys() []string {
 	return nil
@@ -152,7 +150,7 @@ func (sw *StatsWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 // Filtered node statistics. Populated by getFilteredMetrics() based on config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsBlocklist and statsRawMetrics.
 var nodeMetrics map[string]metricType
 
-func (sw *StatsWatcher) refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
+func (sw *StatsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	log.Tracef("node-stats:%s", rawMetrics["statistics"])
 
 	if nodeMetrics == nil {

@@ -33,9 +33,7 @@ var xdrRawMetrics = map[string]metricType{
 
 type XdrWatcher struct{}
 
-func (xw *XdrWatcher) describe(ch chan<- *prometheus.Desc) {
-	return
-}
+func (xw *XdrWatcher) describe(ch chan<- *prometheus.Desc) {}
 
 func (xw *XdrWatcher) passOneKeys() []string {
 	return []string{"get-config:context=xdr"}
@@ -59,7 +57,7 @@ func (xw *XdrWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 // Filtered XDR metrics. Populated by getFilteredMetrics() based on the config.Aerospike.XdrMetricsAllowlist, config.Aerospike.XdrMetricsBlocklist and xdrRawMetrics.
 var xdrMetrics map[string]metricType
 
-func (xw *XdrWatcher) refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
+func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 
 	if xdrMetrics == nil {
 		xdrMetrics = getFilteredMetrics(xdrRawMetrics, config.Aerospike.XdrMetricsAllowlist, config.Aerospike.XdrMetricsAllowlistEnabled, config.Aerospike.XdrMetricsBlocklist, config.Aerospike.XdrMetricsBlocklistEnabled)

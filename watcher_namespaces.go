@@ -384,9 +384,7 @@ var namespaceRawMetrics = map[string]metricType{
 
 type NamespaceWatcher struct{}
 
-func (nw *NamespaceWatcher) describe(ch chan<- *prometheus.Desc) {
-	return
-}
+func (nw *NamespaceWatcher) describe(ch chan<- *prometheus.Desc) {}
 
 func (nw *NamespaceWatcher) passOneKeys() []string {
 	return []string{"namespaces"}
@@ -410,7 +408,7 @@ var namespaceMetrics map[string]metricType
 // Regex for identifying storage-engine stats.
 var seDynamicExtractor = regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 
-func (nw *NamespaceWatcher) refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
+func (nw *NamespaceWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	if namespaceMetrics == nil {
 		namespaceMetrics = getFilteredMetrics(namespaceRawMetrics, config.Aerospike.NamespaceMetricsAllowlist, config.Aerospike.NamespaceMetricsAllowlistEnabled, config.Aerospike.NamespaceMetricsBlocklist, config.Aerospike.NamespaceMetricsBlocklistEnabled)
 	}
