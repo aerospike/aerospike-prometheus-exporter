@@ -131,7 +131,7 @@ timeout=${TICKER_TIMEOUT}
 # XDR metrics blocklist (only for Aerospike versions 5.0 and above)
 # xdr_metrics_blocklist=[${XDR_METRICS_BLOCKLIST}]
 
-# Users Statistics
+# Users Statistics (user statistics are available in Aerospike 5.6+)
 # Users Allowlist and Blocklist to control for which users their statistics should be collected.
 # Note globbing patterns are not supported for this configuration.
 
