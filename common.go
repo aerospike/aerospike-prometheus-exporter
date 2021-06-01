@@ -357,25 +357,24 @@ func sanitizeUTF8(lv string) string {
 }
 
 func buildVersionGreaterThanOrEqual(rawMetrics map[string]string, ref string) (bool, error) {
-	if len(rawMetrics["build"]) > 0 {
-		ver := rawMetrics["build"]
-
-		version, err := goversion.NewVersion(ver)
-		if err != nil {
-			return false, fmt.Errorf("error parsing build version %s: %v", ver, err)
-		}
-
-		refVersion, err := goversion.NewVersion(ref)
-		if err != nil {
-			return false, fmt.Errorf("error parsing reference version %s: %v", ref, err)
-		}
-
-		if version.GreaterThanOrEqual(refVersion) {
-			return true, nil
-		}
-
-		return false, nil
+	if len(rawMetrics["build"]) == 0 {
+		return false, fmt.Errorf("couldn't get build version")
 	}
 
-	return false, fmt.Errorf("couldn't get build version")
+	ver := rawMetrics["build"]
+	version, err := goversion.NewVersion(ver)
+	if err != nil {
+		return false, fmt.Errorf("error parsing build version %s: %v", ver, err)
+	}
+
+	refVersion, err := goversion.NewVersion(ref)
+	if err != nil {
+		return false, fmt.Errorf("error parsing reference version %s: %v", ref, err)
+	}
+
+	if version.GreaterThanOrEqual(refVersion) {
+		return true, nil
+	}
+
+	return false, nil
 }

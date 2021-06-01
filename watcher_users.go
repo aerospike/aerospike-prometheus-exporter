@@ -20,6 +20,9 @@ type UserWatcher struct{}
 func (uw *UserWatcher) describe(ch chan<- *prometheus.Desc) {}
 
 func (uw *UserWatcher) passOneKeys() []string {
+	// "build" info key should be returned here,
+	// but it is also being sent by LatencyWatcher.passOneKeys(),
+	// hence skipping here.
 	return nil
 }
 
@@ -39,6 +42,8 @@ func (uw *UserWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[st
 		return nil
 	}
 
+	// validate aerospike build version
+	// support for user statistics is added in aerospike 5.6
 	var err error
 	ok, err := buildVersionGreaterThanOrEqual(rawMetrics, "5.6.0.0")
 	if err != nil {
@@ -107,14 +112,14 @@ func (uw *UserWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[st
 	}
 
 	for _, user := range users {
-		// check is user allowed
+		// check if user is allowed
 		if config.Aerospike.UserMetricsUsersAllowlistEnabled {
 			if _, ok := allowedUsersList[user.User]; !ok {
 				continue
 			}
 		}
 
-		// check if user blocked
+		// check if user is blocked
 		if config.Aerospike.UserMetricsUsersBlocklistEnabled {
 			if _, ok := blockedUsersList[user.User]; ok {
 				continue
