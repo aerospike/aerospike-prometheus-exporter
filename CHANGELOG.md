@@ -3,6 +3,13 @@
 This file documents all notable changes to Aerospike Prometheus Exporter
 
 
+## [v1.3.0](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.3.0)
+
+### Features
+- [PROD-1742] - Added support for user statistics
+    - Per-user statistics are available in Aerospike 5.6+.
+
+
 ## [v1.2.1](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.2.1)
 
 ### Improvements

@@ -283,7 +283,7 @@ Packages will be generated under `./pkg/target/` directory.
     basic_auth_password=""
     ```
 
-- Use users' allowlist and blocklist configuration to filter out the users for which the statistics are to be fetched. The user statistics are available in Aerospike 5.6+.
+- Use users' allowlist and blocklist configuration to filter out the users for which the statistics are to be fetched. The user statistics are available in Aerospike 5.6+. To fetch user statistics, the authenticated user must have `user-admin` privilege.
     ```toml
     [Aerospike]
 
