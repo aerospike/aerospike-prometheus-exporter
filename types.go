@@ -14,7 +14,7 @@ const (
 type Watcher interface {
 	passOneKeys() []string
 	passTwoKeys(rawMetrics map[string]string) []string
-	refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error
+	refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error
 	describe(ch chan<- *prometheus.Desc)
 }
 

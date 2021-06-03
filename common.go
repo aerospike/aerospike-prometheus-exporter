@@ -17,8 +17,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/gobwas/glob"
-	"github.com/jameskeane/bcrypt"
 	"github.com/prometheus/client_golang/prometheus"
+
+	goversion "github.com/hashicorp/go-version"
 )
 
 func makeMetric(namespace, name string, t metricType, constLabels map[string]string, labels ...string) promMetric {
@@ -88,18 +89,7 @@ func tryConvert(s string) (float64, error) {
 		return 0, nil
 	}
 
-	return 0, fmt.Errorf("Invalid value `%s`. Only Float or Boolean are accepted", s)
-}
-
-// take from github.com/aerospike/aerospike-client-go/admin_command.go
-func hashPassword(password string) ([]byte, error) {
-	// Hashing the password with the cost of 10, with a static salt
-	const salt = "$2a$10$7EqJtq98hPqEX7fNZaFWoO"
-	hashedPassword, err := bcrypt.Hash(password, salt)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(hashedPassword), nil
+	return 0, fmt.Errorf("invalid value `%s`. Only Float or Boolean are accepted", s)
 }
 
 // Check HTTP Basic Authentication.
@@ -192,7 +182,7 @@ func getSecret(secretConfig string) ([]byte, error) {
 		case "env":
 			secret, ok := os.LookupEnv(secretSource[1])
 			if !ok {
-				return nil, fmt.Errorf("Environment variable %s not set", secretSource[1])
+				return nil, fmt.Errorf("environment variable %s not set", secretSource[1])
 			}
 
 			return []byte(secret), nil
@@ -204,7 +194,7 @@ func getSecret(secretConfig string) ([]byte, error) {
 			return getValueFromBase64(secretSource[1])
 
 		default:
-			return nil, fmt.Errorf("Invalid source: %s", secretSource[0])
+			return nil, fmt.Errorf("invalid source: %s", secretSource[0])
 		}
 	}
 
@@ -232,7 +222,7 @@ func getCertificate(certConfig string) ([]byte, error) {
 			return getValueFromBase64(certificateSource[1])
 
 		default:
-			return nil, fmt.Errorf("Invalid source %s", certificateSource[0])
+			return nil, fmt.Errorf("invalid source %s", certificateSource[0])
 		}
 	}
 
@@ -244,7 +234,7 @@ func getCertificate(certConfig string) ([]byte, error) {
 func readFromFile(filePath string) ([]byte, error) {
 	dataBytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to read from file `%s`: `%v`", filePath, err)
+		return nil, fmt.Errorf("failed to read from file `%s`: `%v`", filePath, err)
 	}
 
 	data := bytes.TrimSuffix(dataBytes, []byte("\n"))
@@ -256,7 +246,7 @@ func readFromFile(filePath string) ([]byte, error) {
 func getValueFromBase64EnvVar(envVar string) ([]byte, error) {
 	b64Value, ok := os.LookupEnv(envVar)
 	if !ok {
-		return nil, fmt.Errorf("Environment variable %s not set", envVar)
+		return nil, fmt.Errorf("environment variable %s not set", envVar)
 	}
 
 	return getValueFromBase64(b64Value)
@@ -266,7 +256,7 @@ func getValueFromBase64EnvVar(envVar string) ([]byte, error) {
 func getValueFromBase64(b64Value string) ([]byte, error) {
 	value, err := base64.StdEncoding.DecodeString(b64Value)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to decode base64 value: %v", err)
+		return nil, fmt.Errorf("failed to decode base64 value: %v", err)
 	}
 
 	return value, nil
@@ -315,19 +305,19 @@ func loadServerCertAndKey(certConfig, keyConfig, keyPassConfig string) ([]tls.Ce
 	certBlock, _ := pem.Decode(certFileBytes)
 
 	if keyBlock == nil || certBlock == nil {
-		return nil, fmt.Errorf("Failed to decode PEM data for key or certificate")
+		return nil, fmt.Errorf("failed to decode PEM data for key or certificate")
 	}
 
 	// Check and Decrypt the the Key Block using passphrase
 	if x509.IsEncryptedPEMBlock(keyBlock) {
 		keyFilePassphraseBytes, err := getSecret(keyPassConfig)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get key passphrase: `%s`", err)
+			return nil, fmt.Errorf("failed to get key passphrase: `%s`", err)
 		}
 
 		decryptedDERBytes, err := x509.DecryptPEMBlock(keyBlock, keyFilePassphraseBytes)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to decrypt PEM Block: `%s`", err)
+			return nil, fmt.Errorf("failed to decrypt PEM Block: `%s`", err)
 		}
 
 		keyBlock.Bytes = decryptedDERBytes
@@ -339,12 +329,12 @@ func loadServerCertAndKey(certConfig, keyConfig, keyPassConfig string) ([]tls.Ce
 	certPEM := pem.EncodeToMemory(certBlock)
 
 	if keyPEM == nil || certPEM == nil {
-		return nil, fmt.Errorf("Failed to encode PEM data for key or certificate")
+		return nil, fmt.Errorf("failed to encode PEM data for key or certificate")
 	}
 
 	cert, err := tls.X509KeyPair(certPEM, keyPEM)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to add certificate and key to the pool: `%s`", err)
+		return nil, fmt.Errorf("failed to add certificate and key to the pool: `%s`", err)
 	}
 
 	certificates = append(certificates, cert)
@@ -364,4 +354,27 @@ func sanitizeUTF8(lv string) string {
 	}
 
 	return strings.Map(fixUtf, lv)
+}
+
+func buildVersionGreaterThanOrEqual(rawMetrics map[string]string, ref string) (bool, error) {
+	if len(rawMetrics["build"]) == 0 {
+		return false, fmt.Errorf("couldn't get build version")
+	}
+
+	ver := rawMetrics["build"]
+	version, err := goversion.NewVersion(ver)
+	if err != nil {
+		return false, fmt.Errorf("error parsing build version %s: %v", ver, err)
+	}
+
+	refVersion, err := goversion.NewVersion(ref)
+	if err != nil {
+		return false, fmt.Errorf("error parsing reference version %s: %v", ref, err)
+	}
+
+	if version.GreaterThanOrEqual(refVersion) {
+		return true, nil
+	}
+
+	return false, nil
 }

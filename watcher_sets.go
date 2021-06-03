@@ -21,9 +21,7 @@ var setRawMetrics = map[string]metricType{
 
 type SetWatcher struct{}
 
-func (sw *SetWatcher) describe(ch chan<- *prometheus.Desc) {
-	return
-}
+func (sw *SetWatcher) describe(ch chan<- *prometheus.Desc) {}
 
 func (sw *SetWatcher) passOneKeys() []string {
 	return nil
@@ -36,7 +34,7 @@ func (sw *SetWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 // Filtered set metrics. Populated by getFilteredMetrics() based on config.Aerospike.SetMetricsAllowlist, config.Aerospike.SetMetricsBlocklist and setRawMetrics.
 var setMetrics map[string]metricType
 
-func (sw *SetWatcher) refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
+func (sw *SetWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	setStats := strings.Split(rawMetrics["sets"], ";")
 	log.Tracef("set-stats:%v", setStats)
 

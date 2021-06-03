@@ -32,6 +32,8 @@ export NAMESPACE_METRICS_BLOCKLIST=${NAMESPACE_METRICS_BLOCKLIST:-""}
 export SET_METRICS_BLOCKLIST=${SET_METRICS_BLOCKLIST:-""}
 export NODE_METRICS_BLOCKLIST=${NODE_METRICS_BLOCKLIST:-""}
 export XDR_METRICS_BLOCKLIST=${XDR_METRICS_BLOCKLIST:-""}
+export USER_METRICS_USERS_ALLOWLIST=${USER_METRICS_USERS_ALLOWLIST:-""}
+export USER_METRICS_USERS_BLOCKLIST=${USER_METRICS_USERS_BLOCKLIST:-""}
 
 if [ -f /etc/aerospike-prometheus-exporter/ape.toml.template ]; then
         envsubst < /etc/aerospike-prometheus-exporter/ape.toml.template > /etc/aerospike-prometheus-exporter/ape.toml

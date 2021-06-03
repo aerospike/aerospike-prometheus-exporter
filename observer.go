@@ -151,16 +151,15 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 			&SetWatcher{},
 			&LatencyWatcher{},
 			&StatsWatcher{},
-			&XdrWatcher{}}, // the order is important here
+			&XdrWatcher{},
+			&UserWatcher{}}, // the order is important here
 	}
 
 	return o, nil
 }
 
 // Describe function of Prometheus' Collector interface
-func (o *Observer) Describe(ch chan<- *prometheus.Desc) {
-	return
-}
+func (o *Observer) Describe(ch chan<- *prometheus.Desc) {}
 
 // Collect function of Prometheus' Collector interface
 func (o *Observer) Collect(ch chan<- prometheus.Metric) {
@@ -261,7 +260,7 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	}
 
 	for i, c := range o.watchers {
-		if err := c.refresh(watcherInfoKeys[i], rawMetrics, ch); err != nil {
+		if err := c.refresh(o, watcherInfoKeys[i], rawMetrics, ch); err != nil {
 			return rawMetrics, err
 		}
 	}
