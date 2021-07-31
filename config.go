@@ -47,6 +47,8 @@ type Config struct {
 
 		Timeout uint8 `toml:"timeout"`
 
+		LatencyBucketsCount uint8 `toml:"latency_buckets_count"`
+
 		UserMetricsUsersAllowlist []string `toml:"user_metrics_users_allowlist"`
 		UserMetricsUsersBlocklist []string `toml:"user_metrics_users_blocklist"`
 
