@@ -322,7 +322,7 @@ Packages will be generated under `./pkg/target/` directory.
     log_level = ""
     ```
 
-- Use `latency_buckets_count` to specify number of histogram buckets to be exported for latency metrics (optional). Bucket thresholds range from `2^0` to `2^16` (`17` buckets). All threshold buckets are exported by default (`latency_buckets_count=0`).
+- Use `latency_buckets_count` to specify number of histogram buckets to be exported for latency metrics (optional). Bucket thresholds range from 2<sup>0</sup> to 2<sup>16</sup> (`17` buckets). All threshold buckets are exported by default (`latency_buckets_count=0`).
 
     Example, `latency_buckets_count=5` will export first five buckets i.e. `<=1ms`, `<=2ms`, `<=4ms`, `<=8ms` and `<=16ms`.
     ```toml
