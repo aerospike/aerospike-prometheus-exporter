@@ -3,6 +3,15 @@
 This file documents all notable changes to Aerospike Prometheus Exporter
 
 
+## [v1.4.0](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.4.0)
+
+### Improvements
+- [TOOLS-1740] - Export all histogram buckets by default for latency metrics
+    - Adds new configuration `latency_buckets_count`  to control number of buckets to be exported
+        - Default: `0` (export all buckets)
+        - Example, `latency_buckets_count=5` will export first five buckets i.e. `<=1ms`, `<=2ms`, `<=4ms`, `<=8ms` and `<=16ms`
+
+
 ## [v1.3.0](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.3.0)
 
 ### Features
