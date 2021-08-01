@@ -124,6 +124,14 @@ Packages will be generated under `./pkg/target/` directory.
     db_host="localhost"
     db_port=3000
     ```
+
+- Configure timeout (in seconds) for info commands to Aerospike node (optional). Default value is `5` seconds.
+    ```toml
+    [Aerospike]
+    # timeout for sending commands to the server node in seconds
+    timeout=5
+    ```
+
 - Update Aerospike security and TLS configurations (optional),
     ```toml
     [Aerospike]
@@ -302,4 +310,25 @@ Packages will be generated under `./pkg/target/` directory.
     "admin",
     "superuser"
     ]
+    ```
+
+- Exporter logs to console by default. To enable file logging, use `log_file` configuration to specify a file path. Use `log_level` configuration to specify a logging level (optional). Default logging level is `info`.
+    ```toml
+    [Agent]
+    # Exporter logging configuration
+    # Log file path (optional, logs to console by default)
+    # Level can be info|warning,warn|error,err|debug|trace ('info' by default)
+    log_file = ""
+    log_level = ""
+    ```
+
+- Use `latency_buckets_count` to specify number of histogram buckets to be exported for latency metrics (optional). Bucket thresholds range from 2<sup>0</sup> to 2<sup>16</sup> (`17` buckets). All threshold buckets are exported by default (`latency_buckets_count=0`).
+
+    Example, `latency_buckets_count=5` will export first five buckets i.e. `<=1ms`, `<=2ms`, `<=4ms`, `<=8ms` and `<=16ms`.
+    ```toml
+    [Aerospike]
+    # Number of histogram buckets to export for latency metrics. Bucket thresholds range from 2^0 to 2^16 (17 buckets).
+    # e.g. latency_buckets_count=5 will export first five buckets i.e. <=1ms, <=2ms, <=4ms, <=8ms and <=16ms.
+    # Default: 0 (export all threshold buckets).
+    latency_buckets_count=0
     ```

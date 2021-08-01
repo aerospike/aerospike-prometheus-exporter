@@ -15,7 +15,7 @@ import (
 // error-no-data-yet-or-back-too-small;
 // or,
 // {test}-write:;
-func parseLatencyInfoLegacy(s string) map[string]StatsMap {
+func parseLatencyInfoLegacy(s string, latencyBucketsCount int) map[string]StatsMap {
 	ip := NewInfoParser(s)
 	res := map[string]StatsMap{}
 
@@ -103,8 +103,8 @@ func parseLatencyInfoLegacy(s string) map[string]StatsMap {
 			bucketLabels = append(bucketLabels, strings.Trim(bLabels[i], "><=ms"))
 			bucketValuesFloat = append(bucketValuesFloat, v)
 
-			// Stop after first zero bucket. No point processing further buckets.
-			if val == 0 {
+			if latencyBucketsCount > 0 && i >= latencyBucketsCount {
+				// latency buckets count limit reached
 				break
 			}
 		}
@@ -138,7 +138,7 @@ func parseLatencyInfoLegacy(s string) map[string]StatsMap {
 // Format (with and without latency data)
 // {test}-write:msec,4234.9,28.75,7.40,1.63,0.26,0.03,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00;
 // {test}-read:;
-func parseLatencyInfo(s string) map[string]StatsMap {
+func parseLatencyInfo(s string, latencyBucketsCount int) map[string]StatsMap {
 	ip := NewInfoParser(s)
 	res := map[string]StatsMap{}
 
@@ -215,8 +215,8 @@ func parseLatencyInfo(s string) map[string]StatsMap {
 			bucketLabels = append(bucketLabels, strconv.Itoa(1<<(i-1)))
 			bucketValuesFloat = append(bucketValuesFloat, v)
 
-			// Stop after first zero bucket. No point processing further buckets.
-			if val == 0 {
+			if latencyBucketsCount > 0 && i >= latencyBucketsCount {
+				// latency buckets count limit reached
 				break
 			}
 		}

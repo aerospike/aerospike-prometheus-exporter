@@ -35,9 +35,9 @@ func (lw *LatencyWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 	var latencyStats map[string]StatsMap
 
 	if rawMetrics["latencies:"] != "" {
-		latencyStats = parseLatencyInfo(rawMetrics["latencies:"])
+		latencyStats = parseLatencyInfo(rawMetrics["latencies:"], int(config.Aerospike.LatencyBucketsCount))
 	} else {
-		latencyStats = parseLatencyInfoLegacy(rawMetrics["latency:"])
+		latencyStats = parseLatencyInfoLegacy(rawMetrics["latency:"], int(config.Aerospike.LatencyBucketsCount))
 	}
 
 	log.Tracef("latency-stats:%+v", latencyStats)
