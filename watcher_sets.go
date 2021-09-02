@@ -17,6 +17,9 @@ var setRawMetrics = map[string]metricType{
 	"truncate_lut":      mtGauge,
 	"stop-writes-count": mtCounter,
 	"disable-eviction":  mtGauge,
+	"index_populating":  mtGauge,
+	"sindexes":          mtGauge,
+	"enable-index":      mtGauge,
 }
 
 type SetWatcher struct{}
