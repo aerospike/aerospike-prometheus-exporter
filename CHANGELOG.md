@@ -3,6 +3,12 @@
 This file documents all notable changes to Aerospike Prometheus Exporter
 
 
+## [v1.4.1](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.4.1)
+
+### Improvements
+- [TOOLS-1785] - Add new metrics introduced in Aerospike 5.7
+
+
 ## [v1.4.0](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.4.0)
 
 ### Improvements

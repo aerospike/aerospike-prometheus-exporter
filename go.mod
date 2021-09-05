@@ -14,6 +14,6 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9 // indirect
-	golang.org/x/sys v0.0.0-20210902050250-f475640dd07b // indirect
+	golang.org/x/sys v0.0.0-20210903071746-97244b99971b // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )
