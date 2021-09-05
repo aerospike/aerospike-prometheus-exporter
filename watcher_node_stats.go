@@ -133,6 +133,7 @@ var statsRawMetrics = map[string]metricType{
 	"threads_detached":                      mtGauge,
 	"threads_pool_total":                    mtGauge,
 	"threads_pool_active":                   mtGauge,
+	"failed_best_practices":                 mtGauge,
 }
 
 type StatsWatcher struct{}

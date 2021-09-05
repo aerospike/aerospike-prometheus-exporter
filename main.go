@@ -25,7 +25,7 @@ var (
 	fullHost string
 	config   *Config
 
-	version = "v1.3.0"
+	version = "v1.4.1"
 )
 
 func main() {
