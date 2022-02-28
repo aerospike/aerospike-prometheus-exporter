@@ -49,6 +49,24 @@ type Config struct {
 
 		LatencyBucketsCount uint8 `toml:"latency_buckets_count"`
 
+		JobMetricsAllowlist []string `toml:"job_metrics_allowlist"`
+		JobMetricsBlocklist []string `toml:"job_metrics_blocklist"`
+
+		JobMetricsAllowlistEnabled bool
+		JobMetricsBlocklistEnabled bool
+
+		// knob to disable job metrics collection (for internal use only, will be deprecated)
+		DisableJobMetrics bool `toml:"disable_job_metrics"`
+
+		SindexMetricsAllowlist []string `toml:"sindex_metrics_allowlist"`
+		SindexMetricsBlocklist []string `toml:"sindex_metrics_blocklist"`
+
+		SindexMetricsAllowlistEnabled bool
+		SindexMetricsBlocklistEnabled bool
+
+		// knob to disable sindex metrics collection (for internal use only, will be deprecated)
+		DisableSindexMetrics bool `toml:"disable_sindex_metrics"`
+
 		UserMetricsUsersAllowlist []string `toml:"user_metrics_users_allowlist"`
 		UserMetricsUsersBlocklist []string `toml:"user_metrics_users_blocklist"`
 
@@ -182,6 +200,10 @@ func initAllowlistAndBlocklistConfigs(config *Config, md toml.MetaData) {
 	config.Aerospike.XdrMetricsAllowlistEnabled = md.IsDefined("Aerospike", "xdr_metrics_allowlist")
 	config.Aerospike.UserMetricsUsersAllowlistEnabled = md.IsDefined("Aerospike", "user_metrics_users_allowlist")
 	config.Aerospike.UserMetricsUsersBlocklistEnabled = md.IsDefined("Aerospike", "user_metrics_users_blocklist")
+	config.Aerospike.JobMetricsAllowlistEnabled = md.IsDefined("Aerospike", "job_metrics_allowlist")
+	config.Aerospike.JobMetricsBlocklistEnabled = md.IsDefined("Aerospike", "job_metrics_blocklist")
+	config.Aerospike.SindexMetricsAllowlistEnabled = md.IsDefined("Aerospike", "sindex_metrics_allowlist")
+	config.Aerospike.SindexMetricsBlocklistEnabled = md.IsDefined("Aerospike", "sindex_metrics_blocklist")
 
 	// Initialize BlocklistEnabled config
 	config.Aerospike.NamespaceMetricsBlocklistEnabled = md.IsDefined("Aerospike", "namespace_metrics_blocklist")
