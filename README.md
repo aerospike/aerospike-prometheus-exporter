@@ -230,6 +230,29 @@ Packages will be generated under `./pkg/target/` directory.
     "lap_us"
     ]
 
+    # Job (scans/queries) metrics allowlist
+    job_metrics_allowlist = [
+    "rps",
+    "active-threads",
+    "job-progress",
+    "run-time",
+    "recs-throttled",
+    "recs-succeeded",
+    "recs-failed",
+    "net-io-bytes"
+    ]
+
+    # Secondary index metrics allowlist
+    sindex_metrics_allowlist = [
+    "entries",
+    "ibtr_memory_used",
+    "nbtr_memory_used",
+    "query_basic_complete",
+    "query_basic_error",
+    "query_basic_abort",
+    "query_basic_avg_rec_count"
+    ]
+
     # Metrics Blocklist - If specified, these metrics will be NOT be scraped.
 
     # Namespace metrics blocklist
@@ -248,6 +271,12 @@ Packages will be generated under `./pkg/target/` directory.
 
     # XDR metrics blocklist (only for Aerospike versions 5.0 and above)
     # xdr_metrics_blocklist=[]
+
+    # Job (scans/queries) metrics blocklist
+    # job_metrics_blocklist = []
+
+    # Secondary index metrics blocklist
+    # sindex_metrics_blocklist = []
     ```
 
 - To enable basic HTTP authentication and/or enable HTTPS between the Prometheus server and the exporter, use the below configurations keys,
