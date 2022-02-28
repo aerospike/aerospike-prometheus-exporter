@@ -1,6 +1,6 @@
 FROM golang:alpine AS builder
 
-ARG VERSION=v1.3.0
+ARG VERSION=v1.5.0
 
 ADD . $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter
 WORKDIR $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter
@@ -16,8 +16,6 @@ COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN apk add gettext libintl \
 	&& chmod +x /docker-entrypoint.sh
 
-# you could change the port via env var and then would have to --expose in run.
-# That is likely unnecessary though
 EXPOSE 9145
 
 ENTRYPOINT [ "/docker-entrypoint.sh" ]
