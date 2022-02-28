@@ -35,6 +35,10 @@ export NODE_METRICS_BLOCKLIST=${NODE_METRICS_BLOCKLIST:-""}
 export XDR_METRICS_BLOCKLIST=${XDR_METRICS_BLOCKLIST:-""}
 export USER_METRICS_USERS_ALLOWLIST=${USER_METRICS_USERS_ALLOWLIST:-""}
 export USER_METRICS_USERS_BLOCKLIST=${USER_METRICS_USERS_BLOCKLIST:-""}
+export JOB_METRICS_ALLOWLIST=${JOB_METRICS_ALLOWLIST:-""}
+export JOB_METRICS_BLOCKLIST=${JOB_METRICS_BLOCKLIST:-""}
+export SINDEX_METRICS_ALLOWLIST=${SINDEX_METRICS_ALLOWLIST:-""}
+export SINDEX_METRICS_BLOCKLIST=${SINDEX_METRICS_BLOCKLIST:-""}
 
 if [ -f /etc/aerospike-prometheus-exporter/ape.toml.template ]; then
         envsubst < /etc/aerospike-prometheus-exporter/ape.toml.template > /etc/aerospike-prometheus-exporter/ape.toml
