@@ -2,6 +2,11 @@
 
 This file documents all notable changes to Aerospike Prometheus Exporter
 
+## [v1.5.1](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.5.1)
+
+### Features
+- [TOOLS-1974] - Downgrade dependency Aerospike Go client from v5.7.0 to v5.5.0 to fix a login issue
+
 
 ## [v1.5.0](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.5.0)
 
