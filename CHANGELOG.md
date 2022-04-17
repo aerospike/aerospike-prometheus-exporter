@@ -2,6 +2,14 @@
 
 This file documents all notable changes to Aerospike Prometheus Exporter
 
+
+## [v1.5.2](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.5.2)
+
+### Fixes
+- Dependency upgrade - Aerospike Go Client `v5.8.0`
+    - [CLIENT-1695] Fixes a potential nil deference in `sessionInfo.isValid()` method
+
+
 ## [v1.5.1](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.5.1)
 
 ### Fixes

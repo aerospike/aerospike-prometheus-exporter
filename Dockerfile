@@ -1,6 +1,6 @@
 FROM golang:1.16-alpine AS builder
 
-ARG VERSION=v1.5.1
+ARG VERSION=v1.5.2
 
 ADD . $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter
 WORKDIR $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter
