@@ -20,28 +20,14 @@ func parseLatencyInfoLegacy(s string, latencyBucketsCount int) map[string]StatsM
 	res := map[string]StatsMap{}
 
 	for {
-		if err := ip.Expect("{"); err != nil {
-			// it's an error string, read to next section
-			if _, err := ip.ReadUntil(';'); err != nil {
-				break
-			}
+		namespaceName, operation, err := readNamespaceAndOperation(ip)
+
+		if err != nil {
+			break
+		}
+
+		if namespaceName == "" && operation == "" {
 			continue
-		}
-
-		// Get namespace name
-		namespaceName, err := ip.ReadUntil('}')
-		if err != nil {
-			break
-		}
-
-		if err := ip.Expect("-"); err != nil {
-			break
-		}
-
-		// Get operation (read, write etc.)
-		operation, err := ip.ReadUntil(':')
-		if err != nil {
-			break
 		}
 
 		// Might be an empty output if there's no latency data (in 5.1), so continue to next section
@@ -133,6 +119,37 @@ func parseLatencyInfoLegacy(s string, latencyBucketsCount int) map[string]StatsM
 	return res
 }
 
+func readNamespaceAndOperation(ip *InfoParser) (string, string, error) {
+	if err := ip.PeekAndExpect("batch-index"); err == nil {
+		operation, err := ip.ReadUntil(':')
+		return "", operation, err
+	}
+
+	if err := ip.Expect("{"); err != nil {
+		if _, err := ip.ReadUntil(';'); err != nil {
+			return "", "", err
+		}
+		return "", "", nil
+	}
+
+	// Get namespace name
+	namespaceName, err := ip.ReadUntil('}')
+	if err != nil {
+		return "", "", err
+	}
+
+	if err := ip.Expect("-"); err != nil {
+		return "", "", err
+	}
+
+	// Get operation (read, write etc.)
+	operation, err := ip.ReadUntil(':')
+	if err != nil {
+		return "", "", err
+	}
+	return namespaceName, operation, err
+}
+
 // Parse "latencies:" info output
 //
 // Format (with and without latency data)
@@ -143,27 +160,14 @@ func parseLatencyInfo(s string, latencyBucketsCount int) map[string]StatsMap {
 	res := map[string]StatsMap{}
 
 	for {
-		if err := ip.Expect("{"); err != nil {
-			if _, err := ip.ReadUntil(';'); err != nil {
-				break
-			}
+		namespaceName, operation, err := readNamespaceAndOperation(ip)
+
+		if err != nil {
+			break
+		}
+
+		if namespaceName == "" && operation == "" {
 			continue
-		}
-
-		// Get namespace name
-		namespaceName, err := ip.ReadUntil('}')
-		if err != nil {
-			break
-		}
-
-		if err := ip.Expect("-"); err != nil {
-			break
-		}
-
-		// Get operation (read, write etc.)
-		operation, err := ip.ReadUntil(':')
-		if err != nil {
-			break
 		}
 
 		// Might be an empty output due to no latency data available, so continue to next section
