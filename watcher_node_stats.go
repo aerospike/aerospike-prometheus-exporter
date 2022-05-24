@@ -68,6 +68,7 @@ var statsRawMetrics = map[string]metricType{
 	"batch_index_created_buffers":           mtGauge,
 	"batch_index_destroyed_buffers":         mtCounter,
 	"scans_active":                          mtGauge,
+	"queries_active":                        mtGauge,
 	"query_short_running":                   mtCounter,
 	"query_long_running":                    mtCounter,
 	"sindex_ucgarbage_found":                mtCounter,

@@ -26,6 +26,8 @@ var sindexRawMetrics = map[string]metricType{
 	"query_basic_abort":         mtCounter,
 	"query_basic_avg_rec_count": mtGauge,
 	"histogram":                 mtGauge,
+	"memory_used":               mtGauge,
+	"load_time":                 mtGauge,
 }
 
 type SindexWatcher struct {
