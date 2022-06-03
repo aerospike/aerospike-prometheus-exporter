@@ -11,6 +11,7 @@ import (
 // Jobs raw metrics
 var jobsRawMetrics = map[string]metricType{
 	"priority":           mtGauge,
+	"net-io-time":        mtGauge,
 	"n-pids-requested":   mtGauge,
 	"rps":                mtGauge,
 	"active-threads":     mtGauge,
@@ -47,7 +48,17 @@ func (jw *JobsWatcher) passTwoKeys(rawMetrics map[string]string) (jobsCommands [
 
 	jobsCommands = []string{"jobs:", "scan-show:", "query-show:"}
 
-	ok, err := buildVersionGreaterThanOrEqual(rawMetrics, "5.7.0.0")
+	ok, err := buildVersionGreaterThanOrEqual(rawMetrics, "6.0.0.0-0")
+	if err != nil {
+		log.Warn(err)
+		return jobsCommands
+	}
+
+	if ok {
+		return []string{"query-show:"}
+	}
+
+	ok, err = buildVersionGreaterThanOrEqual(rawMetrics, "5.7.0.0")
 	if err != nil {
 		log.Warn(err)
 		return jobsCommands
