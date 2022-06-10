@@ -10,22 +10,24 @@ import (
 
 // Sindex raw metrics
 var sindexRawMetrics = map[string]metricType{
-	"keys":                      mtGauge,
+	"keys":                      mtGauge, // removed in server6.0
 	"entries":                   mtGauge,
-	"ibtr_memory_used":          mtGauge,
-	"nbtr_memory_used":          mtGauge,
+	"ibtr_memory_used":          mtGauge, // removed in server6.0
+	"nbtr_memory_used":          mtGauge, // removed in server6.0
 	"load_pct":                  mtGauge,
-	"loadtime":                  mtGauge,
-	"write_success":             mtCounter,
-	"write_error":               mtCounter,
-	"delete_success":            mtCounter,
-	"delete_error":              mtCounter,
+	"loadtime":                  mtGauge,   // removed in server6.0
+	"write_success":             mtCounter, // removed in server6.0
+	"write_error":               mtCounter, // removed in server6.0
+	"delete_success":            mtCounter, // removed in server6.0
+	"delete_error":              mtCounter, // removed in server6.0
 	"stat_gc_recs":              mtCounter,
-	"query_basic_complete":      mtCounter,
-	"query_basic_error":         mtCounter,
-	"query_basic_abort":         mtCounter,
-	"query_basic_avg_rec_count": mtGauge,
-	"histogram":                 mtGauge,
+	"query_basic_complete":      mtCounter, // removed in server6.0
+	"query_basic_error":         mtCounter, // removed in server6.0
+	"query_basic_abort":         mtCounter, // removed in server6.0
+	"query_basic_avg_rec_count": mtGauge,   // removed in server6.0
+	"histogram":                 mtGauge,   // removed in server6.0
+	"memory_used":               mtGauge,
+	"load_time":                 mtGauge,
 }
 
 type SindexWatcher struct {

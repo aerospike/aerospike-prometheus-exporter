@@ -11,6 +11,7 @@ import (
 // Jobs raw metrics
 var jobsRawMetrics = map[string]metricType{
 	"priority":           mtGauge,
+	"net-io-time":        mtGauge,
 	"n-pids-requested":   mtGauge,
 	"rps":                mtGauge,
 	"active-threads":     mtGauge,
@@ -47,7 +48,17 @@ func (jw *JobsWatcher) passTwoKeys(rawMetrics map[string]string) (jobsCommands [
 
 	jobsCommands = []string{"jobs:", "scan-show:", "query-show:"}
 
-	ok, err := buildVersionGreaterThanOrEqual(rawMetrics, "5.7.0.0")
+	ok, err := buildVersionGreaterThanOrEqual(rawMetrics, "6.0.0.0-0")
+	if err != nil {
+		log.Warn(err)
+		return jobsCommands
+	}
+
+	if ok {
+		return []string{"query-show:"}
+	}
+
+	ok, err = buildVersionGreaterThanOrEqual(rawMetrics, "5.7.0.0")
 	if err != nil {
 		log.Warn(err)
 		return jobsCommands
@@ -85,7 +96,7 @@ func (jw *JobsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[st
 	for i := range jobStats {
 		jobObserver := make(MetricMap, len(jobMetrics))
 		for m, t := range jobMetrics {
-			jobObserver[m] = makeMetric("aerospike_jobs", m, t, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", "set", "module", "trid")
+			jobObserver[m] = makeMetric("aerospike_jobs", m, t, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", "set", "module", "job_type", "trid")
 		}
 
 		stats := parseStats(jobStats[i], ":")
@@ -101,7 +112,7 @@ func (jw *JobsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[st
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], stats["ns"], stats["set"], stats["module"], stats["trid"])
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], stats["ns"], stats["set"], stats["module"], stats["job-type"], stats["trid"])
 		}
 	}
 
