@@ -41,11 +41,18 @@ export SINDEX_METRICS_ALLOWLIST=${SINDEX_METRICS_ALLOWLIST:-""}
 export SINDEX_METRICS_BLOCKLIST=${SINDEX_METRICS_BLOCKLIST:-""}
 
 if [ -f /etc/aerospike-prometheus-exporter/ape.toml.template ]; then
+        env | while IFS= read -r line; do
+                name=${line%%=*}
+                value=${line#*=}
+                if [ -n "$value" ]; then
+                        sed -i --regex "s/# (.*\{$name\}.*)/\1/" /etc/aerospike-prometheus-exporter/ape.toml.template
+                fi
+        done
         envsubst < /etc/aerospike-prometheus-exporter/ape.toml.template > /etc/aerospike-prometheus-exporter/ape.toml
 fi
 
 if [ "${1:0:1}" = '-' ]; then
-	set -- aerospike-prometheus-exporter "$@"
+        set -- aerospike-prometheus-exporter "$@"
 fi
 
 exec "$@"
