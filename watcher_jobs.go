@@ -96,7 +96,7 @@ func (jw *JobsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[st
 	for i := range jobStats {
 		jobObserver := make(MetricMap, len(jobMetrics))
 		for m, t := range jobMetrics {
-			jobObserver[m] = makeMetric("aerospike_jobs", m, t, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", "set", "module", "job_type", "trid")
+			jobObserver[m] = makeMetric("aerospike_jobs", m, t, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", "set", "module", "job_type", "trid", "sindex_name")
 		}
 
 		stats := parseStats(jobStats[i], ":")
@@ -112,7 +112,7 @@ func (jw *JobsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[st
 				continue
 			}
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], stats["ns"], stats["set"], stats["module"], stats["job-type"], stats["trid"])
+			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], stats["ns"], stats["set"], stats["module"], stats["job-type"], stats["trid"], stats["sindex-name"])
 		}
 	}
 

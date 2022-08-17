@@ -28,6 +28,8 @@ var sindexRawMetrics = map[string]metricType{
 	"histogram":                 mtGauge,   // removed in server6.0
 	"memory_used":               mtGauge,
 	"load_time":                 mtGauge,
+	"entries_per_rec":           mtGauge,
+	"entries_per_bval":          mtGauge,
 }
 
 type SindexWatcher struct {
