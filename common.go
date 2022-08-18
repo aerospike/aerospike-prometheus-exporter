@@ -302,10 +302,9 @@ func loadServerCertAndKey(certConfig, keyConfig, keyPassConfig string) ([]tls.Ce
 
 	// Decode PEM data
 	keyBlock, _ := pem.Decode(keyFileBytes)
-	certBlock, _ := pem.Decode(certFileBytes)
 
-	if keyBlock == nil || certBlock == nil {
-		return nil, fmt.Errorf("failed to decode PEM data for key or certificate")
+	if keyBlock == nil {
+		return nil, fmt.Errorf("failed to decode PEM data for key")
 	}
 
 	// Check and Decrypt the the Key Block using passphrase
@@ -326,13 +325,12 @@ func loadServerCertAndKey(certConfig, keyConfig, keyPassConfig string) ([]tls.Ce
 
 	// Encode PEM data
 	keyPEM := pem.EncodeToMemory(keyBlock)
-	certPEM := pem.EncodeToMemory(certBlock)
 
-	if keyPEM == nil || certPEM == nil {
-		return nil, fmt.Errorf("failed to encode PEM data for key or certificate")
+	if keyPEM == nil {
+		return nil, fmt.Errorf("failed to encode PEM data for key")
 	}
 
-	cert, err := tls.X509KeyPair(certPEM, keyPEM)
+	cert, err := tls.X509KeyPair(certFileBytes, keyPEM)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add certificate and key to the pool: `%s`", err)
 	}
