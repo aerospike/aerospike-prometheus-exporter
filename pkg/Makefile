@@ -12,6 +12,8 @@ DESCRIPTION = "Aerospike Prometheus Exporter, An agent to export Aerospike metri
 LICENSE = "Apache License 2.0"
 URL = "https://github.com/aerospike/aerospike-prometheus-exporter"
 VENDOR = "Aerospike, Inc."
+ARCH ?= $(shell uname -m)
+DEB_PKG_ARCH ?= $(shell dpkg-architecture -q DEB_BUILD_ARCH)
 
 
 .PHONY: all
@@ -32,7 +34,8 @@ deb: prep
 		--license $(LICENSE) \
 		--url $(URL) \
 		--vendor $(VENDOR) \
-		--package $(TARGET_DIR)/aerospike-prometheus-exporter-$(VERSION)-amd64.deb
+		--architecture $(DEB_PKG_ARCH) \
+		--package $(TARGET_DIR)/aerospike-prometheus-exporter-$(VERSION)-$(DEB_PKG_ARCH).deb
 
 .PHONY: rpm
 rpm: prep
@@ -49,7 +52,8 @@ rpm: prep
 		--license $(LICENSE) \
 		--url $(URL) \
 		--vendor $(VENDOR) \
-		--package $(TARGET_DIR)/aerospike-prometheus-exporter-$(VERSION)-x86_64.rpm
+		--architecture $(ARCH) \
+		--package $(TARGET_DIR)/aerospike-prometheus-exporter-$(VERSION)-$(ARCH).rpm
 
 .PHONY: tar
 tar: prep
