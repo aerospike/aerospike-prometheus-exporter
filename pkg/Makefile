@@ -70,7 +70,7 @@ tar: prep
 		--license $(LICENSE) \
 		--url $(URL) \
 		--vendor $(VENDOR) \
-		--package $(TARGET_DIR)/aerospike-prometheus-exporter-$(VERSION).tar
+		--package $(TARGET_DIR)/aerospike-prometheus-exporter-$(VERSION)-$(ARCH).tar
 
 .PHONY: prep
 prep:

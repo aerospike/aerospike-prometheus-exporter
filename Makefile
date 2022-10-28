@@ -5,7 +5,7 @@ VERSION = $(shell git describe --tags --always)
 # Builds exporter binary
 .PHONY: exporter
 exporter:
-	go build -ldflags="-X 'main.version=$(VERSION)'" -o aerospike-prometheus-exporter .
+	GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags="-X 'main.version=$(VERSION)'" -o aerospike-prometheus-exporter .
 
 # Builds RPM, DEB and TAR packages
 # Requires FPM package manager
