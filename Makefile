@@ -49,3 +49,11 @@ docker:
 .PHONY: release-docker-multi-arch
 release-docker-multi-arch:
 	docker buildx build --build-arg VERSION=$(VERSION) --platform $(DOCKER_MULTI_ARCH_PLATFORMS) --push . -t aerospike/aerospike-prometheus-exporter:latest -t aerospike/aerospike-prometheus-exporter:$(VERSION)
+
+.PHONY: package-linux-arm64
+package-linux-arm64:
+	$(MAKE) deb rpm tar GOOS=linux GOARCH=arm64 DEB_PKG_ARCH=arm64 ARCH=arm64
+
+.PHONY: package-linux-amd64
+package-linux-amd64:
+	$(MAKE) deb rpm tar GOOS=linux GOARCH=amd64 DEB_PKG_ARCH=amd64 ARCH=x86_64
