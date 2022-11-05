@@ -1,12 +1,10 @@
 FROM golang:1.16-alpine AS builder
 
-ARG TARGETARCH
-ARG TARGETOS
 ARG VERSION=v1.9.0
 
 ADD . $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter
 WORKDIR $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter
-RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-X 'main.version=$VERSION'" -o aerospike-prometheus-exporter . \
+RUN go build -ldflags="-X 'main.version=$VERSION'" -o aerospike-prometheus-exporter . \
 	&& cp aerospike-prometheus-exporter /aerospike-prometheus-exporter
 
 FROM alpine:latest
