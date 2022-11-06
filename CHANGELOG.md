@@ -3,6 +3,44 @@
 This file documents all notable changes to Aerospike Prometheus Exporter
 
 
+## [v1.8.0](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.8.0)
+
+### Description
+Aerospike Prometheus exporter v1.8.0 adds support for metrics introduced in Aerospike server 6.1, fixes a certificate parsing bug, and fixes docker entrypoint environment processing.
+
+### Features
+- [TOOLS-2086] Add server 6.1 metrics.
+    - Adds `sindex_name` label to job metrics.
+    - Adds `entries_per_rec` sindex metric.
+    - Adds `entries_per_bval ` sindex metric.
+    - Adds `bytes_shipped` xdr metric.
+
+### Fixes
+- [TOOLS-2090] Does not support mTLS with multiple certificates in the cert-file.
+- Fix environment variable processing in docker-entrypoint.  Thanks to @nermolaev for the contribution!
+
+
+## [v1.7.0](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.7.0)
+
+### Description
+Aerospike Prometheus exporter v1.7.0 adds support for batch-index latencies metrics.
+
+### Features
+- [TOOLS-2072] - Add support for batch-index latencies metrics including aerospike_latencies_batch_index_ms_bucket and aerospike_latencies_batch_index_ms_count. Thanks to [KSauter](https://github.com/KSauter) on github for the contribution.
+
+
+## [v1.6.0](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.6.0)
+
+### Description
+Exporter v1.6.0 adds support for metrics introduced in Aerospike 6.0.
+- See the links below for more information on the new metrics.
+    - https://developer.aerospike.com/blog/config-metric-info-changes-in-database-6
+    - Check “Introduced in” 6.0 https://docs.aerospike.com/reference/metrics
+
+### Features
+- [TOOLS-2041] Add support for server6.0 metrics changes.
+
+
 ## [v1.5.2](https://github.com/aerospike/aerospike-prometheus-exporter/releases/tag/v1.5.2)
 
 ### Fixes
