@@ -92,6 +92,25 @@ Build the exporter go binary and package it into `rpm`, `deb` or `tar`.
 
 Packages will be generated under `./pkg/target/` directory.
 
+#### Support for multiple architectures
+
+Build the exporter packages for `linux/arm64` and `linux/amd64`.
+
+For `arm64`,
+```bash
+make package-linux-arm64
+```
+
+For `amd64`,
+```bash
+make package-linux-amd64
+```
+
+For docker, build and push (for release only) exporter docker image with multiarch support
+```bash
+make release-docker-multi-arch
+```
+
 #### Install Exporter Using `DEB` and `RPM` Packages
 
 - Install `deb` package
