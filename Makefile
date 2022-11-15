@@ -52,7 +52,7 @@ release-docker-multi-arch:
 
 .PHONY: package-linux-arm64
 package-linux-arm64:
-	$(MAKE) deb rpm tar GOOS=linux GOARCH=arm64 DEB_PKG_ARCH=arm64 ARCH=arm64
+	$(MAKE) deb rpm tar GOOS=linux GOARCH=arm64 DEB_PKG_ARCH=arm64 ARCH=aarch64
 
 .PHONY: package-linux-amd64
 package-linux-amd64:
