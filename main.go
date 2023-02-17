@@ -13,7 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	aero "github.com/aerospike/aerospike-client-go/v5"
+	aero "github.com/aerospike/aerospike-client-go/v6"
 	log "github.com/sirupsen/logrus"
 )
 
