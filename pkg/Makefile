@@ -35,7 +35,7 @@ deb: prep
 		--url $(URL) \
 		--vendor $(VENDOR) \
 		--architecture $(DEB_PKG_ARCH) \
-		--package $(TARGET_DIR)/aerospike-prometheus-exporter-$(VERSION)-$(DEB_PKG_ARCH).deb
+		--package $(TARGET_DIR)/aerospike-prometheus-exporter_$(VERSION)_$(DEB_PKG_ARCH).deb
 
 .PHONY: rpm
 rpm: prep
@@ -53,7 +53,7 @@ rpm: prep
 		--url $(URL) \
 		--vendor $(VENDOR) \
 		--architecture $(ARCH) \
-		--package $(TARGET_DIR)/aerospike-prometheus-exporter-$(VERSION)-$(ARCH).rpm
+		--package $(TARGET_DIR)/aerospike-prometheus-exporter-$(VERSION).$(ARCH).rpm
 
 .PHONY: tar
 tar: prep
@@ -70,7 +70,7 @@ tar: prep
 		--license $(LICENSE) \
 		--url $(URL) \
 		--vendor $(VENDOR) \
-		--package $(TARGET_DIR)/aerospike-prometheus-exporter-$(VERSION)-$(ARCH).tar
+		--package $(TARGET_DIR)/aerospike-prometheus-exporter_$(VERSION)_$(ARCH).tar
 
 .PHONY: prep
 prep:
