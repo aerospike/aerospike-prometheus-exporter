@@ -43,6 +43,7 @@ var namespaceRawMetrics = map[string]metricType{
 	"ns-forward-xdr-writes":                  mtGauge,
 	"nsup_cycle_duration":                    mtGauge,
 	"nsup_cycle_sleep_pct":                   mtGauge,
+	"nsup_cycle_deleted_pct":                 mtGauge,
 	"obj-size-hist-max":                      mtGauge,
 	"partition-tree-locks":                   mtGauge,
 	"partition-tree-sprigs":                  mtGauge,
