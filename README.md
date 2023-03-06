@@ -71,6 +71,13 @@ We appreciate feedback from community members on the [issues](https://github.com
         gem install --no-document fpm
         ```
 
+####  Pre Requisites for a FIPS build
+
+To generate a FIPS compatible exporter, you need to have FIPS enabled OS and OpenSSL
+Aerospike Exporter internally using boringcrypto library
+
+NOTE: currently exporter with FIPS is only supported in OS=linux and OSARCH=amd64 
+
 #### Steps
 
 Build the exporter go binary and package it into `rpm`, `deb` or `tar`.
@@ -79,15 +86,19 @@ Build the exporter go binary and package it into `rpm`, `deb` or `tar`.
     ```bash
     make deb
     ```
-
-- Build `rpm` package,
+- Build FIPS compliant `deb` package,
     ```bash
-    make rpm
+    make fips-deb
     ```
 
-- Build linux tarball,
+- Build FIPS compliant `rpm` package,
     ```bash
-    make tar
+    make fips-rpm
+    ```
+
+- Build FIPS compliant linux tarball,
+    ```bash
+    make fips- tar
     ```
 
 Packages will be generated under `./pkg/target/` directory.

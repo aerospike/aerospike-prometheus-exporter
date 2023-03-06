@@ -3,6 +3,15 @@ ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 VERSION = $(shell git describe --tags --always)
 GO_ENV_VARS =
 
+# FIPS required evaluations
+GO_VERSION = $(shell go version)
+ifeq ( , $(findstring go1.20,$(GO_VERSION) go_not_20 ))
+	GO_BORINGCRYPTO=
+else
+	GO_BORINGCRYPTO=boringcrypto
+endif
+GO_FIPS =  
+
 ifdef GOOS
 GO_ENV_VARS = GOOS=$(GOOS)
 endif
@@ -16,21 +25,38 @@ DOCKER_MULTI_ARCH_PLATFORMS = linux/amd64,linux/arm64
 # Builds exporter binary
 .PHONY: exporter
 exporter:
-	$(GO_ENV_VARS) go build -ldflags="-X 'main.version=$(VERSION)'" -o aerospike-prometheus-exporter .
+	@echo $(GO_FIPS)
+	$(GO_ENV_VARS) GOEXPERIMENT=$(GO_FIPS) go build -ldflags="-X 'main.version=$(VERSION)'" -o aerospike-prometheus-exporter .
+
+.PHONY: fipsparam
+fipsparam: 
+	$(eval GO_FIPS=$(GO_BORINGCRYPTO))
 
 # Builds RPM, DEB and TAR packages
 # Requires FPM package manager
 .PHONY: deb
 deb: exporter
-	$(MAKE) -C $(ROOT_DIR)/pkg/ $@
+	$(MAKE) -C $(ROOT_DIR)/pkg/ deb 
+
+.PHONY: fips-deb
+fips-deb: fipsparam exporter
+	$(MAKE) -C $(ROOT_DIR)/pkg/ deb 
 
 .PHONY: rpm
 rpm: exporter
-	$(MAKE) -C $(ROOT_DIR)/pkg/ $@
+	$(MAKE) -C $(ROOT_DIR)/pkg/ rpm 
+
+.PHONY: fips-rpm
+fips-rpm: fipsparam exporter
+	$(MAKE) -C $(ROOT_DIR)/pkg/ rpm
 
 .PHONY: tar
 tar: exporter
-	$(MAKE) -C $(ROOT_DIR)/pkg/ $@
+	$(MAKE) -C $(ROOT_DIR)/pkg/ tar 
+
+.PHONY: fips-tar
+fips-tar: fipsparam exporter
+	$(MAKE) -C $(ROOT_DIR)/pkg/ tar 
 
 # Clean up
 .PHONY: clean
