@@ -74,9 +74,10 @@ We appreciate feedback from community members on the [issues](https://github.com
 ####  Pre Requisites for a FIPS build
 
 To generate a FIPS compatible exporter, you need to have FIPS enabled OS and OpenSSL
-Aerospike Exporter internally using boringcrypto library
+Aerospike Exporter internally using boringcrypto library for FIPS complaince crypto operations
 
-NOTE: currently exporter with FIPS is only supported in OS=linux and OSARCH=amd64 
+NOTE: Currently Aerospike Prometheus Exporter with FIPS is only supported 
+      OS_ARCH=amd64 and OS=CentOS 8 or OS=Red Hat Enterprise Linus 8 
 
 #### Steps
 
@@ -86,10 +87,6 @@ Build the exporter go binary and package it into `rpm`, `deb` or `tar`.
     ```bash
     make deb
     ```
-- Build FIPS compliant `deb` package,
-    ```bash
-    make fips-deb
-    ```
 
 - Build FIPS compliant `rpm` package,
     ```bash
@@ -98,7 +95,7 @@ Build the exporter go binary and package it into `rpm`, `deb` or `tar`.
 
 - Build FIPS compliant linux tarball,
     ```bash
-    make fips- tar
+    make fips-tar
     ```
 
 Packages will be generated under `./pkg/target/` directory.
@@ -132,6 +129,11 @@ make release-docker-multi-arch
 - Install `rpm` package
     ```bash
     rpm -Uvh ./pkg/target/aerospike-prometheus-exporter-*.rpm
+    ```
+
+- Install FIPS compatible `rpm` package
+    ```bash
+    rpm -Uvh ./pkg/target/aerospike-prometheus-exporter-federal-*.rpm
     ```
 
 - Run the exporter
