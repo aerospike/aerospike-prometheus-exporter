@@ -1,26 +1,6 @@
 # Variables required for this Makefile
-ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-VERSION = $(shell git describe --tags --always)
-GO_ENV_VARS =
-
-# FIPS required evaluations
-GO_VERSION = $(shell go version)
-ifeq ( , $(findstring go1.20,$(GO_VERSION) go_not_20 ))
-	GO_BORINGCRYPTO=
-else
-	GO_BORINGCRYPTO=boringcrypto
-endif
-GO_FIPS =  
-
-ifdef GOOS
-GO_ENV_VARS = GOOS=$(GOOS)
-endif
-
-ifdef GOARCH
-GO_ENV_VARS += GOARCH=$(GOARCH)
-endif
-
-DOCKER_MULTI_ARCH_PLATFORMS = linux/amd64,linux/arm64
+# Include all common variables
+include Makefile.vars
 
 # Builds exporter binary
 .PHONY: exporter
@@ -30,16 +10,23 @@ exporter:
 
 .PHONY: fipsparam
 fipsparam: 
+	@echo "fips enabled "$(IS_OS_FIPS_MODE)
+	@echo "os-name "$(OS_FULL_NAME)
+	@echo "APE_SUPPORTED_OS ==> "$(APE_SUPPORTED_OS)
+ifeq ($(APE_SUPPORTED_OS),validfipsos)
+	@echo  "Setting FIPS required params"
 	$(eval GO_FIPS=$(GO_BORINGCRYPTO))
+	$(eval BINARY_FILENAME=$(FIPS_BINARY_FILENAME))
+	@echo  "Current BINARY_FILENAME === "$(BINARY_FILENAME)
+else
+	@echo  "Fips Exporter build is supported only on CentOS 8 or Red Hat 8 versions"
+	exit 1
+endif
 
 # Builds RPM, DEB and TAR packages
 # Requires FPM package manager
 .PHONY: deb
 deb: exporter
-	$(MAKE) -C $(ROOT_DIR)/pkg/ deb 
-
-.PHONY: fips-deb
-fips-deb: fipsparam exporter
 	$(MAKE) -C $(ROOT_DIR)/pkg/ deb 
 
 .PHONY: rpm
