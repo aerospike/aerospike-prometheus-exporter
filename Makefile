@@ -10,14 +10,10 @@ exporter:
 
 .PHONY: fipsparam
 fipsparam: 
-	@echo "fips enabled "$(IS_OS_FIPS_MODE)
-	@echo "os-name "$(OS_FULL_NAME)
-	@echo "APE_SUPPORTED_OS ==> "$(APE_SUPPORTED_OS)
 ifeq ($(APE_SUPPORTED_OS),validfipsos)
 	@echo  "Setting FIPS required params"
 	$(eval GO_FIPS=$(GO_BORINGCRYPTO))
-	$(eval BINARY_FILENAME=$(FIPS_BINARY_FILENAME))
-	@echo  "Current BINARY_FILENAME === "$(BINARY_FILENAME)
+	$(eval PKG_FILENAME=$(FIPS_PKG_FILENAME))
 else
 	@echo  "Fips Exporter build is supported only on CentOS 8 or Red Hat 8 versions"
 	exit 1
@@ -29,13 +25,17 @@ endif
 deb: exporter
 	$(MAKE) -C $(ROOT_DIR)/pkg/ deb 
 
+.PHONY: fips-deb
+fips-deb: fipsparam exporter
+	$(MAKE) -C $(ROOT_DIR)/pkg/ fips-deb 
+
 .PHONY: rpm
 rpm: exporter
 	$(MAKE) -C $(ROOT_DIR)/pkg/ rpm 
 
 .PHONY: fips-rpm
 fips-rpm: fipsparam exporter
-	$(MAKE) -C $(ROOT_DIR)/pkg/ rpm
+	$(MAKE) -C $(ROOT_DIR)/pkg/ fips-rpm
 
 .PHONY: tar
 tar: exporter
@@ -43,7 +43,7 @@ tar: exporter
 
 .PHONY: fips-tar
 fips-tar: fipsparam exporter
-	$(MAKE) -C $(ROOT_DIR)/pkg/ tar 
+	$(MAKE) -C $(ROOT_DIR)/pkg/ fips-tar 
 
 # Clean up
 .PHONY: clean

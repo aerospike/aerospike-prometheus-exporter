@@ -30,13 +30,17 @@ fipsparam:
 ifeq ($(APE_SUPPORTED_OS),validfipsos)
 	@echo  "Setting FIPS required params"
 	$(eval GO_FIPS=$(GO_BORINGCRYPTO))
-	$(eval BINARY_FILENAME=$(FIPS_BINARY_FILENAME))
-	@echo  "Current BINARY_FILENAME === "$(BINARY_FILENAME)
+	$(eval PKG_FILENAME=$(FIPS_PKG_FILENAME))
+	@echo  "Current PKG_FILENAME === "$(PKG_FILENAME)
 else
 	@echo  "Fips Exporter build is supported only on CentOS 8 or Red Hat 8 versions"
 	exit 1
 endif
 
+
+.PHONY: fips-deb
+fips-deb: fipsparam deb 
+	@echo "Completed FIPS Packaging"
 
 .PHONY: deb
 deb: prep
@@ -54,10 +58,15 @@ deb: prep
 		--url $(URL) \
 		--vendor $(VENDOR) \
 		--architecture $(DEB_PKG_ARCH) \
-		--package $(TARGET_DIR)/aerospike-prometheus-exporter_$(VERSION)_$(DEB_PKG_ARCH).deb
+		--package $(TARGET_DIR)/$(PKG_FILENAME)_$(VERSION)_$(DEB_PKG_ARCH).deb
+
+
+.PHONY: fips-rpm
+fips-rpm: fipsparam rpm 
+	@echo "Completed FIPS Packaging"
 
 .PHONY: rpm
-rpm: fipsparam prep
+rpm: prep
 	fpm --force \
 		--config-files /etc/aerospike-prometheus-exporter \
 		--input-type dir \
@@ -72,10 +81,13 @@ rpm: fipsparam prep
 		--url $(URL) \
 		--vendor $(VENDOR) \
 		--architecture $(ARCH) \
-		--package $(TARGET_DIR)/$(BINARY_FILENAME)-$(VERSION).$(ARCH).rpm
+		--package $(TARGET_DIR)/$(PKG_FILENAME)-$(VERSION).$(ARCH).rpm
+
+.PHONY: fips-tar
+fips-tar: fipsparam tar 
 
 .PHONY: tar
-tar: fipsparam prep
+tar: prep
 	fpm --force \
 		--config-files /etc/aerospike-prometheus-exporter \
 		--input-type dir \
@@ -89,11 +101,11 @@ tar: fipsparam prep
 		--license $(LICENSE) \
 		--url $(URL) \
 		--vendor $(VENDOR) \
-		--package $(TARGET_DIR)/$(BINARY_FILENAME)_$(VERSION)_$(ARCH).tar
+		--package $(TARGET_DIR)/$(PKG_FILENAME)_$(VERSION)_$(ARCH).tar
 
 .PHONY: prep
 prep:
-	@echo "prep BINARY_FILENAME "$(BINARY_FILENAME)
+	@echo "prep PKG_FILENAME "$(PKG_FILENAME)
 	install -d $(TARGET_DIR)
 	install -d $(BUILD_DIR)/usr/bin
 	install -d $(BUILD_DIR)/etc/aerospike-prometheus-exporter
