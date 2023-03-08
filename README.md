@@ -73,10 +73,10 @@ We appreciate feedback from community members on the [issues](https://github.com
 
 ####  Pre Requisites for a FIPS build
 
-To generate a FIPS compatible exporter, you need to have FIPS enabled OS and OpenSSL
+To generate a FIPS compatible exporter, you need to have FIPS enabled OS and OpenSSL,
 Aerospike Exporter internally using boringcrypto library for FIPS complaince crypto operations
 
-NOTE: Currently Aerospike Prometheus Exporter with FIPS is only supported 
+NOTE: Currently Aerospike Prometheus Exporter with FIPS is only supported on 
       OS_ARCH=amd64 and OS=CentOS 8 or OS=Red Hat Enterprise Linus 8 
 
 #### Steps
