@@ -43,6 +43,7 @@ var namespaceRawMetrics = map[string]metricType{
 	"ns-forward-xdr-writes":                  mtGauge,
 	"nsup_cycle_duration":                    mtGauge,
 	"nsup_cycle_sleep_pct":                   mtGauge,
+	"nsup_cycle_deleted_pct":                 mtGauge,
 	"obj-size-hist-max":                      mtGauge,
 	"partition-tree-locks":                   mtGauge,
 	"partition-tree-sprigs":                  mtGauge,
@@ -145,6 +146,7 @@ var namespaceRawMetrics = map[string]metricType{
 	"shadow_write_q":                           mtGauge,
 	"stop_writes":                              mtGauge,
 	"stop-writes-pct":                          mtGauge,
+	"stop-writes-sys-memory-pct":               mtGauge,
 	"tombstones":                               mtGauge,
 	"write_q":                                  mtGauge,
 	"xdr_tombstones":                           mtGauge,
@@ -442,6 +444,7 @@ var namespaceRawMetrics = map[string]metricType{
 	"storage-engine.tomb-raider-sleep":         mtGauge, //=1000
 	"storage-engine.cache-replica-writes":      mtGauge, //=false
 	"storage-engine.disable-odsync":            mtGauge, //=false
+	"storage-engine.max-used-pct":              mtGauge, //=70
 
 	"storage-engine.file.age":              mtGauge,
 	"storage-engine.file.defrag_q":         mtGauge,

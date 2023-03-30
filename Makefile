@@ -1,36 +1,49 @@
 # Variables required for this Makefile
-ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-VERSION = $(shell git describe --tags --always)
-GO_ENV_VARS =
-
-ifdef GOOS
-GO_ENV_VARS = GOOS=$(GOOS)
-endif
-
-ifdef GOARCH
-GO_ENV_VARS += GOARCH=$(GOARCH)
-endif
-
-DOCKER_MULTI_ARCH_PLATFORMS = linux/amd64,linux/arm64
+# Include all common variables
+include Makefile.vars
 
 # Builds exporter binary
 .PHONY: exporter
 exporter:
-	$(GO_ENV_VARS) go build -ldflags="-X 'main.version=$(VERSION)'" -o aerospike-prometheus-exporter .
+	@echo $(GO_FIPS)
+	$(GO_ENV_VARS) GOEXPERIMENT=$(GO_FIPS) go build -ldflags="-X 'main.version=$(VERSION)'" -o aerospike-prometheus-exporter .
+
+.PHONY: fipsparam
+fipsparam: 
+ifeq ($(APE_SUPPORTED_OS),validfipsos)
+	@echo  "Setting FIPS required params"
+	$(eval GO_FIPS=$(GO_BORINGCRYPTO))
+	$(eval PKG_FILENAME=$(FIPS_PKG_FILENAME))
+else
+	@echo  "Fips Exporter build is supported only on CentOS 8 or Red Hat 8 versions or have Golang v1.20 and above"
+	exit 1
+endif
 
 # Builds RPM, DEB and TAR packages
 # Requires FPM package manager
 .PHONY: deb
 deb: exporter
-	$(MAKE) -C $(ROOT_DIR)/pkg/ $@
+	$(MAKE) -C $(ROOT_DIR)/pkg/ deb 
+
+.PHONY: fips-deb
+fips-deb: fipsparam exporter
+	$(MAKE) -C $(ROOT_DIR)/pkg/ fips-deb 
 
 .PHONY: rpm
 rpm: exporter
-	$(MAKE) -C $(ROOT_DIR)/pkg/ $@
+	$(MAKE) -C $(ROOT_DIR)/pkg/ rpm 
+
+.PHONY: fips-rpm
+fips-rpm: fipsparam exporter
+	$(MAKE) -C $(ROOT_DIR)/pkg/ fips-rpm
 
 .PHONY: tar
 tar: exporter
-	$(MAKE) -C $(ROOT_DIR)/pkg/ $@
+	$(MAKE) -C $(ROOT_DIR)/pkg/ tar 
+
+.PHONY: fips-tar
+fips-tar: fipsparam exporter
+	$(MAKE) -C $(ROOT_DIR)/pkg/ fips-tar 
 
 # Clean up
 .PHONY: clean
