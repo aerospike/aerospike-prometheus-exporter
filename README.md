@@ -71,6 +71,12 @@ We appreciate feedback from community members on the [issues](https://github.com
         gem install --no-document fpm
         ```
 
+####  Pre Requisites for a FIPS build
+
+To generate a FIPS compatible exporter you need Golang 1.20 or above or have a FIPS enabled OS and OpenSSL.
+
+Aerospike Exporter internally using boringcrypto library for FIPS complaince crypto operations
+
 #### Steps
 
 Build the exporter go binary and package it into `rpm`, `deb` or `tar`.
@@ -88,6 +94,21 @@ Build the exporter go binary and package it into `rpm`, `deb` or `tar`.
 - Build linux tarball,
     ```bash
     make tar
+    ```
+
+- Build FIPS compliant `deb` package,
+    ```bash
+    make fips-deb
+    ```
+
+- Build FIPS compliant `rpm` package,
+    ```bash
+    make fips-rpm
+    ```
+
+- Build FIPS compliant linux tarball,
+    ```bash
+    make fips-tar
     ```
 
 Packages will be generated under `./pkg/target/` directory.
@@ -121,6 +142,11 @@ make release-docker-multi-arch
 - Install `rpm` package
     ```bash
     rpm -Uvh ./pkg/target/aerospike-prometheus-exporter-*.rpm
+    ```
+
+- Install FIPS compatible `rpm` package
+    ```bash
+    rpm -Uvh ./pkg/target/aerospike-prometheus-exporter-federal-*.rpm
     ```
 
 - Run the exporter

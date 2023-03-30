@@ -26,7 +26,8 @@ var sindexRawMetrics = map[string]metricType{
 	"query_basic_abort":         mtCounter, // removed in server6.0
 	"query_basic_avg_rec_count": mtGauge,   // removed in server6.0
 	"histogram":                 mtGauge,   // removed in server6.0
-	"memory_used":               mtGauge,
+	"memory_used":               mtGauge,   // deprecated in server6.3 version and replaced by used_bytes
+	"used_bytes":                mtGauge,   // added in server6.3 represents memory used by data (aka memory_used)
 	"load_time":                 mtGauge,
 	"entries_per_rec":           mtGauge,
 	"entries_per_bval":          mtGauge,
@@ -86,7 +87,6 @@ func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 		nsName := sindexInfoKeySplit[0]
 		sindexName := sindexInfoKeySplit[1]
 		log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
-
 		sindexObserver := make(MetricMap, len(sindexMetrics))
 		for m, t := range sindexMetrics {
 			sindexObserver[m] = makeMetric("aerospike_sindex", m, t, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", "sindex")
