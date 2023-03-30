@@ -15,7 +15,7 @@ ifeq ($(APE_SUPPORTED_OS),validfipsos)
 	$(eval GO_FIPS=$(GO_BORINGCRYPTO))
 	$(eval PKG_FILENAME=$(FIPS_PKG_FILENAME))
 else
-	@echo  "Fips Exporter build is supported only on CentOS 8 or Red Hat 8 versions"
+	@echo  "Fips Exporter build is supported only on CentOS 8 or Red Hat 8 versions or have Golang v1.20 and above"
 	exit 1
 endif
 
