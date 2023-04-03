@@ -12,7 +12,7 @@ We appreciate feedback from community members on the [issues](https://github.com
 
 #### Pre Requisites
 
-- Install Go v1.12+
+- Install Go v1.17+
 
 #### Steps
 
