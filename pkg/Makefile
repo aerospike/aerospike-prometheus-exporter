@@ -48,6 +48,7 @@ deb: prep
 		--config-files /etc/aerospike-prometheus-exporter \
 		--input-type dir \
 		--output-type deb \
+		--deb-compression xz \
 		--chdir $(BUILD_DIR)/ \
 		--after-install $(PKG_DIR)/post-install.sh \
 		--name $(NAME) \
