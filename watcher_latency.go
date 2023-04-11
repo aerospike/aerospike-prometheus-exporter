@@ -9,6 +9,11 @@ import (
 type LatencyWatcher struct {
 }
 
+var latenciesRawMetrics = map[string]metricType{}
+
+// Filtered namespace metrics. Populated by getFilteredMetrics() based on the config.Aerospike.LatenciesMetricsAllowlist, config.Aerospike.LatenciesMetricsBlocklist and namespaceRawMetrics.
+var latenciesMetrics map[string]metricType
+
 func (lw *LatencyWatcher) describe(ch chan<- *prometheus.Desc) {}
 
 func (lw *LatencyWatcher) passOneKeys() []string {
@@ -32,6 +37,11 @@ func (lw *LatencyWatcher) passTwoKeys(rawMetrics map[string]string) (latencyComm
 }
 
 func (lw *LatencyWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
+
+	if latenciesMetrics == nil {
+		latenciesMetrics = getFilteredMetrics(latenciesRawMetrics, config.Aerospike.LatenciesMetricsAllowlist, config.Aerospike.LatenciesMetricsAllowlistEnabled, config.Aerospike.NamespaceMetricsBlocklist, config.Aerospike.NamespaceMetricsBlocklistEnabled)
+	}
+
 	var latencyStats map[string]StatsMap
 
 	if rawMetrics["latencies:"] != "" {

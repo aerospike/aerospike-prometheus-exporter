@@ -128,6 +128,9 @@ latency_buckets_count = 0
 # Secondary index metrics allowlist
 # sindex_metrics_allowlist = []
 
+# Latencies metrics allowlist
+# latencies_metrics_allowlist = []
+
 # Metrics Blocklist - If specified, these metrics will be NOT be scraped.
 
 # Namespace metrics blocklist
@@ -147,6 +150,9 @@ latency_buckets_count = 0
 
 # Secondary index metrics blocklist
 # sindex_metrics_blocklist = []
+
+# latencies metrics blocklist
+# latencies_metrics_blocklist = []
 
 # Users Statistics (user statistics are available in Aerospike 5.6+)
 # Users Allowlist and Blocklist to control for which users their statistics should be collected.

@@ -64,6 +64,13 @@ type Config struct {
 		SindexMetricsAllowlistEnabled bool
 		SindexMetricsBlocklistEnabled bool
 
+		// Latencies Allow and Block list
+		LatenciesMetricsAllowlistEnabled bool
+		LatenciesMetricsAllowlist        []string `toml:"latencies_metrics_allowlist"`
+
+		LatenciesMetricsBlocklistEnabled bool
+		LatenciesMetricsBlocklist        []string `toml:"latencies_metrics_blocklist"`
+
 		// knob to disable sindex metrics collection (for internal use only, will be deprecated)
 		DisableSindexMetrics bool `toml:"disable_sindex_metrics"`
 
@@ -98,11 +105,13 @@ type Config struct {
 		SetMetricsWhitelist       []string `toml:"set_metrics_whitelist"`
 		NodeMetricsWhitelist      []string `toml:"node_metrics_whitelist"`
 		XdrMetricsWhitelist       []string `toml:"xdr_metrics_whitelist"`
+		LatenciesMetricsWhitelist []string `toml:"latencies_metrics_whitelist"`
 
 		NamespaceMetricsBlacklist []string `toml:"namespace_metrics_blacklist"`
 		SetMetricsBlacklist       []string `toml:"set_metrics_blacklist"`
 		NodeMetricsBlacklist      []string `toml:"node_metrics_blacklist"`
 		XdrMetricsBlacklist       []string `toml:"xdr_metrics_blacklist"`
+		LatenciesMetricsBlacklist []string `toml:"latencies_metrics_blacklist"`
 	} `toml:"Aerospike"`
 
 	LogFile *os.File
@@ -205,6 +214,9 @@ func initAllowlistAndBlocklistConfigs(config *Config, md toml.MetaData) {
 	config.Aerospike.SindexMetricsAllowlistEnabled = md.IsDefined("Aerospike", "sindex_metrics_allowlist")
 	config.Aerospike.SindexMetricsBlocklistEnabled = md.IsDefined("Aerospike", "sindex_metrics_blocklist")
 
+	config.Aerospike.LatenciesMetricsAllowlistEnabled = md.IsDefined("Aerospike", "latencies_metrics_allowlist")
+	config.Aerospike.LatenciesMetricsBlocklistEnabled = md.IsDefined("Aerospike", "sindex_metrics_blocklist")
+
 	// Initialize BlocklistEnabled config
 	config.Aerospike.NamespaceMetricsBlocklistEnabled = md.IsDefined("Aerospike", "namespace_metrics_blocklist")
 	config.Aerospike.SetMetricsBlocklistEnabled = md.IsDefined("Aerospike", "set_metrics_blocklist")
@@ -285,4 +297,15 @@ func initAllowlistAndBlocklistConfigs(config *Config, md toml.MetaData) {
 		config.Aerospike.XdrMetricsBlocklistEnabled = true
 		config.Aerospike.XdrMetricsBlocklist = config.Aerospike.XdrMetricsBlacklist
 	}
+
+	// Latencies -- Is this required - as this feature was not available in previous versions
+	if md.IsDefined("Aerospike", "latencies_metrics_allowlist") {
+		if config.Aerospike.LatenciesMetricsAllowlistEnabled {
+			log.Fatalf("latencies_metrics_whitelist and latencies_metrics_allowlist are mutually exclusive!")
+		}
+
+		config.Aerospike.LatenciesMetricsAllowlistEnabled = true
+		config.Aerospike.LatenciesMetricsAllowlist = config.Aerospike.NamespaceMetricsWhitelist
+	}
+
 }
