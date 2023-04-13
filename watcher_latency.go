@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	log "github.com/sirupsen/logrus"
@@ -21,6 +23,14 @@ func (lw *LatencyWatcher) passOneKeys() []string {
 }
 
 func (lw *LatencyWatcher) passTwoKeys(rawMetrics map[string]string) (latencyCommands []string) {
+
+	// return if this feature is disabled.
+	if config.Aerospike.DisableLatenciesMetrics {
+		// disabled
+		fmt.Println("latencies refresh is disabled")
+		return nil
+	}
+
 	latencyCommands = []string{"latencies:", "latency:"}
 
 	ok, err := buildVersionGreaterThanOrEqual(rawMetrics, "5.1.0.0")
@@ -38,8 +48,19 @@ func (lw *LatencyWatcher) passTwoKeys(rawMetrics map[string]string) (latencyComm
 
 func (lw *LatencyWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 
-	if latenciesMetrics == nil {
-		latenciesMetrics = getFilteredMetrics(latenciesRawMetrics, config.Aerospike.LatenciesMetricsAllowlist, config.Aerospike.LatenciesMetricsAllowlistEnabled, config.Aerospike.NamespaceMetricsBlocklist, config.Aerospike.NamespaceMetricsBlocklistEnabled)
+	allowedLatenciesList := make(map[string]struct{})
+	blockedLatenciessList := make(map[string]struct{})
+
+	if config.Aerospike.LatenciesMetricsAllowlistEnabled {
+		for _, allowedLatencies := range config.Aerospike.LatenciesMetricsAllowlist {
+			allowedLatenciesList[allowedLatencies] = struct{}{}
+		}
+	}
+
+	if config.Aerospike.LatenciesMetricsBlocklistEnabled {
+		for _, blockedLatencies := range config.Aerospike.LatenciesMetricsBlocklist {
+			blockedLatenciessList[blockedLatencies] = struct{}{}
+		}
 	}
 
 	var latencyStats map[string]StatsMap
@@ -54,6 +75,20 @@ func (lw *LatencyWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 
 	for namespaceName, nsLatencyStats := range latencyStats {
 		for operation, opLatencyStats := range nsLatencyStats {
+
+			// operation comes from server as histogram-names
+			if config.Aerospike.LatenciesMetricsAllowlistEnabled {
+				if _, ok := allowedLatenciesList[operation]; !ok {
+					continue
+				}
+			}
+
+			if config.Aerospike.LatenciesMetricsBlocklistEnabled {
+				if _, ok := blockedLatenciessList[operation]; ok {
+					continue
+				}
+			}
+
 			for i, labelValue := range opLatencyStats.(StatsMap)["bucketLabels"].([]string) {
 				// aerospike_latencies_<operation>_<timeunit>_bucket metric - Less than or equal to histogram buckets
 				pm := makeMetric("aerospike_latencies", operation+"_"+opLatencyStats.(StatsMap)["timeUnit"].(string)+"_bucket", mtGauge, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", "le")

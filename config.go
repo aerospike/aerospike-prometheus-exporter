@@ -71,6 +71,9 @@ type Config struct {
 		LatenciesMetricsBlocklistEnabled bool
 		LatenciesMetricsBlocklist        []string `toml:"latencies_metrics_blocklist"`
 
+		// knob to disable latencies metrics collection (for internal use only, will be deprecated)
+		DisableLatenciesMetrics bool `toml:"disable_latencies_metrics"`
+
 		// knob to disable sindex metrics collection (for internal use only, will be deprecated)
 		DisableSindexMetrics bool `toml:"disable_sindex_metrics"`
 
@@ -215,7 +218,7 @@ func initAllowlistAndBlocklistConfigs(config *Config, md toml.MetaData) {
 	config.Aerospike.SindexMetricsBlocklistEnabled = md.IsDefined("Aerospike", "sindex_metrics_blocklist")
 
 	config.Aerospike.LatenciesMetricsAllowlistEnabled = md.IsDefined("Aerospike", "latencies_metrics_allowlist")
-	config.Aerospike.LatenciesMetricsBlocklistEnabled = md.IsDefined("Aerospike", "sindex_metrics_blocklist")
+	config.Aerospike.LatenciesMetricsBlocklistEnabled = md.IsDefined("Aerospike", "latencies_metrics_blocklist")
 
 	// Initialize BlocklistEnabled config
 	config.Aerospike.NamespaceMetricsBlocklistEnabled = md.IsDefined("Aerospike", "namespace_metrics_blocklist")
@@ -299,13 +302,23 @@ func initAllowlistAndBlocklistConfigs(config *Config, md toml.MetaData) {
 	}
 
 	// Latencies -- Is this required - as this feature was not available in previous versions
-	if md.IsDefined("Aerospike", "latencies_metrics_allowlist") {
+	if md.IsDefined("Aerospike", "latencies_metrics_whitelist") {
 		if config.Aerospike.LatenciesMetricsAllowlistEnabled {
 			log.Fatalf("latencies_metrics_whitelist and latencies_metrics_allowlist are mutually exclusive!")
 		}
 
 		config.Aerospike.LatenciesMetricsAllowlistEnabled = true
-		config.Aerospike.LatenciesMetricsAllowlist = config.Aerospike.NamespaceMetricsWhitelist
+		config.Aerospike.LatenciesMetricsAllowlist = config.Aerospike.LatenciesMetricsWhitelist
+	}
+
+	// Latencies -- Is this required - as this feature was not available in previous versions
+	if md.IsDefined("Aerospike", "latencies_metrics_blacklist") {
+		if config.Aerospike.LatenciesMetricsBlocklistEnabled {
+			log.Fatalf("latencies_metrics_blacklist and latencies_metrics_blocklist are mutually exclusive!")
+		}
+
+		config.Aerospike.LatenciesMetricsBlocklistEnabled = true
+		config.Aerospike.LatenciesMetricsBlocklist = config.Aerospike.NamespaceMetricsBlacklist
 	}
 
 }
