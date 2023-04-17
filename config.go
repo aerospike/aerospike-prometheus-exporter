@@ -108,13 +108,11 @@ type Config struct {
 		SetMetricsWhitelist       []string `toml:"set_metrics_whitelist"`
 		NodeMetricsWhitelist      []string `toml:"node_metrics_whitelist"`
 		XdrMetricsWhitelist       []string `toml:"xdr_metrics_whitelist"`
-		LatenciesMetricsWhitelist []string `toml:"latencies_metrics_whitelist"`
 
 		NamespaceMetricsBlacklist []string `toml:"namespace_metrics_blacklist"`
 		SetMetricsBlacklist       []string `toml:"set_metrics_blacklist"`
 		NodeMetricsBlacklist      []string `toml:"node_metrics_blacklist"`
 		XdrMetricsBlacklist       []string `toml:"xdr_metrics_blacklist"`
-		LatenciesMetricsBlacklist []string `toml:"latencies_metrics_blacklist"`
 	} `toml:"Aerospike"`
 
 	LogFile *os.File
