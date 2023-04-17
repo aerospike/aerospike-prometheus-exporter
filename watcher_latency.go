@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/prometheus/client_golang/prometheus"
 
 	log "github.com/sirupsen/logrus"
@@ -10,11 +8,6 @@ import (
 
 type LatencyWatcher struct {
 }
-
-var latenciesRawMetrics = map[string]metricType{}
-
-// Filtered namespace metrics. Populated by getFilteredMetrics() based on the config.Aerospike.LatenciesMetricsAllowlist, config.Aerospike.LatenciesMetricsBlocklist and namespaceRawMetrics.
-var latenciesMetrics map[string]metricType
 
 func (lw *LatencyWatcher) describe(ch chan<- *prometheus.Desc) {}
 
@@ -27,7 +20,6 @@ func (lw *LatencyWatcher) passTwoKeys(rawMetrics map[string]string) (latencyComm
 	// return if this feature is disabled.
 	if config.Aerospike.DisableLatenciesMetrics {
 		// disabled
-		fmt.Println("latencies refresh is disabled")
 		return nil
 	}
 

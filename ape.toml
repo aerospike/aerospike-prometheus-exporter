@@ -156,7 +156,8 @@ latency_buckets_count = 0
 # user_metrics_users_blocklist = []
 
 # Latencies Allowlist and Blocklist to control for which histogram statistics should be collected. 
-# we configure histogram-names, Note globbing patterns are not supported for this configuration. 
+# We configure histogram-names
+# Note: globbing patterns are not supported for this configuration. 
 # latencies_metrics_allowlist = []
 # latencies_metrics_blocklist = []
 
