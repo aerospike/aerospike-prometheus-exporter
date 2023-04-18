@@ -107,50 +107,44 @@ timeout = 5
 # Default: 0 (export all threshold buckets).
 latency_buckets_count = 0
 
+# Order of context - namespace, set, latencies, node-stats, xdr, user, jobs, sindex
+
 # Metrics Allowlist - If specified, only these metrics will be scraped. An empty list will exclude all metrics.
 # Commenting out the below allowlist configs will disable metrics filtering (i.e. all metrics will be scraped).
 
-# Namespace metrics allowlist
+# Metrics Blocklist - If specified, these metrics will be NOT be scraped. An empty list will include all metrics.
+# Commenting out the below blocklist configs will disable metrics filtering (i.e. no metrics will be blocked/filtered).
+
+# globbing pattern (wildcard) are allowd for allowlist and blocklist
+# for example "batch_index_*_buffers"
+
+# Namespace metrics allowlist, to control which Namespace metrics should be collected.
 # namespace_metrics_allowlist = []
-
-# Set metrics allowlist
-# set_metrics_allowlist = []
-
-# Node metrics allowlist
-# node_metrics_allowlist = []
-
-# XDR metrics allowlist (only for Aerospike versions 5.0 and above)
-# xdr_metrics_allowlist = []
-
-# Job (scans/queries) metrics allowlist
-# job_metrics_allowlist = []
-
-# Secondary index metrics allowlist
-# sindex_metrics_allowlist = []
-
-# Metrics Blocklist - If specified, these metrics will be NOT be scraped.
-
-# Namespace metrics blocklist
 # namespace_metrics_blocklist = []
 
-# Set metrics blocklist
+# set_metrics_allowlist = []
 # set_metrics_blocklist = []
 
-# Node metrics blocklist
+# Latencies histogram allowlist, to control which Histogram-name metrics should be collected. 
+# Note: globbing patterns (wildcard) are not supported for this latency metric configuration. 
+# latencies_metrics_allowlist = []
+# latencies_metrics_blocklist = []
+
+# node_metrics_allowlist = []
 # node_metrics_blocklist = []
 
-# XDR metrics blocklist (only for Aerospike versions 5.0 and above)
+# Support only from Aerospike versions 5.0 and above
+# xdr_metrics_allowlist = []
 # xdr_metrics_blocklist = []
 
-# Job (scans/queries) metrics blocklist
-# job_metrics_blocklist = []
-
-# Secondary index metrics blocklist
-# sindex_metrics_blocklist = []
-
-# Users Statistics (user statistics are available in Aerospike 5.6+)
-# Users Allowlist and Blocklist to control for which users their statistics should be collected.
-# Note globbing patterns are not supported for this configuration.
-
+# User statistics are available in Aerospike 5.6+
+# Note globbing patterns (wildcard) are not supported for this User configuration.
 # user_metrics_users_allowlist = []
 # user_metrics_users_blocklist = []
+
+# job_metrics_allowlist = []
+# job_metrics_blocklist = []
+
+# sindex_metrics_allowlist = []
+# sindex_metrics_blocklist = []
+
