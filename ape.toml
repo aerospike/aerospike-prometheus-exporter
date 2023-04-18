@@ -112,50 +112,39 @@ latency_buckets_count = 0
 # Metrics Allowlist - If specified, only these metrics will be scraped. An empty list will exclude all metrics.
 # Commenting out the below allowlist configs will disable metrics filtering (i.e. all metrics will be scraped).
 
-# Metrics Blocklist - If specified, If specified, these metrics will be NOT be scraped. An empty list will include all metrics.
+# Metrics Blocklist - If specified, these metrics will be NOT be scraped. An empty list will include all metrics.
 # Commenting out the below blocklist configs will disable metrics filtering (i.e. no metrics will be blocked/filtered).
+
+# globbing pattern (wildcard) are allowd for allowlist and blocklist
+# for example "batch_index_*_buffers"
 
 # Namespace metrics allowlist, to control which Namespace metrics should be collected.
 # namespace_metrics_allowlist = []
-# Namespace metrics blocklist, If specified, these Namespace metrics will be NOT be scraped.
 # namespace_metrics_blocklist = []
 
-# Set metrics allowlist, to control which Set metrics should be collected.
 # set_metrics_allowlist = []
-# Set metrics blocklist, If specified, these Set metrics will be NOT be scraped.
 # set_metrics_blocklist = []
 
 # Latencies histogram allowlist, to control which Histogram-name metrics should be collected. 
-# Note: globbing patterns are not supported for this latency metric configuration. 
+# Note: globbing patterns (wildcard) are not supported for this latency metric configuration. 
 # latencies_metrics_allowlist = []
-# Latencies histogram blocklist, If specified a Histogram-name those metrics will be NOT be scraped.
-# Note: globbing patterns are not supported for this latency metric configuration. 
 # latencies_metrics_blocklist = []
 
-# Node metrics allowlist, to control which Node metrics should be collected.
 # node_metrics_allowlist = []
-# Node metrics blocklist, If specified, these Node metrics will be NOT be scraped.
 # node_metrics_blocklist = []
 
-# XDR metrics allowlist (only for Aerospike versions 5.0 and above), to control which XDR metrics should be collected.
+# Support only from Aerospike versions 5.0 and above
 # xdr_metrics_allowlist = []
-# XDR metrics blocklist (only for Aerospike versions 5.0 and above), If specified, these metrics will be NOT be scraped.
 # xdr_metrics_blocklist = []
 
-# Users allowlist ((user statistics are available in Aerospike 5.6+)) to control which users specific metrics should be collected.
-# Note globbing patterns are not supported for this User configuration.
+# User statistics are available in Aerospike 5.6+
+# Note globbing patterns (wildcard) are not supported for this User configuration.
 # user_metrics_users_allowlist = []
-# Users metrics blocklist (user statistics are available in Aerospike 5.6+), If specified, these User specific metrics will be NOT be scraped.
-# Note globbing patterns are not supported for this User configuration.
 # user_metrics_users_blocklist = []
 
-# Job (scans/queries) metrics allowlist, to control which Job metrics should be collected.
 # job_metrics_allowlist = []
-# Job (scans/queries) metrics blocklist, If specified, these Job metrics will be NOT be scraped.
 # job_metrics_blocklist = []
 
-# Secondary index metrics allowlist, to control which Secondary index metrics should be collected.
 # sindex_metrics_allowlist = []
-# Secondary index metrics blocklist, If specified, these Secondary index metrics will be NOT be scraped.
 # sindex_metrics_blocklist = []
 
