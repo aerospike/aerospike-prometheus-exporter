@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -155,7 +154,7 @@ func initConfig(configFile string, config *Config) {
 	log.SetLevel(log.DebugLevel)
 
 	log.Infof("Loading configuration file %s", configFile)
-	blob, err := ioutil.ReadFile(configFile)
+	blob, err := os.ReadFile(configFile)
 	if err != nil {
 		log.Fatalln(err)
 	}
