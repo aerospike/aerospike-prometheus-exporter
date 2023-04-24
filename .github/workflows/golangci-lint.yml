@@ -1,0 +1,43 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: golangci-lint
+on:
+  push:
+    branches:
+      - dev
+
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+          fetch-depth: 0
+          
+    - name: Get current date
+      id: date
+      run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+           
+    - name: Step 1 - Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: 1.20
+
+    - name: Step 2 - Run golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+          version: v1.50
+          args: --timeout=5m --out-format code-climate:exporter_code_lint_report.json
+          
+    - name: Step 3 - Use the Upload Artifact GitHub Action
+      uses: actions/upload-artifact@v3
+      with: 
+         name: ape_code_lint_report_${{ steps.date.outputs.date }}
+         path: |
+                exporter_code*
