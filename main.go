@@ -86,7 +86,10 @@ func main() {
 
 			w.Header().Set("WWW-Authenticate", `Basic realm="AEROSPIKE-PROMETHEUS-EXPORTER-REALM"`)
 			w.WriteHeader(401)
-			w.Write([]byte("401 Unauthorized\n"))
+			_, err := w.Write([]byte("401 Unauthorized\n"))
+			if err != nil {
+				log.Warnf("failed to write http response data for /metrics: %s", err.Error())
+			}
 		} else {
 			promhttp.HandlerFor(promReg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 		}
@@ -94,12 +97,15 @@ func main() {
 
 	// Handle "/health" url
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`OK`))
+		_, err := w.Write([]byte(`OK`))
+		if err != nil {
+			log.Warnf("failed to write http response for /health: %s", err.Error())
+		}
 	})
 
 	// Handle "/" root url
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
+		_, err := w.Write([]byte(`<html>
 			<head><title>Aerospike Prometheus Exporter</title></head>
 			<body>
 			<h1>Aerospike Prometheus Exporter</h1>
@@ -107,6 +113,9 @@ func main() {
 			</body>
 			</html>
 		`))
+		if err != nil {
+			log.Warnf("failed to write http response for root /: %s", err.Error())
+		}
 	})
 
 	srv := &http.Server{
