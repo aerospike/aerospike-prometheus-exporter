@@ -1,0 +1,83 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on: 
+  push:
+    # TODO this combination logic of branch + tag is not working.
+    tags:
+       - v*
+
+permissions:
+  id-token: write
+  actions: write
+  contents: write
+
+jobs:
+
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+      with:
+          fetch-depth: 0
+          
+    - name: environment variables
+      id: vars
+      run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT    
+      
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.20.2
+
+    - name: go mod tidy
+      run: |
+         dpkg-architecture -q DEB_BUILD_ARCH
+         (git describe --tags --always --abbrev=0 | cut -c 1-)
+         go mod tidy
+         
+    - uses: actions/setup-ruby@v1
+      with:
+        ruby-version: '3.x'
+    - run: gem install fpm --no-document
+    
+    - name: make exporter
+      run: |
+         echo "GIT_TAG ${{ steps.vars.outputs.tag }}"
+         
+         make exporter
+         
+    - name: make deb
+      run: |
+         make deb
+
+    - name: make package-linux-arm64
+      run: make package-linux-arm64
+
+    - name: make package-linux-amd64
+      run: make package-linux-amd64
+
+    - name: make fips-deb 
+      run: make fips-deb
+
+    - name: make fips-rpm
+      run: make fips-rpm
+      
+    - name: Upload Release Asset
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_NAME: "Aerospike Prometheus Exporter"
+          TAG_NAME: "${{ steps.vars.outputs.tag }}"
+      run: |
+         echo "tag_name $TAG_NAME"
+         
+         files=$(find pkg/target -type f -name "aerospike-prom*" -printf "$(realpath -s %p) ")
+         
+         for file in $files; do
+           echo "uploading file === $file"
+           hub release edit -a $file -m "$RELEASE_NAME $TAG_NAME" "$TAG_NAME"
+         done
+
+         hub release edit -a aerospike-prometheus-exporter -m "$RELEASE_NAME $TAG_NAME"  "$TAG_NAME"
