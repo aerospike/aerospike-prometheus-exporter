@@ -11,7 +11,6 @@ const (
 	mtCounter metricType = 'C'
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Watcher
 type Watcher interface {
 	passOneKeys() []string
 	passTwoKeys(rawMetrics map[string]string) []string

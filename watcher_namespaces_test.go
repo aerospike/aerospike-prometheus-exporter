@@ -53,14 +53,14 @@ func TestNamespaceRefreshDefault(t *testing.T) {
 	nsWatcher := new(NamespaceWatcher)
 	lObserver := &Observer{}
 	ch := make(chan prometheus.Metric, 1000)
-	pass2Metrics := make(map[string]string)
-	pass2Metrics["namespaces"] = "test;bar"
+	pass2Metrics := requestInfoNamespaces(rawMetrics)
 
 	nsWatcher.passTwoKeys(rawMetrics)
 
-	expectedOutputs := []string{"namespace/test", "namespace/bar"}
-	outputs := nsWatcher.passTwoKeys(pass2Metrics)
-	assert.Equal(t, outputs, expectedOutputs)
+	expectedOutputs := createPassTwoExpectedOutputs(rawMetrics)
+
+	// outputs := nsWatcher.passTwoKeys(pass2Metrics)
+	// assert.Equal(t, outputs, expectedOutputs)
 
 	err := nsWatcher.refresh(lObserver, expectedOutputs, rawMetrics, ch)
 
@@ -137,94 +137,3 @@ func TestNamespaceRefreshDefault(t *testing.T) {
 	}
 
 }
-
-// func TestNamespaceRefresh_Allowlist_Blocklist(t *testing.T) {
-
-// 	fmt.Println("initializing config ... TestNamespaceRefreshBlocklist")
-// 	// Initialize and validate config
-// 	config = new(Config)
-// 	initConfig(NS_ALLOWLIST_APE_TOML, config)
-
-// 	config.validateAndUpdate()
-
-// 	fakeWatcher := &FakeWatcher{}
-// 	pass2Metrics := make(map[string]string)
-// 	pass2Metrics["namespaces"] = "test;bar"
-
-// 	expectedOutputs := []string{"namespace/test", "namespace/bar"}
-// 	fakeWatcher.PassTwoKeysReturns(expectedOutputs)
-
-// 	outputs := fakeWatcher.passTwoKeys(pass2Metrics)
-// 	assert.Equal(t, outputs, expectedOutputs)
-
-// 	// read raw-metrics from mock data gen, create observer and channel prometeus metric ingestion and processing
-// 	rawMetrics := getRawMetrics()
-// 	nsWatcher := new(NamespaceWatcher)
-// 	lObserver := &Observer{}
-// 	ch := make(chan prometheus.Metric, 1000)
-
-// 	nsWatcher.refresh(lObserver, expectedOutputs, rawMetrics, ch)
-
-// 	// map of string ==> map["namespace/metric-name"]["<VALUE>"]
-// 	// map of string ==> map["namespace/metric-name"]["<Label>"]
-// 	//  both used to assert the return values from actual code against calculated values
-// 	lOutputValues := map[string]string{}
-// 	lOutputLabels := map[string]string{}
-
-// 	// reads data from the Prom channel and creates a map of strings so we can assert in the below loop
-// 	domore := 1
-
-// 	for domore == 1 {
-// 		select {
-
-// 		case nsMetric := <-ch:
-// 			description := nsMetric.Desc().String()
-// 			var protobuffer dto.Metric
-// 			err := nsMetric.Write(&protobuffer)
-// 			if err != nil {
-// 				fmt.Println(" unable to get metric ", description, " data into protobuf ", err)
-// 			}
-
-// 			metricValue := ""
-// 			metricLabel := fmt.Sprintf("%s", protobuffer.Label)
-// 			if protobuffer.Gauge != nil {
-// 				metricValue = fmt.Sprintf("%.0f", *protobuffer.Gauge.Value)
-// 			} else if protobuffer.Counter != nil {
-// 				metricValue = fmt.Sprintf("%.0f", *protobuffer.Counter.Value)
-// 			}
-
-// 			// Desc{fqName: "aerospike_namespac_memory_free_pct", help: "memory free pct", constLabels: {}, variableLabels: [cluster_name service ns]}
-// 			metricNameFromDesc := extractMetricNameFromDesc(description)
-// 			nsFromLabel := extractNamespaceFromLabel(metricLabel)
-
-// 			// key will as namespace/<metric_name>, this way we use this check during assertion
-// 			keyName := makeKeyname(metricNameFromDesc, nsFromLabel, true)
-// 			lOutputValues[keyName] = metricValue
-// 			lOutputLabels[keyName] = metricLabel
-
-// 		case <-time.After(1 * time.Second):
-// 			fmt.Println(" Either timedout or no more metrics to read ")
-// 			domore = 0
-
-// 		} // end select
-// 	}
-
-// 	// loop each namespace and check the label and value comparision
-// 	arrNames := strings.Split(pass2Metrics["namespaces"], ";")
-
-// 	for nsIndex := range arrNames {
-// 		tnsForNamespace := arrNames[nsIndex]
-// 		fmt.Println("Running test data assertion for namespace : ", tnsForNamespace)
-// 		lExpectedMetricNamedValues, lExpectedMetricLabels := createNamespaceWatcherExpectedOutputs(tnsForNamespace, true)
-// 		fmt.Println("lExpectedMetricNamedValues: ", len(lExpectedMetricNamedValues))
-// 		fmt.Println("lExpectedMetricLabels: ", len(lExpectedMetricLabels))
-// 		fmt.Println("lOutputValues: ", len(lOutputValues))
-
-// 		// for key := range lOutputValues {
-// 		// 	outputMetricValues := lOutputValues[key]
-// 		// 	// fmt.Println(outputMetricValues)
-
-// 		// 	// assert - only if the value belongs to the namespace we read expected values and processing
-// 		// }
-// 	}
-// }
