@@ -105,7 +105,7 @@ func (uw *UserWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[st
 		}
 	}
 
-	if config.Aerospike.UserMetricsUsersBlocklistEnabled {
+	if len(config.Aerospike.UserMetricsUsersBlocklist) > 0 {
 		for _, blockedUser := range config.Aerospike.UserMetricsUsersBlocklist {
 			blockedUsersList[blockedUser] = struct{}{}
 		}
@@ -120,7 +120,7 @@ func (uw *UserWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[st
 		}
 
 		// check if user is blocked
-		if config.Aerospike.UserMetricsUsersBlocklistEnabled {
+		if len(config.Aerospike.UserMetricsUsersBlocklist) > 0 {
 			if _, ok := blockedUsersList[user.User]; ok {
 				continue
 			}
