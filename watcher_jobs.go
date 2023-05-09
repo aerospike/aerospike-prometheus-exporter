@@ -90,7 +90,7 @@ func (jw *JobsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[st
 	log.Tracef("job-stats:%v", jobStats)
 
 	if jobMetrics == nil {
-		jobMetrics = getFilteredMetrics(jobsRawMetrics, config.Aerospike.JobMetricsAllowlist, config.Aerospike.JobMetricsAllowlistEnabled, config.Aerospike.JobMetricsBlocklist, config.Aerospike.JobMetricsBlocklistEnabled)
+		jobMetrics = getFilteredMetrics(jobsRawMetrics, config.Aerospike.JobMetricsAllowlist, config.Aerospike.JobMetricsAllowlistEnabled, config.Aerospike.JobMetricsBlocklist)
 	}
 
 	for i := range jobStats {

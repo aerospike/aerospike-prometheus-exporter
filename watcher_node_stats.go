@@ -156,7 +156,7 @@ func (sw *StatsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[s
 	log.Tracef("node-stats:%s", rawMetrics["statistics"])
 
 	if nodeMetrics == nil {
-		nodeMetrics = getFilteredMetrics(statsRawMetrics, config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsAllowlistEnabled, config.Aerospike.NodeMetricsBlocklist, config.Aerospike.NodeMetricsBlocklistEnabled)
+		nodeMetrics = getFilteredMetrics(statsRawMetrics, config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsAllowlistEnabled, config.Aerospike.NodeMetricsBlocklist)
 	}
 
 	statsObserver := make(MetricMap, len(nodeMetrics))

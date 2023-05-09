@@ -108,9 +108,9 @@ var globbingPattern = regexp.MustCompile(`\[|\]|\*|\?|\{|\}|\\|!`)
 
 // Filter metrics
 // Runs the raw metrics through allowlist first and the resulting metrics through blocklist
-func getFilteredMetrics(rawMetrics map[string]metricType, allowlist []string, allowlistEnabled bool, blocklist []string, blocklistEnabled bool) map[string]metricType {
+func getFilteredMetrics(rawMetrics map[string]metricType, allowlist []string, allowlistEnabled bool, blocklist []string) map[string]metricType {
 	filteredMetrics := filterAllowedMetrics(rawMetrics, allowlist, allowlistEnabled)
-	filterBlockedMetrics(filteredMetrics, blocklist, blocklistEnabled)
+	filterBlockedMetrics(filteredMetrics, blocklist)
 
 	return filteredMetrics
 }
@@ -143,8 +143,8 @@ func filterAllowedMetrics(rawMetrics map[string]metricType, allowlist []string, 
 }
 
 // Filter metrics based on configured blocklist.
-func filterBlockedMetrics(filteredMetrics map[string]metricType, blocklist []string, blocklistEnabled bool) {
-	if !blocklistEnabled {
+func filterBlockedMetrics(filteredMetrics map[string]metricType, blocklist []string) {
+	if len(blocklist) == 0 {
 		return
 	}
 

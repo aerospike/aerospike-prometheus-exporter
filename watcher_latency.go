@@ -49,7 +49,7 @@ func (lw *LatencyWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 		}
 	}
 
-	if config.Aerospike.LatenciesMetricsBlocklistEnabled {
+	if len(config.Aerospike.LatenciesMetricsBlocklist) > 0 {
 		for _, blockedLatencies := range config.Aerospike.LatenciesMetricsBlocklist {
 			blockedLatenciessList[blockedLatencies] = struct{}{}
 		}
@@ -75,7 +75,7 @@ func (lw *LatencyWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 				}
 			}
 
-			if config.Aerospike.LatenciesMetricsBlocklistEnabled {
+			if len(config.Aerospike.LatenciesMetricsBlocklist) > 0 {
 				if _, ok := blockedLatenciessList[operation]; ok {
 					continue
 				}
