@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"regexp"
@@ -109,9 +108,9 @@ var globbingPattern = regexp.MustCompile(`\[|\]|\*|\?|\{|\}|\\|!`)
 
 // Filter metrics
 // Runs the raw metrics through allowlist first and the resulting metrics through blocklist
-func getFilteredMetrics(rawMetrics map[string]metricType, allowlist []string, allowlistEnabled bool, blocklist []string, blocklistEnabled bool) map[string]metricType {
+func getFilteredMetrics(rawMetrics map[string]metricType, allowlist []string, allowlistEnabled bool, blocklist []string) map[string]metricType {
 	filteredMetrics := filterAllowedMetrics(rawMetrics, allowlist, allowlistEnabled)
-	filterBlockedMetrics(filteredMetrics, blocklist, blocklistEnabled)
+	filterBlockedMetrics(filteredMetrics, blocklist)
 
 	return filteredMetrics
 }
@@ -144,8 +143,8 @@ func filterAllowedMetrics(rawMetrics map[string]metricType, allowlist []string, 
 }
 
 // Filter metrics based on configured blocklist.
-func filterBlockedMetrics(filteredMetrics map[string]metricType, blocklist []string, blocklistEnabled bool) {
-	if !blocklistEnabled {
+func filterBlockedMetrics(filteredMetrics map[string]metricType, blocklist []string) {
+	if len(blocklist) == 0 {
 		return
 	}
 
@@ -232,7 +231,7 @@ func getCertificate(certConfig string) ([]byte, error) {
 
 // Read content from file
 func readFromFile(filePath string) ([]byte, error) {
-	dataBytes, err := ioutil.ReadFile(filePath)
+	dataBytes, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read from file `%s`: `%v`", filePath, err)
 	}
@@ -308,13 +307,13 @@ func loadServerCertAndKey(certConfig, keyConfig, keyPassConfig string) ([]tls.Ce
 	}
 
 	// Check and Decrypt the the Key Block using passphrase
-	if x509.IsEncryptedPEMBlock(keyBlock) {
+	if x509.IsEncryptedPEMBlock(keyBlock) { // nolint:staticcheck
 		keyFilePassphraseBytes, err := getSecret(keyPassConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get key passphrase: `%s`", err)
 		}
 
-		decryptedDERBytes, err := x509.DecryptPEMBlock(keyBlock, keyFilePassphraseBytes)
+		decryptedDERBytes, err := x509.DecryptPEMBlock(keyBlock, keyFilePassphraseBytes) // nolint:staticcheck
 		if err != nil {
 			return nil, fmt.Errorf("failed to decrypt PEM Block: `%s`", err)
 		}

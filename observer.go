@@ -65,8 +65,8 @@ func initAerospikeTLS() *tls.Config {
 		RootCAs:                  serverPool,
 		InsecureSkipVerify:       false,
 		PreferServerCipherSuites: true,
+		NameToCertificate:        nil,
 	}
-	tlsConfig.BuildNameToCertificate()
 
 	return tlsConfig
 }
@@ -149,7 +149,7 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 		watchers: []Watcher{
 			&NamespaceWatcher{},
 			&SetWatcher{},
-			&LatencyWatcher{},
+			&LatencyWatcher{}, // gets the build version, used by watchers below
 			&StatsWatcher{},
 			&XdrWatcher{},
 			&UserWatcher{},

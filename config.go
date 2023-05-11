@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -49,49 +48,63 @@ type Config struct {
 
 		LatencyBucketsCount uint8 `toml:"latency_buckets_count"`
 
-		JobMetricsAllowlist []string `toml:"job_metrics_allowlist"`
-		JobMetricsBlocklist []string `toml:"job_metrics_blocklist"`
+		// Order of context ( from observer.go) - namespace, set, latencies, node-stats, xdr, user, jobs, sindex
+		// Namespace metrics allow/block
+		NamespaceMetricsAllowlist []string `toml:"namespace_metrics_allowlist"`
+		NamespaceMetricsBlocklist []string `toml:"namespace_metrics_blocklist"`
 
-		JobMetricsAllowlistEnabled bool
-		JobMetricsBlocklistEnabled bool
+		NamespaceMetricsAllowlistEnabled bool
 
-		// knob to disable job metrics collection (for internal use only, will be deprecated)
-		DisableJobMetrics bool `toml:"disable_job_metrics"`
+		// Set metrics allow/block
+		SetMetricsAllowlist []string `toml:"set_metrics_allowlist"`
+		SetMetricsBlocklist []string `toml:"set_metrics_blocklist"`
 
-		SindexMetricsAllowlist []string `toml:"sindex_metrics_allowlist"`
-		SindexMetricsBlocklist []string `toml:"sindex_metrics_blocklist"`
+		SetMetricsAllowlistEnabled bool
 
-		SindexMetricsAllowlistEnabled bool
-		SindexMetricsBlocklistEnabled bool
+		// Latencies metrics allow/block
+		LatenciesMetricsAllowlist []string `toml:"latencies_metrics_allowlist"`
+		LatenciesMetricsBlocklist []string `toml:"latencies_metrics_blocklist"`
 
-		// knob to disable sindex metrics collection (for internal use only, will be deprecated)
-		DisableSindexMetrics bool `toml:"disable_sindex_metrics"`
+		LatenciesMetricsAllowlistEnabled bool
 
+		// knob to disable latencies metrics collection (for internal use only, will be deprecated)
+		DisableLatenciesMetrics bool `toml:"disable_latencies_metrics"`
+
+		// Node metrics allow/block
+		NodeMetricsAllowlist []string `toml:"node_metrics_allowlist"`
+		NodeMetricsBlocklist []string `toml:"node_metrics_blocklist"`
+
+		NodeMetricsAllowlistEnabled bool
+
+		// Xdr metrics allow/block
+		XdrMetricsAllowlist []string `toml:"xdr_metrics_allowlist"`
+		XdrMetricsBlocklist []string `toml:"xdr_metrics_blocklist"`
+
+		XdrMetricsAllowlistEnabled bool
+
+		// User metrics allow/block
 		UserMetricsUsersAllowlist []string `toml:"user_metrics_users_allowlist"`
 		UserMetricsUsersBlocklist []string `toml:"user_metrics_users_blocklist"`
 
 		UserMetricsUsersAllowlistEnabled bool
-		UserMetricsUsersBlocklistEnabled bool
 
-		NamespaceMetricsAllowlist []string `toml:"namespace_metrics_allowlist"`
-		SetMetricsAllowlist       []string `toml:"set_metrics_allowlist"`
-		NodeMetricsAllowlist      []string `toml:"node_metrics_allowlist"`
-		XdrMetricsAllowlist       []string `toml:"xdr_metrics_allowlist"`
+		// Job metrics allow/block
+		JobMetricsAllowlist []string `toml:"job_metrics_allowlist"`
+		JobMetricsBlocklist []string `toml:"job_metrics_blocklist"`
 
-		NamespaceMetricsAllowlistEnabled bool
-		SetMetricsAllowlistEnabled       bool
-		NodeMetricsAllowlistEnabled      bool
-		XdrMetricsAllowlistEnabled       bool
+		JobMetricsAllowlistEnabled bool
 
-		NamespaceMetricsBlocklist []string `toml:"namespace_metrics_blocklist"`
-		SetMetricsBlocklist       []string `toml:"set_metrics_blocklist"`
-		NodeMetricsBlocklist      []string `toml:"node_metrics_blocklist"`
-		XdrMetricsBlocklist       []string `toml:"xdr_metrics_blocklist"`
+		// knob to disable job metrics collection (for internal use only, will be deprecated)
+		DisableJobMetrics bool `toml:"disable_job_metrics"`
 
-		NamespaceMetricsBlocklistEnabled bool
-		SetMetricsBlocklistEnabled       bool
-		NodeMetricsBlocklistEnabled      bool
-		XdrMetricsBlocklistEnabled       bool
+		// Sindex metrics allow/block
+		SindexMetricsAllowlist []string `toml:"sindex_metrics_allowlist"`
+		SindexMetricsBlocklist []string `toml:"sindex_metrics_blocklist"`
+
+		SindexMetricsAllowlistEnabled bool
+
+		// knob to disable sindex metrics collection (for internal use only, will be deprecated)
+		DisableSindexMetrics bool `toml:"disable_sindex_metrics"`
 
 		// Tolerate older whitelist and blacklist configurations for a while
 		NamespaceMetricsWhitelist []string `toml:"namespace_metrics_whitelist"`
@@ -133,7 +146,7 @@ func initConfig(configFile string, config *Config) {
 	log.SetLevel(log.DebugLevel)
 
 	log.Infof("Loading configuration file %s", configFile)
-	blob, err := ioutil.ReadFile(configFile)
+	blob, err := os.ReadFile(configFile)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -199,17 +212,9 @@ func initAllowlistAndBlocklistConfigs(config *Config, md toml.MetaData) {
 	config.Aerospike.NodeMetricsAllowlistEnabled = md.IsDefined("Aerospike", "node_metrics_allowlist")
 	config.Aerospike.XdrMetricsAllowlistEnabled = md.IsDefined("Aerospike", "xdr_metrics_allowlist")
 	config.Aerospike.UserMetricsUsersAllowlistEnabled = md.IsDefined("Aerospike", "user_metrics_users_allowlist")
-	config.Aerospike.UserMetricsUsersBlocklistEnabled = md.IsDefined("Aerospike", "user_metrics_users_blocklist")
 	config.Aerospike.JobMetricsAllowlistEnabled = md.IsDefined("Aerospike", "job_metrics_allowlist")
-	config.Aerospike.JobMetricsBlocklistEnabled = md.IsDefined("Aerospike", "job_metrics_blocklist")
 	config.Aerospike.SindexMetricsAllowlistEnabled = md.IsDefined("Aerospike", "sindex_metrics_allowlist")
-	config.Aerospike.SindexMetricsBlocklistEnabled = md.IsDefined("Aerospike", "sindex_metrics_blocklist")
-
-	// Initialize BlocklistEnabled config
-	config.Aerospike.NamespaceMetricsBlocklistEnabled = md.IsDefined("Aerospike", "namespace_metrics_blocklist")
-	config.Aerospike.SetMetricsBlocklistEnabled = md.IsDefined("Aerospike", "set_metrics_blocklist")
-	config.Aerospike.NodeMetricsBlocklistEnabled = md.IsDefined("Aerospike", "node_metrics_blocklist")
-	config.Aerospike.XdrMetricsBlocklistEnabled = md.IsDefined("Aerospike", "xdr_metrics_blocklist")
+	config.Aerospike.LatenciesMetricsAllowlistEnabled = md.IsDefined("Aerospike", "latencies_metrics_allowlist")
 
 	// Tolerate older whitelist and blacklist configurations for a while.
 	// If whitelist and blacklist configs are defined copy them into allowlist and blocklist.
@@ -251,38 +256,34 @@ func initAllowlistAndBlocklistConfigs(config *Config, md toml.MetaData) {
 	}
 
 	if md.IsDefined("Aerospike", "namespace_metrics_blacklist") {
-		if config.Aerospike.NamespaceMetricsBlocklistEnabled {
+		if len(config.Aerospike.NamespaceMetricsBlocklist) > 0 {
 			log.Fatalf("namespace_metrics_blacklist and namespace_metrics_blocklist are mutually exclusive!")
 		}
 
-		config.Aerospike.NamespaceMetricsBlocklistEnabled = true
 		config.Aerospike.NamespaceMetricsBlocklist = config.Aerospike.NamespaceMetricsBlacklist
 	}
 
 	if md.IsDefined("Aerospike", "set_metrics_blacklist") {
-		if config.Aerospike.SetMetricsBlocklistEnabled {
+		if len(config.Aerospike.SetMetricsBlocklist) > 0 {
 			log.Fatalf("set_metrics_blacklist and set_metrics_blocklist are mutually exclusive!")
 		}
 
-		config.Aerospike.SetMetricsBlocklistEnabled = true
 		config.Aerospike.SetMetricsBlocklist = config.Aerospike.SetMetricsBlacklist
 	}
 
 	if md.IsDefined("Aerospike", "node_metrics_blacklist") {
-		if config.Aerospike.NodeMetricsBlocklistEnabled {
+		if len(config.Aerospike.NodeMetricsBlocklist) > 0 {
 			log.Fatalf("node_metrics_blacklist and node_metrics_blocklist are mutually exclusive!")
 		}
 
-		config.Aerospike.NodeMetricsBlocklistEnabled = true
 		config.Aerospike.NodeMetricsBlocklist = config.Aerospike.NodeMetricsBlacklist
 	}
 
 	if md.IsDefined("Aerospike", "xdr_metrics_blacklist") {
-		if config.Aerospike.XdrMetricsBlocklistEnabled {
+		if len(config.Aerospike.XdrMetricsBlocklist) > 0 {
 			log.Fatalf("xdr_metrics_blacklist and xdr_metrics_blocklist are mutually exclusive!")
 		}
 
-		config.Aerospike.XdrMetricsBlocklistEnabled = true
 		config.Aerospike.XdrMetricsBlocklist = config.Aerospike.XdrMetricsBlacklist
 	}
 }

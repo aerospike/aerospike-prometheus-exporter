@@ -78,7 +78,7 @@ func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 	}
 
 	if sindexMetrics == nil {
-		sindexMetrics = getFilteredMetrics(sindexRawMetrics, config.Aerospike.SindexMetricsAllowlist, config.Aerospike.SindexMetricsAllowlistEnabled, config.Aerospike.SindexMetricsBlocklist, config.Aerospike.SindexMetricsBlocklistEnabled)
+		sindexMetrics = getFilteredMetrics(sindexRawMetrics, config.Aerospike.SindexMetricsAllowlist, config.Aerospike.SindexMetricsAllowlistEnabled, config.Aerospike.SindexMetricsBlocklist)
 	}
 
 	for _, sindex := range infoKeys {

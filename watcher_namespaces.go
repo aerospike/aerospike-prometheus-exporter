@@ -494,7 +494,7 @@ var seDynamicExtractor = regexp.MustCompile(`storage\-engine\.(?P<type>file|devi
 
 func (nw *NamespaceWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	if namespaceMetrics == nil {
-		namespaceMetrics = getFilteredMetrics(namespaceRawMetrics, config.Aerospike.NamespaceMetricsAllowlist, config.Aerospike.NamespaceMetricsAllowlistEnabled, config.Aerospike.NamespaceMetricsBlocklist, config.Aerospike.NamespaceMetricsBlocklistEnabled)
+		namespaceMetrics = getFilteredMetrics(namespaceRawMetrics, config.Aerospike.NamespaceMetricsAllowlist, config.Aerospike.NamespaceMetricsAllowlistEnabled, config.Aerospike.NamespaceMetricsBlocklist)
 	}
 
 	for _, ns := range infoKeys {

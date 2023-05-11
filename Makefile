@@ -19,6 +19,20 @@ else
 	exit 1
 endif
 
+.PHONY: fmt
+fmt: ## Run go fmt against code.
+	go fmt ./...
+
+.PHONY: lint
+lint:
+    ## install golangci-lint from https://raw.githubusercontent.com/golangci/golangci-lint , install and include in PATH
+    ## Run golangci-lint against code.
+	golangci-lint run
+
+.PHONY: test
+test: ## Run all the test-cases defined in this folder.
+	go test -v ./...	
+
 # Builds RPM, DEB and TAR packages
 # Requires FPM package manager
 .PHONY: deb
