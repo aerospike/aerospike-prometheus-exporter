@@ -27,7 +27,7 @@ root_ca = ""
 key_file_passphrase = ""
 
 # labels to add to the prometheus metrics for e.g. labels={zone="asia-south1-a", platform="google compute engine"}
-labels = {}
+labels = {a="hello"}
 
 bind = ":9145"
 

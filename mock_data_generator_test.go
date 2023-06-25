@@ -61,18 +61,36 @@ func createPassTwoExpectedOutputs(rawMetrics map[string]string) []string {
 	return lNamespaces
 }
 
+func makeLabelsFromConfig(cfgLabels map[string]string) string {
+	if cfgLabels == nil {
+		return ""
+	}
+	var labels = ""
+	for key, value := range cfgLabels {
+		labels = labels + "name:\"" + key + "\" value:\"" + value + "\"  "
+	}
+
+	return labels
+}
+
 /*
 generated the output used by the Namespace-Watcher TestCases, the same output may not be suitable for other watchers,
 so for each data-context we need to have a method to generate expected output
 */
 func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[string][]string, map[string][]string) {
+
 	lExpectedMetricNamedValues := map[string][]string{}
 	lExpectedMetricLabels := map[string][]string{}
 
 	rawMetrics := getRawMetrics()
 
+	fmt.Println("config.AeroProm.MetricLabels: ", config.AeroProm.MetricLabels)
+
 	clusterName := rawMetrics["cluster-name"]
 	service := rawMetrics["service-clear-std"]
+
+	cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
+	// fmt.Println("cfgLabelsToAdd: " + cfgLabelsToAdd)
 
 	for metricsGrpKey := range rawMetrics {
 		if strings.HasPrefix(metricsGrpKey, "namespace/") && strings.HasSuffix(metricsGrpKey, nsName) {
@@ -88,6 +106,19 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 					fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
 					continue
 				}
+
+				isBlocked := isHelperBlockedMetric(s, config.Aerospike.NamespaceMetricsBlocklist)
+				if isBlocked {
+					// fmt.Println("stat: ", s, " is marked in BLOCKED-LIST, skipping this stat during mock-data-gen")
+					continue
+				}
+				isAllowed := isHelperAllowedMetric(s, config.Aerospike.NamespaceMetricsAllowlist)
+				if !isAllowed {
+					// fmt.Println("stat: ", s, " is marked in NOT ALLOW-LIST, skipping this stat during mock-data-gen")
+					continue
+				}
+				// fmt.Println("stat: ", s, " is marked in ALLOW-LIST, adding to mock-data-gen")
+
 				// reconvert float back to string
 				value := fmt.Sprintf("%.0f", convertedValue)
 
@@ -107,7 +138,7 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 						labelsArr = []string{}
 					}
 
-					labelStr := "[name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
+					labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
 
 					valuesArr = append(valuesArr, value)
 					labelsArr = append(labelsArr, labelStr)
@@ -134,7 +165,7 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 						labelsArr = []string{}
 					}
 
-					labelStr := "[name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"file\" value:\"" + deviceOrFileName + "\"  name:\"file_index\" value:\"" + metricIndex + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
+					labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"file\" value:\"" + deviceOrFileName + "\"  name:\"file_index\" value:\"" + metricIndex + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
 
 					valuesArr = append(valuesArr, value)
 					labelsArr = append(labelsArr, labelStr)

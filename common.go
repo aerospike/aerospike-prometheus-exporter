@@ -375,3 +375,100 @@ func buildVersionGreaterThanOrEqual(rawMetrics map[string]string, ref string) (b
 
 	return false, nil
 }
+
+// refactored code
+/**
+from given list of allow-list, checks if the input rawMetricName is allowed to send to monitoring systems or not
+*/
+var DEFAULT_METRIC_TYPE = mtCounter
+
+/*
+*
+validates if given type is correct metric-type, if not, return default metric-type (i.e. DEFAULT_METRIC_TYPE)
+*/
+func getMetricType(rawMetricName string, rawMetricType metricType) metricType {
+
+	if rawMetricType == mtCounter || rawMetricType == mtGauge {
+		return rawMetricType
+	}
+
+	// fmt.Println("rawMetricName: ", rawMetricName, " metricType is not Counter/Gauge, hence defaulting to ", DEFAULT_METRIC_TYPE)
+	return DEFAULT_METRIC_TYPE
+}
+
+/**
+ * this function check is a given stat is allowed or blocked against given patterns
+ * these patterns are defined within ape.toml
+ *
+ * NOTE: when a stat falls within intersection of allow-list & block-list, we block that stat
+ *
+ */
+func isMetricAllowed(pRawStatName string, pAllowlist []string, pBlocklist []string) bool {
+	var can_be_exported = false
+
+	/**
+		* is this stat is in blocked list
+	    *    if is-block-list array not-defined or is-empty, then true (i.e. STAT-IS-NOT-BLOCKED)
+		*    else
+		*       match stat with "all-block-list-patterns",
+		*             if-any-pattern-match-found,
+		*                    return true (i.e. STAT-IS-BLOCKED)
+		* is stat-is-not-blocked
+		*    if is-allow-list array not-defined or is-empty, then true (i.e. STAT-IS-ALLOWED)
+		*    else
+		*      match stat with "all-allow-list-patterns"
+		*             if-any-pattern-match-found,
+		*                    return true (i.e. STAT-IS-ALLOWED)
+	*/
+	is_blocked := loopPatterns(pRawStatName, pBlocklist, false)
+
+	// as it is already blocked, we dont need to check in allow-list,
+	// i.e. when a stat falls within intersection of allow-list & block-list, we block that stat
+	//
+	if is_blocked {
+		can_be_exported = false
+	} else {
+		can_be_exported = loopPatterns(pRawStatName, pAllowlist, true)
+	}
+
+	return can_be_exported
+}
+
+/**
+ *  this function is used to loop thru any given regex-pattern-list, [ master_objects or *master* ]
+ *
+ *             | empty         | no-pattern-match-found | pattern-match-found
+ *  allow-list | allowed/true  |   not-allowed/ false   |    allowed/true
+ *  block-list | blocked/false |   not-blocked/ false   |    blocked/true
+ *
+ *  NOTE: as this is common function, default_return_value is taken as param to match empty-list-usecase in above table
+ *
+ */
+func loopPatterns(pRawStatName string, pAllowPatterns []string, default_return_value bool) bool {
+
+	if len(pAllowPatterns) == 0 {
+		return default_return_value
+	}
+
+	for _, cfgStatPattern := range pAllowPatterns {
+		if len(cfgStatPattern) > 0 {
+
+			ge := glob.MustCompile(cfgStatPattern)
+
+			if ge.Match(pRawStatName) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func isTestcaseMode() bool {
+	testcaseMode := os.Getenv("TESTCASE_MODE")
+	// fmt.Println("Testcase Mode == ", testcaseMode)
+	if len(testcaseMode) > 0 && testcaseMode == "true" {
+		return true
+	}
+	return false
+}
