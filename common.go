@@ -410,7 +410,6 @@ func getMetricType(pContext ContextType, pRawMetricName string) metricType {
  *
  */
 func isMetricAllowed(pRawStatName string, pAllowlist []string, pBlocklist []string) bool {
-	var lCanBeExported = false
 
 	/**
 		* is this stat is in blocked list
@@ -432,12 +431,11 @@ func isMetricAllowed(pRawStatName string, pAllowlist []string, pBlocklist []stri
 	// i.e. when a stat falls within intersection of allow-list & block-list, we block that stat
 	//
 	if isBlocked {
-		lCanBeExported = false
+		return false
 	} else {
-		lCanBeExported = loopPatterns(pRawStatName, pAllowlist, true)
+		return loopPatterns(pRawStatName, pAllowlist, true)
 	}
 
-	return lCanBeExported
 }
 
 /**
