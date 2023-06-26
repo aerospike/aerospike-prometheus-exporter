@@ -24,12 +24,6 @@ type promMetric struct {
 	valueType prometheus.ValueType
 }
 
-type AerospikeStat struct {
-	statContext    string
-	stat           string
-	statMetricType metricType
-	isAllowed      bool
-}
 type StatsMap map[string]interface{}
 
 // Value should be an int64 or a convertible string; otherwise defValue is returned

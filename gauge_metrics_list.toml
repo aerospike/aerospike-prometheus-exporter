@@ -1,0 +1,111 @@
+# This file represents a list of metrics which are treated by Gauges while exporting to Prometheus of some other Observability tool.
+# to know more about these stats, please visit https://docs.aerospike.com
+#
+# Node: below section define all Node stats which are treated by Gauges 
+#
+node_gauge_stats = [
+	"cluster_size", "cluster_min_compatibility_id", "cluster_max_compatibility_id",	"cluster_integrity", "cluster_is_member",
+	"cluster_clock_skew_stop_writes_sec", "cluster_clock_skew_ms",
+	"system_total_cpu_pct",	"system_user_cpu_pct", "system_kernel_cpu_pct", "process_cpu_pct", "system_free_mem_pct",
+	"heap_allocated_kbytes", "heap_active_kbytes", "heap_mapped_kbytes", 
+	"heap_efficiency_pct", "heap_site_count", "objects", "tombstones", "tsvc_queue",
+	"info_queue", "rw_in_progress", "proxy_in_progress",
+	"tree_gc_queue", "client_connections", "heartbeat_connections", "fabric_connections", "batch_index_proto_uncompressed_pct",
+	"batch_index_proto_compression_ratio", "batch_index_queue", "batch_index_unused_buffers",
+	"batch_index_huge_buffers", "batch_index_created_buffers", "scans_active", "queries_active", "sindex_gc_list_creation_time",
+	"sindex_gc_list_deletion_time", "time_since_rebalance", "migrate_partitions_remaining",
+	"fabric_bulk_send_rate", "fabric_bulk_recv_rate", "fabric_ctrl_send_rate", "fabric_ctrl_recv_rate",
+	"fabric_meta_send_rate", "fabric_meta_recv_rate", "fabric_rw_send_rate",
+	"fabric_rw_recv_rate", "dlog_used_objects", "dlog_free_pct", "dlog_logged","xdr_ship_inflight_objects",
+	"xdr_ship_outstanding_objects", "xdr_ship_latency_avg", "xdr_ship_compression_avg_pct",
+	"xdr_read_latency_avg", "xdr_read_active_avg_pct", "xdr_read_idle_avg_pct", "xdr_read_reqq_used", "xdr_read_respq_used",
+	"xdr_read_reqq_used_pct", "xdr_read_txnq_used", "xdr_read_txnq_used_pct",
+	"xdr_relogged_incoming", "xdr_relogged_outgoing", "xdr_active_failed_node_sessions", "xdr_active_link_down_sessions", "xdr_timelag",
+	"xdr_throughput", "xdr_global_lastshiptime", "threads_joinable",
+	"threads_detached", "threads_pool_total", "threads_pool_active","failed_best_practices",	
+]
+
+#
+# Namespace: below section define all Namespace stats which are treated by Gauges 
+#
+namespace_gauge_stats =[
+	"allow-nonxdr-writes", "allow-xdr-writes", "cache_read_pct",
+	"cold-start-evict-ttl", "conflict-resolution-policy", "conflict-resolve-writes", "data-in-index", "default-ttl",
+	"disable-write-dup-res", "disallow-null-setname", "enable-benchmarks-batch-sub",
+	"enable-benchmarks-read", "enable-benchmarks-udf-sub", "enable-benchmarks-udf","enable-benchmarks-write", "enable-benchmarks-ops-sub",
+	"enable-hist-proxy", "enable-xdr", "evict_ttl",
+	"geo2dsphere-within.earth-radius-meters", "geo2dsphere-within.level-mod", "geo2dsphere-within.max-cells","geo2dsphere-within.max-level", "geo2dsphere-within.min-level",
+	"geo2dsphere-within.strict","max-ttl","migrate-order","migrate-retransmit-ms",
+	"migrate-sleep","ns-forward-xdr-writes","nsup_cycle_duration","nsup_cycle_sleep_pct","nsup_cycle_deleted_pct",
+	"obj-size-hist-max","partition-tree-locks","partition-tree-sprigs",
+	"rack-id","read-consistency-level-override","sets-enable-xdr","sindex.num-partitions","single-bin",
+	"storage-engine","tomb-raider-eligible-age","tomb-raider-period",
+	"truncate_lut","write-commit-level-override","allow-ttl-without-nsup","background-scan-max-rps","disable-cold-start-eviction",
+	"index-stage-size","nsup-hist-period","nsup-period",
+	"nsup-threads","prefer-uniform-balance","reject-non-xdr-writes","reject-xdr-writes","single-scan-threads",
+	"strong-consistency","strong-consistency-allow-expunge","transaction-pending-limit",
+	"truncate-threads","xdr-tomb-raider-period","xdr-tomb-raider-threads","xdr-bin-tombstone-ttl","ignore-migrate-fill-delay",
+	"max-record-size","clock_skew_stop_writes","unreplicated_records",
+	"dead_partitions","unavailable_partitions","available_bin_names","defrag_q","pmem_available_pct",
+	"pmem_free_pct","pmem_total_bytes","pmem_used_bytes",
+	"pmem_compression_ratio","device_available_pct","device_compression_ratio","device_free_pct","device_total_bytes",
+	"device_used_bytes","effective_is_quiesced","effective_replication_factor",
+	"evict-hist-buckets","evict-tenths-pct","high-water-disk-pct","high-water-memory-pct","hwm_breached",
+	"index_pmem_used_bytes","index_pmem_used_pct","index_flash_used_bytes",
+	"index_flash_used_pct","index_flash_alloc_bytes","index_flash_alloc_pct","index-type.mounts-high-water-pct","index-type.mounts-size-limit",
+	"master_objects","master_tombstones","memory_free_pct",
+	"memory_used_bytes","memory_used_data_bytes","memory_used_index_bytes","memory_used_set_index_bytes","memory_used_sindex_bytes",
+	"memory-size","migrate_record_receives","migrate_record_retransmits",
+	"migrate_records_skipped","migrate_records_transmitted","migrate_rx_instances","migrate_rx_partitions_active","migrate_rx_partitions_initial",
+	"migrate_rx_partitions_remaining","migrate_signals_active","migrate_signals_remaining",
+	"migrate_tx_instances","migrate_tx_partitions_active","migrate_tx_partitions_imbalance","migrate_tx_partitions_initial","migrate_tx_partitions_remaining",
+	"n_nodes_quiesced","non_expirable_objects","non_replica_objects",
+	"non_replica_tombstones","ns_cluster_size","objects","pending_quiesce","prole_objects",
+	"prole_tombstones","replication-factor","shadow_write_q",
+	"stop_writes","stop-writes-pct","stop-writes-sys-memory-pct","tombstones","write_q",
+	"xdr_tombstones","xdr_bin_cemeteries","record_proto_uncompressed_pct",
+	"record_proto_compression_ratio","scan_proto_uncompressed_pct","scan_proto_compression_ratio","query_proto_uncompressed_pct","query_proto_compression_ratio",
+	"effective_prefer_uniform_balance","migrate_tx_partitions_lead_remaining","appeals_tx_active",
+	"appeals_rx_active","appeals_tx_remaining","query_basic_avg_rec_count","query_aggr_avg_rec_count",
+	"storage-engine.filesize",# default value 1073741824
+	"storage-engine.write-block-size",# default value 1048576
+	"storage-engine.data-in-memory",# default value false
+	"storage-engine.cold-start-empty",# default value false
+	"storage-engine.commit-to-device",# default value false
+	"storage-engine.commit-min-size",# default value 0
+	"storage-engine.compression-level",# default value 0
+	"storage-engine.defrag-lwm-pct",# default value 50
+	"storage-engine.defrag-queue-min",# default value 0
+	"storage-engine.defrag-sleep",# default value 1000
+	"storage-engine.defrag-startup-minimum",# default value 10
+	"storage-engine.direct-files",# default value false
+	"storage-engine.enable-benchmarks-storage",# default value false
+	"storage-engine.flush-max-ms",# default value 1000
+	"storage-engine.max-write-cache",# default value 67108864
+	"storage-engine.min-avail-pct",# default value 5
+	"storage-engine.post-write-queue",# default value 256
+	"storage-engine.read-page-cache",# default value false
+	"storage-engine.serialize-tomb-raider",# default value false
+	"storage-engine.tomb-raider-sleep",# default value 1000
+	"storage-engine.cache-replica-writes",# default value false
+	"storage-engine.disable-odsync",# default value false
+	"storage-engine.max-used-pct",# default value 70
+	"storage-engine.file.age",
+	"storage-engine.file.defrag_q",
+	"storage-engine.file.defrag_reads",
+	"storage-engine.file.defrag_writes",
+	"storage-engine.file.free_wblocks",
+	"storage-engine.file.shadow_write_q",
+	"storage-engine.file.used_bytes",
+	"storage-engine.file.write_q",
+	"storage-engine.file.writes",
+	"storage-engine.device.age",
+	"storage-engine.device.defrag_q",
+	"storage-engine.device.defrag_reads",
+	"storage-engine.device.defrag_writes",
+	"storage-engine.device.free_wblocks",
+	"storage-engine.device.shadow_write_q",
+	"storage-engine.device.used_bytes",
+	"storage-engine.device.write_q",
+	"storage-engine.device.writes",
+]

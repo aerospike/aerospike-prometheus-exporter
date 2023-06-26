@@ -386,13 +386,12 @@ var DEFAULT_METRIC_TYPE = mtCounter
 *
 validates if given type is correct metric-type, if not, return default metric-type (i.e. DEFAULT_METRIC_TYPE)
 */
-func getMetricType(rawMetricName string, rawMetricType metricType) metricType {
+func getMetricType(pContext ContextType, pRawMetricName string) metricType {
 
-	if rawMetricType == mtCounter || rawMetricType == mtGauge {
-		return rawMetricType
+	if gaugeStatHandler.isGauge(pContext, pRawMetricName) {
+		return mtGauge
 	}
 
-	// fmt.Println("rawMetricName: ", rawMetricName, " metricType is not Counter/Gauge, hence defaulting to ", DEFAULT_METRIC_TYPE)
 	return DEFAULT_METRIC_TYPE
 }
 
@@ -402,36 +401,43 @@ func getMetricType(rawMetricName string, rawMetricType metricType) metricType {
  *
  * NOTE: when a stat falls within intersection of allow-list & block-list, we block that stat
  *
+ *             | empty         | no-pattern-match-found | pattern-match-found
+ *  allow-list | allowed/true  |   not-allowed/ false   |    allowed/true
+ *  block-list | blocked/false |   not-blocked/ false   |    blocked/true
+ *
+ *  by checking the blocklist first,
+ *     we avoid processing the allow-list for some of the metrics
+ *
  */
 func isMetricAllowed(pRawStatName string, pAllowlist []string, pBlocklist []string) bool {
-	var can_be_exported = false
+	var lCanBeExported = false
 
 	/**
 		* is this stat is in blocked list
-	    *    if is-block-list array not-defined or is-empty, then true (i.e. STAT-IS-NOT-BLOCKED)
+	    *    if is-block-list array not-defined or is-empty, then false (i.e. STAT-IS-NOT-BLOCKED)
 		*    else
 		*       match stat with "all-block-list-patterns",
 		*             if-any-pattern-match-found,
 		*                    return true (i.e. STAT-IS-BLOCKED)
-		* is stat-is-not-blocked
+		* if stat-is-not-blocked
 		*    if is-allow-list array not-defined or is-empty, then true (i.e. STAT-IS-ALLOWED)
 		*    else
 		*      match stat with "all-allow-list-patterns"
 		*             if-any-pattern-match-found,
 		*                    return true (i.e. STAT-IS-ALLOWED)
 	*/
-	is_blocked := loopPatterns(pRawStatName, pBlocklist, false)
+	isBlocked := loopPatterns(pRawStatName, pBlocklist, false)
 
 	// as it is already blocked, we dont need to check in allow-list,
 	// i.e. when a stat falls within intersection of allow-list & block-list, we block that stat
 	//
-	if is_blocked {
-		can_be_exported = false
+	if isBlocked {
+		lCanBeExported = false
 	} else {
-		can_be_exported = loopPatterns(pRawStatName, pAllowlist, true)
+		lCanBeExported = loopPatterns(pRawStatName, pAllowlist, true)
 	}
 
-	return can_be_exported
+	return lCanBeExported
 }
 
 /**
@@ -441,19 +447,20 @@ func isMetricAllowed(pRawStatName string, pAllowlist []string, pBlocklist []stri
  *  allow-list | allowed/true  |   not-allowed/ false   |    allowed/true
  *  block-list | blocked/false |   not-blocked/ false   |    blocked/true
  *
- *  NOTE: as this is common function, default_return_value is taken as param to match empty-list-usecase in above table
+ *  NOTE: as this is common function, pDefaultReturnValue is taken as param to match empty-list-usecase in above table
  *
  */
-func loopPatterns(pRawStatName string, pAllowPatterns []string, default_return_value bool) bool {
 
-	if len(pAllowPatterns) == 0 {
-		return default_return_value
+func loopPatterns(pRawStatName string, pPatternList []string, pDefaultReturnValue bool) bool {
+
+	if len(pPatternList) == 0 {
+		return pDefaultReturnValue
 	}
 
-	for _, cfgStatPattern := range pAllowPatterns {
-		if len(cfgStatPattern) > 0 {
+	for _, statPattern := range pPatternList {
+		if len(statPattern) > 0 {
 
-			ge := glob.MustCompile(cfgStatPattern)
+			ge := glob.MustCompile(statPattern)
 
 			if ge.Match(pRawStatName) {
 				return true

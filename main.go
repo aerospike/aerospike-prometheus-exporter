@@ -26,6 +26,10 @@ var (
 	config   *Config
 
 	version = "v1.9.0"
+
+	// Guage related
+	gaugeStatsFile   = "./gauge_metrics_list.toml"
+	gaugeStatHandler *GaugeStats
 )
 
 func main() {
@@ -45,6 +49,10 @@ func main() {
 	config = new(Config)
 	initConfig(*configFile, config)
 	config.validateAndUpdate()
+
+	// initialize Guage metric definitions
+	gaugeStatHandler = new(GaugeStats)
+	initGaugeStats(gaugeStatsFile, gaugeStatHandler)
 
 	fullHost = net.JoinHostPort(config.Aerospike.Host, strconv.Itoa(int(config.Aerospike.Port)))
 

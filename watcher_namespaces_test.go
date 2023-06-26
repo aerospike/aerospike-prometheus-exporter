@@ -108,6 +108,12 @@ func TestNamespaceRefreshBlocklist(t *testing.T) {
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
 func runTestcase(t *testing.T) {
+
+	gaugeStatHandler = new(GaugeStats)
+	METRICS_CONFIG_FILE := "gauge_metrics_list.toml"
+
+	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
+
 	// read raw-metrics from mock data gen, create observer and channel prometeus metric ingestion and processing
 	rawMetrics := getRawMetrics()
 	nsWatcher := new(NamespaceWatcher)
@@ -154,12 +160,12 @@ func runTestcase(t *testing.T) {
 				}
 
 				// Desc{fqName: "aerospike_namespac_memory_free_pct", help: "memory free pct", constLabels: {}, variableLabels: [cluster_name service ns]}
-				// fmt.Println("\t refresh-labels: ", metricLabel)
 				metricNameFromDesc := extractMetricNameFromDesc(description)
 				namespaceFromLabel := extractNamespaceFromLabel(metricLabel)
 
 				// key will be like namespace/<metric_name>, this we use this check during assertion
 				keyName := makeKeyname(namespaceFromLabel, metricNameFromDesc, true)
+				// fmt.Println("\t refresh-labels: ", metricLabel, "\n\t\t\t keyName: ", keyName)
 				lOutputValues[keyName] = metricValue
 				lOutputLabels[keyName] = metricLabel
 
