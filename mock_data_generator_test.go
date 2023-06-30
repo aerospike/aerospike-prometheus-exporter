@@ -81,7 +81,7 @@ func createLabelByNames(labelsMap map[string]string) string {
 	arr_label_names := []string{}
 	createdLabelString := ""
 
-	for key, _ := range labelsMap {
+	for key := range labelsMap {
 		arr_label_names = append(arr_label_names, strings.TrimSpace(key))
 	}
 
