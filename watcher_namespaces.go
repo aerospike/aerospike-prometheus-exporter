@@ -73,7 +73,6 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 				}
 
 				if asMetric.isAllowed {
-					// fmt.Println("namespaces: checking for stat: ", compositeStatName, " is-ALLOWED? : ", nsMetric.isAllowed)
 					deviceOrFileName := stats["storage-engine."+statType+"["+statIndex+"]"]
 
 					desc, valueType := asMetric.makePromeMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType)

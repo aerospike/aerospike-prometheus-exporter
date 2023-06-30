@@ -178,9 +178,6 @@ func xdr_runTestCase(t *testing.T) {
 				// Description: Desc{fqName: "aerospike_xdr_hot_keys", help: "hot keys", constLabels: {a="hello"}, variableLabels: [cluster_name service dc]}
 				// Label: [name:"cluster_name" value:"null"  name:"dc" value:"backup_dc_asdev20"  name:"service" value:"172.17.0.3:3000" ]
 
-				// fmt.Println("Xdr Desc : ", description)
-				// fmt.Println("Xdr Label : ", metricLabel)
-
 				metricNameFromDesc := extractMetricNameFromDesc(description)
 				dcFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "dc")
 				serviceFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "service")
@@ -204,12 +201,9 @@ func xdr_runTestCase(t *testing.T) {
 		// we have only 1 service in our mock-data, however loop thru service array
 		for _, xdrDcName := range arrXdrDcSets {
 
-			// fmt.Println(" ^^^ \t\t processing xdrDcName: ", xdrDcName)
-
 			lExpectedMetricNamedValues, lExpectedMetricLabels := createXdrsWatcherExpectedOutputs(xdrDcName)
 
 			for key := range lOutputValues {
-				// fmt.Println("\t **** processing key: ", key, " \t\t xdrDcName: ", xdrDcName)
 				expectedValues := lExpectedMetricNamedValues[key]
 				expectedLabels := lExpectedMetricLabels[key]
 				outputMetricValues := lOutputValues[key]
@@ -217,8 +211,6 @@ func xdr_runTestCase(t *testing.T) {
 
 				// assert - only if the value belongs to the namespace/set we read expected values and processing
 				if strings.HasPrefix(key, xdrDcName) {
-					// fmt.Println("key:", key, "\n\t===> expectedValues: ", expectedValues, "\n\t\t===> outputMetricValues: ", outputMetricValues)
-					// fmt.Println("key:", key, "\n\t===> expectedLabels: ", expectedLabels, "\n\t\t===> outpuMetrictLabels: ", outpuMetricLabels)
 					assert.Contains(t, expectedValues, outputMetricValues)
 					assert.Contains(t, expectedLabels, outpuMetricLabels)
 				}

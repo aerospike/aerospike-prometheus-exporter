@@ -21,9 +21,6 @@ func (xw *XdrWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	list := parseStats(res, ";")
 	dcsList := strings.Split(list["dcs"], ",")
 
-	// fmt.Println("\n\n watcher_xdr: list: ", list)
-	// fmt.Println("\n\n watcher_xdr: dcsList: ", dcsList)
-
 	var infoKeys []string
 	for _, dc := range dcsList {
 		if dc != "" {

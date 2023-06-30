@@ -60,8 +60,6 @@ func extractNameValuePair(fullLabel string, reqName string) string {
 			from := len(reqName) + 7
 			value := element[from:]
 
-			// fmt.Println("\n -->name:  ", name, "\t.", len(reqName)+6, "\t * word:", element, " ==>", value)
-
 			return strings.TrimSpace(value)
 		}
 	}
@@ -71,7 +69,6 @@ func extractNameValuePair(fullLabel string, reqName string) string {
 
 func extractMetricNameFromDesc(desc string) string {
 	// Desc{fqName: "aerospike_namespac_memory_free_pct", help: "memory free pct", constLabels: {}, variableLabels: [cluster_name service ns]}
-	// fmt.Println("description given: ===> ", desc)
 	metricNameFromDesc := desc[0 : (strings.Index(desc, ","))-1]
 	metricNameFromDesc = metricNameFromDesc[(strings.Index(metricNameFromDesc, ":"))+3:]
 
@@ -114,7 +111,6 @@ func convertValue(s string) (float64, error) {
 		return 0, nil
 	}
 
-	// fmt.Println("input string is ", s, " **** returning 0")
 	return 0, fmt.Errorf("invalid value `%s`. Only Float or Boolean are accepted", s)
 }
 
@@ -241,12 +237,9 @@ func splitLatencies(latencyRawMetric string) []string {
 				value = (total - ((value * total) / 100))
 				convertedValue := fmt.Sprintf("%.0f", value)
 				latencies = append(latencies, convertedValue)
-				// fmt.Println(" \t\t adding == operation: ", operation, " \t idx: ", idx, "\telement: ", convertedValue)
 			}
 		}
 	}
-
-	// fmt.Println("\t ==> len(arrLatencies): ", len(arrLatencies), "\n\t ===> len(latencies): ", len(latencies))
 
 	return latencies
 }

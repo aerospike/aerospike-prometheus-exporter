@@ -109,14 +109,8 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 
 	rawMetrics := getRawMetrics()
 
-	// fmt.Println("config.AeroProm.MetricLabels: ", config.AeroProm.MetricLabels)
-
 	clusterName := rawMetrics["cluster-name"]
 	service := rawMetrics["service-clear-std"]
-
-	// cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
-
-	// fmt.Println("cfgLabelsToAdd: " + cfgLabelsToAdd)
 
 	for metricsGrpKey := range rawMetrics {
 		if strings.HasPrefix(metricsGrpKey, "namespace/") && strings.HasSuffix(metricsGrpKey, nsName) {
@@ -135,21 +129,17 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 
 				isBlocked := isHelperBlockedMetric(s, config.Aerospike.NamespaceMetricsBlocklist)
 				if isBlocked {
-					// fmt.Println("stat: ", s, " is marked in BLOCKED-LIST, skipping this stat during mock-data-gen")
 					continue
 				}
 				isAllowed := isHelperAllowedMetric(s, config.Aerospike.NamespaceMetricsAllowlist)
 				if !isAllowed {
-					// fmt.Println("stat: ", s, " is marked in NOT ALLOW-LIST, skipping this stat during mock-data-gen")
 					continue
 				}
-				// fmt.Println("stat: ", s, " is marked in ALLOW-LIST, adding to mock-data-gen")
 
 				// reconvert float back to string
 				value := fmt.Sprintf("%.0f", convertedValue)
 
 				match := seDynamicExtractor.FindStringSubmatch(key)
-				// if strings.Contains(key, "[") {
 				if len(match) != 4 {
 
 					key = strings.ReplaceAll(key, "-", "_")
@@ -173,17 +163,6 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 					labelsMap["cluster_name"] = clusterName
 
 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-					// fmt.Println(">>> sorted_label_str: ", sorted_label_str)
-
-					// labelStr := "[" + cfgLabelsToAdd
-
-					// labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
-					// labelStr = labelStr + constructLabelElement("ns", ns)
-					// labelStr = labelStr + constructLabelElement("service", service)
-
-					// labelStr = labelStr + " ]"
-					// fmt.Println(">>> OLD labelStr: ", labelStr)
-
 					valuesArr = append(valuesArr, value)
 					labelsArr = append(labelsArr, sorted_label_str)
 
@@ -198,7 +177,6 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 					metricName := match[3]
 					deviceOrFileName := stats["storage-engine."+metricType+"["+metricIndex+"]"]
 
-					// fmt.Println("metricType: ", metricType, " === metricIndex: ", metricIndex, " ==== metricName: ", metricName, " ===== deviceOrFileName: ", deviceOrFileName)
 					metric := "aerospike_namespace_storage_engine_" + metricType + "_" + metricName
 
 					valuesArr := lExpectedMetricNamedValues[metric]
@@ -220,20 +198,6 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 					labelsMap["service"] = service
 
 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-					// fmt.Println(">>> metric : ", metric)
-					// fmt.Println(">>> sorted_label_str: ", sorted_label_str)
-
-					// labelStr := "[" + cfgLabelsToAdd
-
-					// labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
-					// labelStr = labelStr + constructLabelElement("file", deviceOrFileName)
-					// labelStr = labelStr + constructLabelElement("file_index", metricIndex)
-					// labelStr = labelStr + constructLabelElement("ns", ns)
-					// labelStr = labelStr + constructLabelElement("service", service)
-
-					// labelStr = labelStr + " ]"
-					// fmt.Println(">>> OLD labelStr: ", labelStr)
-
 					valuesArr = append(valuesArr, value)
 					labelsArr = append(labelsArr, sorted_label_str)
 
@@ -255,18 +219,13 @@ func createNodeStatsWatcherExpectedOutputs(serviceIp string) (map[string][]strin
 
 	rawMetrics := getRawMetrics()
 
-	// fmt.Println("config.AeroProm.MetricLabels: ", config.AeroProm.MetricLabels)
-
 	clusterName := rawMetrics["cluster-name"]
 	service := rawMetrics["service-clear-std"]
-
-	// cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
 
 	for metricsGrpKey := range rawMetrics {
 		if strings.HasPrefix(metricsGrpKey, "statistics") {
 			grpValues := rawMetrics[metricsGrpKey]
 			stats := splitAndRetrieveStats(grpValues, ";")
-			// fmt.Println("\n\t\tstats: ", stats)
 			for s, v := range stats {
 				key := s
 				convertedValue, err := convertValue(v)
@@ -277,19 +236,15 @@ func createNodeStatsWatcherExpectedOutputs(serviceIp string) (map[string][]strin
 
 				isBlocked := isHelperBlockedMetric(s, config.Aerospike.NodeMetricsBlocklist)
 				if isBlocked {
-					// fmt.Println("stat: ", s, " is marked in BLOCKED-LIST, skipping this stat during mock-data-gen")
 					continue
 				}
 				isAllowed := isHelperAllowedMetric(s, config.Aerospike.NodeMetricsAllowlist)
 				if !isAllowed {
-					// fmt.Println("stat: ", s, " is marked in NOT ALLOW-LIST, skipping this stat during mock-data-gen")
 					continue
 				}
-				// fmt.Println("stat: ", s, " is marked in ALLOW-LIST, adding to mock-data-gen")
 
 				// reconvert float back to string
 				value := fmt.Sprintf("%.0f", convertedValue)
-				// fmt.Println(" stat: ", key, " \t\t value: ", value)
 
 				key = strings.ReplaceAll(key, "-", "_")
 				key = strings.ReplaceAll(key, ".", "_")
@@ -305,14 +260,11 @@ func createNodeStatsWatcherExpectedOutputs(serviceIp string) (map[string][]strin
 				}
 
 				// [name:"cluster_name" value:"null"  name:"service" value:"172.17.0.3:3000" ]
-				// fmt.Println(" length-of-serviceIp:-", len(serviceIp))
 				labelsMap := copyConfigLabels()
 				labelsMap["service"] = service
 				labelsMap["cluster_name"] = clusterName
 
 				sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-
-				// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"service\" value:\"" + service + "\" ]"
 
 				valuesArr = append(valuesArr, value)
 				labelsArr = append(labelsArr, sorted_label_str)
@@ -334,12 +286,8 @@ func createSetsWatcherExpectedOutputs(t string) (map[string][]string, map[string
 
 	rawMetrics := getRawMetrics()
 
-	// fmt.Println("config.AeroProm.MetricLabels: ", config.AeroProm.MetricLabels)
-
 	clusterName := rawMetrics["cluster-name"]
 	service := rawMetrics["service-clear-std"]
-
-	// cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
 
 	for metricsGrpKey := range rawMetrics {
 		if strings.HasPrefix(metricsGrpKey, "sets") {
@@ -349,12 +297,9 @@ func createSetsWatcherExpectedOutputs(t string) (map[string][]string, map[string
 
 				singleSetKeyValues := nsWithSets[idx]
 
-				// fmt.Println("singleSetKeyValues: ", singleSetKeyValues)
-
 				stats := splitAndRetrieveStats(singleSetKeyValues, ":")
 				namespace := stats["ns"]
 				setName := stats["set"]
-				// fmt.Println("\n\t\tstats: ", stats)
 
 				for s, v := range stats {
 					key := s
@@ -366,19 +311,14 @@ func createSetsWatcherExpectedOutputs(t string) (map[string][]string, map[string
 
 					isBlocked := isHelperBlockedMetric(s, config.Aerospike.SetMetricsBlocklist)
 					if isBlocked {
-						// fmt.Println("stat: ", s, " is marked in BLOCKED-LIST, skipping this stat during mock-data-gen")
 						continue
 					}
 					isAllowed := isHelperAllowedMetric(s, config.Aerospike.SetMetricsAllowlist)
 					if !isAllowed {
-						// fmt.Println("stat: ", s, " is marked in NOT ALLOW-LIST, skipping this stat during mock-data-gen")
 						continue
 					}
-					// fmt.Println("stat: ", s, " is marked in ALLOW-LIST, adding to mock-data-gen")
-
 					// reconvert float back to string
 					value := fmt.Sprintf("%.0f", convertedValue)
-					// fmt.Println(" stat: ", key, " \t\t value: ", value)
 
 					key = strings.ReplaceAll(key, "-", "_")
 					key = strings.ReplaceAll(key, ".", "_")
@@ -394,7 +334,6 @@ func createSetsWatcherExpectedOutputs(t string) (map[string][]string, map[string
 					}
 
 					// [name:"cluster_name" value:"null"  name:"ns" value:"bar"  name:"service" value:"172.17.0.3:3000"  name:"set" value:"west_region" ]
-					// fmt.Println(" length-of-serviceIp:-", len(serviceIp))
 					mapKeyname := makeKeyname(setName, metric, true)
 					mapKeyname = makeKeyname(namespace, mapKeyname, true)
 
@@ -407,25 +346,12 @@ func createSetsWatcherExpectedOutputs(t string) (map[string][]string, map[string
 					labelsMap["set"] = setName
 
 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-					fmt.Println("\t>>>  metric_name: ", metric, "\t\t mapKeyname: ", mapKeyname)
-					fmt.Println("\t>>> sets_test.go: sorted_label_str: ", sorted_label_str, " \t\t value: ", value)
-
-					// labelStr := "[" + cfgLabelsToAdd
-
-					// labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
-					// labelStr = labelStr + constructLabelElement("ns", namespace)
-					// labelStr = labelStr + constructLabelElement("service", service)
-					// labelStr = labelStr + constructLabelElement("set", setName)
-
-					// labelStr = labelStr + " ]"
-
 					valuesArr = append(valuesArr, value)
 					labelsArr = append(labelsArr, sorted_label_str)
 
 					lExpectedMetricNamedValues[mapKeyname] = valuesArr
 					lExpectedMetricLabels[mapKeyname] = labelsArr
 				}
-				fmt.Println("\t***### lExpectedMetricLabels: ", len(lExpectedMetricLabels))
 
 			}
 		}
@@ -440,12 +366,8 @@ func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[stri
 
 	rawMetrics := getRawMetrics()
 
-	// fmt.Println("config.AeroProm.MetricLabels: ", config.AeroProm.MetricLabels)
-
 	clusterName := rawMetrics["cluster-name"]
 	service := rawMetrics["service-clear-std"]
-
-	// cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
 
 	latencyLabelGroups := []string{"0", "+Inf", "1", "2", "4", "8", "16", "32", "64", "128", "256", "512", "1024", "2048", "4096", "8192", "16384", "32768", "65536"}
 	for metricsGrpKey := range rawMetrics {
@@ -458,7 +380,6 @@ func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[stri
 
 				allLatencyValues := splitLatencies(singleLatencyOperation)
 				if len(allLatencyValues) == 1 {
-					// fmt.Println("\tSKIPPING: singleLatencyOperation: ", singleLatencyOperation, " has NO Latency Values")
 					continue
 				}
 				namespace, operation, _ := splitLatencyDetails(allLatencyValues)
@@ -487,15 +408,6 @@ func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[stri
 					labelsMap["cluster_name"] = clusterName
 
 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-
-					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"" + " ]"
-					// labelStr := "[" + cfgLabelsToAdd
-
-					// labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
-					// labelStr = labelStr + constructLabelElement("ns", namespace)
-					// labelStr = labelStr + constructLabelElement("service", service)
-
-					// labelStr = labelStr + " ]"
 
 					cntValuesArr = append(cntValuesArr, allLatencyValues[1])
 					cntLabelsArr = append(cntLabelsArr, sorted_label_str)
@@ -529,16 +441,6 @@ func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[stri
 
 							sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
 
-							// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"" + " ]"
-							// labelStr := "[" + cfgLabelsToAdd
-
-							// labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
-							// labelStr = labelStr + constructLabelElement("le", le)
-							// labelStr = labelStr + constructLabelElement("ns", namespace)
-							// labelStr = labelStr + constructLabelElement("service", service)
-
-							// labelStr = labelStr + " ]"
-
 							bktValuesArr = append(bktValuesArr, value)
 							bktLabelsArr = append(bktLabelsArr, sorted_label_str)
 
@@ -547,7 +449,6 @@ func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[stri
 
 						}
 
-						// fmt.Println(" \n\t\t # of elements in array ", len(lExpectedMetricNamedValues[mapKeyname]))
 					}
 
 				} else {
@@ -569,29 +470,22 @@ func createXdrsWatcherExpectedOutputs(t string) (map[string][]string, map[string
 
 	rawMetrics := getRawMetrics()
 
-	// fmt.Println("config.AeroProm.MetricLabels: ", config.AeroProm.MetricLabels)
-
 	clusterName := rawMetrics["cluster-name"]
 	service := rawMetrics["service-clear-std"]
-
-	// cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
 
 	for metricsGrpKey := range rawMetrics {
 		if strings.HasPrefix(metricsGrpKey, "get-stats:context=xdr;dc=") {
 			grpValues := rawMetrics[metricsGrpKey]
-			// fmt.Println(" *** \t createXdrsWatcherExpectedOutputs: ", grpValues)
 			xdrDcInfos := strings.Split(grpValues, ";")
 			for idx := range xdrDcInfos {
 
 				singleXdrDcValues := xdrDcInfos[idx]
 
 				stats := splitAndRetrieveStats(singleXdrDcValues, ":")
-				// fmt.Println(" %%%% \t stats: ", stats)
 
 				dcName := strings.ReplaceAll(metricsGrpKey, "get-stats:context=xdr;dc=", "")
 
 				for s, v := range stats {
-					// fmt.Println(" :::: stats===> key: ", s, "\t=\t value: ", v)
 					key := s
 					convertedValue, err := convertValue(v)
 					if err != nil {
@@ -601,19 +495,15 @@ func createXdrsWatcherExpectedOutputs(t string) (map[string][]string, map[string
 
 					isBlocked := isHelperBlockedMetric(s, config.Aerospike.XdrMetricsBlocklist)
 					if isBlocked {
-						// fmt.Println("stat: ", s, " is marked in BLOCKED-LIST, skipping this stat during mock-data-gen")
 						continue
 					}
 					isAllowed := isHelperAllowedMetric(s, config.Aerospike.XdrMetricsAllowlist)
 					if !isAllowed {
-						// fmt.Println("stat: ", s, " is marked in NOT ALLOW-LIST, skipping this stat during mock-data-gen")
 						continue
 					}
-					// fmt.Println("stat: ", s, " is marked in ALLOW-LIST, adding to mock-data-gen")
 
 					// reconvert float back to string
 					value := fmt.Sprintf("%.0f", convertedValue)
-					// fmt.Println(" stat: ", key, " \t\t value: ", value)
 
 					key = strings.ReplaceAll(key, "-", "_")
 					key = strings.ReplaceAll(key, ".", "_")
@@ -629,11 +519,10 @@ func createXdrsWatcherExpectedOutputs(t string) (map[string][]string, map[string
 					}
 
 					// [name:"cluster_name" value:"null"  name:"dc" value:"backup_dc_asdev20"  name:"service" value:"172.17.0.3:3000" ]
-					// 		// fmt.Println(" length-of-serviceIp:-", len(serviceIp))
 					mapKeyname := makeKeyname(dcName, metric, true)
 					mapKeyname = makeKeyname(service, mapKeyname, true)
 
-					// 		// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"  name:\"set\" value:\"" + setName + "\"" + " ]"
+					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"  name:\"set\" value:\"" + setName + "\"" + " ]"
 
 					labelsMap := copyConfigLabels()
 					labelsMap["dc"] = dcName
@@ -641,16 +530,6 @@ func createXdrsWatcherExpectedOutputs(t string) (map[string][]string, map[string
 					labelsMap["cluster_name"] = clusterName
 
 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-					// fmt.Println(">>> sorted_label_str: ", sorted_label_str)
-
-					// labelStr := "[" + cfgLabelsToAdd
-
-					// labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
-					// labelStr = labelStr + constructLabelElement("dc", dcName)
-					// labelStr = labelStr + constructLabelElement("service", service)
-
-					// labelStr = labelStr + " ]"
-
 					valuesArr = append(valuesArr, value)
 					labelsArr = append(labelsArr, sorted_label_str)
 
@@ -680,8 +559,6 @@ func createXdrPassTwoExpectedOutputs(rawMetrics map[string]string) []string {
 			elements := strings.Split(metricsGrpKeys, ";")
 
 			xdr_dcs_str := elements[0]
-			// fmt.Println(" \n\t xdr_dc_names_key1: ", xdr_dc_names_key1)
-			// element[0] looks like dcs=backup_dc_asdev20,a,b, in mock, dealing as strings, so remove dcs= prefix
 			xdr_dcs_str = strings.ReplaceAll(xdr_dcs_str, "dcs=", "")
 			dcs := strings.Split(xdr_dcs_str, ",")
 
@@ -711,13 +588,9 @@ func (sim *MockSindexDataGen) createSindexPassTwoExpectedOutputs(rawMetrics map[
 		metricsGrpKeys := contextKeys[idx]
 
 		if strings.HasPrefix(metricsGrpKeys, "sindex") {
-			// fmt.Println(" FOUND: metricsGrpKeys: ", metricsGrpKeys)
 
 			// we are assuming only 1 xdr dc for now
-			// metricsGrpKeys = strings.ReplaceAll(metricsGrpKeys, "sindex:", "")
-			// elements := strings.Split(metricsGrpKeys, ":")
 			elements := splitAndRetrieveStats(metricsGrpKeys, ":")
-			// fmt.Println(" elements: ", elements, "\n\n***")
 
 			// in mock assuming only 1 Sindex
 			lSindexNames = append(lSindexNames, "sindex/"+elements["ns"]+"/"+elements["indexname"])
@@ -725,7 +598,6 @@ func (sim *MockSindexDataGen) createSindexPassTwoExpectedOutputs(rawMetrics map[
 
 	}
 
-	fmt.Println("\n >>>> lSindexNames: ", lSindexNames, "\n*******")
 	return lSindexNames
 
 }
@@ -744,11 +616,8 @@ func (sim *MockSindexDataGen) createSindexWatcherTestData() (map[string][]string
 	for metricsGrpKey := range rawMetrics {
 		if strings.HasPrefix(metricsGrpKey, "sindex/") {
 			sindexInfos := rawMetrics[metricsGrpKey]
-			// fmt.Println("\t >>>> sindexInfos: ", sindexInfos)
 			namespace, sindexName := sim.extractNamespaceSetSindexname(metricsGrpKey)
-			// fmt.Println(" %%%% namespace: ", namespace, " \t %%%%> ", sindexName)
 			stats := splitAndRetrieveStats(sindexInfos, ";")
-			// fmt.Println("\n\n\nstats: ************* : \t", stats, "\n\n*************")
 			for stat, value := range stats {
 				key := stat
 				convertedValue, err := convertValue(value)
@@ -759,18 +628,15 @@ func (sim *MockSindexDataGen) createSindexWatcherTestData() (map[string][]string
 
 				isBlocked := isHelperBlockedMetric(stat, config.Aerospike.SindexMetricsBlocklist)
 				if isBlocked {
-					// fmt.Println("stat: ", s, " is marked in BLOCKED-LIST, skipping this stat during mock-data-gen")
 					continue
 				}
 				isAllowed := isHelperAllowedMetric(stat, config.Aerospike.SindexMetricsAllowlist)
 				if !isAllowed {
-					// fmt.Println("stat: ", s, " is marked in NOT ALLOW-LIST, skipping this stat during mock-data-gen")
 					continue
 				}
 
 				// reconvert float back to string
 				value := fmt.Sprintf("%.0f", convertedValue)
-				fmt.Println(" stat: ", key, " \t\t value: ", value)
 
 				key = strings.ReplaceAll(key, "-", "_")
 				key = strings.ReplaceAll(key, ".", "_")
@@ -798,8 +664,6 @@ func (sim *MockSindexDataGen) createSindexWatcherTestData() (map[string][]string
 				labelsMap["cluster_name"] = clusterName
 
 				sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-				// fmt.Println("\t>>> mapKeyname             :", mapKeyname)
-				// fmt.Println("\t>>> Sindex sorted_label_str: ", sorted_label_str)
 
 				valuesArr = append(valuesArr, value)
 				labelsArr = append(labelsArr, sorted_label_str)

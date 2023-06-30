@@ -119,9 +119,6 @@ func TestSindex_RefreshWithLabelsConfig(t *testing.T) {
 				// Description: Desc{fqName: "aerospike_sindex_entries_per_rec", help: "entries per rec", constLabels: {sample="sample_label_value"}, variableLabels: [cluster_name service ns sindex]}
 				// Label: [name:"cluster_name" value:"null"  name:"ns" value:"test"  name:"sample" value:"sample_label_value"  name:"service" value:"172.17.0.3:3000"  name:"sindex" value:"test_sindex1" ]
 
-				// fmt.Println("sindex -description: ", description)
-				// fmt.Println("sindex -label: ", metricLabel)
-
 				for eachConfigMetricLabel := range config.AeroProm.MetricLabels {
 					modifiedConfigMetricLabels := strings.ReplaceAll(eachConfigMetricLabel, "=", ":")
 
@@ -206,8 +203,6 @@ func sindex_runTestCase(t *testing.T) {
 				sindexSetKey := makeKeyname(namespaceFromLabel, sindexFromLabel, true)
 				sindexSetKey = makeKeyname(serviceFromLabel, sindexSetKey, true)
 				arrSindexSets[sindexSetKey] = sindexSetKey
-				// fmt.Println("\n\n\n@@@@@@@@@@ >>>>>>>> keyName: ", keyName)
-				// fmt.Println("\n\n\n@@@@@@@@@@ >>>>>>>> sindexSetKey: ", sindexSetKey)
 
 				lOutputValues[keyName] = metricValue
 				lOutputLabels[keyName] = metricLabel
@@ -230,9 +225,6 @@ func sindex_runTestCase(t *testing.T) {
 
 				// assert - only if the value belongs to the namespace/set we read expected values and processing
 				if strings.HasPrefix(key, namespaceWithSindexName) {
-					// fmt.Println("key: ", key, "\t\t\t namespaceWithSetName: ", namespaceWithSindexName)
-					// fmt.Println("key:", key, "\n\t===> expectedValues: ", expectedValues, "\n\t\t===> outputMetricValues: ", outputMetricValues)
-					// fmt.Println("key:", key, "\n\t===> expectedLabels: ", expectedLabels, "\n\t\t===> outpuMetrictLabels: ", outpuMetricLabels)
 					assert.Contains(t, expectedValues, outputMetricValues)
 					assert.Contains(t, expectedLabels, outpuMetricLabels)
 				}

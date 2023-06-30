@@ -192,7 +192,6 @@ func latencies_runTestCase(t *testing.T) {
 				// appends to the service array
 				arrServices[keyName] = keyName
 
-				// fmt.Println("\t refresh-labels: ", metricLabel, "\n\t\t\t keyName: ", keyName)
 				lOutputValues[keyName] = metricValue
 				lOutputLabels[keyName] = metricLabel
 			case <-time.After(1 * time.Second):
@@ -201,18 +200,12 @@ func latencies_runTestCase(t *testing.T) {
 			} // end select
 		}
 
-		// fmt.Println("arrServices: ", arrServices)
-
 		// we have only 1 service in our mock-data, however loop thru service array
 		for _, keyValue := range arrServices {
-
-			// fmt.Println("Running test data assertion for ns+operation : ", keyValue)
 
 			lExpectedMetricNamedValues, lExpectedMetricLabels := createLatencysWatcherExpectedOutputs(keyValue)
 
 			for key := range lOutputValues {
-				// fmt.Println("lOutputValues-key: ", key, " \t ---> keyValue: ", keyValue)
-				// fmt.Println(values)
 				expectedValues := lExpectedMetricNamedValues[key]
 				expectedLabels := lExpectedMetricLabels[key]
 				outputMetricValues := lOutputValues[key]
@@ -220,8 +213,6 @@ func latencies_runTestCase(t *testing.T) {
 
 				// assert - only if the value belongs to the service we read expected values and processing
 				if strings.HasPrefix(key, keyValue) {
-					// fmt.Println("key:", key, "\n\t===> expectedValues: ", expectedValues, "\n\t\t===> outputMetricValues: ", outputMetricValues)
-					// fmt.Println("key:", key, "\n\t===> expectedLabels: ", expectedLabels, "\n\t\t===> outpuMetrictLabels: ", outpuMetricLabels)
 					assert.Contains(t, expectedValues, outputMetricValues)
 					assert.Contains(t, expectedLabels, outpuMetricLabels)
 

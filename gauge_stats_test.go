@@ -22,7 +22,6 @@ func TestGetGaugesNotEmpty(t *testing.T) {
 
 	nslist := gaugeList.getGaugeStats(CTX_NAMESPACE)
 	nodelist := gaugeList.getGaugeStats(CTX_NODE_STATS)
-	// fmt.Println(glist)
 	assert.NotEmpty(t, nslist)
 	assert.NotEmpty(t, nodelist)
 }

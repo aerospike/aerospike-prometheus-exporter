@@ -135,13 +135,11 @@ func nodeStats_runTestCase(t *testing.T) {
 				metricNameFromDesc := extractMetricNameFromDesc(description)
 				serviceFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "service")
 				// clusterFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "cluster_name")
-				// fmt.Println("clusterFromLabel: ", clusterFromLabel, "\t serviceFromLabel: ", serviceFromLabel)
 				// appends to the service array
 				arrServices = append(arrServices, serviceFromLabel)
 
 				// key will be like namespace/<metric_name>, this we use this check during assertion
 				keyName := makeKeyname(serviceFromLabel, metricNameFromDesc, true)
-				// fmt.Println("\t refresh-labels: ", metricLabel, "\n\t\t\t keyName: ", keyName)
 				lOutputValues[keyName] = metricValue
 				lOutputLabels[keyName] = metricLabel
 			case <-time.After(1 * time.Second):
@@ -153,19 +151,11 @@ func nodeStats_runTestCase(t *testing.T) {
 		// we have only 1 service in our mock-data, however loop thru service array
 		for serviceIndex := range arrServices {
 			serviceIp := arrServices[serviceIndex]
-			// fmt.Println("Running test data assertion for service : ", serviceIp)
 
 			lExpectedMetricNamedValues, lExpectedMetricLabels := createNodeStatsWatcherExpectedOutputs(serviceIp)
 			fmt.Println("length-of-lExpectedMetricNamedValues: ", len(lExpectedMetricNamedValues))
-			// fmt.Println("length-of-lExpectedMetricLabels: ", len(lExpectedMetricLabels))
-			// fmt.Println("\n\n********************************")
-			// fmt.Println("\n\nlExpectedMetricNamedValues:\n\t\t", lExpectedMetricNamedValues)
-			// fmt.Println("\n\nlExpectedMetricLabels:\n\t\t", lExpectedMetricLabels)
-			// fmt.Println("\n\n********************************")
 
 			for key := range lOutputValues {
-				// fmt.Println(key, " \t ---> ", serviceIp)
-				// fmt.Println(values)
 				expectedValues := lExpectedMetricNamedValues[key]
 				expectedLabels := lExpectedMetricLabels[key]
 				outputMetricValues := lOutputValues[key]
@@ -173,8 +163,6 @@ func nodeStats_runTestCase(t *testing.T) {
 
 				// assert - only if the value belongs to the service we read expected values and processing
 				if strings.HasPrefix(key, serviceIp) {
-					// fmt.Println("key:", key, "\n\t===> expectedValues: ", expectedValues, "\n\t\t===> outputMetricValues: ", outputMetricValues)
-					// fmt.Println("key:", key, "\n\t===> expectedLabels: ", expectedLabels, "\n\t\t===> outpuMetrictLabels: ", outpuMetricLabels)
 					assert.Contains(t, expectedValues, outputMetricValues)
 					assert.Contains(t, expectedLabels, outpuMetricLabels)
 				}

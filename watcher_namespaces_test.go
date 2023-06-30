@@ -164,7 +164,6 @@ func runTestcase(t *testing.T) {
 
 				// key will be like namespace/<metric_name>, this we use this check during assertion
 				keyName := makeKeyname(namespaceFromLabel, metricNameFromDesc, true)
-				// fmt.Println("\t refresh-labels: ", metricLabel, "\n\t\t\t keyName: ", keyName)
 				lOutputValues[keyName] = metricValue
 				lOutputLabels[keyName] = metricLabel
 
@@ -183,8 +182,6 @@ func runTestcase(t *testing.T) {
 			lExpectedMetricNamedValues, lExpectedMetricLabels := createNamespaceWatcherExpectedOutputs(tnsForNamespace, true)
 
 			for key := range lOutputValues {
-				// fmt.Println(key, " \t ---> ", tnsForNamespace)
-				// fmt.Println(values)
 				expectedValues := lExpectedMetricNamedValues[key]
 				expectedLabels := lExpectedMetricLabels[key]
 				outputMetricValues := lOutputValues[key]
@@ -192,7 +189,6 @@ func runTestcase(t *testing.T) {
 
 				// assert - only if the value belongs to the namespace we read expected values and processing
 				if strings.HasPrefix(key, tnsForNamespace) {
-					// fmt.Println("key:", key, "\n\t===> expectedLabels: ", expectedLabels, "\n\t\t===> outpuMetrictLabels: ", outpuMetricLabels)
 					assert.Contains(t, expectedValues, outputMetricValues)
 					assert.Contains(t, expectedLabels, outpuMetricLabels)
 				}
