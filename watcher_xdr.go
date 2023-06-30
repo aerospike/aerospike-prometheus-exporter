@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -64,8 +63,6 @@ var xdrMetrics map[string]metricType
 
 func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 
-	fmt.Println("Xdr Raw Metrics: ", rawMetrics)
-
 	if xdrMetrics == nil {
 		xdrMetrics = getFilteredMetrics(xdrRawMetrics, config.Aerospike.XdrMetricsAllowlist, config.Aerospike.XdrMetricsAllowlistEnabled, config.Aerospike.XdrMetricsBlocklist)
 	}
@@ -73,8 +70,6 @@ func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 	for _, dc := range infoKeys {
 		dcName := strings.ReplaceAll(dc, "get-stats:context=xdr;dc=", "")
 		log.Tracef("xdr-stats:%s:%s", dcName, rawMetrics[dc])
-
-		fmt.Println("\n\n processing DC: ", dcName)
 
 		xdrObserver := make(MetricMap, len(xdrMetrics))
 		for m, t := range xdrMetrics {
