@@ -61,7 +61,7 @@ func initGaugeStats(pConfigFile string, pGaugeStats *GaugeStats) {
 	// fmt.Println("initGaugeStats: size of NamespaceStats-map: ", len(pGaugeStats.NamespaceStats))
 	// fmt.Println("initGaugeStats: size of Namespace-array: ", len(pGaugeStats.Namespace))
 
-	// log.Debugln("# of Gauge Keys defined at Gauge Stat level are: ", len(md.Keys()))
+	log.Debugln("# of Gauge Keys defined at Gauge Stat level are: ", len(md.Keys()))
 }
 
 /**
