@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -64,16 +65,36 @@ func createNamespacePassTwoExpectedOutputs(rawMetrics map[string]string) []strin
 	return lNamespaces
 }
 
-func makeLabelsFromConfig(cfgLabels map[string]string) string {
-	if cfgLabels == nil {
-		return ""
-	}
-	var labels = ""
+func copyConfigLabels() map[string]string {
+	cfgLabels := config.AeroProm.MetricLabels
+
+	returnLabelMap := make(map[string]string)
 	for key, value := range cfgLabels {
-		labels = labels + "name:\"" + key + "\" value:\"" + value + "\"  "
+		returnLabelMap[key] = value
 	}
 
-	return labels
+	return returnLabelMap
+}
+
+func createLabelByNames(labelsMap map[string]string) string {
+
+	arr_label_names := []string{}
+	createdLabelString := ""
+
+	for key, _ := range labelsMap {
+		arr_label_names = append(arr_label_names, strings.TrimSpace(key))
+	}
+
+	// sort the keys
+	sort.Strings(arr_label_names)
+
+	for idx := range arr_label_names {
+		keyName := arr_label_names[idx]
+		value := labelsMap[keyName]
+		createdLabelString = createdLabelString + constructLabelElement(keyName, strings.TrimSpace(value))
+	}
+
+	return strings.TrimSpace(createdLabelString)
 }
 
 /*
@@ -92,7 +113,8 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 	clusterName := rawMetrics["cluster-name"]
 	service := rawMetrics["service-clear-std"]
 
-	cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
+	// cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
+
 	// fmt.Println("cfgLabelsToAdd: " + cfgLabelsToAdd)
 
 	for metricsGrpKey := range rawMetrics {
@@ -128,6 +150,7 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 				match := seDynamicExtractor.FindStringSubmatch(key)
 				// if strings.Contains(key, "[") {
 				if len(match) != 4 {
+
 					key = strings.ReplaceAll(key, "-", "_")
 					key = strings.ReplaceAll(key, ".", "_")
 
@@ -143,22 +166,32 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 
 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
 
-					labelStr := "[" + cfgLabelsToAdd
+					labelsMap := copyConfigLabels()
+					labelsMap["ns"] = ns
+					labelsMap["service"] = service
+					labelsMap["cluster_name"] = clusterName
 
-					labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
-					labelStr = labelStr + constructLabelElement("ns", ns)
-					labelStr = labelStr + constructLabelElement("service", service)
+					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+					// fmt.Println(">>> sorted_label_str: ", sorted_label_str)
 
-					labelStr = labelStr + " ]"
+					// labelStr := "[" + cfgLabelsToAdd
+
+					// labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
+					// labelStr = labelStr + constructLabelElement("ns", ns)
+					// labelStr = labelStr + constructLabelElement("service", service)
+
+					// labelStr = labelStr + " ]"
+					// fmt.Println(">>> OLD labelStr: ", labelStr)
 
 					valuesArr = append(valuesArr, value)
-					labelsArr = append(labelsArr, labelStr)
+					labelsArr = append(labelsArr, sorted_label_str)
 
 					mapKeyname := makeKeyname(nsName, metric, addNsToKey)
 					lExpectedMetricNamedValues[mapKeyname] = valuesArr
 					lExpectedMetricLabels[mapKeyname] = labelsArr
 
 				} else {
+
 					metricType := match[1]
 					metricIndex := match[2]
 					metricName := match[3]
@@ -178,18 +211,30 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 
 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"file\" value:\"" + deviceOrFileName + "\"  name:\"file_index\" value:\"" + metricIndex + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
 
-					labelStr := "[" + cfgLabelsToAdd
+					labelsMap := copyConfigLabels()
+					labelsMap["cluster_name"] = clusterName
+					labelsMap["file"] = deviceOrFileName
+					labelsMap["ns"] = ns
+					labelsMap["file_index"] = metricIndex
+					labelsMap["service"] = service
 
-					labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
-					labelStr = labelStr + constructLabelElement("file", deviceOrFileName)
-					labelStr = labelStr + constructLabelElement("file_index", metricIndex)
-					labelStr = labelStr + constructLabelElement("ns", ns)
-					labelStr = labelStr + constructLabelElement("service", service)
+					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+					// fmt.Println(">>> metric : ", metric)
+					// fmt.Println(">>> sorted_label_str: ", sorted_label_str)
 
-					labelStr = labelStr + " ]"
+					// labelStr := "[" + cfgLabelsToAdd
+
+					// labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
+					// labelStr = labelStr + constructLabelElement("file", deviceOrFileName)
+					// labelStr = labelStr + constructLabelElement("file_index", metricIndex)
+					// labelStr = labelStr + constructLabelElement("ns", ns)
+					// labelStr = labelStr + constructLabelElement("service", service)
+
+					// labelStr = labelStr + " ]"
+					// fmt.Println(">>> OLD labelStr: ", labelStr)
 
 					valuesArr = append(valuesArr, value)
-					labelsArr = append(labelsArr, labelStr)
+					labelsArr = append(labelsArr, sorted_label_str)
 
 					mapKeyname := makeKeyname(nsName, metric, addNsToKey)
 
@@ -214,7 +259,7 @@ func createNodeStatsWatcherExpectedOutputs(serviceIp string) (map[string][]strin
 	clusterName := rawMetrics["cluster-name"]
 	service := rawMetrics["service-clear-std"]
 
-	cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
+	// cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
 
 	for metricsGrpKey := range rawMetrics {
 		if strings.HasPrefix(metricsGrpKey, "statistics") {
@@ -260,12 +305,18 @@ func createNodeStatsWatcherExpectedOutputs(serviceIp string) (map[string][]strin
 
 				// [name:"cluster_name" value:"null"  name:"service" value:"172.17.0.3:3000" ]
 				// fmt.Println(" length-of-serviceIp:-", len(serviceIp))
-				mapKeyname := makeKeyname(serviceIp, metric, true)
-				labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"service\" value:\"" + service + "\" ]"
+				labelsMap := copyConfigLabels()
+				labelsMap["service"] = service
+				labelsMap["cluster_name"] = clusterName
+
+				sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+				// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"service\" value:\"" + service + "\" ]"
 
 				valuesArr = append(valuesArr, value)
-				labelsArr = append(labelsArr, labelStr)
+				labelsArr = append(labelsArr, sorted_label_str)
 
+				mapKeyname := makeKeyname(serviceIp, metric, true)
 				lExpectedMetricNamedValues[mapKeyname] = valuesArr
 				lExpectedMetricLabels[mapKeyname] = labelsArr
 
@@ -287,7 +338,7 @@ func createSetsWatcherExpectedOutputs(namespaceWithSetName string) (map[string][
 	clusterName := rawMetrics["cluster-name"]
 	service := rawMetrics["service-clear-std"]
 
-	cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
+	// cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
 
 	for metricsGrpKey := range rawMetrics {
 		if strings.HasPrefix(metricsGrpKey, "sets") {
@@ -348,17 +399,25 @@ func createSetsWatcherExpectedOutputs(namespaceWithSetName string) (map[string][
 
 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"  name:\"set\" value:\"" + setName + "\"" + " ]"
 
-					labelStr := "[" + cfgLabelsToAdd
+					labelsMap := copyConfigLabels()
+					labelsMap["ns"] = namespace
+					labelsMap["service"] = service
+					labelsMap["cluster_name"] = clusterName
+					labelsMap["set"] = setName
 
-					labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
-					labelStr = labelStr + constructLabelElement("ns", namespace)
-					labelStr = labelStr + constructLabelElement("service", service)
-					labelStr = labelStr + constructLabelElement("set", setName)
+					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
 
-					labelStr = labelStr + " ]"
+					// labelStr := "[" + cfgLabelsToAdd
+
+					// labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
+					// labelStr = labelStr + constructLabelElement("ns", namespace)
+					// labelStr = labelStr + constructLabelElement("service", service)
+					// labelStr = labelStr + constructLabelElement("set", setName)
+
+					// labelStr = labelStr + " ]"
 
 					valuesArr = append(valuesArr, value)
-					labelsArr = append(labelsArr, labelStr)
+					labelsArr = append(labelsArr, sorted_label_str)
 
 					lExpectedMetricNamedValues[mapKeyname] = valuesArr
 					lExpectedMetricLabels[mapKeyname] = labelsArr
@@ -382,7 +441,7 @@ func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[stri
 	clusterName := rawMetrics["cluster-name"]
 	service := rawMetrics["service-clear-std"]
 
-	cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
+	// cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
 
 	latencyLabelGroups := []string{"0", "+Inf", "1", "2", "4", "8", "16", "32", "64", "128", "256", "512", "1024", "2048", "4096", "8192", "16384", "32768", "65536"}
 	for metricsGrpKey := range rawMetrics {
@@ -418,17 +477,24 @@ func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[stri
 						cntLabelsArr = []string{}
 					}
 
+					labelsMap := copyConfigLabels()
+					labelsMap["ns"] = namespace
+					labelsMap["service"] = service
+					labelsMap["cluster_name"] = clusterName
+
+					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"" + " ]"
-					labelStr := "[" + cfgLabelsToAdd
+					// labelStr := "[" + cfgLabelsToAdd
 
-					labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
-					labelStr = labelStr + constructLabelElement("ns", namespace)
-					labelStr = labelStr + constructLabelElement("service", service)
+					// labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
+					// labelStr = labelStr + constructLabelElement("ns", namespace)
+					// labelStr = labelStr + constructLabelElement("service", service)
 
-					labelStr = labelStr + " ]"
+					// labelStr = labelStr + " ]"
 
 					cntValuesArr = append(cntValuesArr, allLatencyValues[1])
-					cntLabelsArr = append(cntLabelsArr, labelStr)
+					cntLabelsArr = append(cntLabelsArr, sorted_label_str)
 
 					lExpectedMetricNamedValues[mapKeyname] = cntValuesArr
 					lExpectedMetricLabels[mapKeyname] = cntLabelsArr
@@ -451,18 +517,26 @@ func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[stri
 								bktLabelsArr = []string{}
 							}
 
+							labelsMap := copyConfigLabels()
+							labelsMap["ns"] = namespace
+							labelsMap["le"] = le
+							labelsMap["service"] = service
+							labelsMap["cluster_name"] = clusterName
+
+							sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
 							// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"" + " ]"
-							labelStr := "[" + cfgLabelsToAdd
+							// labelStr := "[" + cfgLabelsToAdd
 
-							labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
-							labelStr = labelStr + constructLabelElement("le", le)
-							labelStr = labelStr + constructLabelElement("ns", namespace)
-							labelStr = labelStr + constructLabelElement("service", service)
+							// labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
+							// labelStr = labelStr + constructLabelElement("le", le)
+							// labelStr = labelStr + constructLabelElement("ns", namespace)
+							// labelStr = labelStr + constructLabelElement("service", service)
 
-							labelStr = labelStr + " ]"
+							// labelStr = labelStr + " ]"
 
 							bktValuesArr = append(bktValuesArr, value)
-							bktLabelsArr = append(bktLabelsArr, labelStr)
+							bktLabelsArr = append(bktLabelsArr, sorted_label_str)
 
 							lExpectedMetricNamedValues[mapKeyname] = bktValuesArr
 							lExpectedMetricLabels[mapKeyname] = bktLabelsArr
@@ -496,7 +570,7 @@ func createXdrsWatcherExpectedOutputs(namespaceWithSetName string) (map[string][
 	clusterName := rawMetrics["cluster-name"]
 	service := rawMetrics["service-clear-std"]
 
-	cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
+	// cfgLabelsToAdd := makeLabelsFromConfig(config.AeroProm.MetricLabels)
 
 	for metricsGrpKey := range rawMetrics {
 		if strings.HasPrefix(metricsGrpKey, "get-stats:context=xdr;dc=") {
@@ -557,16 +631,24 @@ func createXdrsWatcherExpectedOutputs(namespaceWithSetName string) (map[string][
 
 					// 		// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"  name:\"set\" value:\"" + setName + "\"" + " ]"
 
-					labelStr := "[" + cfgLabelsToAdd
+					labelsMap := copyConfigLabels()
+					labelsMap["dc"] = dcName
+					labelsMap["service"] = service
+					labelsMap["cluster_name"] = clusterName
 
-					labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
-					labelStr = labelStr + constructLabelElement("dc", dcName)
-					labelStr = labelStr + constructLabelElement("service", service)
+					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+					// fmt.Println(">>> sorted_label_str: ", sorted_label_str)
 
-					labelStr = labelStr + " ]"
+					// labelStr := "[" + cfgLabelsToAdd
+
+					// labelStr = labelStr + strings.TrimSpace(constructLabelElement("cluster_name", clusterName)) // only for the first
+					// labelStr = labelStr + constructLabelElement("dc", dcName)
+					// labelStr = labelStr + constructLabelElement("service", service)
+
+					// labelStr = labelStr + " ]"
 
 					valuesArr = append(valuesArr, value)
-					labelsArr = append(labelsArr, labelStr)
+					labelsArr = append(labelsArr, sorted_label_str)
 
 					lExpectedMetricNamedValues[mapKeyname] = valuesArr
 					lExpectedMetricLabels[mapKeyname] = labelsArr
