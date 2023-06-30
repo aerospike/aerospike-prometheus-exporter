@@ -29,18 +29,23 @@ const (
 const METRIC_LABEL_CLUSTER_NAME = "cluster_name"
 const METRIC_LABEL_SERVICE = "service"
 const METRIC_LABEL_NS = "ns"
+const METRIC_LABEL_SET = "set"
+const METRIC_LABEL_LE = "le"
+const METRIC_LABEL_DC_NAME = "dc"
+const METRIC_LABEL_SINDEX = "sindex"
 
 /**
  * Constructs Prometheus parameters required which are needed to push metrics to Prometheus
  */
 
-func (as *AerospikeStat) makePromeMetric(pConstLabels map[string]string, pLabels ...string) (*prometheus.Desc, prometheus.ValueType) {
+func (as *AerospikeStat) makePromeMetric(pLabels ...string) (*prometheus.Desc, prometheus.ValueType) {
+
 	qualifiedName := as.qualifyMetricContext() + "_" + normalizeMetric(as.name)
 	promDesc := prometheus.NewDesc(
 		qualifiedName,
 		normalizeDesc(as.name),
 		pLabels,
-		pConstLabels,
+		config.AeroProm.MetricLabels,
 	)
 
 	if as.mType == mtGauge {

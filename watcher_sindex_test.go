@@ -12,30 +12,40 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSets_PassOneKeys(t *testing.T) {
-	watcher := new(SetWatcher)
+func TestSindex_PassOneKeys(t *testing.T) {
+	watcher := new(SindexWatcher)
+
+	config = new(Config)
+	initConfig(LABELS_APE_TOML, config)
+	config.validateAndUpdate()
+
 	// Check passoneKeys
-	passOneKeys := watcher.passOneKeys()
-	assert.Nil(t, passOneKeys)
+	passOneKeysOutputs := watcher.passOneKeys()
+	// assert.Nil(t, passOneKeys)
+
+	assert.Equal(t, passOneKeysOutputs, []string{"sindex"})
 
 }
 
-func TestSets_PassTwoKeys(t *testing.T) {
-	watcher := new(SetWatcher)
+func TestSindex_PassTwoKeys(t *testing.T) {
+	watcher := new(SindexWatcher)
 
 	// simulate, as if we are sending requestInfo to AS and get the NodeStats, these are coming from mock-data-generator
-	pass2Keys := make(map[string]string)
-	outputs := watcher.passTwoKeys(pass2Keys)
+	rawMetrics := getRawMetrics()
+	msdg := new(MockSindexDataGen)
+	expectedOutputs := msdg.createSindexPassTwoExpectedOutputs(rawMetrics)
 
-	fmt.Println("TestNodeStats_PassTwoKeys: outputs: ", outputs)
+	outputs := watcher.passTwoKeys(rawMetrics)
 
-	assert.Equal(t, outputs, []string{"sets"})
+	fmt.Println("TestSindex_PassTwoKeys: outputs: ", outputs)
+
+	assert.Equal(t, outputs, expectedOutputs)
 }
 
-func TestSets_RefreshDefault(t *testing.T) {
+func TestSindex_RefreshDefault(t *testing.T) {
 	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
 
-	fmt.Println("initializing config ... TestSets_RefreshDefault")
+	fmt.Println("initializing config ... TestSindex_RefreshDefault")
 	// Initialize and validate config
 	config = new(Config)
 	initConfig(DEFAULT_APE_TOML, config)
@@ -43,12 +53,12 @@ func TestSets_RefreshDefault(t *testing.T) {
 	config.validateAndUpdate()
 
 	// run the test-case logic
-	sets_runTestCase(t)
+	sindex_runTestCase(t)
 
 	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
 }
 
-func TestSets_Allowlist(t *testing.T) {
+func TestSindex_Allowlist(t *testing.T) {
 	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
 
 	fmt.Println("initializing config ... TestSets_Allowlist")
@@ -59,21 +69,21 @@ func TestSets_Allowlist(t *testing.T) {
 	config.validateAndUpdate()
 
 	// run the test-case logic
-	sets_runTestCase(t)
+	sindex_runTestCase(t)
 
 	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
 }
 
-func TestSets_RefreshWithLabelsConfig(t *testing.T) {
+func TestSindex_RefreshWithLabelsConfig(t *testing.T) {
 	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
 
-	fmt.Println("initializing config ... TestSets_RefreshWithLabelsConfig")
+	fmt.Println("initializing config ... TestSindex_RefreshWithLabelsConfig")
 	// Initialize and validate config
 	config = new(Config)
 	initConfig(LABELS_APE_TOML, config)
 	config.validateAndUpdate()
 
-	watcher := new(SetWatcher)
+	watcher := new(SindexWatcher)
 
 	gaugeStatHandler = new(GaugeStats)
 
@@ -82,13 +92,14 @@ func TestSets_RefreshWithLabelsConfig(t *testing.T) {
 
 	lObserver := &Observer{}
 	ch := make(chan prometheus.Metric, 1000)
-	setsInfoKeys := []string{}
+
+	sindexInfoKeys := watcher.passTwoKeys(rawMetrics)
 
 	watcher.passTwoKeys(rawMetrics)
-	err := watcher.refresh(lObserver, setsInfoKeys, rawMetrics, ch)
+	err := watcher.refresh(lObserver, sindexInfoKeys, rawMetrics, ch)
 
 	if err != nil {
-		fmt.Println("watcher_latency_test : Unable to refresh Latencies")
+		fmt.Println("watcher_sindex_test : Unable to refresh Sindex")
 	} else {
 		domore := 1
 
@@ -105,8 +116,11 @@ func TestSets_RefreshWithLabelsConfig(t *testing.T) {
 
 				metricLabel := fmt.Sprintf("%s", protobuffer.Label)
 
-				// Description: Desc{fqName: "aerospike_latencies_read_ms_bucket", help: "read ms bucket", constLabels: {}, variableLabels: [cluster_name service ns le]}
-				// Label: [name:"cluster_name" value:"null"  name:"le" value:"+Inf"  name:"ns" value:"test"  name:"service" value:"172.17.0.3:3000" ]
+				// Description: Desc{fqName: "aerospike_sindex_entries_per_rec", help: "entries per rec", constLabels: {sample="sample_label_value"}, variableLabels: [cluster_name service ns sindex]}
+				// Label: [name:"cluster_name" value:"null"  name:"ns" value:"test"  name:"sample" value:"sample_label_value"  name:"service" value:"172.17.0.3:3000"  name:"sindex" value:"test_sindex1" ]
+
+				// fmt.Println("sindex -description: ", description)
+				// fmt.Println("sindex -label: ", metricLabel)
 
 				for eachConfigMetricLabel := range config.AeroProm.MetricLabels {
 					modifiedConfigMetricLabels := strings.ReplaceAll(eachConfigMetricLabel, "=", ":")
@@ -127,8 +141,8 @@ func TestSets_RefreshWithLabelsConfig(t *testing.T) {
 /**
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
-func sets_runTestCase(t *testing.T) {
-	watcher := new(SetWatcher)
+func sindex_runTestCase(t *testing.T) {
+	watcher := new(SindexWatcher)
 
 	gaugeStatHandler = new(GaugeStats)
 
@@ -137,22 +151,24 @@ func sets_runTestCase(t *testing.T) {
 
 	lObserver := &Observer{}
 	ch := make(chan prometheus.Metric, 1000)
-	setsInfoKeys := []string{}
+	sindexInfoKeys := watcher.passTwoKeys(rawMetrics)
 
 	watcher.passTwoKeys(rawMetrics)
-	err := watcher.refresh(lObserver, setsInfoKeys, rawMetrics, ch)
+	err := watcher.refresh(lObserver, sindexInfoKeys, rawMetrics, ch)
 
 	if err != nil {
 		fmt.Println("watcher_sets_test : Unable to refresh set stats")
 	} else {
 		domore := 1
 
+		msdg := new(MockSindexDataGen)
+
 		// map of string ==> map["namespace/metric-name"]["<Label>"]
 		//  both used to assert the return values from actual code against calculated values
 		lOutputValues := map[string]string{}
 		lOutputLabels := map[string]string{}
 
-		arrNamespaceSets := map[string]string{}
+		arrSindexSets := map[string]string{}
 
 		for domore == 1 {
 			select {
@@ -173,19 +189,25 @@ func sets_runTestCase(t *testing.T) {
 					metricValue = fmt.Sprintf("%.0f", *protobuffer.Counter.Value)
 				}
 
-				// Description: Desc{fqName: "aerospike_sets_truncate_lut", help: "truncate lut", constLabels: {}, variableLabels: [cluster_name service ns set]}
-				// Label: [name:"cluster_name" value:"null"  name:"ns" value:"bar"  name:"service" value:"172.17.0.3:3000"  name:"set" value:"west_region" ]
+				// Description: Desc{fqName: "aerospike_sindex_entries_per_rec", help: "entries per rec", constLabels: {sample="sample_label_value"}, variableLabels: [cluster_name service ns sindex]}
+				// Label: [name:"cluster_name" value:"null"  name:"ns" value:"test"  name:"service" value:"172.17.0.3:3000"  name:"sindex" value:"test_sindex1" ]
+				//        [name:"cluster_name" value:"null"  name:"ns" value:"test"  name:"service" value:"172.17.0.3:3000"  name:"sindex" value:"test_sindex1" ]
 				metricNameFromDesc := extractMetricNameFromDesc(description)
+				serviceFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "service")
 				namespaceFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "ns")
-				setFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "set")
+				sindexFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "sindex")
 
-				// key will be like namespace/set/<metric_name>, this we use this check during assertion
-				keyName := makeKeyname(setFromLabel, metricNameFromDesc, true)
+				// key will be like service/namespace/sindex/<metric_name>, this we use this check during assertion
+				keyName := makeKeyname(sindexFromLabel, metricNameFromDesc, true)
 				keyName = makeKeyname(namespaceFromLabel, keyName, true)
+				keyName = makeKeyname(serviceFromLabel, keyName, true)
 
 				// appends to the sets array
-				namespaceSetKey := makeKeyname(namespaceFromLabel, setFromLabel, true)
-				arrNamespaceSets[namespaceSetKey] = namespaceSetKey
+				sindexSetKey := makeKeyname(namespaceFromLabel, sindexFromLabel, true)
+				sindexSetKey = makeKeyname(serviceFromLabel, sindexSetKey, true)
+				arrSindexSets[sindexSetKey] = sindexSetKey
+				// fmt.Println("\n\n\n@@@@@@@@@@ >>>>>>>> keyName: ", keyName)
+				// fmt.Println("\n\n\n@@@@@@@@@@ >>>>>>>> sindexSetKey: ", sindexSetKey)
 
 				lOutputValues[keyName] = metricValue
 				lOutputLabels[keyName] = metricLabel
@@ -196,9 +218,9 @@ func sets_runTestCase(t *testing.T) {
 		}
 
 		// we have only 1 service in our mock-data, however loop thru service array
-		for _, namespaceWithSetName := range arrNamespaceSets {
+		for _, namespaceWithSindexName := range arrSindexSets {
 
-			lExpectedMetricNamedValues, lExpectedMetricLabels := createSetsWatcherExpectedOutputs(namespaceWithSetName)
+			lExpectedMetricNamedValues, lExpectedMetricLabels := msdg.createSindexWatcherTestData()
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]
@@ -207,10 +229,10 @@ func sets_runTestCase(t *testing.T) {
 				outpuMetricLabels := lOutputLabels[key]
 
 				// assert - only if the value belongs to the namespace/set we read expected values and processing
-				if strings.HasPrefix(key, namespaceWithSetName) {
-					fmt.Println("key: ", key, "\t\t\t namespaceWithSetName: ", namespaceWithSetName)
-					fmt.Println("key:", key, "\n\t===> expectedValues: ", expectedValues, "\n\t\t===> outputMetricValues: ", outputMetricValues)
-					fmt.Println("key:", key, "\n\t===> expectedLabels: ", expectedLabels, "\n\t\t===> outpuMetrictLabels: ", outpuMetricLabels)
+				if strings.HasPrefix(key, namespaceWithSindexName) {
+					// fmt.Println("key: ", key, "\t\t\t namespaceWithSetName: ", namespaceWithSindexName)
+					// fmt.Println("key:", key, "\n\t===> expectedValues: ", expectedValues, "\n\t\t===> outputMetricValues: ", outputMetricValues)
+					// fmt.Println("key:", key, "\n\t===> expectedLabels: ", expectedLabels, "\n\t\t===> outpuMetrictLabels: ", outpuMetricLabels)
 					assert.Contains(t, expectedValues, outputMetricValues)
 					assert.Contains(t, expectedLabels, outpuMetricLabels)
 				}

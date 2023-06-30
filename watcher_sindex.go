@@ -8,31 +8,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Sindex raw metrics
-var sindexRawMetrics = map[string]metricType{
-	"keys":                      mtGauge, // removed in server6.0
-	"entries":                   mtGauge,
-	"ibtr_memory_used":          mtGauge, // removed in server6.0
-	"nbtr_memory_used":          mtGauge, // removed in server6.0
-	"load_pct":                  mtGauge,
-	"loadtime":                  mtGauge,   // removed in server6.0
-	"write_success":             mtCounter, // removed in server6.0
-	"write_error":               mtCounter, // removed in server6.0
-	"delete_success":            mtCounter, // removed in server6.0
-	"delete_error":              mtCounter, // removed in server6.0
-	"stat_gc_recs":              mtCounter,
-	"query_basic_complete":      mtCounter, // removed in server6.0
-	"query_basic_error":         mtCounter, // removed in server6.0
-	"query_basic_abort":         mtCounter, // removed in server6.0
-	"query_basic_avg_rec_count": mtGauge,   // removed in server6.0
-	"histogram":                 mtGauge,   // removed in server6.0
-	"memory_used":               mtGauge,   // deprecated in server6.3 version and replaced by used_bytes
-	"used_bytes":                mtGauge,   // added in server6.3 represents memory used by data (aka memory_used)
-	"load_time":                 mtGauge,
-	"entries_per_rec":           mtGauge,
-	"entries_per_bval":          mtGauge,
-}
-
 type SindexWatcher struct {
 }
 
@@ -69,7 +44,7 @@ func (siw *SindexWatcher) getSindexCommands(sindexesMeta []string) (sindexComman
 	return sindexCommands
 }
 
-var sindexMetrics map[string]metricType
+var sindexMetrics map[string]AerospikeStat
 
 func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	if config.Aerospike.DisableSindexMetrics {
@@ -77,8 +52,9 @@ func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 		return nil
 	}
 
-	if sindexMetrics == nil {
-		sindexMetrics = getFilteredMetrics(sindexRawMetrics, config.Aerospike.SindexMetricsAllowlist, config.Aerospike.SindexMetricsAllowlistEnabled, config.Aerospike.SindexMetricsBlocklist)
+	if sindexMetrics == nil || isTestcaseMode() {
+		// sindexMetrics = getFilteredMetrics(sindexRawMetrics, config.Aerospike.SindexMetricsAllowlist, config.Aerospike.SindexMetricsAllowlistEnabled, config.Aerospike.SindexMetricsBlocklist)
+		sindexMetrics = make(map[string]AerospikeStat)
 	}
 
 	for _, sindex := range infoKeys {
@@ -87,26 +63,46 @@ func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 		nsName := sindexInfoKeySplit[0]
 		sindexName := sindexInfoKeySplit[1]
 		log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
-		sindexObserver := make(MetricMap, len(sindexMetrics))
-		for m, t := range sindexMetrics {
-			sindexObserver[m] = makeMetric("aerospike_sindex", m, t, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", "sindex")
-		}
+
+		// sindexObserver := make(MetricMap, len(sindexMetrics))
+		// for m, t := range sindexMetrics {
+		// 	sindexObserver[m] = makeMetric("aerospike_sindex", m, t, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", "sindex")
+		// }
 
 		stats := parseStats(rawMetrics[sindex], ";")
-		for stat, pm := range sindexObserver {
-			v, exists := stats[stat]
-			if !exists {
-				// not found
-				continue
-			}
-
-			pv, err := tryConvert(v)
+		for stat, value := range stats {
+			pv, err := tryConvert(value)
 			if err != nil {
 				continue
 			}
+			asMetric, exists := xdrMetrics[stat]
 
-			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, sindexName)
+			if !exists {
+				asMetric = newAerospikeStat(CTX_SINDEX, stat)
+				sindexMetrics[stat] = asMetric
+			}
+
+			if asMetric.isAllowed {
+				desc, valueType := asMetric.makePromeMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_SINDEX)
+				ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, sindexName)
+			}
+
 		}
+
+		// for stat, pm := range sindexObserver {
+		// 	v, exists := stats[stat]
+		// 	if !exists {
+		// 		// not found
+		// 		continue
+		// 	}
+
+		// 	pv, err := tryConvert(v)
+		// 	if err != nil {
+		// 		continue
+		// 	}
+
+		// 	ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, sindexName)
+		// }
 	}
 
 	return nil

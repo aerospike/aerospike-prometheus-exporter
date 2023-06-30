@@ -31,8 +31,9 @@ func getRawMetrics() map[string]string {
 	rawMetrics["service-clear-std"] = "172.17.0.3:3000"
 	rawMetrics["cluster-name"] = "null"
 	rawMetrics["get-stats:context=xdr;dc=backup_dc_asdev20"] = "lag=0;in_queue=0;in_progress=0;success=0;abandoned=0;not_found=0;filtered_out=0;retry_no_node=0;retry_conn_reset=0;retry_dest=0;recoveries=0;recoveries_pending=0;hot_keys=0;bytes_shipped=0;uncompressed_pct=0.000;compression_ratio=1.000;nodes=0;throughput=0;latency_ms=0;lap_us=12"
-	rawMetrics["raw_metrics_keys"] = "map[build:6.2.0.0-94-g2ccdbdd dcs=backup_dc_asdev20,a,b;src-id=0;trace-sample=0 namespaces:test;materials;employees;ns_test_1;ns_test_2;ns_test_3;ns_test_4;ns_test_5 sindex:ns=test:indexname=test_sindex1:set=test_set2:bin=occurred:type=numeric:indextype=default:context=null:state=RW]"
+	rawMetrics["raw_metrics_keys"] = "build:6.2.0.0-94-g2ccdbdd dcs=backup_dc_asdev20,a,b;src-id=0;trace-sample=0 namespaces:test;materials;employees;ns_test_1;ns_test_2;ns_test_3;ns_test_4;ns_test_5 sindex:ns=test:indexname=test_sindex1:set=test_set2:bin=occurred:type=numeric:indextype=default:context=null:state=RW"
 	rawMetrics["get-config:context=xdr"] = "dcs=backup_dc_asdev20,a,b;src-id=0;trace-sample=0"
+	rawMetrics["sindex"] = "ns=test:indexname=test_sindex1:set=test_set2:bin=occurred:type=numeric:indextype=default:context=null:state=RW"
 
 	return rawMetrics
 }
@@ -327,7 +328,7 @@ func createNodeStatsWatcherExpectedOutputs(serviceIp string) (map[string][]strin
 	return lExpectedMetricNamedValues, lExpectedMetricLabels
 }
 
-func createSetsWatcherExpectedOutputs(namespaceWithSetName string) (map[string][]string, map[string][]string) {
+func createSetsWatcherExpectedOutputs(t string) (map[string][]string, map[string][]string) {
 	lExpectedMetricNamedValues := map[string][]string{}
 	lExpectedMetricLabels := map[string][]string{}
 
@@ -406,6 +407,8 @@ func createSetsWatcherExpectedOutputs(namespaceWithSetName string) (map[string][
 					labelsMap["set"] = setName
 
 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+					fmt.Println("\t>>>  metric_name: ", metric, "\t\t mapKeyname: ", mapKeyname)
+					fmt.Println("\t>>> sets_test.go: sorted_label_str: ", sorted_label_str, " \t\t value: ", value)
 
 					// labelStr := "[" + cfgLabelsToAdd
 
@@ -422,6 +425,7 @@ func createSetsWatcherExpectedOutputs(namespaceWithSetName string) (map[string][
 					lExpectedMetricNamedValues[mapKeyname] = valuesArr
 					lExpectedMetricLabels[mapKeyname] = labelsArr
 				}
+				fmt.Println("\t***### lExpectedMetricLabels: ", len(lExpectedMetricLabels))
 
 			}
 		}
@@ -559,7 +563,7 @@ func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[stri
 
 // Xdr related
 
-func createXdrsWatcherExpectedOutputs(namespaceWithSetName string) (map[string][]string, map[string][]string) {
+func createXdrsWatcherExpectedOutputs(t string) (map[string][]string, map[string][]string) {
 	lExpectedMetricNamedValues := map[string][]string{}
 	lExpectedMetricLabels := map[string][]string{}
 
@@ -688,4 +692,130 @@ func createXdrPassTwoExpectedOutputs(rawMetrics map[string]string) []string {
 
 	}
 	return lXdrDc
+}
+
+// Sindex related methods
+type MockSindexDataGen struct {
+	// this will hold the golbal array/objects for Sindex
+	lExpectedMetricNamedValues map[string][]string
+	lExpectedMetricLabels      map[string][]string
+}
+
+func (sim *MockSindexDataGen) createSindexPassTwoExpectedOutputs(rawMetrics map[string]string) []string {
+	lSindexNames := []string{}
+	rawMetricsKeys := rawMetrics["raw_metrics_keys"]
+	contextKeys := strings.Split(rawMetricsKeys, " ")
+
+	for idx := range contextKeys {
+
+		metricsGrpKeys := contextKeys[idx]
+
+		if strings.HasPrefix(metricsGrpKeys, "sindex") {
+			// fmt.Println(" FOUND: metricsGrpKeys: ", metricsGrpKeys)
+
+			// we are assuming only 1 xdr dc for now
+			// metricsGrpKeys = strings.ReplaceAll(metricsGrpKeys, "sindex:", "")
+			// elements := strings.Split(metricsGrpKeys, ":")
+			elements := splitAndRetrieveStats(metricsGrpKeys, ":")
+			// fmt.Println(" elements: ", elements, "\n\n***")
+
+			// in mock assuming only 1 Sindex
+			lSindexNames = append(lSindexNames, "sindex/"+elements["ns"]+"/"+elements["indexname"])
+		}
+
+	}
+
+	fmt.Println("\n >>>> lSindexNames: ", lSindexNames, "\n*******")
+	return lSindexNames
+
+}
+
+func (sim *MockSindexDataGen) createSindexWatcherTestData() (map[string][]string, map[string][]string) {
+
+	// re-initialize whenever called
+	sim.lExpectedMetricNamedValues = make(map[string][]string)
+	sim.lExpectedMetricLabels = make(map[string][]string)
+
+	rawMetrics := getRawMetrics()
+
+	clusterName := rawMetrics["cluster-name"]
+	service := rawMetrics["service-clear-std"]
+
+	for metricsGrpKey := range rawMetrics {
+		if strings.HasPrefix(metricsGrpKey, "sindex/") {
+			sindexInfos := rawMetrics[metricsGrpKey]
+			// fmt.Println("\t >>>> sindexInfos: ", sindexInfos)
+			namespace, sindexName := sim.extractNamespaceSetSindexname(metricsGrpKey)
+			// fmt.Println(" %%%% namespace: ", namespace, " \t %%%%> ", sindexName)
+			stats := splitAndRetrieveStats(sindexInfos, ";")
+			// fmt.Println("\n\n\nstats: ************* : \t", stats, "\n\n*************")
+			for stat, value := range stats {
+				key := stat
+				convertedValue, err := convertValue(value)
+				if err != nil {
+					fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", value, ") = error: ", err)
+					continue
+				}
+
+				isBlocked := isHelperBlockedMetric(stat, config.Aerospike.SindexMetricsBlocklist)
+				if isBlocked {
+					// fmt.Println("stat: ", s, " is marked in BLOCKED-LIST, skipping this stat during mock-data-gen")
+					continue
+				}
+				isAllowed := isHelperAllowedMetric(stat, config.Aerospike.SindexMetricsAllowlist)
+				if !isAllowed {
+					// fmt.Println("stat: ", s, " is marked in NOT ALLOW-LIST, skipping this stat during mock-data-gen")
+					continue
+				}
+
+				// reconvert float back to string
+				value := fmt.Sprintf("%.0f", convertedValue)
+				fmt.Println(" stat: ", key, " \t\t value: ", value)
+
+				key = strings.ReplaceAll(key, "-", "_")
+				key = strings.ReplaceAll(key, ".", "_")
+				metric := "aerospike_sindex" + "_" + key
+				valuesArr := sim.lExpectedMetricNamedValues[metric]
+				labelsArr := sim.lExpectedMetricLabels[metric]
+
+				if valuesArr == nil {
+					valuesArr = []string{}
+				}
+				if labelsArr == nil {
+					labelsArr = []string{}
+				}
+
+				// Label: [name:"cluster_name" value:"null"  name:"ns" value:"test"  name:"service" value:"172.17.0.3:3000"  name:"sindex" value:"test_sindex1" ]
+				// service/namespace/sindexname/<metric-name>
+				mapKeyname := makeKeyname(sindexName, metric, true)
+				mapKeyname = makeKeyname(namespace, mapKeyname, true)
+				mapKeyname = makeKeyname(service, mapKeyname, true)
+
+				labelsMap := copyConfigLabels()
+				labelsMap["ns"] = namespace
+				labelsMap["sindex"] = sindexName
+				labelsMap["service"] = service
+				labelsMap["cluster_name"] = clusterName
+
+				sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+				// fmt.Println("\t>>> mapKeyname             :", mapKeyname)
+				// fmt.Println("\t>>> Sindex sorted_label_str: ", sorted_label_str)
+
+				valuesArr = append(valuesArr, value)
+				labelsArr = append(labelsArr, sorted_label_str)
+
+				sim.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+				sim.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+			}
+		}
+	}
+
+	return sim.lExpectedMetricNamedValues, sim.lExpectedMetricLabels
+}
+
+func (siMock *MockSindexDataGen) extractNamespaceSetSindexname(sindexKey string) (string, string) {
+	elements := strings.Split(sindexKey, "/")
+
+	return elements[1], elements[2]
 }

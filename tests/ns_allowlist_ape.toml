@@ -127,14 +127,14 @@ set_metrics_allowlist = ["sets_enable_index"]
 
 # Latencies histogram allowlist, to control which Histogram-name metrics should be collected. 
 # Note: globbing patterns (wildcard) are not supported for this latency metric configuration. 
-# latencies_metrics_allowlist = []
+latencies_metrics_allowlist = ["read"]
 # latencies_metrics_blocklist = []
 
 node_metrics_allowlist = ["cluster_max_compatibility_i*"]
 # node_metrics_blocklist = []
 
 # Support only from Aerospike versions 5.0 and above
-# xdr_metrics_allowlist = []
+ xdr_metrics_allowlist = ["compression_ratio"]
 # xdr_metrics_blocklist = []
 
 # User statistics are available in Aerospike 5.6+
@@ -145,6 +145,6 @@ node_metrics_allowlist = ["cluster_max_compatibility_i*"]
 # job_metrics_allowlist = []
 # job_metrics_blocklist = []
 
-# sindex_metrics_allowlist = []
+ sindex_metrics_allowlist = ["used_bytes"]
 # sindex_metrics_blocklist = []
 
