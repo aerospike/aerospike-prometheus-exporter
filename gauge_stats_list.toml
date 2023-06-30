@@ -70,8 +70,9 @@ node_gauge_stats = [
 	"client_connections",
 	"cluster_clock_skew_ms",
 	"cluster_clock_skew_stop_writes_sec",
+	"cluster_integrity",
 	"cluster_is_member",
-	"cluster_max_compatibility_id",	"cluster_integrity",
+	"cluster_max_compatibility_id",	
 	"cluster_min_compatibility_id",
 	"cluster_size",
 	"dlog_free_pct",
@@ -105,7 +106,8 @@ node_gauge_stats = [
 	"sindex_gc_list_deletion_time",
 	"system_free_mem_pct",
 	"system_kernel_cpu_pct",
-	"system_total_cpu_pct",	"system_user_cpu_pct",
+	"system_total_cpu_pct",	
+	"system_user_cpu_pct",
 	"threads_detached",
 	"threads_joinable",
 	"threads_pool_active",	
@@ -116,7 +118,7 @@ node_gauge_stats = [
 	"tsvc_queue",
 	#
 	# TODO: Do we need the below XDR Stats
-	#
+	#	
 	"xdr_active_failed_node_sessions",
 	"xdr_active_link_down_sessions",
 	"xdr_global_lastshiptime",
@@ -136,7 +138,6 @@ node_gauge_stats = [
 	"xdr_ship_outstanding_objects",
 	"xdr_throughput",
 	"xdr_timelag",
-
 ]
 
 #
