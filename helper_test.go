@@ -54,8 +54,8 @@ func extractNameValuePair(fullLabel string, reqName string) string {
 		element := arrLabels[idx]
 		if strings.HasPrefix(element, reqName) {
 			// example: name:service value:172.17.0.3:3000
-			name := element[0:len(reqName)]
-			name = name[5:]
+			// name := element[0:len(reqName)]
+			// name = name[5:]
 
 			from := len(reqName) + 7
 			value := element[from:]
