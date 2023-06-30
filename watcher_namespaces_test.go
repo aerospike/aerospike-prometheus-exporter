@@ -30,7 +30,7 @@ func TestPassTwoKeys(t *testing.T) {
 	nsOutputs := nsWatcher.passTwoKeys(pass2Keys)
 
 	// nsExpected := []string{"namespace/bar", "namespace/test"}
-	nsExpected := createPassTwoExpectedOutputs(rawMetrics)
+	nsExpected := createNamespacePassTwoExpectedOutputs(rawMetrics)
 
 	assert := assert.New(t)
 
@@ -110,7 +110,6 @@ func TestNamespaceRefreshBlocklist(t *testing.T) {
 func runTestcase(t *testing.T) {
 
 	gaugeStatHandler = new(GaugeStats)
-	METRICS_CONFIG_FILE := "gauge_metrics_list.toml"
 
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
 
@@ -123,12 +122,12 @@ func runTestcase(t *testing.T) {
 
 	nsWatcher.passTwoKeys(rawMetrics)
 
-	expectedOutputs := createPassTwoExpectedOutputs(rawMetrics)
+	nsInfoKeys := createNamespacePassTwoExpectedOutputs(rawMetrics)
 
 	// outputs := nsWatcher.passTwoKeys(pass2Metrics)
 	// assert.Equal(t, outputs, expectedOutputs)
 
-	err := nsWatcher.refresh(lObserver, expectedOutputs, rawMetrics, ch)
+	err := nsWatcher.refresh(lObserver, nsInfoKeys, rawMetrics, ch)
 
 	if err == nil {
 		// map of string ==> map["namespace/metric-name"]["<VALUE>"]

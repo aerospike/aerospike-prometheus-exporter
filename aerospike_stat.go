@@ -19,7 +19,7 @@ const (
 	CTX_USERS      ContextType = "users"
 	CTX_NAMESPACE  ContextType = "namespace"
 	CTX_NODE_STATS ContextType = "node_stats"
-	CTX_SETS       ContextType = "node_stats"
+	CTX_SETS       ContextType = "sets"
 	CTX_SINDEX     ContextType = "sindex"
 	CTX_XDR        ContextType = "xdr"
 	CTX_LATENCIES  ContextType = "latencies"
@@ -34,39 +34,37 @@ const METRIC_LABEL_NS = "ns"
  * Constructs Prometheus parameters required which are needed to push metrics to Prometheus
  */
 
-func (as *AerospikeStat) makePromeMetric(pContext ContextType, pName string, pMetricType metricType, pConstLabels map[string]string, pLabels ...string) (string, *prometheus.Desc, prometheus.ValueType) {
-	qualifiedName := as.qualifyMetricContext(pContext) + "_" + normalizeMetric(pName)
+func (as *AerospikeStat) makePromeMetric(pConstLabels map[string]string, pLabels ...string) (*prometheus.Desc, prometheus.ValueType) {
+	qualifiedName := as.qualifyMetricContext() + "_" + normalizeMetric(as.name)
 	promDesc := prometheus.NewDesc(
 		qualifiedName,
-		normalizeDesc(pName),
+		normalizeDesc(as.name),
 		pLabels,
 		pConstLabels,
 	)
 
-	if pMetricType == mtGauge {
-		return qualifiedName, promDesc, prometheus.GaugeValue
+	if as.mType == mtGauge {
+		return promDesc, prometheus.GaugeValue
 	}
 
-	return qualifiedName, promDesc, prometheus.CounterValue
+	return promDesc, prometheus.CounterValue
 }
 
 /**
  * prefixs a Context with Aerospike qualifier
  */
-func (as *AerospikeStat) qualifyMetricContext(pContext ContextType) string {
-	return PREFIX_AEROSPIKE + string(pContext)
+func (as *AerospikeStat) qualifyMetricContext() string {
+	return PREFIX_AEROSPIKE + string(as.context)
 }
 
 /*
 *
 * Utility, constructs a new AerospikeStat object with required checks like is-allowed, metric-type
-TODO: move to common place
-*/
-func newAerospikeStat(pContext ContextType, pStatName string, pAllowList []string, pBlockList []string) AerospikeStat {
+ */
+func newAerospikeStat(pContext ContextType, pStatName string) AerospikeStat {
 
-	isAllowed := isMetricAllowed(pStatName, pAllowList, pBlockList)
+	isAllowed := config.isMetricAllowed(pContext, pStatName)
 	mType := getMetricType(pContext, pStatName)
-	nsMetric := AerospikeStat{pContext, pStatName, mType, isAllowed}
 
-	return nsMetric
+	return AerospikeStat{pContext, pStatName, mType, isAllowed}
 }

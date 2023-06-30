@@ -155,7 +155,7 @@ var nodeMetrics map[string]metricType
 func (sw *StatsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	log.Tracef("node-stats:%s", rawMetrics["statistics"])
 
-	if nodeMetrics == nil || isTestcaseMode() {
+	if nodeMetrics == nil {
 		nodeMetrics = getFilteredMetrics(statsRawMetrics, config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsAllowlistEnabled, config.Aerospike.NodeMetricsBlocklist)
 	}
 

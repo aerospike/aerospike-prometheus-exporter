@@ -388,85 +388,17 @@ validates if given type is correct metric-type, if not, return default metric-ty
 */
 func getMetricType(pContext ContextType, pRawMetricName string) metricType {
 
-	if gaugeStatHandler.isGauge(pContext, pRawMetricName) {
+	// condition#1 : Config ( which has a - in the stat) is always a Gauge
+	// condition#2 : or - it is marked as Gauge in the configuration file
+	//
+	// TODO: shall we move condition#1 to the isGauge function itself?
+	//
+	if strings.Contains(pRawMetricName, "-") ||
+		gaugeStatHandler.isGauge(pContext, pRawMetricName) {
 		return mtGauge
 	}
 
 	return DEFAULT_METRIC_TYPE
-}
-
-/**
- * this function check is a given stat is allowed or blocked against given patterns
- * these patterns are defined within ape.toml
- *
- * NOTE: when a stat falls within intersection of allow-list & block-list, we block that stat
- *
- *             | empty         | no-pattern-match-found | pattern-match-found
- *  allow-list | allowed/true  |   not-allowed/ false   |    allowed/true
- *  block-list | blocked/false |   not-blocked/ false   |    blocked/true
- *
- *  by checking the blocklist first,
- *     we avoid processing the allow-list for some of the metrics
- *
- */
-func isMetricAllowed(pRawStatName string, pAllowlist []string, pBlocklist []string) bool {
-
-	/**
-		* is this stat is in blocked list
-	    *    if is-block-list array not-defined or is-empty, then false (i.e. STAT-IS-NOT-BLOCKED)
-		*    else
-		*       match stat with "all-block-list-patterns",
-		*             if-any-pattern-match-found,
-		*                    return true (i.e. STAT-IS-BLOCKED)
-		* if stat-is-not-blocked
-		*    if is-allow-list array not-defined or is-empty, then true (i.e. STAT-IS-ALLOWED)
-		*    else
-		*      match stat with "all-allow-list-patterns"
-		*             if-any-pattern-match-found,
-		*                    return true (i.e. STAT-IS-ALLOWED)
-	*/
-	isBlocked := loopPatterns(pRawStatName, pBlocklist, false)
-
-	// as it is already blocked, we dont need to check in allow-list,
-	// i.e. when a stat falls within intersection of allow-list & block-list, we block that stat
-	//
-	if isBlocked {
-		return false
-	} else {
-		return loopPatterns(pRawStatName, pAllowlist, true)
-	}
-
-}
-
-/**
- *  this function is used to loop thru any given regex-pattern-list, [ master_objects or *master* ]
- *
- *             | empty         | no-pattern-match-found | pattern-match-found
- *  allow-list | allowed/true  |   not-allowed/ false   |    allowed/true
- *  block-list | blocked/false |   not-blocked/ false   |    blocked/true
- *
- *  NOTE: as this is common function, pDefaultReturnValue is taken as param to match empty-list-usecase in above table
- *
- */
-
-func loopPatterns(pRawStatName string, pPatternList []string, pDefaultReturnValue bool) bool {
-
-	if len(pPatternList) == 0 {
-		return pDefaultReturnValue
-	}
-
-	for _, statPattern := range pPatternList {
-		if len(statPattern) > 0 {
-
-			ge := glob.MustCompile(statPattern)
-
-			if ge.Match(pRawStatName) {
-				return true
-			}
-		}
-	}
-
-	return false
 }
 
 func isTestcaseMode() bool {

@@ -36,7 +36,7 @@ var namespaceMetrics = make(map[string]AerospikeStat)
 // Regex for identifying storage-engine stats.
 var seDynamicExtractor = regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 
-func (nw *NamespaceWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
+func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	if isTestcaseMode() {
 		fmt.Println("Reinitializing namespaceMetrics(...) ")
 		namespaceMetrics = make(map[string]AerospikeStat)
@@ -68,7 +68,7 @@ func (nw *NamespaceWatcher) refresh(o *Observer, infoKeys []string, rawMetrics m
 				asMetric, exists := namespaceMetrics[compositeStatName]
 
 				if !exists {
-					asMetric = newAerospikeStat(CTX_NAMESPACE, compositeStatName, config.Aerospike.NamespaceMetricsAllowlist, config.Aerospike.NamespaceMetricsBlocklist)
+					asMetric = newAerospikeStat(CTX_NAMESPACE, compositeStatName)
 					namespaceMetrics[compositeStatName] = asMetric
 				}
 
@@ -76,19 +76,19 @@ func (nw *NamespaceWatcher) refresh(o *Observer, infoKeys []string, rawMetrics m
 					// fmt.Println("namespaces: checking for stat: ", compositeStatName, " is-ALLOWED? : ", nsMetric.isAllowed)
 					deviceOrFileName := stats["storage-engine."+statType+"["+statIndex+"]"]
 
-					_, desc, valueType := asMetric.makePromeMetric(CTX_NAMESPACE, asMetric.name, asMetric.mType, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType)
+					desc, valueType := asMetric.makePromeMetric(config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType)
 					ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName)
 				}
 			} else { // regular stat (i.e. non-storage-engine related)
 				asMetric, exists := namespaceMetrics[stat]
 
 				if !exists {
-					asMetric = newAerospikeStat(CTX_NAMESPACE, stat, config.Aerospike.NamespaceMetricsAllowlist, config.Aerospike.NamespaceMetricsBlocklist)
+					asMetric = newAerospikeStat(CTX_NAMESPACE, stat)
 					namespaceMetrics[stat] = asMetric
 				}
 
 				if asMetric.isAllowed {
-					_, desc, valueType := asMetric.makePromeMetric(CTX_NAMESPACE, asMetric.name, asMetric.mType, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS)
+					desc, valueType := asMetric.makePromeMetric(config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS)
 					ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName)
 				}
 

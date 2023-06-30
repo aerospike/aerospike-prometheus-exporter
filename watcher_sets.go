@@ -42,7 +42,7 @@ func (sw *SetWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 	setStats := strings.Split(rawMetrics["sets"], ";")
 	log.Tracef("set-stats:%v", setStats)
 
-	if setMetrics == nil {
+	if setMetrics == nil || isTestcaseMode() {
 		setMetrics = getFilteredMetrics(setRawMetrics, config.Aerospike.SetMetricsAllowlist, config.Aerospike.SetMetricsAllowlistEnabled, config.Aerospike.SetMetricsBlocklist)
 	}
 

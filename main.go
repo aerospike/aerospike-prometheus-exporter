@@ -27,8 +27,12 @@ var (
 
 	version = "v1.9.0"
 
-	// Guage related
-	gaugeStatsFile   = "./gauge_metrics_list.toml"
+	// Gauge related
+	//
+	//TODO: should we put this file in /etc/aerospike ?
+	//TODO: should we allow user to edit this file ? if yes, why ?
+	//
+	gaugeStatsFile   = "./gauge_stats_list.toml"
 	gaugeStatHandler *GaugeStats
 )
 
@@ -50,7 +54,7 @@ func main() {
 	initConfig(*configFile, config)
 	config.validateAndUpdate()
 
-	// initialize Guage metric definitions
+	// initialize Gauge metric definitions
 	gaugeStatHandler = new(GaugeStats)
 	initGaugeStats(gaugeStatsFile, gaugeStatHandler)
 
