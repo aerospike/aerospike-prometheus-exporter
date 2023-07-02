@@ -30,8 +30,8 @@ func (nw *NamespaceWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	return infoKeys
 }
 
-// Filtered namespace metrics. Populated by getFilteredMetrics() based on the config.Aerospike.NamespaceMetricsAllowlist, config.Aerospike.NamespaceMetricsBlocklist and namespaceRawMetrics.
-var namespaceMetrics = make(map[string]AerospikeStat)
+// All (allowed/blocked) namespace stats. Based on the config.Aerospike.NamespaceMetricsAllowlist, config.Aerospike.NamespaceMetricsBlocklist.
+var namespaceStats = make(map[string]AerospikeStat)
 
 // Regex for identifying storage-engine stats.
 var seDynamicExtractor = regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
@@ -39,7 +39,7 @@ var seDynamicExtractor = regexp.MustCompile(`storage\-engine\.(?P<type>file|devi
 func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	if isTestcaseMode() {
 		fmt.Println("Reinitializing namespaceMetrics(...) ")
-		namespaceMetrics = make(map[string]AerospikeStat)
+		namespaceStats = make(map[string]AerospikeStat)
 	}
 
 	for _, ns := range infoKeys {
@@ -65,11 +65,11 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 				statName := match[3]
 
 				compositeStatName := "storage-engine_" + statType + "_" + statName
-				asMetric, exists := namespaceMetrics[compositeStatName]
+				asMetric, exists := namespaceStats[compositeStatName]
 
 				if !exists {
 					asMetric = newAerospikeStat(CTX_NAMESPACE, compositeStatName)
-					namespaceMetrics[compositeStatName] = asMetric
+					namespaceStats[compositeStatName] = asMetric
 				}
 
 				if asMetric.isAllowed {
@@ -79,11 +79,11 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 					ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName)
 				}
 			} else { // regular stat (i.e. non-storage-engine related)
-				asMetric, exists := namespaceMetrics[stat]
+				asMetric, exists := namespaceStats[stat]
 
 				if !exists {
 					asMetric = newAerospikeStat(CTX_NAMESPACE, stat)
-					namespaceMetrics[stat] = asMetric
+					namespaceStats[stat] = asMetric
 				}
 
 				if asMetric.isAllowed {

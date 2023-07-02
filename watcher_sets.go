@@ -20,7 +20,7 @@ func (sw *SetWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	return []string{"sets"}
 }
 
-// Filtered set metrics. Populated by getFilteredMetrics() based on config.Aerospike.SetMetricsAllowlist, config.Aerospike.SetMetricsBlocklist and setRawMetrics.
+// All (allowed/blocked) Sets stats. Based on the config.Aerospike.SetsMetricsAllowlist, config.Aerospike.SetsMetricsBlocklist.
 var setMetrics = make(map[string]AerospikeStat)
 
 func (sw *SetWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {

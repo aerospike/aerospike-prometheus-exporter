@@ -31,13 +31,12 @@ func (xw *XdrWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	return infoKeys
 }
 
-// Filtered XDR metrics. Populated by getFilteredMetrics() based on the config.Aerospike.XdrMetricsAllowlist, config.Aerospike.XdrMetricsBlocklist and xdrRawMetrics.
+// All (allowed/blocked) XDR stats. Based on the config.Aerospike.XdrMetricsAllowlist, config.Aerospike.XdrMetricsBlocklist.
 var xdrMetrics = make(map[string]AerospikeStat)
 
 func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 
 	if xdrMetrics == nil || isTestcaseMode() {
-		// xdrMetrics = getFilteredMetrics(xdrRawMetrics, config.Aerospike.XdrMetricsAllowlist, config.Aerospike.XdrMetricsAllowlistEnabled, config.Aerospike.XdrMetricsBlocklist)
 		xdrMetrics = make(map[string]AerospikeStat)
 
 	}
@@ -45,11 +44,6 @@ func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 	for _, dc := range infoKeys {
 		dcName := strings.ReplaceAll(dc, "get-stats:context=xdr;dc=", "")
 		log.Tracef("xdr-stats:%s:%s", dcName, rawMetrics[dc])
-
-		// xdrObserver := make(MetricMap, len(xdrMetrics))
-		// for m, t := range xdrMetrics {
-		// 	xdrObserver[m] = makeMetric("aerospike_xdr", m, t, config.AeroProm.MetricLabels, "cluster_name", "service", "dc")
-		// }
 
 		stats := parseStats(rawMetrics[dc], ";")
 		for stat, value := range stats {
@@ -70,20 +64,6 @@ func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 			}
 		}
 
-		// for stat, pm := range xdrObserver {
-		// 	v, exists := stats[stat]
-		// 	if !exists {
-		// 		// not found
-		// 		continue
-		// 	}
-
-		// 	pv, err := tryConvert(v)
-		// 	if err != nil {
-		// 		continue
-		// 	}
-
-		// 	ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], dcName)
-		// }
 	}
 
 	return nil

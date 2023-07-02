@@ -178,7 +178,6 @@ func runTestcase(t *testing.T) {
 
 		for nsIndex := range arrNames {
 			tnsForNamespace := arrNames[nsIndex]
-			fmt.Println("Running test data assertion for namespace : ", tnsForNamespace)
 			lExpectedMetricNamedValues, lExpectedMetricLabels := createNamespaceWatcherExpectedOutputs(tnsForNamespace, true)
 
 			for key := range lOutputValues {

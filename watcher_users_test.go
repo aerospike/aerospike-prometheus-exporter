@@ -12,68 +12,61 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSets_PassOneKeys(t *testing.T) {
-	watcher := new(SetWatcher)
+func TestUsers_PassOneKeys(t *testing.T) {
+	fmt.Println("initializing config ... TestXdr_PassOneKeys")
+
+	watcher := new(UserWatcher)
 	// Check passoneKeys
 	passOneKeys := watcher.passOneKeys()
 	assert.Nil(t, passOneKeys)
 
 }
 
-func TestSets_PassTwoKeys(t *testing.T) {
-	watcher := new(SetWatcher)
+func TestUsers_PassTwoKeys(t *testing.T) {
+	watcher := new(UserWatcher)
+
+	rawMetrics := getRawMetrics()
 
 	// simulate, as if we are sending requestInfo to AS and get the NodeStats, these are coming from mock-data-generator
-	pass2Keys := make(map[string]string)
-	outputs := watcher.passTwoKeys(pass2Keys)
+	outputs := watcher.passTwoKeys(rawMetrics)
 
-	fmt.Println("TestNodeStats_PassTwoKeys: outputs: ", outputs)
-
-	assert.Equal(t, outputs, []string{"sets"})
+	assert.Nil(t, outputs)
 }
 
-func TestSets_RefreshDefault(t *testing.T) {
+func TestUsers_Allowlist(t *testing.T) {
 	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
 
-	fmt.Println("initializing config ... TestSets_RefreshDefault")
-	// Initialize and validate config
-	config = new(Config)
-	initConfig(DEFAULT_APE_TOML, config)
-
-	config.validateAndUpdate()
-
-	// run the test-case logic
-	sets_runTestCase(t)
-
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
-}
-
-func TestSets_Allowlist(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
-	fmt.Println("initializing config ... TestSets_Allowlist")
+	fmt.Println("initializing config ... TestUsers_Allowlist")
 	// Initialize and validate config
 	config = new(Config)
 	initConfig(NS_ALLOWLIST_APE_TOML, config)
-
 	config.validateAndUpdate()
 
-	// run the test-case logic
-	sets_runTestCase(t)
+	// this is required as UserWatcher cheks for user/password in the properties file
+	config.Aerospike.User = "admin"
+	config.Aerospike.Password = "admin"
 
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
+	gaugeStatHandler = new(GaugeStats)
+
+	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
+
+	users_runTestCase(t)
 }
 
-func TestSets_RefreshWithLabelsConfig(t *testing.T) {
+func TestUsers_RefreshWithLabelsConfig(t *testing.T) {
 	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
 
-	fmt.Println("initializing config ... TestSets_RefreshWithLabelsConfig")
+	fmt.Println("initializing config ... TestUsers_RefreshWithLabelsConfig")
 	// Initialize and validate config
 	config = new(Config)
 	initConfig(LABELS_APE_TOML, config)
 	config.validateAndUpdate()
 
-	watcher := new(SetWatcher)
+	watcher := new(UserWatcher)
+
+	// this is required as UserWatcher cheks for user/password in the properties file
+	config.Aerospike.User = "admin"
+	config.Aerospike.Password = "admin"
 
 	gaugeStatHandler = new(GaugeStats)
 
@@ -82,13 +75,17 @@ func TestSets_RefreshWithLabelsConfig(t *testing.T) {
 
 	lObserver := &Observer{}
 	ch := make(chan prometheus.Metric, 1000)
-	setsInfoKeys := []string{}
+	userInfoKeys := watcher.passTwoKeys(rawMetrics)
+
+	// get user data from mock
+	mUsers := new(MockUsersDataGen)
+	users := mUsers.createDummyUserRoles()
 
 	watcher.passTwoKeys(rawMetrics)
-	err := watcher.refresh(lObserver, setsInfoKeys, rawMetrics, ch)
+	err := watcher.refreshUserStats(lObserver, userInfoKeys, rawMetrics, ch, users)
 
 	if err != nil {
-		fmt.Println("watcher_latency_test : Unable to refresh Latencies")
+		fmt.Println("watcher_users_test : Unable to refresh Users")
 	} else {
 		domore := 1
 
@@ -105,8 +102,8 @@ func TestSets_RefreshWithLabelsConfig(t *testing.T) {
 
 				metricLabel := fmt.Sprintf("%s", protobuffer.Label)
 
-				// Description: Desc{fqName: "aerospike_latencies_read_ms_bucket", help: "read ms bucket", constLabels: {}, variableLabels: [cluster_name service ns le]}
-				// Label: [name:"cluster_name" value:"null"  name:"le" value:"+Inf"  name:"ns" value:"test"  name:"service" value:"172.17.0.3:3000" ]
+				// Desc{fqName: "aerospike_users_write_single_record_tps", help: "write single record tps", constLabels: {sample="sample_label_value"}, variableLabels: [cluster_name service user]}
+				// [name:"cluster_name" value:"null"  name:"sample" value:"sample_label_value"  name:"service" value:"172.17.0.3:3000"  name:"user" value:"" ]
 
 				for eachConfigMetricLabel := range config.AeroProm.MetricLabels {
 					modifiedConfigMetricLabels := strings.ReplaceAll(eachConfigMetricLabel, "=", ":")
@@ -127,8 +124,8 @@ func TestSets_RefreshWithLabelsConfig(t *testing.T) {
 /**
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
-func sets_runTestCase(t *testing.T) {
-	watcher := new(SetWatcher)
+func users_runTestCase(t *testing.T) {
+	watcher := new(UserWatcher)
 
 	gaugeStatHandler = new(GaugeStats)
 
@@ -137,22 +134,28 @@ func sets_runTestCase(t *testing.T) {
 
 	lObserver := &Observer{}
 	ch := make(chan prometheus.Metric, 1000)
-	setsInfoKeys := []string{}
+	userInfoKeys := watcher.passTwoKeys(rawMetrics)
+
+	// get user data from mock
+	mockUserGen := new(MockUsersDataGen)
+	userRoles := mockUserGen.createDummyUserRoles()
+
+	// get user data from mock
 
 	watcher.passTwoKeys(rawMetrics)
-	err := watcher.refresh(lObserver, setsInfoKeys, rawMetrics, ch)
+	err := watcher.refreshUserStats(lObserver, userInfoKeys, rawMetrics, ch, userRoles)
 
 	if err != nil {
-		fmt.Println("watcher_sets_test : Unable to refresh set stats")
+		fmt.Println("users_runTestCase : Unable to refresh User stats")
 	} else {
 		domore := 1
 
 		// map of string ==> map["namespace/metric-name"]["<Label>"]
-		//  both used to assert the return values from actual code against calculated values
+		//     both used to assert the return values from actual code against calculated values
 		lOutputValues := map[string]string{}
 		lOutputLabels := map[string]string{}
 
-		arrNamespaceSets := map[string]string{}
+		arrUserRoles := map[string]string{}
 
 		for domore == 1 {
 			select {
@@ -173,19 +176,20 @@ func sets_runTestCase(t *testing.T) {
 					metricValue = fmt.Sprintf("%.0f", *protobuffer.Counter.Value)
 				}
 
-				// Description: Desc{fqName: "aerospike_sets_truncate_lut", help: "truncate lut", constLabels: {}, variableLabels: [cluster_name service ns set]}
-				// Label: [name:"cluster_name" value:"null"  name:"ns" value:"bar"  name:"service" value:"172.17.0.3:3000"  name:"set" value:"west_region" ]
+				// Desc{fqName: "aerospike_users_write_single_record_tps", help: "write single record tps", constLabels: {sample="sample_label_value"}, variableLabels: [cluster_name service user]}
+				// [name:"cluster_name" value:"null"  name:"sample" value:"sample_label_value"  name:"service" value:"172.17.0.3:3000"  name:"user" value:"" ]
+
 				metricNameFromDesc := extractMetricNameFromDesc(description)
-				namespaceFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "ns")
-				setFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "set")
+				userFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "user")
+				serviceFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "service")
 
 				// key will be like namespace/set/<metric_name>, this we use this check during assertion
-				keyName := makeKeyname(setFromLabel, metricNameFromDesc, true)
-				keyName = makeKeyname(namespaceFromLabel, keyName, true)
+				keyName := makeKeyname(userFromLabel, metricNameFromDesc, true)
+				keyName = makeKeyname(serviceFromLabel, keyName, true)
 
 				// appends to the sets array
-				namespaceSetKey := makeKeyname(namespaceFromLabel, setFromLabel, true)
-				arrNamespaceSets[namespaceSetKey] = namespaceSetKey
+				namespaceSetKey := makeKeyname(serviceFromLabel, userFromLabel, true)
+				arrUserRoles[namespaceSetKey] = namespaceSetKey
 
 				lOutputValues[keyName] = metricValue
 				lOutputLabels[keyName] = metricLabel
@@ -196,9 +200,9 @@ func sets_runTestCase(t *testing.T) {
 		}
 
 		// we have only 1 service in our mock-data, however loop thru service array
-		for _, namespaceWithSetName := range arrNamespaceSets {
+		for _, userRole := range arrUserRoles {
 
-			lExpectedMetricNamedValues, lExpectedMetricLabels := createSetsWatcherExpectedOutputs(namespaceWithSetName)
+			lExpectedMetricNamedValues, lExpectedMetricLabels := mockUserGen.createMockUserData()
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]
@@ -207,7 +211,7 @@ func sets_runTestCase(t *testing.T) {
 				outpuMetricLabels := lOutputLabels[key]
 
 				// assert - only if the value belongs to the namespace/set we read expected values and processing
-				if strings.HasPrefix(key, namespaceWithSetName) {
+				if strings.HasPrefix(key, userRole) {
 					assert.Contains(t, expectedValues, outputMetricValues)
 					assert.Contains(t, expectedLabels, outpuMetricLabels)
 				}

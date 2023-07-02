@@ -44,6 +44,7 @@ func (siw *SindexWatcher) getSindexCommands(sindexesMeta []string) (sindexComman
 	return sindexCommands
 }
 
+// All (allowed/blocked) Sindex stats. Based on the config.Aerospike.SindexMetricsAllowlist, config.Aerospike.SindexMetricsBlocklist.
 var sindexMetrics map[string]AerospikeStat
 
 func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
@@ -53,7 +54,6 @@ func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 	}
 
 	if sindexMetrics == nil || isTestcaseMode() {
-		// sindexMetrics = getFilteredMetrics(sindexRawMetrics, config.Aerospike.SindexMetricsAllowlist, config.Aerospike.SindexMetricsAllowlistEnabled, config.Aerospike.SindexMetricsBlocklist)
 		sindexMetrics = make(map[string]AerospikeStat)
 	}
 

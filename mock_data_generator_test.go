@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
+
+	aero "github.com/aerospike/aerospike-client-go/v6"
 )
 
 /*
@@ -682,4 +685,194 @@ func (siMock *MockSindexDataGen) extractNamespaceSetSindexname(sindexKey string)
 	elements := strings.Split(sindexKey, "/")
 
 	return elements[1], elements[2]
+}
+
+// User related utilities
+type MockUsersDataGen struct {
+	lExpectedMetricNamedValues map[string][]string
+	lExpectedMetricLabels      map[string][]string
+}
+
+func (mockUsers *MockUsersDataGen) createDummyUserRoles() []*aero.UserRoles {
+	userRoles := []*aero.UserRoles{}
+
+	MAX_USERS := 4
+	MAX_READINFO := 4
+	MAX_WRITEINFO := 4
+
+	userNames := []string{"test", "admin", "app_user_1", "app_user_read_1", "app_user_rw_all"}
+
+	// we always give dummy data
+	for i := 0; i <= MAX_USERS; i++ {
+
+		if mockUsers.isUserAllowed(userNames[i]) {
+			userRoles = append(userRoles, new(aero.UserRoles))
+
+			userRoles[i].User = userNames[i]
+			userRoles[i].ConnsInUse = i * 2
+
+			for k := 0; k <= MAX_READINFO; k++ {
+				userRoles[i].ReadInfo = append(userRoles[i].ReadInfo, (k+1)*5)
+			}
+			for k := 0; k <= MAX_WRITEINFO; k++ {
+				userRoles[i].WriteInfo = append(userRoles[i].WriteInfo, (k+1)*10)
+			}
+		}
+	}
+
+	return userRoles
+}
+
+func (mockUsers *MockUsersDataGen) createMockUserData() (map[string][]string, map[string][]string) {
+	userRoles := mockUsers.createDummyUserRoles()
+
+	// re-initialize whenever called
+	mockUsers.lExpectedMetricNamedValues = make(map[string][]string)
+	mockUsers.lExpectedMetricLabels = make(map[string][]string)
+
+	rawMetrics := getRawMetrics()
+
+	clusterName := rawMetrics["cluster-name"]
+	service := rawMetrics["service-clear-std"]
+
+	readInfoStats := []string{"read_quota", "read_single_record_tps", "read_scan_query_rps", "limitless_read_scan_query"}
+	writeInfoStats := []string{"write_quota", "write_single_record_tps", "write_scan_query_rps", "limitless_write_scan_query"}
+
+	for idx := range userRoles {
+		userRole := userRoles[idx]
+
+		userName := userRole.User
+
+		// conn-in-use
+		key := "conns_in_use"
+		value := strconv.Itoa(userRole.ConnsInUse)
+
+		metric := "aerospike_users" + "_" + key
+
+		valuesArr := mockUsers.lExpectedMetricNamedValues[metric]
+		labelsArr := mockUsers.lExpectedMetricLabels[metric]
+
+		if valuesArr == nil {
+			valuesArr = []string{}
+		}
+		if labelsArr == nil {
+			labelsArr = []string{}
+		}
+
+		mapKeyname := makeKeyname(userName, metric, true)
+		mapKeyname = makeKeyname(service, mapKeyname, true)
+
+		labelsMap := copyConfigLabels()
+		labelsMap["user"] = userName
+		labelsMap["service"] = service
+		labelsMap["cluster_name"] = clusterName
+
+		sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+		valuesArr = append(valuesArr, value)
+		labelsArr = append(labelsArr, sorted_label_str)
+
+		mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+		mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+		// end: conn-in-use
+
+		// Label: [name:"cluster_name" value:"null"  name:"ns" value:"bar"  name:"service" value:"172.17.0.3:3000"  name:"set" value:"west_region" ]
+		for i := 0; i < len(readInfoStats); i++ {
+
+			key := readInfoStats[i]
+			value := strconv.Itoa(userRole.ReadInfo[i])
+
+			metric := "aerospike_users" + "_" + key
+
+			valuesArr := mockUsers.lExpectedMetricNamedValues[metric]
+			labelsArr := mockUsers.lExpectedMetricLabels[metric]
+
+			if valuesArr == nil {
+				valuesArr = []string{}
+			}
+			if labelsArr == nil {
+				labelsArr = []string{}
+			}
+
+			mapKeyname := makeKeyname(userName, metric, true)
+			mapKeyname = makeKeyname(service, mapKeyname, true)
+
+			labelsMap := copyConfigLabels()
+			labelsMap["user"] = userName
+			labelsMap["service"] = service
+			labelsMap["cluster_name"] = clusterName
+
+			sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+			valuesArr = append(valuesArr, value)
+			labelsArr = append(labelsArr, sorted_label_str)
+
+			mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+			mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+		}
+
+		// Label: [name:"cluster_name" value:"null"  name:"ns" value:"bar"  name:"service" value:"172.17.0.3:3000"  name:"set" value:"west_region" ]
+		for i := 0; i < len(writeInfoStats); i++ {
+			key := writeInfoStats[i]
+			value := strconv.Itoa(userRole.WriteInfo[i])
+
+			metric := "aerospike_users" + "_" + key
+
+			valuesArr := mockUsers.lExpectedMetricNamedValues[metric]
+			labelsArr := mockUsers.lExpectedMetricLabels[metric]
+
+			if valuesArr == nil {
+				valuesArr = []string{}
+			}
+			if labelsArr == nil {
+				labelsArr = []string{}
+			}
+
+			mapKeyname := makeKeyname(userName, metric, true)
+			mapKeyname = makeKeyname(service, mapKeyname, true)
+
+			labelsMap := copyConfigLabels()
+			labelsMap["user"] = userName
+			labelsMap["service"] = service
+			labelsMap["cluster_name"] = clusterName
+
+			sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+			valuesArr = append(valuesArr, value)
+			labelsArr = append(labelsArr, sorted_label_str)
+
+			mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+			mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+		}
+
+		// create mock output
+	}
+
+	return mockUsers.lExpectedMetricNamedValues, mockUsers.lExpectedMetricLabels
+}
+
+func (mockUsers *MockUsersDataGen) isUserAllowed(username string) bool {
+	userAllowlist := config.Aerospike.UserMetricsUsersAllowlist
+	userBlocklist := config.Aerospike.UserMetricsUsersBlocklist
+	if len(userBlocklist) == 0 && len(userAllowlist) == 0 {
+		return true
+	}
+	// check blocklist
+	for i := 0; i < len(userBlocklist); i++ {
+		if strings.EqualFold(userBlocklist[i], username) {
+			return true
+		}
+	}
+
+	// check allowlist
+	for i := 0; i < len(userAllowlist); i++ {
+		if strings.EqualFold(userAllowlist[i], username) {
+			return true
+		}
+	}
+
+	return false
 }

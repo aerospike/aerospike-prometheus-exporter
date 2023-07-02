@@ -18,10 +18,11 @@ func (sw *StatsWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	return []string{"statistics"}
 }
 
-// Filtered node statistics. Populated by getFilteredMetrics() based on config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsBlocklist and statsRawMetrics.
+// All (allowed/blocked) node stats. Based on the config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsBlocklist.
 var nodeMetrics = make(map[string]AerospikeStat)
 
 func (sw *StatsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
+
 	log.Tracef("node-stats:%s", rawMetrics["statistics"])
 
 	if nodeMetrics == nil || isTestcaseMode() {

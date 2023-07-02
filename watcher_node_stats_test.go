@@ -153,7 +153,6 @@ func nodeStats_runTestCase(t *testing.T) {
 			serviceIp := arrServices[serviceIndex]
 
 			lExpectedMetricNamedValues, lExpectedMetricLabels := createNodeStatsWatcherExpectedOutputs(serviceIp)
-			fmt.Println("length-of-lExpectedMetricNamedValues: ", len(lExpectedMetricNamedValues))
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]

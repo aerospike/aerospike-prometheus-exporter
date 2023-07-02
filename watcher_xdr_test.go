@@ -145,7 +145,7 @@ func xdr_runTestCase(t *testing.T) {
 	err := watcher.refresh(lObserver, xdrInfoKeys, rawMetrics, ch)
 
 	if err != nil {
-		fmt.Println("watcher_sets_test : Unable to refresh set stats")
+		fmt.Println("watcher_xdr_test : Unable to refresh set stats")
 	} else {
 		domore := 1
 
@@ -186,7 +186,7 @@ func xdr_runTestCase(t *testing.T) {
 				keyName := makeKeyname(dcFromLabel, metricNameFromDesc, true)
 				keyName = makeKeyname(serviceFromLabel, keyName, true)
 
-				// appends to the sets array
+				// appends to the xdr array
 				namespaceSetKey := makeKeyname(serviceFromLabel, dcFromLabel, true)
 				arrXdrDcSets[namespaceSetKey] = namespaceSetKey
 

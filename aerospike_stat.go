@@ -33,6 +33,7 @@ const METRIC_LABEL_SET = "set"
 const METRIC_LABEL_LE = "le"
 const METRIC_LABEL_DC_NAME = "dc"
 const METRIC_LABEL_SINDEX = "sindex"
+const METRIC_LABEL_USER = "user"
 
 /**
  * Constructs Prometheus parameters required which are needed to push metrics to Prometheus

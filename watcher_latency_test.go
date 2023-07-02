@@ -79,8 +79,6 @@ func TestLatencies_RefreshWithLabelsConfig(t *testing.T) {
 	ch := make(chan prometheus.Metric, 1000)
 	latenciesInfoKeys := watcher.passTwoKeys(rawMetrics)
 
-	fmt.Println(" processing latencies with InfoKeys: ", latenciesInfoKeys)
-
 	watcher.passTwoKeys(rawMetrics)
 	err := watcher.refresh(lObserver, latenciesInfoKeys, rawMetrics, ch)
 

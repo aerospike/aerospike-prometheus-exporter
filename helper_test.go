@@ -147,7 +147,6 @@ func isHelperBlockedMetric(rawMetricName string, blocklist []string) bool {
 			ge := glob.MustCompile(stat)
 
 			if ge.Match(rawMetricName) {
-				fmt.Println("isHelperBlockedMetric: given stat ", rawMetricName, " is matching block-list-pattern: ", stat)
 				return true
 			}
 		} else {
@@ -222,6 +221,7 @@ func splitLatencies(latencyRawMetric string) []string {
 		latencies = append(latencies, sumOfQueriesStr)
 		if err != nil {
 			fmt.Println(" unable to convert sumOfQueriesStr to float-value ", sumOfQueriesStr)
+			return nil
 		}
 		for idx := range arrLatencies {
 			// process from second element
@@ -232,6 +232,7 @@ func splitLatencies(latencyRawMetric string) []string {
 				// value, err := strconv.ParseInt(arrLatencies[idx], 10, 64)
 				if err != nil {
 					fmt.Println(" unable to convert latencies value to float-value ", latencies[idx], " at index: ", idx, " -- err: ", err)
+					return nil
 				}
 				// value = total - value
 				value = (total - ((value * total) / 100))
