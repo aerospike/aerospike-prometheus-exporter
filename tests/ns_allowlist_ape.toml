@@ -139,7 +139,7 @@ node_metrics_allowlist = ["cluster_max_compatibility_i*"]
 
 # User statistics are available in Aerospike 5.6+
 # Note globbing patterns (wildcard) are not supported for this User configuration.
-# user_metrics_users_allowlist = []
+user_metrics_users_allowlist = ["test"]
 # user_metrics_users_blocklist = []
 
 # job_metrics_allowlist = []
