@@ -27,7 +27,7 @@ func (sw *SetWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 	setStats := strings.Split(rawMetrics["sets"], ";")
 	log.Tracef("set-stats:%v", setStats)
 
-	if setMetrics == nil || isTestcaseMode() {
+	if isTestcaseMode() {
 		setMetrics = make(map[string]AerospikeStat)
 	}
 
@@ -47,7 +47,7 @@ func (sw *SetWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 			}
 
 			if asMetric.isAllowed {
-				desc, valueType := asMetric.makePromeMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_SET)
+				desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_SET)
 				ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], stats["ns"], stats["set"])
 			}
 

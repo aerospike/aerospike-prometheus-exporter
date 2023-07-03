@@ -53,7 +53,7 @@ func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 		return nil
 	}
 
-	if sindexMetrics == nil || isTestcaseMode() {
+	if isTestcaseMode() {
 		sindexMetrics = make(map[string]AerospikeStat)
 	}
 
@@ -83,7 +83,7 @@ func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 			}
 
 			if asMetric.isAllowed {
-				desc, valueType := asMetric.makePromeMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_SINDEX)
+				desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_SINDEX)
 				ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, sindexName)
 			}
 

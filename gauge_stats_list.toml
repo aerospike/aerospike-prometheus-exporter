@@ -13,12 +13,6 @@ sets_gauge_stats = [
 	"sindexes",
 	"tombstones",
 	"truncate_lut",
-	
-#	"disable-eviction",
-#	"enable-index",
-#	"stop-writes-count",
-#	"stop-writes-size",
-
 ]
 
 #
@@ -41,19 +35,19 @@ xdr_gauge_stats = [
 # Sindex: below section define all Sindex stats which are treated as Gauges 
 #
 sindex_gauge_stats = [
-	"entries_per_bval"          ,
-	"entries_per_rec"           ,
-	"entries"                   ,
-	"histogram"                 ,   # removed in server6.0
-	"ibtr_memory_used"          , # removed in server6.0
-	"keys"                      , # removed in server6.0
-	"load_pct"                  ,
-	"load_time"                 ,
-	"loadtime"                  ,   # removed in server6.0
-	"memory_used"               ,   # deprecated in server6.3 version and replaced by used_bytes
-	"nbtr_memory_used"          , # removed in server6.0
-	"query_basic_avg_rec_count" ,   # removed in server6.0
-	"used_bytes"                ,   # added in server6.3 represents memory used by data (aka memory_used)
+	"entries_per_bval",
+	"entries_per_rec",
+	"entries",
+	"histogram",                    # removed in server6.0
+	"ibtr_memory_used",             # removed in server6.0
+	"keys", # removed in server6.0
+	"load_pct",
+	"load_time",
+	"loadtime",                     # removed in server6.0
+	"memory_used",                  # deprecated in server6.3 version and replaced by used_bytes
+	"nbtr_memory_used",             # removed in server6.0
+	"query_basic_avg_rec_count",    # removed in server6.0
+	"used_bytes",                   # added in server6.3 represents memory used by data (aka memory_used)
 ]
 
 #
@@ -145,7 +139,6 @@ node_gauge_stats = [
 #
 namespace_gauge_stats =[
 
-
 	"appeals_rx_active",
 	"appeals_tx_active",
 	"appeals_tx_remaining",
@@ -222,9 +215,6 @@ namespace_gauge_stats =[
 	"shadow_write_q",
 	"stop_writes",
 	
-	#
-	# TODO: Check if below storage-engine stats are config ?
-	#
 	"storage-engine.device.defrag_q",
 	"storage-engine.device.defrag_reads",
 	"storage-engine.device.defrag_writes",
@@ -239,9 +229,6 @@ namespace_gauge_stats =[
 	"storage-engine.file.shadow_write_q",
 	"storage-engine.file.used_bytes",
 	"storage-engine.file.write_q",
-	#
-	# TODO: Check if below storage-engine stats are config ?
-	#
 	
 	"tombstones",
 	"truncate_lut",

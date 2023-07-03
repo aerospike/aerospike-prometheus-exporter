@@ -308,21 +308,23 @@ func (cfg *Config) isMetricAllowed(pContextType ContextType, pRawStatName string
 	pAllowlist := []string{}
 	pBlocklist := []string{}
 
-	if CTX_NAMESPACE == pContextType {
+	switch pContextType {
+	case CTX_NAMESPACE:
 		pAllowlist = cfg.Aerospike.NamespaceMetricsAllowlist
 		pBlocklist = cfg.Aerospike.NamespaceMetricsBlocklist
-	} else if CTX_NODE_STATS == pContextType {
+	case CTX_NODE_STATS:
 		pAllowlist = cfg.Aerospike.NodeMetricsAllowlist
 		pBlocklist = cfg.Aerospike.NodeMetricsBlocklist
-	} else if CTX_SETS == pContextType {
+	case CTX_SETS:
 		pAllowlist = cfg.Aerospike.SetMetricsAllowlist
 		pBlocklist = cfg.Aerospike.SetMetricsBlocklist
-	} else if CTX_SINDEX == pContextType {
+	case CTX_SINDEX:
 		pAllowlist = cfg.Aerospike.SindexMetricsAllowlist
 		pBlocklist = cfg.Aerospike.SindexMetricsBlocklist
-	} else if CTX_XDR == pContextType {
+	case CTX_XDR:
 		pAllowlist = cfg.Aerospike.XdrMetricsAllowlist
 		pBlocklist = cfg.Aerospike.XdrMetricsBlocklist
+
 	}
 
 	/**
@@ -339,17 +341,22 @@ func (cfg *Config) isMetricAllowed(pContextType ContextType, pRawStatName string
 		*             if-any-pattern-match-found,
 		*                    return true (i.e. STAT-IS-ALLOWED)
 	*/
-	isBlocked := cfg.loopPatterns(pRawStatName, pBlocklist, false)
+	if len(pBlocklist) > 0 {
+		isBlocked := cfg.loopPatterns(pRawStatName, pBlocklist)
+		if isBlocked {
+			return false
+		}
+	}
 
 	// as it is already blocked, we dont need to check in allow-list,
 	// i.e. when a stat falls within intersection of allow-list & block-list, we block that stat
 	//
-	if isBlocked {
-		return false
-	} else {
-		return cfg.loopPatterns(pRawStatName, pAllowlist, true)
+
+	if len(pAllowlist) == 0 {
+		return true
 	}
 
+	return cfg.loopPatterns(pRawStatName, pAllowlist)
 }
 
 /**
@@ -359,15 +366,10 @@ func (cfg *Config) isMetricAllowed(pContextType ContextType, pRawStatName string
  *  allow-list | allowed/true  |   not-allowed/ false   |    allowed/true
  *  block-list | blocked/false |   not-blocked/ false   |    blocked/true
  *
- *  NOTE: as this is common function, pDefaultReturnValue is taken as param to match empty-list-usecase in above table
  *
  */
 
-func (cfg *Config) loopPatterns(pRawStatName string, pPatternList []string, pDefaultReturnValue bool) bool {
-
-	if len(pPatternList) == 0 {
-		return pDefaultReturnValue
-	}
+func (cfg *Config) loopPatterns(pRawStatName string, pPatternList []string) bool {
 
 	for _, statPattern := range pPatternList {
 		if len(statPattern) > 0 {

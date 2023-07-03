@@ -66,50 +66,20 @@ func initGaugeStats(pConfigFile string, pGaugeStats *GaugeStats) {
  */
 func (gm *GaugeStats) isGauge(pContextType ContextType, pStat string) bool {
 
-	if CTX_NAMESPACE == pContextType {
+	switch pContextType {
+	case CTX_NAMESPACE:
 		return gm.NamespaceStats[pStat]
-	} else if CTX_NODE_STATS == pContextType {
+	case CTX_NODE_STATS:
 		return gm.NodeStats[pStat]
-	} else if CTX_SETS == pContextType {
+	case CTX_SETS:
 		return gm.SetsStats[pStat]
-	} else if CTX_SINDEX == pContextType {
+	case CTX_SINDEX:
 		return gm.SindexStats[pStat]
-	} else if CTX_XDR == pContextType {
+	case CTX_XDR:
 		return gm.XdrStats[pStat]
 	}
 
 	return false
-}
-
-/**
- * getter returns all the Gauge stats in requested context
- */
-func (gm *GaugeStats) getGaugeStats(pContextType ContextType) []string {
-
-	if CTX_NAMESPACE == pContextType {
-		return gm.fetAllGaugeStats(gm.NamespaceStats)
-	} else if CTX_NODE_STATS == pContextType {
-		return gm.fetAllGaugeStats(gm.NodeStats)
-	} else if CTX_SETS == pContextType {
-		return gm.fetAllGaugeStats(gm.SetsStats)
-	} else if CTX_SINDEX == pContextType {
-		return gm.fetAllGaugeStats(gm.SindexStats)
-	} else if CTX_XDR == pContextType {
-		return gm.fetAllGaugeStats(gm.XdrStats)
-	}
-
-	return nil
-}
-
-/**
- * Utility, common logic used to loop through contextual-array like Nodes, Sets etc.,
- */
-func (gm *GaugeStats) fetAllGaugeStats(statsMap map[string]bool) []string {
-	keys := []string{}
-	for k := range statsMap {
-		keys = append(keys, k)
-	}
-	return keys
 }
 
 /**

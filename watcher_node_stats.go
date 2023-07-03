@@ -25,7 +25,7 @@ func (sw *StatsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[s
 
 	log.Tracef("node-stats:%s", rawMetrics["statistics"])
 
-	if nodeMetrics == nil || isTestcaseMode() {
+	if isTestcaseMode() {
 		nodeMetrics = make(map[string]AerospikeStat)
 	}
 
@@ -44,7 +44,7 @@ func (sw *StatsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[s
 		}
 
 		if asMetric.isAllowed {
-			desc, valueType := asMetric.makePromeMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE)
+			desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE)
 			ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService])
 		}
 	}

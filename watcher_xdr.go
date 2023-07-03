@@ -36,9 +36,8 @@ var xdrMetrics = make(map[string]AerospikeStat)
 
 func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 
-	if xdrMetrics == nil || isTestcaseMode() {
+	if isTestcaseMode() {
 		xdrMetrics = make(map[string]AerospikeStat)
-
 	}
 
 	for _, dc := range infoKeys {
@@ -59,7 +58,7 @@ func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 			}
 
 			if asMetric.isAllowed {
-				desc, valueType := asMetric.makePromeMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_DC_NAME)
+				desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_DC_NAME)
 				ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], dcName)
 			}
 		}

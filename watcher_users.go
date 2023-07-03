@@ -154,8 +154,8 @@ func (uw *UserWatcher) refreshUserStats(o *Observer, infoKeys []string, rawMetri
 
 		// Order is important as user.ReadInfo returns an int-array - where
 		//   0 = read-quota, 1=read_single_record_tps etc., -- this order is fixed from server
-		// readInfoStats := []string{"read_quota", "read_single_record_tps", "read_scan_query_rps", "limitless_read_scan_query"}
-		// writeInfoStats := []string{"write_quota", "write_single_record_tps", "write_scan_query_rps", "limitless_write_scan_query"}
+		readInfoStats := []string{"read_quota", "read_single_record_tps", "read_scan_query_rps", "limitless_read_scan_query"}
+		writeInfoStats := []string{"write_quota", "write_single_record_tps", "write_scan_query_rps", "limitless_write_scan_query"}
 
 		// Connections in use
 		pm := makeMetric("aerospike_users", "conns_in_use", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
@@ -163,23 +163,23 @@ func (uw *UserWatcher) refreshUserStats(o *Observer, infoKeys []string, rawMetri
 
 		if len(user.ReadInfo) >= 4 && len(user.WriteInfo) >= 4 {
 			// User read info statistics
-			pm = makeMetric("aerospike_users", "read_quota", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
+			pm = makeMetric("aerospike_users", readInfoStats[0], mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
 			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.ReadInfo[0]), rawMetrics[ikClusterName], rawMetrics[ikService], user.User)
-			pm = makeMetric("aerospike_users", "read_single_record_tps", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
+			pm = makeMetric("aerospike_users", readInfoStats[1], mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
 			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.ReadInfo[1]), rawMetrics[ikClusterName], rawMetrics[ikService], user.User)
-			pm = makeMetric("aerospike_users", "read_scan_query_rps", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
+			pm = makeMetric("aerospike_users", readInfoStats[2], mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
 			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.ReadInfo[2]), rawMetrics[ikClusterName], rawMetrics[ikService], user.User)
-			pm = makeMetric("aerospike_users", "limitless_read_scan_query", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
+			pm = makeMetric("aerospike_users", readInfoStats[3], mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
 			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.ReadInfo[3]), rawMetrics[ikClusterName], rawMetrics[ikService], user.User)
 
 			// User write info statistics
-			pm = makeMetric("aerospike_users", "write_quota", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
+			pm = makeMetric("aerospike_users", writeInfoStats[0], mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
 			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.WriteInfo[0]), rawMetrics[ikClusterName], rawMetrics[ikService], user.User)
-			pm = makeMetric("aerospike_users", "write_single_record_tps", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
+			pm = makeMetric("aerospike_users", writeInfoStats[1], mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
 			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.WriteInfo[1]), rawMetrics[ikClusterName], rawMetrics[ikService], user.User)
-			pm = makeMetric("aerospike_users", "write_scan_query_rps", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
+			pm = makeMetric("aerospike_users", writeInfoStats[2], mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
 			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.WriteInfo[2]), rawMetrics[ikClusterName], rawMetrics[ikService], user.User)
-			pm = makeMetric("aerospike_users", "limitless_write_scan_query", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
+			pm = makeMetric("aerospike_users", writeInfoStats[3], mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_USER)
 			ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.WriteInfo[3]), rawMetrics[ikClusterName], rawMetrics[ikService], user.User)
 		}
 	}

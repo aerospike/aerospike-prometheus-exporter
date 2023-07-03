@@ -21,6 +21,34 @@ import (
 	goversion "github.com/hashicorp/go-version"
 )
 
+// this is used as a prefix to qualify a metric while pushing to Prometheus or something
+var PREFIX_AEROSPIKE = "aerospike_"
+
+// used to define context of stat types (like namespace, set, xdr etc.,)
+type ContextType string
+
+const (
+	CTX_USERS      ContextType = "users"
+	CTX_NAMESPACE  ContextType = "namespace"
+	CTX_NODE_STATS ContextType = "node_stats"
+	CTX_SETS       ContextType = "sets"
+	CTX_SINDEX     ContextType = "sindex"
+	CTX_XDR        ContextType = "xdr"
+	CTX_LATENCIES  ContextType = "latencies"
+)
+
+const STORAGE_ENGINE = "storage-engine_"
+
+// below constant represent the labels we send along with metrics to Prometheus or something
+const METRIC_LABEL_CLUSTER_NAME = "cluster_name"
+const METRIC_LABEL_SERVICE = "service"
+const METRIC_LABEL_NS = "ns"
+const METRIC_LABEL_SET = "set"
+const METRIC_LABEL_LE = "le"
+const METRIC_LABEL_DC_NAME = "dc"
+const METRIC_LABEL_SINDEX = "sindex"
+const METRIC_LABEL_USER = "user"
+
 func makeMetric(namespace, name string, t metricType, constLabels map[string]string, labels ...string) promMetric {
 	promDesc := prometheus.NewDesc(
 		namespace+"_"+normalizeMetric(name),
@@ -377,28 +405,26 @@ func buildVersionGreaterThanOrEqual(rawMetrics map[string]string, ref string) (b
 }
 
 // refactored code
-/**
-from given list of allow-list, checks if the input rawMetricName is allowed to send to monitoring systems or not
-*/
-var DEFAULT_METRIC_TYPE = mtCounter
 
 /*
-*
-validates if given type is correct metric-type, if not, return default metric-type (i.e. DEFAULT_METRIC_TYPE)
+Validates if given stat is having - or defined in gauge-stat list, if not, return default metric-type (i.e. Counter)
 */
 func getMetricType(pContext ContextType, pRawMetricName string) metricType {
 
 	// condition#1 : Config ( which has a - in the stat) is always a Gauge
 	// condition#2 : or - it is marked as Gauge in the configuration file
 	//
-	// TODO: shall we move condition#1 to the isGauge function itself?
+	// If stat is storage-engine related then consider the remaining stat name during below check
 	//
-	if strings.Contains(pRawMetricName, "-") ||
-		gaugeStatHandler.isGauge(pContext, pRawMetricName) {
+
+	tmpRawMetricName := strings.ReplaceAll(pRawMetricName, STORAGE_ENGINE, "")
+
+	if strings.Contains(tmpRawMetricName, "-") ||
+		gaugeStatHandler.isGauge(pContext, tmpRawMetricName) {
 		return mtGauge
 	}
 
-	return DEFAULT_METRIC_TYPE
+	return mtCounter
 }
 
 func isTestcaseMode() bool {

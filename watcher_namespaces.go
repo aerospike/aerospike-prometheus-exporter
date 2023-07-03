@@ -64,7 +64,7 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 				statIndex := match[2]
 				statName := match[3]
 
-				compositeStatName := "storage-engine_" + statType + "_" + statName
+				compositeStatName := STORAGE_ENGINE + statType + "_" + statName
 				asMetric, exists := namespaceStats[compositeStatName]
 
 				if !exists {
@@ -75,7 +75,7 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 				if asMetric.isAllowed {
 					deviceOrFileName := stats["storage-engine."+statType+"["+statIndex+"]"]
 
-					desc, valueType := asMetric.makePromeMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType)
+					desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType)
 					ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName)
 				}
 			} else { // regular stat (i.e. non-storage-engine related)
@@ -87,7 +87,7 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 				}
 
 				if asMetric.isAllowed {
-					desc, valueType := asMetric.makePromeMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS)
+					desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS)
 					ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName)
 				}
 

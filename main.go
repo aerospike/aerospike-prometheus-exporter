@@ -29,10 +29,7 @@ var (
 
 	// Gauge related
 	//
-	//TODO: should we put this file in /etc/aerospike ?
-	//TODO: should we allow user to edit this file ? if yes, why ?
-	//
-	gaugeStatsFile   = "./gauge_stats_list.toml"
+	gaugeStatsFile   = flag.String("gauge-list", "/etc/aerospike-prometheus-exporter/gauge_stats_list.toml", "Gauge stats File")
 	gaugeStatHandler *GaugeStats
 )
 
@@ -56,7 +53,7 @@ func main() {
 
 	// initialize Gauge metric definitions
 	gaugeStatHandler = new(GaugeStats)
-	initGaugeStats(gaugeStatsFile, gaugeStatHandler)
+	initGaugeStats(*gaugeStatsFile, gaugeStatHandler)
 
 	fullHost = net.JoinHostPort(config.Aerospike.Host, strconv.Itoa(int(config.Aerospike.Port)))
 

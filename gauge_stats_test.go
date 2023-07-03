@@ -20,8 +20,8 @@ func TestGetGaugesNotEmpty(t *testing.T) {
 
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeList)
 
-	nslist := gaugeList.getGaugeStats(CTX_NAMESPACE)
-	nodelist := gaugeList.getGaugeStats(CTX_NODE_STATS)
+	nslist := gaugeList.NamespaceStats
+	nodelist := gaugeList.NodeStats
 	assert.NotEmpty(t, nslist)
 	assert.NotEmpty(t, nodelist)
 }
@@ -38,20 +38,19 @@ func TestGetGaugesCounts(t *testing.T) {
 
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeList)
 
-	glist := gaugeList.getGaugeStats(CTX_NAMESPACE)
+	glist := gaugeList.NamespaceStats
 	assert.Equal(t, len(glist), 96)
-	//TODO Write checks on Sets, Xdr, Sindedx, Nodestats
 
-	glist = gaugeList.getGaugeStats(CTX_NODE_STATS)
+	glist = gaugeList.NodeStats
 	assert.Equal(t, len(glist), 74)
 
-	glist = gaugeList.getGaugeStats(CTX_SETS)
+	glist = gaugeList.SetsStats
 	assert.Equal(t, len(glist), 7)
 
-	glist = gaugeList.getGaugeStats(CTX_SINDEX)
+	glist = gaugeList.SindexStats
 	assert.Equal(t, len(glist), 13)
 
-	glist = gaugeList.getGaugeStats(CTX_XDR)
+	glist = gaugeList.XdrStats
 	assert.Equal(t, len(glist), 10)
 
 }
