@@ -76,6 +76,7 @@ rpm: prep
 		--after-install $(PKG_DIR)/post-install.sh \
 		--name $(NAME) \
 		--version $(VERSION) \
+		--rpm-digest sha256 \ 
 		--maintainer $(MAINTAINER) \
 		--description $(DESCRIPTION) \
 		--license $(LICENSE) \
@@ -112,6 +113,7 @@ prep:
 	install -d $(BUILD_DIR)/etc/aerospike-prometheus-exporter
 	install -pm 755 $(TOP_DIR)/aerospike-prometheus-exporter $(BUILD_DIR)/usr/bin/aerospike-prometheus-exporter
 	install -pm 644 $(TOP_DIR)/ape.toml $(BUILD_DIR)/etc/aerospike-prometheus-exporter/ape.toml
+	install -pm 644 $(TOP_DIR)/gauge_stats_list.toml $(BUILD_DIR)/etc/aerospike-prometheus-exporter/gauge_stats_list.toml
 
 .PHONY: clean
 clean:

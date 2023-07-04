@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/BurntSushi/toml"
@@ -31,10 +30,12 @@ type GaugeStats struct {
 }
 
 // Initialize exporter configuration
-func initGaugeStats(pConfigFile string, pGaugeStats *GaugeStats) {
+func initGaugeStats(pGaugeStatsFile string, pGaugeStats *GaugeStats) {
 
-	fmt.Println("Loading Gauge Stats file ", configFile)
-	blob, err := os.ReadFile(pConfigFile)
+	log.Infof("Loading Gauge Stats file %s", pGaugeStatsFile)
+
+	// fmt.Println("Loading Gauge Stats file ", configFile)
+	blob, err := os.ReadFile(pGaugeStatsFile)
 	if err != nil {
 		log.Fatalln(err)
 	}
