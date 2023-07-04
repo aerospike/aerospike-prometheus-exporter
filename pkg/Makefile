@@ -76,7 +76,7 @@ rpm: prep
 		--after-install $(PKG_DIR)/post-install.sh \
 		--name $(NAME) \
 		--version $(VERSION) \
-		--rpm-digest sha256 \ 
+		--rpm-digest sha256 \
 		--maintainer $(MAINTAINER) \
 		--description $(DESCRIPTION) \
 		--license $(LICENSE) \
