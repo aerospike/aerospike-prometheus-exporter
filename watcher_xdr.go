@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -8,7 +9,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type XdrWatcher struct{}
+type XdrWatcher struct {
+	xdrMetrics map[string]AerospikeStat
+}
 
 func (xw *XdrWatcher) describe(ch chan<- *prometheus.Desc) {}
 
@@ -32,12 +35,13 @@ func (xw *XdrWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 }
 
 // All (allowed/blocked) XDR stats. Based on the config.Aerospike.XdrMetricsAllowlist, config.Aerospike.XdrMetricsBlocklist.
-var xdrMetrics = make(map[string]AerospikeStat)
+// var xdrMetrics = make(map[string]AerospikeStat)
 
 func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 
-	if isTestcaseMode() {
-		xdrMetrics = make(map[string]AerospikeStat)
+	if xw.xdrMetrics == nil {
+		fmt.Println("Reinitializing xdrStats(...) ")
+		xw.xdrMetrics = make(map[string]AerospikeStat)
 	}
 
 	for _, dc := range infoKeys {
@@ -51,10 +55,10 @@ func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 			if err != nil {
 				continue
 			}
-			asMetric, exists := xdrMetrics[stat]
+			asMetric, exists := xw.xdrMetrics[stat]
 			if !exists {
 				asMetric = newAerospikeStat(CTX_XDR, stat)
-				xdrMetrics[stat] = asMetric
+				xw.xdrMetrics[stat] = asMetric
 			}
 
 			if asMetric.isAllowed {

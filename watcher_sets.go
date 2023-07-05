@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -8,7 +9,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type SetWatcher struct{}
+type SetWatcher struct {
+	setMetrics map[string]AerospikeStat
+}
 
 func (sw *SetWatcher) describe(ch chan<- *prometheus.Desc) {}
 
@@ -21,14 +24,15 @@ func (sw *SetWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 }
 
 // All (allowed/blocked) Sets stats. Based on the config.Aerospike.SetsMetricsAllowlist, config.Aerospike.SetsMetricsBlocklist.
-var setMetrics = make(map[string]AerospikeStat)
+// var setMetrics = make(map[string]AerospikeStat)
 
 func (sw *SetWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	setStats := strings.Split(rawMetrics["sets"], ";")
 	log.Tracef("set-stats:%v", setStats)
 
-	if isTestcaseMode() {
-		setMetrics = make(map[string]AerospikeStat)
+	if sw.setMetrics == nil {
+		fmt.Println("Reinitializing setStats (...)")
+		sw.setMetrics = make(map[string]AerospikeStat)
 	}
 
 	for i := range setStats {
@@ -39,11 +43,11 @@ func (sw *SetWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 			if err != nil {
 				continue
 			}
-			asMetric, exists := setMetrics[stat]
+			asMetric, exists := sw.setMetrics[stat]
 
 			if !exists {
 				asMetric = newAerospikeStat(CTX_SETS, stat)
-				setMetrics[stat] = asMetric
+				sw.setMetrics[stat] = asMetric
 			}
 
 			if asMetric.isAllowed {

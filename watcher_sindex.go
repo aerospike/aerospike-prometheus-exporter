@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -9,6 +10,7 @@ import (
 )
 
 type SindexWatcher struct {
+	sindexMetrics map[string]AerospikeStat
 }
 
 func (siw *SindexWatcher) describe(ch chan<- *prometheus.Desc) {}
@@ -45,7 +47,7 @@ func (siw *SindexWatcher) getSindexCommands(sindexesMeta []string) (sindexComman
 }
 
 // All (allowed/blocked) Sindex stats. Based on the config.Aerospike.SindexMetricsAllowlist, config.Aerospike.SindexMetricsBlocklist.
-var sindexMetrics = make(map[string]AerospikeStat)
+// var sindexMetrics = make(map[string]AerospikeStat)
 
 func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	if config.Aerospike.DisableSindexMetrics {
@@ -53,8 +55,10 @@ func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 		return nil
 	}
 
-	if isTestcaseMode() {
-		sindexMetrics = make(map[string]AerospikeStat)
+	if siw.sindexMetrics == nil {
+		fmt.Println("Reinitializing sindexStats(...) ")
+
+		siw.sindexMetrics = make(map[string]AerospikeStat)
 	}
 
 	for _, sindex := range infoKeys {
@@ -64,22 +68,17 @@ func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 		sindexName := sindexInfoKeySplit[1]
 		log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
 
-		// sindexObserver := make(MetricMap, len(sindexMetrics))
-		// for m, t := range sindexMetrics {
-		// 	sindexObserver[m] = makeMetric("aerospike_sindex", m, t, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", "sindex")
-		// }
-
 		stats := parseStats(rawMetrics[sindex], ";")
 		for stat, value := range stats {
 			pv, err := tryConvert(value)
 			if err != nil {
 				continue
 			}
-			asMetric, exists := xdrMetrics[stat]
+			asMetric, exists := siw.sindexMetrics[stat]
 
 			if !exists {
 				asMetric = newAerospikeStat(CTX_SINDEX, stat)
-				sindexMetrics[stat] = asMetric
+				siw.sindexMetrics[stat] = asMetric
 			}
 
 			if asMetric.isAllowed {
@@ -89,20 +88,6 @@ func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 
 		}
 
-		// for stat, pm := range sindexObserver {
-		// 	v, exists := stats[stat]
-		// 	if !exists {
-		// 		// not found
-		// 		continue
-		// 	}
-
-		// 	pv, err := tryConvert(v)
-		// 	if err != nil {
-		// 		continue
-		// 	}
-
-		// 	ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, sindexName)
-		// }
 	}
 
 	return nil
