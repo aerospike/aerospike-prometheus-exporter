@@ -10,7 +10,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type NamespaceWatcher struct{}
+type NamespaceWatcher struct {
+	namespaceStats map[string]AerospikeStat
+}
 
 func (nw *NamespaceWatcher) describe(ch chan<- *prometheus.Desc) {}
 
@@ -31,15 +33,16 @@ func (nw *NamespaceWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 }
 
 // All (allowed/blocked) namespace stats. Based on the config.Aerospike.NamespaceMetricsAllowlist, config.Aerospike.NamespaceMetricsBlocklist.
-var namespaceStats = make(map[string]AerospikeStat)
+// TODO: move this to NamespaceWatcher -- as thie belongs there
+// var namespaceStats = make(map[string]AerospikeStat)
 
 // Regex for identifying storage-engine stats.
-var seDynamicExtractor = regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 
 func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
-	if isTestcaseMode() {
-		fmt.Println("Reinitializing namespaceMetrics(...) ")
-		namespaceStats = make(map[string]AerospikeStat)
+	seDynamicExtractor := regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
+	if nw.namespaceStats == nil {
+		fmt.Println("Reinitializing namespaceStats(...) ")
+		nw.namespaceStats = make(map[string]AerospikeStat)
 	}
 
 	for _, ns := range infoKeys {
@@ -65,11 +68,11 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 				statName := match[3]
 
 				compositeStatName := STORAGE_ENGINE + statType + "_" + statName
-				asMetric, exists := namespaceStats[compositeStatName]
+				asMetric, exists := nw.namespaceStats[compositeStatName]
 
 				if !exists {
 					asMetric = newAerospikeStat(CTX_NAMESPACE, compositeStatName)
-					namespaceStats[compositeStatName] = asMetric
+					nw.namespaceStats[compositeStatName] = asMetric
 				}
 
 				if asMetric.isAllowed {
@@ -79,11 +82,11 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 					ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName)
 				}
 			} else { // regular stat (i.e. non-storage-engine related)
-				asMetric, exists := namespaceStats[stat]
+				asMetric, exists := nw.namespaceStats[stat]
 
 				if !exists {
 					asMetric = newAerospikeStat(CTX_NAMESPACE, stat)
-					namespaceStats[stat] = asMetric
+					nw.namespaceStats[stat] = asMetric
 				}
 
 				if asMetric.isAllowed {

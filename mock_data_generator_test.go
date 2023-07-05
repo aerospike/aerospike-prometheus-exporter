@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -106,6 +107,9 @@ generated the output used by the Namespace-Watcher TestCases, the same output ma
 so for each data-context we need to have a method to generate expected output
 */
 func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[string][]string, map[string][]string) {
+
+	// regex to check if a stat is storage-engine
+	seDynamicExtractor := regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 
 	lExpectedMetricNamedValues := map[string][]string{}
 	lExpectedMetricLabels := map[string][]string{}
