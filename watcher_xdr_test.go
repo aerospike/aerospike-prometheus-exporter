@@ -84,6 +84,8 @@ func TestXdr_RefreshWithLabelsConfig(t *testing.T) {
 				for eachConfigMetricLabel := range config.AeroProm.MetricLabels {
 					modifiedConfigMetricLabels := strings.ReplaceAll(eachConfigMetricLabel, "=", ":")
 
+					fmt.Println(" \t >>>> metricLabel: ", metricLabel)
+
 					assert.Contains(t, metricLabel, modifiedConfigMetricLabels)
 				}
 

@@ -29,7 +29,9 @@ var jobsRawMetrics = map[string]metricType{
 	"ops-active":         mtGauge,
 }
 
-type JobsWatcher struct{}
+type JobsWatcher struct {
+	jobMetrics map[string]metricType
+}
 
 func (jw *JobsWatcher) describe(ch chan<- *prometheus.Desc) {}
 
@@ -71,7 +73,7 @@ func (jw *JobsWatcher) passTwoKeys(rawMetrics map[string]string) (jobsCommands [
 	return []string{"jobs:"}
 }
 
-var jobMetrics map[string]metricType
+// var jobMetrics map[string]metricType
 
 func (jw *JobsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	if config.Aerospike.DisableJobMetrics {
@@ -89,13 +91,13 @@ func (jw *JobsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[st
 	}
 	log.Tracef("job-stats:%v", jobStats)
 
-	if jobMetrics == nil {
-		jobMetrics = getFilteredMetrics(jobsRawMetrics, config.Aerospike.JobMetricsAllowlist, config.Aerospike.JobMetricsAllowlistEnabled, config.Aerospike.JobMetricsBlocklist)
+	if jw.jobMetrics == nil {
+		jw.jobMetrics = getFilteredMetrics(jobsRawMetrics, config.Aerospike.JobMetricsAllowlist, config.Aerospike.JobMetricsAllowlistEnabled, config.Aerospike.JobMetricsBlocklist)
 	}
 
 	for i := range jobStats {
-		jobObserver := make(MetricMap, len(jobMetrics))
-		for m, t := range jobMetrics {
+		jobObserver := make(MetricMap, len(jw.jobMetrics))
+		for m, t := range jw.jobMetrics {
 			jobObserver[m] = makeMetric("aerospike_jobs", m, t, config.AeroProm.MetricLabels, "cluster_name", "service", "ns", "set", "module", "job_type", "trid", "sindex_name")
 		}
 

@@ -404,8 +404,6 @@ func buildVersionGreaterThanOrEqual(rawMetrics map[string]string, ref string) (b
 	return false, nil
 }
 
-// refactored code
-
 /*
 Validates if given stat is having - or defined in gauge-stat list, if not, return default metric-type (i.e. Counter)
 */
@@ -425,13 +423,4 @@ func getMetricType(pContext ContextType, pRawMetricName string) metricType {
 	}
 
 	return mtCounter
-}
-
-func isTestcaseMode() bool {
-	testcaseMode := os.Getenv("TESTCASE_MODE")
-	// fmt.Println("Testcase Mode == ", testcaseMode)
-	if len(testcaseMode) > 0 && testcaseMode == "true" {
-		return true
-	}
-	return false
 }
