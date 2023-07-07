@@ -119,8 +119,8 @@ latency_buckets_count = 0
 # for example "batch_index_*_buffers"
 
 # Namespace metrics allowlist, to control which Namespace metrics should be collected.
-#namespace_metrics_allowlist = ["master*object*"]
-# namespace_metrics_blocklist = []
+# namespace_metrics_allowlist = []
+namespace_metrics_blocklist = ["master_object*"]
 
 # set_metrics_allowlist = []
 # set_metrics_blocklist = []

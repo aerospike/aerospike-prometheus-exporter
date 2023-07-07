@@ -4,10 +4,20 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/gobwas/glob"
 )
 
 var DEFAULT_APE_TOML = "tests/default_ape.toml"
-var NS_ALLOWLIST_APE_TOML = "tests/ns_allow_block_list_ape.toml"
+var LABELS_APE_TOML = "tests/labels_ape.toml"
+var NS_ALLOWLIST_APE_TOML = "tests/ns_allowlist_ape.toml"
+var NS_BLOCKLIST_APE_TOML = "tests/ns_blocklist_ape.toml"
+
+var TESTCASE_MODE = "TESTCASE_MODE"
+var TESTCASE_MODE_TRUE = "true"
+var TESTCASE_MODE_FALSE = "false"
+
+var METRICS_CONFIG_FILE = "gauge_stats_list.toml"
 
 // var g_ns_metric_allow_list = []string{"aerospike_namespace_master_objects", "aerospike_namespace_memory_used_bytes"}
 
@@ -20,9 +30,45 @@ func extractNamespaceFromLabel(label string) string {
 	return nsFromLabel
 }
 
+func extractLabelNameValueFromFullLabel(fullLabel string, reqName string) string {
+
+	// Example Given Original: [name:"cluster_name" value:"null"  name:"service" value:"172.17.0.3:3000" ]
+	// Example After Replacing: [name:cluster_name value:null  name:service value:172.17.0.3:3000 ]
+
+	// labels will have individual strings like [ name:cluster_name value:null ] [name:service value:172.17.0.3:3000]
+	value := extractNameValuePair(fullLabel, "name:"+reqName)
+
+	return strings.TrimSpace(value)
+}
+
+func extractNameValuePair(fullLabel string, reqName string) string {
+
+	// in the label-string, each label is separated by a double-space i.e."  "
+	fullLabel = strings.ReplaceAll(fullLabel, "\"", "")
+	fullLabel = strings.ReplaceAll(fullLabel, "[", "")
+	fullLabel = strings.ReplaceAll(fullLabel, "]", "")
+
+	arrLabels := strings.Split(fullLabel, "  ")
+	for idx := range arrLabels {
+
+		element := arrLabels[idx]
+		if strings.HasPrefix(element, reqName) {
+			// example: name:service value:172.17.0.3:3000
+			// name := element[0:len(reqName)]
+			// name = name[5:]
+
+			from := len(reqName) + 7
+			value := element[from:]
+
+			return strings.TrimSpace(value)
+		}
+	}
+
+	return ""
+}
+
 func extractMetricNameFromDesc(desc string) string {
 	// Desc{fqName: "aerospike_namespac_memory_free_pct", help: "memory free pct", constLabels: {}, variableLabels: [cluster_name service ns]}
-	// fmt.Println("description given: ===> ", desc)
 	metricNameFromDesc := desc[0 : (strings.Index(desc, ","))-1]
 	metricNameFromDesc = metricNameFromDesc[(strings.Index(metricNameFromDesc, ":"))+3:]
 
@@ -65,6 +111,148 @@ func convertValue(s string) (float64, error) {
 		return 0, nil
 	}
 
-	// fmt.Println("input string is ", s, " **** returning 0")
 	return 0, fmt.Errorf("invalid value `%s`. Only Float or Boolean are accepted", s)
+}
+
+func isHelperAllowedMetric(rawStatName string, allowlist []string) bool {
+	// consider, disabled-allowlist and empty-allowlist as same, stat is accepted and allowed
+	if len(allowlist) == 0 {
+		return true
+	}
+
+	for _, cfgStatPattern := range allowlist {
+		if globbingPattern.MatchString(cfgStatPattern) {
+			ge := glob.MustCompile(cfgStatPattern)
+
+			if ge.Match(rawStatName) {
+				return true
+			}
+		} else {
+			if rawStatName == cfgStatPattern {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func isHelperBlockedMetric(rawMetricName string, blocklist []string) bool {
+	if len(blocklist) == 0 {
+		return false
+	}
+
+	for _, stat := range blocklist {
+		if globbingPattern.MatchString(stat) {
+			ge := glob.MustCompile(stat)
+
+			if ge.Match(rawMetricName) {
+				return true
+			}
+		} else {
+			if rawMetricName == stat {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// Latency related utility functions
+
+func splitLatencyDetails(latencies []string) (string, string, string) {
+
+	// {test}-read:msec,0.0,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00
+	// batch-index:
+	firstElement := latencies[0]
+	firstElement = strings.ReplaceAll(firstElement, "{", "")
+	firstElement = strings.ReplaceAll(firstElement, "}", "")
+	firstElement = strings.ReplaceAll(firstElement, ":", "-")
+	//
+	// {test}-read:msec ==> test-read-msec
+	// batch-index:     ==> batch-index-
+	//
+	elements := strings.Split(firstElement, "-")
+
+	return elements[0], elements[1], elements[2]
+}
+
+func isLatencyOperationAllowe(operation string, allowlist []string, blocklist []string) bool {
+
+	if len(blocklist) > 0 {
+		for idx := range blocklist {
+			op := blocklist[idx]
+			if strings.EqualFold(op, operation) {
+				return false
+			}
+		}
+	}
+
+	if len(allowlist) == 0 {
+		return true
+	}
+
+	for idx := range allowlist {
+		op := allowlist[idx]
+		if strings.EqualFold(op, operation) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func splitLatencies(latencyRawMetric string) []string {
+	// {test}-read:msec,0.0,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00
+	// batch-index:
+	arrLatencies := strings.Split(latencyRawMetric, ",")
+
+	latencies := []string{}
+
+	operation := strings.TrimSpace(arrLatencies[0])
+
+	latencies = append(latencies, operation)
+	if len(arrLatencies) > 1 {
+		sumOfQueriesStr := arrLatencies[1]
+		total, err := convertValue(sumOfQueriesStr)
+
+		sumOfQueriesStr = fmt.Sprintf("%.0f", total)
+		latencies = append(latencies, sumOfQueriesStr)
+		if err != nil {
+			fmt.Println(" unable to convert sumOfQueriesStr to float-value ", sumOfQueriesStr)
+			return nil
+		}
+		for idx := range arrLatencies {
+			// process from second element
+			if idx >= 2 { // i.e. 3rd element in index
+				// value, err := strconv.ParseFloat(arrLatencies[idx], 64)
+				value, err := convertValue(arrLatencies[idx])
+
+				// value, err := strconv.ParseInt(arrLatencies[idx], 10, 64)
+				if err != nil {
+					fmt.Println(" unable to convert latencies value to float-value ", latencies[idx], " at index: ", idx, " -- err: ", err)
+					return nil
+				}
+				// value = total - value
+				value = (total - ((value * total) / 100))
+				convertedValue := fmt.Sprintf("%.0f", value)
+				latencies = append(latencies, convertedValue)
+			}
+		}
+	}
+
+	return latencies
+}
+
+func constructLabelElement(labelKey string, labelValue string) string {
+	return "  name:" + "\"" + labelKey + "\"" + " value:" + "\"" + labelValue + "\""
+}
+
+func extractOperationFromMetric(metricName string) string {
+	operationName := strings.ReplaceAll(metricName, "aerospike_latencies_", "")
+
+	operationName = operationName[0:strings.Index(operationName, "_")]
+
+	return operationName
 }

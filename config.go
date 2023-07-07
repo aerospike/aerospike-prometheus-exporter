@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/gobwas/glob"
 
 	aslog "github.com/aerospike/aerospike-client-go/v6/logger"
 	log "github.com/sirupsen/logrus"
@@ -286,4 +287,100 @@ func initAllowlistAndBlocklistConfigs(config *Config, md toml.MetaData) {
 
 		config.Aerospike.XdrMetricsBlocklist = config.Aerospike.XdrMetricsBlacklist
 	}
+}
+
+/**
+ * this function check is a given stat is allowed or blocked against given patterns
+ * these patterns are defined within ape.toml
+ *
+ * NOTE: when a stat falls within intersection of allow-list & block-list, we block that stat
+ *
+ *             | empty         | no-pattern-match-found | pattern-match-found
+ *  allow-list | allowed/true  |   not-allowed/ false   |    allowed/true
+ *  block-list | blocked/false |   not-blocked/ false   |    blocked/true
+ *
+ *  by checking the blocklist first,
+ *     we avoid processing the allow-list for some of the metrics
+ *
+ */
+func (cfg *Config) isMetricAllowed(pContextType ContextType, pRawStatName string) bool {
+
+	pAllowlist := []string{}
+	pBlocklist := []string{}
+
+	switch pContextType {
+	case CTX_NAMESPACE:
+		pAllowlist = cfg.Aerospike.NamespaceMetricsAllowlist
+		pBlocklist = cfg.Aerospike.NamespaceMetricsBlocklist
+	case CTX_NODE_STATS:
+		pAllowlist = cfg.Aerospike.NodeMetricsAllowlist
+		pBlocklist = cfg.Aerospike.NodeMetricsBlocklist
+	case CTX_SETS:
+		pAllowlist = cfg.Aerospike.SetMetricsAllowlist
+		pBlocklist = cfg.Aerospike.SetMetricsBlocklist
+	case CTX_SINDEX:
+		pAllowlist = cfg.Aerospike.SindexMetricsAllowlist
+		pBlocklist = cfg.Aerospike.SindexMetricsBlocklist
+	case CTX_XDR:
+		pAllowlist = cfg.Aerospike.XdrMetricsAllowlist
+		pBlocklist = cfg.Aerospike.XdrMetricsBlocklist
+
+	}
+
+	/**
+		* is this stat is in blocked list
+	    *    if is-block-list array not-defined or is-empty, then false (i.e. STAT-IS-NOT-BLOCKED)
+		*    else
+		*       match stat with "all-block-list-patterns",
+		*             if-any-pattern-match-found,
+		*                    return true (i.e. STAT-IS-BLOCKED)
+		* if stat-is-not-blocked
+		*    if is-allow-list array not-defined or is-empty, then true (i.e. STAT-IS-ALLOWED)
+		*    else
+		*      match stat with "all-allow-list-patterns"
+		*             if-any-pattern-match-found,
+		*                    return true (i.e. STAT-IS-ALLOWED)
+	*/
+	if len(pBlocklist) > 0 {
+		isBlocked := cfg.loopPatterns(pRawStatName, pBlocklist)
+		if isBlocked {
+			return false
+		}
+	}
+
+	// as it is already blocked, we dont need to check in allow-list,
+	// i.e. when a stat falls within intersection of allow-list & block-list, we block that stat
+	//
+
+	if len(pAllowlist) == 0 {
+		return true
+	}
+
+	return cfg.loopPatterns(pRawStatName, pAllowlist)
+}
+
+/**
+ *  this function is used to loop thru any given regex-pattern-list, [ master_objects or *master* ]
+ *
+ *             | empty         | no-pattern-match-found | pattern-match-found
+ *  allow-list | allowed/true  |   not-allowed/ false   |    allowed/true
+ *  block-list | blocked/false |   not-blocked/ false   |    blocked/true
+ *
+ *
+ */
+
+func (cfg *Config) loopPatterns(pRawStatName string, pPatternList []string) bool {
+
+	for _, statPattern := range pPatternList {
+		if len(statPattern) > 0 {
+
+			ge := glob.MustCompile(statPattern)
+
+			if ge.Match(pRawStatName) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
