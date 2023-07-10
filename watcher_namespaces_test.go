@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -29,7 +30,7 @@ func TestPassTwoKeys(t *testing.T) {
 	nsOutputs := nsWatcher.passTwoKeys(pass2Keys)
 
 	// nsExpected := []string{"namespace/bar", "namespace/test"}
-	nsExpected := createPassTwoExpectedOutputs(rawMetrics)
+	nsExpected := createNamespacePassTwoExpectedOutputs(rawMetrics)
 
 	assert := assert.New(t)
 
@@ -41,12 +42,76 @@ func TestPassTwoKeys(t *testing.T) {
 
 func TestNamespaceRefreshDefault(t *testing.T) {
 
+	// this is to force-reload the config in the NamespaceWatcher, this is a check on this param in NamespaceWatcher implementation
+	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
+
 	fmt.Println("initializing config ... TestNamespaceRefreshDefault")
 	// Initialize and validate config
 	config = new(Config)
 	initConfig(DEFAULT_APE_TOML, config)
 
 	config.validateAndUpdate()
+
+	runTestcase(t)
+	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
+}
+
+func TestNamespaceRefreshLabels(t *testing.T) {
+
+	// this is to force-reload the config in the NamespaceWatcher, this is a check on this param in NamespaceWatcher implementation
+	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
+
+	fmt.Println("initializing config ... TestNamespaceRefreshLabels")
+	// Initialize and validate config
+	config = new(Config)
+	initConfig(LABELS_APE_TOML, config)
+
+	config.validateAndUpdate()
+
+	runTestcase(t)
+	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
+}
+
+func TestNamespaceRefreshAllowlist(t *testing.T) {
+
+	// this is to force-reload the config in the NamespaceWatcher, this is a check on this param in NamespaceWatcher implementation
+	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
+
+	fmt.Println("initializing config ... TestNamespaceRefreshAllowlist")
+	// Initialize and validate config
+	config = new(Config)
+	initConfig(NS_ALLOWLIST_APE_TOML, config)
+
+	config.validateAndUpdate()
+
+	runTestcase(t)
+
+}
+
+func TestNamespaceRefreshBlocklist(t *testing.T) {
+
+	// this is to force-reload the config in the NamespaceWatcher, this is a check on this param in NamespaceWatcher implementation
+	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
+
+	fmt.Println("initializing config ... TestNamespaceRefreshBlocklist")
+	// Initialize and validate config
+	config = new(Config)
+	initConfig(NS_BLOCKLIST_APE_TOML, config)
+
+	config.validateAndUpdate()
+
+	runTestcase(t)
+
+}
+
+/**
+* complete logic to call watcher, generate-mock data and asset is part of this function
+ */
+func runTestcase(t *testing.T) {
+
+	gaugeStatHandler = new(GaugeStats)
+
+	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
 
 	// read raw-metrics from mock data gen, create observer and channel prometeus metric ingestion and processing
 	rawMetrics := getRawMetrics()
@@ -57,14 +122,14 @@ func TestNamespaceRefreshDefault(t *testing.T) {
 
 	nsWatcher.passTwoKeys(rawMetrics)
 
-	expectedOutputs := createPassTwoExpectedOutputs(rawMetrics)
+	nsInfoKeys := createNamespacePassTwoExpectedOutputs(rawMetrics)
 
 	// outputs := nsWatcher.passTwoKeys(pass2Metrics)
 	// assert.Equal(t, outputs, expectedOutputs)
 
-	err := nsWatcher.refresh(lObserver, expectedOutputs, rawMetrics, ch)
+	err := nsWatcher.refresh(lObserver, nsInfoKeys, rawMetrics, ch)
 
-	if err != nil {
+	if err == nil {
 		// map of string ==> map["namespace/metric-name"]["<VALUE>"]
 		// map of string ==> map["namespace/metric-name"]["<Label>"]
 		//  both used to assert the return values from actual code against calculated values
@@ -113,21 +178,18 @@ func TestNamespaceRefreshDefault(t *testing.T) {
 
 		for nsIndex := range arrNames {
 			tnsForNamespace := arrNames[nsIndex]
-			fmt.Println("Running test data assertion for namespace : ", tnsForNamespace)
 			lExpectedMetricNamedValues, lExpectedMetricLabels := createNamespaceWatcherExpectedOutputs(tnsForNamespace, true)
 
 			for key := range lOutputValues {
-				// fmt.Println(key)
-				// fmt.Println(values)
 				expectedValues := lExpectedMetricNamedValues[key]
 				expectedLabels := lExpectedMetricLabels[key]
 				outputMetricValues := lOutputValues[key]
-				outpuMetrictLabels := lOutputLabels[key]
+				outpuMetricLabels := lOutputLabels[key]
 
 				// assert - only if the value belongs to the namespace we read expected values and processing
-				if strings.HasSuffix(key, tnsForNamespace) {
+				if strings.HasPrefix(key, tnsForNamespace) {
 					assert.Contains(t, expectedValues, outputMetricValues)
-					assert.Contains(t, expectedLabels, outpuMetrictLabels)
+					assert.Contains(t, expectedLabels, outpuMetricLabels)
 				}
 			}
 
@@ -135,5 +197,4 @@ func TestNamespaceRefreshDefault(t *testing.T) {
 	} else {
 		fmt.Println(" Failed Refreshing, error: ", err)
 	}
-
 }

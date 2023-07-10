@@ -38,7 +38,7 @@ We appreciate feedback from community members on the [issues](https://github.com
 
 3. Run the exporter
      ```bash
-     ./aerospike-prometheus-exporter --config <full-path-of-the-config-file>
+     ./aerospike-prometheus-exporter --config <full-path-of-the-config-file> --gauge-list <full-path-of-the-gauge-stats-list-file>
      ```
 
 ### Aerospike Prometheus Exporter Docker Image

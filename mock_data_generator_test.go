@@ -2,7 +2,12 @@ package main
 
 import (
 	"fmt"
+	"regexp"
+	"sort"
+	"strconv"
 	"strings"
+
+	aero "github.com/aerospike/aerospike-client-go/v6"
 )
 
 /*
@@ -22,13 +27,17 @@ func getRawMetrics() map[string]string {
 	rawMetrics["namespace/test"] = "ns_cluster_size=1;effective_replication_factor=1;objects=38914;tombstones=0;xdr_tombstones=0;xdr_bin_cemeteries=0;master_objects=38914;master_tombstones=0;prole_objects=0;prole_tombstones=0;non_replica_objects=0;non_replica_tombstones=0;unreplicated_records=0;dead_partitions=0;unavailable_partitions=0;clock_skew_stop_writes=false;stop_writes=false;hwm_breached=false;current_time=420112506;non_expirable_objects=0;expired_objects=0;evicted_objects=0;evict_ttl=0;evict_void_time=0;smd_evict_void_time=0;nsup_cycle_duration=0;nsup_cycle_deleted_pct=0.00;truncate_lut=0;truncating=false;sindex_gc_cleaned=0;memory_used_bytes=21830135;memory_used_data_bytes=2562423;memory_used_index_bytes=2490496;memory_used_set_index_bytes=0;memory_used_sindex_bytes=16777216;memory_free_pct=99;xmem_id=1;available_bin_names=65529;record_proto_uncompressed_pct=0.000;record_proto_compression_ratio=1.000;query_proto_uncompressed_pct=0.000;query_proto_compression_ratio=1.000;pending_quiesce=false;effective_is_quiesced=false;nodes_quiesced=0;effective_prefer_uniform_balance=true;migrate_tx_partitions_imbalance=0;migrate_tx_instances=0;migrate_rx_instances=0;migrate_tx_partitions_active=0;migrate_rx_partitions_active=0;migrate_tx_partitions_initial=0;migrate_tx_partitions_remaining=0;migrate_tx_partitions_lead_remaining=0;migrate_rx_partitions_initial=0;migrate_rx_partitions_remaining=0;migrate_records_skipped=0;migrate_records_transmitted=0;migrate_record_retransmits=0;migrate_record_receives=0;migrate_signals_active=0;migrate_signals_remaining=0;appeals_tx_active=0;appeals_rx_active=0;appeals_tx_remaining=0;appeals_records_exonerated=0;client_tsvc_error=0;client_tsvc_timeout=0;client_proxy_complete=0;client_proxy_error=0;client_proxy_timeout=0;client_read_success=126;client_read_error=0;client_read_timeout=0;client_read_not_found=27;client_read_filtered_out=0;client_write_success=64414;client_write_error=0;client_write_timeout=0;client_write_filtered_out=0;xdr_client_write_success=0;xdr_client_write_error=0;xdr_client_write_timeout=0;client_delete_success=20;client_delete_error=0;client_delete_timeout=0;client_delete_not_found=0;client_delete_filtered_out=0;xdr_client_delete_success=0;xdr_client_delete_error=0;xdr_client_delete_timeout=0;xdr_client_delete_not_found=0;client_udf_complete=0;client_udf_error=0;client_udf_timeout=0;client_udf_filtered_out=0;client_lang_read_success=0;client_lang_write_success=0;client_lang_delete_success=0;client_lang_error=0;from_proxy_tsvc_error=0;from_proxy_tsvc_timeout=0;from_proxy_read_success=0;from_proxy_read_error=0;from_proxy_read_timeout=0;from_proxy_read_not_found=0;from_proxy_read_filtered_out=0;from_proxy_write_success=0;from_proxy_write_error=0;from_proxy_write_timeout=0;from_proxy_write_filtered_out=0;xdr_from_proxy_write_success=0;xdr_from_proxy_write_error=0;xdr_from_proxy_write_timeout=0;from_proxy_delete_success=0;from_proxy_delete_error=0;from_proxy_delete_timeout=0;from_proxy_delete_not_found=0;from_proxy_delete_filtered_out=0;xdr_from_proxy_delete_success=0;xdr_from_proxy_delete_error=0;xdr_from_proxy_delete_timeout=0;xdr_from_proxy_delete_not_found=0;from_proxy_udf_complete=0;from_proxy_udf_error=0;from_proxy_udf_timeout=0;from_proxy_udf_filtered_out=0;from_proxy_lang_read_success=0;from_proxy_lang_write_success=0;from_proxy_lang_delete_success=0;from_proxy_lang_error=0;batch_sub_tsvc_error=0;batch_sub_tsvc_timeout=0;batch_sub_proxy_complete=0;batch_sub_proxy_error=0;batch_sub_proxy_timeout=0;batch_sub_read_success=0;batch_sub_read_error=0;batch_sub_read_timeout=0;batch_sub_read_not_found=0;batch_sub_read_filtered_out=0;batch_sub_write_success=0;batch_sub_write_error=0;batch_sub_write_timeout=0;batch_sub_write_filtered_out=0;batch_sub_delete_success=0;batch_sub_delete_error=0;batch_sub_delete_timeout=0;batch_sub_delete_not_found=0;batch_sub_delete_filtered_out=0;batch_sub_udf_complete=0;batch_sub_udf_error=0;batch_sub_udf_timeout=0;batch_sub_udf_filtered_out=0;batch_sub_lang_read_success=0;batch_sub_lang_write_success=0;batch_sub_lang_delete_success=0;batch_sub_lang_error=0;from_proxy_batch_sub_tsvc_error=0;from_proxy_batch_sub_tsvc_timeout=0;from_proxy_batch_sub_read_success=0;from_proxy_batch_sub_read_error=0;from_proxy_batch_sub_read_timeout=0;from_proxy_batch_sub_read_not_found=0;from_proxy_batch_sub_read_filtered_out=0;from_proxy_batch_sub_write_success=0;from_proxy_batch_sub_write_error=0;from_proxy_batch_sub_write_timeout=0;from_proxy_batch_sub_write_filtered_out=0;from_proxy_batch_sub_delete_success=0;from_proxy_batch_sub_delete_error=0;from_proxy_batch_sub_delete_timeout=0;from_proxy_batch_sub_delete_not_found=0;from_proxy_batch_sub_delete_filtered_out=0;from_proxy_batch_sub_udf_complete=0;from_proxy_batch_sub_udf_error=0;from_proxy_batch_sub_udf_timeout=0;from_proxy_batch_sub_udf_filtered_out=0;from_proxy_batch_sub_lang_read_success=0;from_proxy_batch_sub_lang_write_success=0;from_proxy_batch_sub_lang_delete_success=0;from_proxy_batch_sub_lang_error=0;udf_sub_tsvc_error=0;udf_sub_tsvc_timeout=0;udf_sub_udf_complete=0;udf_sub_udf_error=0;udf_sub_udf_timeout=0;udf_sub_udf_filtered_out=0;udf_sub_lang_read_success=0;udf_sub_lang_write_success=0;udf_sub_lang_delete_success=0;udf_sub_lang_error=0;ops_sub_tsvc_error=0;ops_sub_tsvc_timeout=0;ops_sub_write_success=0;ops_sub_write_error=0;ops_sub_write_timeout=0;ops_sub_write_filtered_out=0;dup_res_ask=0;dup_res_respond_read=0;dup_res_respond_no_read=0;retransmit_all_read_dup_res=0;retransmit_all_write_dup_res=0;retransmit_all_write_repl_write=0;retransmit_all_delete_dup_res=0;retransmit_all_delete_repl_write=0;retransmit_all_udf_dup_res=0;retransmit_all_udf_repl_write=0;retransmit_all_batch_sub_dup_res=0;retransmit_udf_sub_dup_res=0;retransmit_udf_sub_repl_write=0;retransmit_ops_sub_dup_res=0;retransmit_ops_sub_repl_write=0;pi_query_short_basic_complete=0;pi_query_short_basic_error=0;pi_query_short_basic_timeout=0;pi_query_long_basic_complete=1;pi_query_long_basic_error=14;pi_query_long_basic_abort=0;pi_query_aggr_complete=0;pi_query_aggr_error=0;pi_query_aggr_abort=0;pi_query_udf_bg_complete=0;pi_query_udf_bg_error=0;pi_query_udf_bg_abort=0;pi_query_ops_bg_complete=0;pi_query_ops_bg_error=0;pi_query_ops_bg_abort=0;si_query_short_basic_complete=0;si_query_short_basic_error=0;si_query_short_basic_timeout=0;si_query_long_basic_complete=0;si_query_long_basic_error=0;si_query_long_basic_abort=0;si_query_aggr_complete=0;si_query_aggr_error=0;si_query_aggr_abort=0;si_query_udf_bg_complete=0;si_query_udf_bg_error=0;si_query_udf_bg_abort=0;si_query_ops_bg_complete=0;si_query_ops_bg_error=0;si_query_ops_bg_abort=0;geo_region_query_reqs=0;geo_region_query_cells=0;geo_region_query_points=0;geo_region_query_falsepos=0;re_repl_tsvc_error=0;re_repl_tsvc_timeout=0;re_repl_success=0;re_repl_error=0;re_repl_timeout=0;fail_xdr_forbidden=0;fail_key_busy=0;fail_generation=0;fail_record_too_big=0;fail_client_lost_conflict=0;fail_xdr_lost_conflict=0;deleted_last_bin=0;allow-ttl-without-nsup=false;background-query-max-rps=10000;conflict-resolution-policy=generation;conflict-resolve-writes=false;data-in-index=false;default-ttl=0;disable-cold-start-eviction=false;disable-write-dup-res=false;disallow-expunge=false;disallow-null-setname=false;enable-benchmarks-batch-sub=false;enable-benchmarks-ops-sub=false;enable-benchmarks-read=false;enable-benchmarks-udf=false;enable-benchmarks-udf-sub=false;enable-benchmarks-write=false;enable-hist-proxy=false;evict-hist-buckets=10000;evict-tenths-pct=5;force-long-queries=false;high-water-disk-pct=0;high-water-memory-pct=0;ignore-migrate-fill-delay=false;index-stage-size=1073741824;inline-short-queries=false;max-record-size=0;memory-size=4294967296;migrate-order=5;migrate-retransmit-ms=5000;migrate-sleep=1;nsup-hist-period=3600;nsup-period=0;nsup-threads=1;partition-tree-sprigs=256;prefer-uniform-balance=true;rack-id=0;read-consistency-level-override=off;reject-non-xdr-writes=false;reject-xdr-writes=false;replication-factor=2;sindex-stage-size=1073741824;single-bin=false;single-query-threads=4;stop-writes-pct=90;stop-writes-sys-memory-pct=90;strong-consistency=false;strong-consistency-allow-expunge=false;tomb-raider-eligible-age=86400;tomb-raider-period=86400;transaction-pending-limit=20;truncate-threads=4;write-commit-level-override=off;xdr-bin-tombstone-ttl=86400;xdr-tomb-raider-period=120;xdr-tomb-raider-threads=1;geo2dsphere-within.strict=true;geo2dsphere-within.min-level=1;geo2dsphere-within.max-level=20;geo2dsphere-within.max-cells=12;geo2dsphere-within.level-mod=1;geo2dsphere-within.earth-radius-meters=6371000;index-type=shmem;sindex-type=shmem;storage-engine=memory"
 	rawMetrics["namespace/bar"] = "ns_cluster_size=1;effective_replication_factor=1;objects=13403218;tombstones=0;xdr_tombstones=0;xdr_bin_cemeteries=0;master_objects=13403218;master_tombstones=0;prole_objects=0;prole_tombstones=0;non_replica_objects=0;non_replica_tombstones=0;unreplicated_records=0;dead_partitions=0;unavailable_partitions=0;clock_skew_stop_writes=false;stop_writes=false;hwm_breached=false;current_time=420112506;non_expirable_objects=0;expired_objects=0;evicted_objects=0;evict_ttl=0;evict_void_time=0;smd_evict_void_time=0;nsup_cycle_duration=0;nsup_cycle_deleted_pct=0.00;truncate_lut=0;truncating=false;sindex_gc_cleaned=0;memory_used_bytes=1751784700;memory_used_data_bytes=893978748;memory_used_index_bytes=857805952;memory_used_set_index_bytes=0;memory_used_sindex_bytes=0;memory_free_pct=59;xmem_id=2;available_bin_names=65532;device_total_bytes=17179869184;device_used_bytes=1621031664;device_free_pct=90;device_available_pct=86;storage-engine.file[0].used_bytes=1621031664;storage-engine.file[0].free_wblocks=14198;storage-engine.file[0].write_q=0;storage-engine.file[0].writes=0;storage-engine.file[0].defrag_q=0;storage-engine.file[0].defrag_reads=2;storage-engine.file[0].defrag_writes=0;storage-engine.file[0].shadow_write_q=0;storage-engine.file[0].age=-1;record_proto_uncompressed_pct=0.000;record_proto_compression_ratio=1.000;query_proto_uncompressed_pct=0.000;query_proto_compression_ratio=1.000;pending_quiesce=false;effective_is_quiesced=false;nodes_quiesced=0;effective_prefer_uniform_balance=true;migrate_tx_partitions_imbalance=0;migrate_tx_instances=0;migrate_rx_instances=0;migrate_tx_partitions_active=0;migrate_rx_partitions_active=0;migrate_tx_partitions_initial=0;migrate_tx_partitions_remaining=0;migrate_tx_partitions_lead_remaining=0;migrate_rx_partitions_initial=0;migrate_rx_partitions_remaining=0;migrate_records_skipped=0;migrate_records_transmitted=0;migrate_record_retransmits=0;migrate_record_receives=0;migrate_signals_active=0;migrate_signals_remaining=0;appeals_tx_active=0;appeals_rx_active=0;appeals_tx_remaining=0;appeals_records_exonerated=0;client_tsvc_error=0;client_tsvc_timeout=0;client_proxy_complete=0;client_proxy_error=0;client_proxy_timeout=0;client_read_success=0;client_read_error=0;client_read_timeout=0;client_read_not_found=0;client_read_filtered_out=0;client_write_success=13;client_write_error=0;client_write_timeout=0;client_write_filtered_out=0;xdr_client_write_success=0;xdr_client_write_error=0;xdr_client_write_timeout=0;client_delete_success=0;client_delete_error=0;client_delete_timeout=0;client_delete_not_found=0;client_delete_filtered_out=0;xdr_client_delete_success=0;xdr_client_delete_error=0;xdr_client_delete_timeout=0;xdr_client_delete_not_found=0;client_udf_complete=0;client_udf_error=0;client_udf_timeout=0;client_udf_filtered_out=0;client_lang_read_success=0;client_lang_write_success=0;client_lang_delete_success=0;client_lang_error=0;from_proxy_tsvc_error=0;from_proxy_tsvc_timeout=0;from_proxy_read_success=0;from_proxy_read_error=0;from_proxy_read_timeout=0;from_proxy_read_not_found=0;from_proxy_read_filtered_out=0;from_proxy_write_success=0;from_proxy_write_error=0;from_proxy_write_timeout=0;from_proxy_write_filtered_out=0;xdr_from_proxy_write_success=0;xdr_from_proxy_write_error=0;xdr_from_proxy_write_timeout=0;from_proxy_delete_success=0;from_proxy_delete_error=0;from_proxy_delete_timeout=0;from_proxy_delete_not_found=0;from_proxy_delete_filtered_out=0;xdr_from_proxy_delete_success=0;xdr_from_proxy_delete_error=0;xdr_from_proxy_delete_timeout=0;xdr_from_proxy_delete_not_found=0;from_proxy_udf_complete=0;from_proxy_udf_error=0;from_proxy_udf_timeout=0;from_proxy_udf_filtered_out=0;from_proxy_lang_read_success=0;from_proxy_lang_write_success=0;from_proxy_lang_delete_success=0;from_proxy_lang_error=0;batch_sub_tsvc_error=0;batch_sub_tsvc_timeout=0;batch_sub_proxy_complete=0;batch_sub_proxy_error=0;batch_sub_proxy_timeout=0;batch_sub_read_success=0;batch_sub_read_error=0;batch_sub_read_timeout=0;batch_sub_read_not_found=0;batch_sub_read_filtered_out=0;batch_sub_write_success=0;batch_sub_write_error=0;batch_sub_write_timeout=0;batch_sub_write_filtered_out=0;batch_sub_delete_success=0;batch_sub_delete_error=0;batch_sub_delete_timeout=0;batch_sub_delete_not_found=0;batch_sub_delete_filtered_out=0;batch_sub_udf_complete=0;batch_sub_udf_error=0;batch_sub_udf_timeout=0;batch_sub_udf_filtered_out=0;batch_sub_lang_read_success=0;batch_sub_lang_write_success=0;batch_sub_lang_delete_success=0;batch_sub_lang_error=0;from_proxy_batch_sub_tsvc_error=0;from_proxy_batch_sub_tsvc_timeout=0;from_proxy_batch_sub_read_success=0;from_proxy_batch_sub_read_error=0;from_proxy_batch_sub_read_timeout=0;from_proxy_batch_sub_read_not_found=0;from_proxy_batch_sub_read_filtered_out=0;from_proxy_batch_sub_write_success=0;from_proxy_batch_sub_write_error=0;from_proxy_batch_sub_write_timeout=0;from_proxy_batch_sub_write_filtered_out=0;from_proxy_batch_sub_delete_success=0;from_proxy_batch_sub_delete_error=0;from_proxy_batch_sub_delete_timeout=0;from_proxy_batch_sub_delete_not_found=0;from_proxy_batch_sub_delete_filtered_out=0;from_proxy_batch_sub_udf_complete=0;from_proxy_batch_sub_udf_error=0;from_proxy_batch_sub_udf_timeout=0;from_proxy_batch_sub_udf_filtered_out=0;from_proxy_batch_sub_lang_read_success=0;from_proxy_batch_sub_lang_write_success=0;from_proxy_batch_sub_lang_delete_success=0;from_proxy_batch_sub_lang_error=0;udf_sub_tsvc_error=0;udf_sub_tsvc_timeout=0;udf_sub_udf_complete=0;udf_sub_udf_error=0;udf_sub_udf_timeout=0;udf_sub_udf_filtered_out=0;udf_sub_lang_read_success=0;udf_sub_lang_write_success=0;udf_sub_lang_delete_success=0;udf_sub_lang_error=0;ops_sub_tsvc_error=0;ops_sub_tsvc_timeout=0;ops_sub_write_success=0;ops_sub_write_error=0;ops_sub_write_timeout=0;ops_sub_write_filtered_out=0;dup_res_ask=0;dup_res_respond_read=0;dup_res_respond_no_read=0;retransmit_all_read_dup_res=0;retransmit_all_write_dup_res=0;retransmit_all_write_repl_write=0;retransmit_all_delete_dup_res=0;retransmit_all_delete_repl_write=0;retransmit_all_udf_dup_res=0;retransmit_all_udf_repl_write=0;retransmit_all_batch_sub_dup_res=0;retransmit_udf_sub_dup_res=0;retransmit_udf_sub_repl_write=0;retransmit_ops_sub_dup_res=0;retransmit_ops_sub_repl_write=0;pi_query_short_basic_complete=0;pi_query_short_basic_error=0;pi_query_short_basic_timeout=0;pi_query_long_basic_complete=0;pi_query_long_basic_error=0;pi_query_long_basic_abort=0;pi_query_aggr_complete=0;pi_query_aggr_error=0;pi_query_aggr_abort=0;pi_query_udf_bg_complete=0;pi_query_udf_bg_error=0;pi_query_udf_bg_abort=0;pi_query_ops_bg_complete=0;pi_query_ops_bg_error=0;pi_query_ops_bg_abort=0;si_query_short_basic_complete=0;si_query_short_basic_error=0;si_query_short_basic_timeout=0;si_query_long_basic_complete=0;si_query_long_basic_error=0;si_query_long_basic_abort=0;si_query_aggr_complete=0;si_query_aggr_error=0;si_query_aggr_abort=0;si_query_udf_bg_complete=0;si_query_udf_bg_error=0;si_query_udf_bg_abort=0;si_query_ops_bg_complete=0;si_query_ops_bg_error=0;si_query_ops_bg_abort=0;geo_region_query_reqs=0;geo_region_query_cells=0;geo_region_query_points=0;geo_region_query_falsepos=0;re_repl_tsvc_error=0;re_repl_tsvc_timeout=0;re_repl_success=0;re_repl_error=0;re_repl_timeout=0;fail_xdr_forbidden=0;fail_key_busy=0;fail_generation=0;fail_record_too_big=0;fail_client_lost_conflict=0;fail_xdr_lost_conflict=0;deleted_last_bin=0;allow-ttl-without-nsup=false;background-query-max-rps=10000;conflict-resolution-policy=generation;conflict-resolve-writes=false;data-in-index=false;default-ttl=0;disable-cold-start-eviction=false;disable-write-dup-res=false;disallow-expunge=false;disallow-null-setname=false;enable-benchmarks-batch-sub=false;enable-benchmarks-ops-sub=false;enable-benchmarks-read=false;enable-benchmarks-udf=false;enable-benchmarks-udf-sub=false;enable-benchmarks-write=false;enable-hist-proxy=false;evict-hist-buckets=10000;evict-tenths-pct=5;force-long-queries=false;high-water-disk-pct=0;high-water-memory-pct=0;ignore-migrate-fill-delay=false;index-stage-size=1073741824;inline-short-queries=false;max-record-size=0;memory-size=4294967296;migrate-order=5;migrate-retransmit-ms=5000;migrate-sleep=1;nsup-hist-period=3600;nsup-period=0;nsup-threads=1;partition-tree-sprigs=256;prefer-uniform-balance=true;rack-id=0;read-consistency-level-override=off;reject-non-xdr-writes=false;reject-xdr-writes=false;replication-factor=2;sindex-stage-size=1073741824;single-bin=false;single-query-threads=4;stop-writes-pct=90;stop-writes-sys-memory-pct=90;strong-consistency=false;strong-consistency-allow-expunge=false;tomb-raider-eligible-age=86400;tomb-raider-period=86400;transaction-pending-limit=20;truncate-threads=4;write-commit-level-override=off;xdr-bin-tombstone-ttl=86400;xdr-tomb-raider-period=120;xdr-tomb-raider-threads=1;geo2dsphere-within.strict=true;geo2dsphere-within.min-level=1;geo2dsphere-within.max-level=20;geo2dsphere-within.max-cells=12;geo2dsphere-within.level-mod=1;geo2dsphere-within.earth-radius-meters=6371000;index-type=shmem;sindex-type=shmem;storage-engine=device;storage-engine.file[0]=/opt/aerospike/data/bar.dat;storage-engine.cache-replica-writes=false;storage-engine.cold-start-empty=false;storage-engine.commit-to-device=false;storage-engine.commit-min-size=0;storage-engine.compression=none;storage-engine.compression-acceleration=0;storage-engine.compression-level=0;storage-engine.data-in-memory=true;storage-engine.defrag-lwm-pct=50;storage-engine.defrag-queue-min=0;storage-engine.defrag-sleep=1000;storage-engine.defrag-startup-minimum=0;storage-engine.direct-files=false;storage-engine.disable-odsync=false;storage-engine.enable-benchmarks-storage=false;storage-engine.encryption-key-file=null;storage-engine.encryption-old-key-file=null;storage-engine.filesize=17179869184;storage-engine.flush-max-ms=1000;storage-engine.max-used-pct=70;storage-engine.max-write-cache=67108864;storage-engine.min-avail-pct=5;storage-engine.post-write-queue=0;storage-engine.read-page-cache=false;storage-engine.scheduler-mode=null;storage-engine.serialize-tomb-raider=false;storage-engine.sindex-startup-device-scan=false;storage-engine.tomb-raider-sleep=1000;storage-engine.write-block-size=1048576"
 	rawMetrics["sets"] = "ns=test:set=test_set2:objects=12973:tombstones=0:memory_data_bytes=845591:device_data_bytes=0:truncate_lut=0:sindexes=1:index_populating=false:truncating=false:disable-eviction=false:enable-index=false:stop-writes-count=0:stop-writes-size=0;ns=test:set=test_east_region:objects=12971:tombstones=0:memory_data_bytes=858449:device_data_bytes=0:truncate_lut=0:sindexes=0:index_populating=false:truncating=false:disable-eviction=false:enable-index=false:stop-writes-count=0:stop-writes-size=0;ns=test:set=test_vendors:objects=12970:tombstones=0:memory_data_bytes=858383:device_data_bytes=0:truncate_lut=0:sindexes=0:index_populating=false:truncating=false:disable-eviction=false:enable-index=false:stop-writes-count=0:stop-writes-size=0;ns=test:set=aerospike:objects=0:tombstones=0:memory_data_bytes=0:device_data_bytes=0:truncate_lut=0:sindexes=0:index_populating=false:truncating=false:disable-eviction=false:enable-index=false:stop-writes-count=0:stop-writes-size=0;ns=test:set=ownset:objects=0:tombstones=0:memory_data_bytes=0:device_data_bytes=0:truncate_lut=0:sindexes=0:index_populating=false:truncating=false:disable-eviction=false:enable-index=false:stop-writes-count=0:stop-writes-size=0;ns=bar:set=set2:objects=3684785:tombstones=0:memory_data_bytes=247974882:device_data_bytes=412695920:truncate_lut=0:sindexes=0:index_populating=false:truncating=false:disable-eviction=false:enable-index=false:stop-writes-count=0:stop-writes-size=0;ns=bar:set=vendors:objects=3495040:tombstones=0:memory_data_bytes=234530114:device_data_bytes=411741440:truncate_lut=0:sindexes=0:index_populating=false:truncating=false:disable-eviction=false:enable-index=false:stop-writes-count=0:stop-writes-size=0;ns=bar:set=south_region:objects=998985:tombstones=0:memory_data_bytes=65825013:device_data_bytes=127870080:truncate_lut=0:sindexes=0:index_populating=false:truncating=false:disable-eviction=false:enable-index=false:stop-writes-count=0:stop-writes-size=0;ns=bar:set=north_region:objects=998987:tombstones=0:memory_data_bytes=65825146:device_data_bytes=127870336:truncate_lut=0:sindexes=0:index_populating=false:truncating=false:disable-eviction=false:enable-index=false:stop-writes-count=0:stop-writes-size=0;ns=bar:set=east_region:objects=3226447:tombstones=0:memory_data_bytes=213999303:device_data_bytes=412985216:truncate_lut=0:sindexes=0:index_populating=false:truncating=false:disable-eviction=false:enable-index=false:stop-writes-count=0:stop-writes-size=0;ns=bar:set=west_region:objects=998974:tombstones=0:memory_data_bytes=65824290:device_data_bytes=127868672:truncate_lut=0:sindexes=0:index_populating=false:truncating=false:disable-eviction=false:enable-index=false:stop-writes-count=0:stop-writes-size=0"
-	rawMetrics["latencies"] = "batch-index:;{test}-read:msec,0.0,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00;{test}-write:msec,0.0,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00;{test}-udf:;{test}-pi-query:;{test}-si-query:;{bar}-read:;{bar}-write:msec,0.0,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00;{bar}-udf:;{bar}-pi-query:;{bar}-si-query:"
+	rawMetrics["latencies:"] = "batch-index:;{test}-read:msec,0.0,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00;{test}-write:msec,0.0,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00;{test}-udf:;{test}-pi-query:;{test}-si-query:;{bar}-read:;{bar}-write:msec,0.0,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00;{bar}-udf:;{bar}-pi-query:;{bar}-si-query:"
 	rawMetrics["sindex/test/test_sindex1"] = "entries=12972;used_bytes=16777216;entries_per_bval=12972;entries_per_rec=1;load_pct=100;load_time=0;stat_gc_recs=0"
 	rawMetrics["query-show"] = "trid=12860712447849720134:ns=test:set=test_set2:n-pids-requested=4096:n-keyds-requested=0:rps=0:active-threads=0:status=done(ok):job-progress=100.00:run-time=91:time-since-done=76964462:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=12971:recs-failed=0:from=172.17.0.6+40714:job-type=basic:net-io-bytes=2116680:net-io-time=45:socket-timeout=30000;trid=10212667924988677130:ns=test:set=test_vendors:n-pids-requested=4090:n-keyds-requested=0:rps=0:active-threads=0:status=done(abandoned-response-error):job-progress=100.00:run-time=36:time-since-done=96971708:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=2192:recs-failed=0:from=172.17.0.2+53556:job-type=basic:net-io-bytes=232535:net-io-time=0:socket-timeout=30000;trid=9038054471030658800:ns=test:set=test_vendors:n-pids-requested=4091:n-keyds-requested=0:rps=0:active-threads=0:status=done(abandoned-response-error):job-progress=100.00:run-time=36:time-since-done=96971747:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=2193:recs-failed=0:from=172.17.0.2+53548:job-type=basic:net-io-bytes=228561:net-io-time=0:socket-timeout=30000;trid=18297828132092499463:ns=test:set=test_vendors:n-pids-requested=4092:n-keyds-requested=0:rps=0:active-threads=0:status=done(abandoned-response-error):job-progress=100.00:run-time=36:time-since-done=96971786:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=2193:recs-failed=0:from=172.17.0.2+53532:job-type=basic:net-io-bytes=226885:net-io-time=0:socket-timeout=30000;trid=16496035235509212077:ns=test:set=test_vendors:n-pids-requested=4093:n-keyds-requested=0:rps=0:active-threads=0:status=done(abandoned-response-error):job-progress=100.00:run-time=36:time-since-done=96971825:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=2194:recs-failed=0:from=172.17.0.2+53518:job-type=basic:net-io-bytes=228308:net-io-time=0:socket-timeout=30000;trid=5499606219233706254:ns=test:set=test_vendors:n-pids-requested=4094:n-keyds-requested=0:rps=0:active-threads=0:status=done(abandoned-response-error):job-progress=100.00:run-time=36:time-since-done=96971864:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=2194:recs-failed=0:from=172.17.0.2+53510:job-type=basic:net-io-bytes=231002:net-io-time=0:socket-timeout=30000;trid=4355246641643620061:ns=test:set=test_vendors:n-pids-requested=4095:n-keyds-requested=0:rps=0:active-threads=0:status=done(abandoned-response-error):job-progress=100.00:run-time=36:time-since-done=96971904:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=2196:recs-failed=0:from=172.17.0.2+53502:job-type=basic:net-io-bytes=229269:net-io-time=0:socket-timeout=30000;trid=10994964236021603577:ns=test:set=test_vendors:n-pids-requested=4096:n-keyds-requested=0:rps=0:active-threads=0:status=done(abandoned-response-error):job-progress=100.00:run-time=36:time-since-done=96971943:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=2197:recs-failed=0:from=172.17.0.2+53500:job-type=basic:net-io-bytes=231177:net-io-time=0:socket-timeout=30000;trid=13990051320060701253:ns=test:set=test_vendors:n-pids-requested=4090:n-keyds-requested=0:rps=0:active-threads=0:status=done(abandoned-response-error):job-progress=100.00:run-time=36:time-since-done=96983686:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=2192:recs-failed=0:from=172.17.0.2+35732:job-type=basic:net-io-bytes=218025:net-io-time=0:socket-timeout=30000;trid=13506735252273329484:ns=test:set=test_vendors:n-pids-requested=4091:n-keyds-requested=0:rps=0:active-threads=0:status=done(abandoned-response-error):job-progress=100.00:run-time=37:time-since-done=96983725:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=2192:recs-failed=0:from=172.17.0.2+35720:job-type=basic:net-io-bytes=226786:net-io-time=0:socket-timeout=30000;trid=7603703035483518258:ns=test:set=test_vendors:n-pids-requested=4092:n-keyds-requested=0:rps=0:active-threads=0:status=done(abandoned-response-error):job-progress=100.00:run-time=36:time-since-done=96983766:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=2192:recs-failed=0:from=172.17.0.2+35710:job-type=basic:net-io-bytes=228998:net-io-time=0:socket-timeout=30000;trid=13591277360630725735:ns=test:set=test_vendors:n-pids-requested=4093:n-keyds-requested=0:rps=0:active-threads=0:status=done(abandoned-response-error):job-progress=100.00:run-time=36:time-since-done=96983805:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=2193:recs-failed=0:from=172.17.0.2+35702:job-type=basic:net-io-bytes=227783:net-io-time=0:socket-timeout=30000;trid=8120506070021718461:ns=test:set=test_vendors:n-pids-requested=4094:n-keyds-requested=0:rps=0:active-threads=0:status=done(abandoned-response-error):job-progress=100.00:run-time=36:time-since-done=96983845:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=2194:recs-failed=0:from=172.17.0.2+35690:job-type=basic:net-io-bytes=340535:net-io-time=0:socket-timeout=30000;trid=1896955730142066978:ns=test:set=test_vendors:n-pids-requested=4095:n-keyds-requested=0:rps=0:active-threads=0:status=done(abandoned-response-error):job-progress=100.00:run-time=36:time-since-done=96983884:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=2196:recs-failed=0:from=172.17.0.2+35676:job-type=basic:net-io-bytes=341889:net-io-time=0:socket-timeout=30000;trid=2711297642618297495:ns=test:set=test_vendors:n-pids-requested=4096:n-keyds-requested=0:rps=0:active-threads=0:status=done(abandoned-response-error):job-progress=100.00:run-time=43:time-since-done=96983922:recs-throttled=0:recs-filtered-meta=0:recs-filtered-bins=0:recs-succeeded=2197:recs-failed=0:from=172.17.0.2+35674:job-type=basic:net-io-bytes=226042:net-io-time=0:socket-timeout=30000"
 	rawMetrics["statistics"] = "failed_best_practices=true;cluster_size=1;cluster_key=4B8274A4C334;cluster_generation=1;cluster_principal=BB9030011AC4202;cluster_min_compatibility_id=11;cluster_max_compatibility_id=11;cluster_integrity=true;cluster_is_member=true;cluster_duplicate_nodes=null;cluster_clock_skew_stop_writes_sec=0;cluster_clock_skew_ms=0;cluster_clock_skew_outliers=null;uptime=97961;system_total_cpu_pct=6;system_user_cpu_pct=4;system_kernel_cpu_pct=2;system_free_mem_kbytes=9100968;system_free_mem_pct=74;system_thp_mem_kbytes=59392;process_cpu_pct=4;threads_joinable=9;threads_detached=70;threads_pool_total=31;threads_pool_active=27;heap_allocated_kbytes=1313306;heap_active_kbytes=1314744;heap_mapped_kbytes=1390080;heap_efficiency_pct=100;heap_site_count=0;objects=13442132;tombstones=0;info_queue=0;rw_in_progress=0;proxy_in_progress=0;tree_gc_queue=0;client_connections=2;client_connections_opened=5190;client_connections_closed=5188;heartbeat_connections=0;heartbeat_connections_opened=0;heartbeat_connections_closed=0;fabric_connections=0;fabric_connections_opened=0;fabric_connections_closed=0;heartbeat_received_self=0;heartbeat_received_foreign=0;reaped_fds=0;info_complete=108816;info_timeout=0;demarshal_error=0;early_tsvc_client_error=0;early_tsvc_from_proxy_error=0;early_tsvc_batch_sub_error=0;early_tsvc_from_proxy_batch_sub_error=0;early_tsvc_udf_sub_error=0;early_tsvc_ops_sub_error=0;long_queries_active=0;batch_index_initiate=0;batch_index_queue=0:0,0:0,0:0,0:0,0:0;batch_index_complete=0;batch_index_error=0;batch_index_timeout=0;batch_index_delay=0;batch_index_unused_buffers=0;batch_index_huge_buffers=0;batch_index_created_buffers=0;batch_index_destroyed_buffers=0;batch_index_proto_uncompressed_pct=0.000;batch_index_proto_compression_ratio=1.000;paxos_principal=BB9030011AC4202;time_since_rebalance=97888;migrate_allowed=true;migrate_partitions_remaining=0;fabric_bulk_send_rate=0;fabric_bulk_recv_rate=0;fabric_ctrl_send_rate=0;fabric_ctrl_recv_rate=0;fabric_meta_send_rate=0;fabric_meta_recv_rate=0;fabric_rw_send_rate=0;fabric_rw_recv_rate=0"
 	rawMetrics["build"] = "6.2.0.0-94-g2ccdbdd"
 	rawMetrics["service-clear-std"] = "172.17.0.3:3000"
 	rawMetrics["cluster-name"] = "null"
+	rawMetrics["get-stats:context=xdr;dc=backup_dc_asdev20"] = "lag=0;in_queue=0;in_progress=0;success=0;abandoned=0;not_found=0;filtered_out=0;retry_no_node=0;retry_conn_reset=0;retry_dest=0;recoveries=0;recoveries_pending=0;hot_keys=0;bytes_shipped=0;uncompressed_pct=0.000;compression_ratio=1.000;nodes=0;throughput=0;latency_ms=0;lap_us=12"
+	rawMetrics["raw_metrics_keys"] = "build:6.2.0.0-94-g2ccdbdd dcs=backup_dc_asdev20,a,b;src-id=0;trace-sample=0 namespaces:test;materials;employees;ns_test_1;ns_test_2;ns_test_3;ns_test_4;ns_test_5 sindex:ns=test:indexname=test_sindex1:set=test_set2:bin=occurred:type=numeric:indextype=default:context=null:state=RW"
+	rawMetrics["get-config:context=xdr"] = "dcs=backup_dc_asdev20,a,b;src-id=0;trace-sample=0"
+	rawMetrics["sindex"] = "ns=test:indexname=test_sindex1:set=test_set2:bin=occurred:type=numeric:indextype=default:context=null:state=RW"
 
 	return rawMetrics
 }
@@ -50,7 +59,7 @@ func requestInfoNamespaces(rawMetrics map[string]string) map[string]string {
 	return pass2Metrics
 }
 
-func createPassTwoExpectedOutputs(rawMetrics map[string]string) []string {
+func createNamespacePassTwoExpectedOutputs(rawMetrics map[string]string) []string {
 	lNamespaces := []string{}
 	for metricsGrpKey := range rawMetrics {
 		if strings.HasPrefix(metricsGrpKey, "namespace/") {
@@ -61,11 +70,47 @@ func createPassTwoExpectedOutputs(rawMetrics map[string]string) []string {
 	return lNamespaces
 }
 
+func copyConfigLabels() map[string]string {
+	cfgLabels := config.AeroProm.MetricLabels
+
+	returnLabelMap := make(map[string]string)
+	for key, value := range cfgLabels {
+		returnLabelMap[key] = value
+	}
+
+	return returnLabelMap
+}
+
+func createLabelByNames(labelsMap map[string]string) string {
+
+	arr_label_names := []string{}
+	createdLabelString := ""
+
+	for key := range labelsMap {
+		arr_label_names = append(arr_label_names, strings.TrimSpace(key))
+	}
+
+	// sort the keys
+	sort.Strings(arr_label_names)
+
+	for idx := range arr_label_names {
+		keyName := arr_label_names[idx]
+		value := labelsMap[keyName]
+		createdLabelString = createdLabelString + constructLabelElement(keyName, strings.TrimSpace(value))
+	}
+
+	return strings.TrimSpace(createdLabelString)
+}
+
 /*
 generated the output used by the Namespace-Watcher TestCases, the same output may not be suitable for other watchers,
 so for each data-context we need to have a method to generate expected output
 */
 func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[string][]string, map[string][]string) {
+
+	// regex to check if a stat is storage-engine
+	seDynamicExtractor := regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
+
 	lExpectedMetricNamedValues := map[string][]string{}
 	lExpectedMetricLabels := map[string][]string{}
 
@@ -88,12 +133,22 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 					fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
 					continue
 				}
+
+				isBlocked := isHelperBlockedMetric(s, config.Aerospike.NamespaceMetricsBlocklist)
+				if isBlocked {
+					continue
+				}
+				isAllowed := isHelperAllowedMetric(s, config.Aerospike.NamespaceMetricsAllowlist)
+				if !isAllowed {
+					continue
+				}
+
 				// reconvert float back to string
 				value := fmt.Sprintf("%.0f", convertedValue)
 
 				match := seDynamicExtractor.FindStringSubmatch(key)
-				// if strings.Contains(key, "[") {
 				if len(match) != 4 {
+
 					key = strings.ReplaceAll(key, "-", "_")
 					key = strings.ReplaceAll(key, ".", "_")
 
@@ -107,22 +162,28 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 						labelsArr = []string{}
 					}
 
-					labelStr := "[name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
+					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
 
+					labelsMap := copyConfigLabels()
+					labelsMap["ns"] = ns
+					labelsMap["service"] = service
+					labelsMap["cluster_name"] = clusterName
+
+					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
 					valuesArr = append(valuesArr, value)
-					labelsArr = append(labelsArr, labelStr)
+					labelsArr = append(labelsArr, sorted_label_str)
 
 					mapKeyname := makeKeyname(nsName, metric, addNsToKey)
 					lExpectedMetricNamedValues[mapKeyname] = valuesArr
 					lExpectedMetricLabels[mapKeyname] = labelsArr
 
 				} else {
+
 					metricType := match[1]
 					metricIndex := match[2]
 					metricName := match[3]
 					deviceOrFileName := stats["storage-engine."+metricType+"["+metricIndex+"]"]
 
-					// fmt.Println("metricType: ", metricType, " === metricIndex: ", metricIndex, " ==== metricName: ", metricName, " ===== deviceOrFileName: ", deviceOrFileName)
 					metric := "aerospike_namespace_storage_engine_" + metricType + "_" + metricName
 
 					valuesArr := lExpectedMetricNamedValues[metric]
@@ -134,10 +195,18 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 						labelsArr = []string{}
 					}
 
-					labelStr := "[name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"file\" value:\"" + deviceOrFileName + "\"  name:\"file_index\" value:\"" + metricIndex + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
+					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"file\" value:\"" + deviceOrFileName + "\"  name:\"file_index\" value:\"" + metricIndex + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
 
+					labelsMap := copyConfigLabels()
+					labelsMap["cluster_name"] = clusterName
+					labelsMap["file"] = deviceOrFileName
+					labelsMap["ns"] = ns
+					labelsMap["file_index"] = metricIndex
+					labelsMap["service"] = service
+
+					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
 					valuesArr = append(valuesArr, value)
-					labelsArr = append(labelsArr, labelStr)
+					labelsArr = append(labelsArr, sorted_label_str)
 
 					mapKeyname := makeKeyname(nsName, metric, addNsToKey)
 
@@ -149,4 +218,665 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 	}
 
 	return lExpectedMetricNamedValues, lExpectedMetricLabels
+}
+
+func createNodeStatsWatcherExpectedOutputs(serviceIp string) (map[string][]string, map[string][]string) {
+	lExpectedMetricNamedValues := map[string][]string{}
+	lExpectedMetricLabels := map[string][]string{}
+
+	rawMetrics := getRawMetrics()
+
+	clusterName := rawMetrics["cluster-name"]
+	service := rawMetrics["service-clear-std"]
+
+	for metricsGrpKey := range rawMetrics {
+		if strings.HasPrefix(metricsGrpKey, "statistics") {
+			grpValues := rawMetrics[metricsGrpKey]
+			stats := splitAndRetrieveStats(grpValues, ";")
+			for s, v := range stats {
+				key := s
+				convertedValue, err := convertValue(v)
+				if err != nil {
+					fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
+					continue
+				}
+
+				isBlocked := isHelperBlockedMetric(s, config.Aerospike.NodeMetricsBlocklist)
+				if isBlocked {
+					continue
+				}
+				isAllowed := isHelperAllowedMetric(s, config.Aerospike.NodeMetricsAllowlist)
+				if !isAllowed {
+					continue
+				}
+
+				// reconvert float back to string
+				value := fmt.Sprintf("%.0f", convertedValue)
+
+				key = strings.ReplaceAll(key, "-", "_")
+				key = strings.ReplaceAll(key, ".", "_")
+				metric := "aerospike_node_stats_" + key
+				valuesArr := lExpectedMetricNamedValues[metric]
+				labelsArr := lExpectedMetricLabels[metric]
+
+				if valuesArr == nil {
+					valuesArr = []string{}
+				}
+				if labelsArr == nil {
+					labelsArr = []string{}
+				}
+
+				// [name:"cluster_name" value:"null"  name:"service" value:"172.17.0.3:3000" ]
+				labelsMap := copyConfigLabels()
+				labelsMap["service"] = service
+				labelsMap["cluster_name"] = clusterName
+
+				sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+				valuesArr = append(valuesArr, value)
+				labelsArr = append(labelsArr, sorted_label_str)
+
+				mapKeyname := makeKeyname(serviceIp, metric, true)
+				lExpectedMetricNamedValues[mapKeyname] = valuesArr
+				lExpectedMetricLabels[mapKeyname] = labelsArr
+
+			}
+		}
+	}
+
+	return lExpectedMetricNamedValues, lExpectedMetricLabels
+}
+
+func createSetsWatcherExpectedOutputs(t string) (map[string][]string, map[string][]string) {
+	lExpectedMetricNamedValues := map[string][]string{}
+	lExpectedMetricLabels := map[string][]string{}
+
+	rawMetrics := getRawMetrics()
+
+	clusterName := rawMetrics["cluster-name"]
+	service := rawMetrics["service-clear-std"]
+
+	for metricsGrpKey := range rawMetrics {
+		if strings.HasPrefix(metricsGrpKey, "sets") {
+			grpValues := rawMetrics[metricsGrpKey]
+			nsWithSets := strings.Split(grpValues, ";")
+			for idx := range nsWithSets {
+
+				singleSetKeyValues := nsWithSets[idx]
+
+				stats := splitAndRetrieveStats(singleSetKeyValues, ":")
+				namespace := stats["ns"]
+				setName := stats["set"]
+
+				for s, v := range stats {
+					key := s
+					convertedValue, err := convertValue(v)
+					if err != nil {
+						fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
+						continue
+					}
+
+					isBlocked := isHelperBlockedMetric(s, config.Aerospike.SetMetricsBlocklist)
+					if isBlocked {
+						continue
+					}
+					isAllowed := isHelperAllowedMetric(s, config.Aerospike.SetMetricsAllowlist)
+					if !isAllowed {
+						continue
+					}
+					// reconvert float back to string
+					value := fmt.Sprintf("%.0f", convertedValue)
+
+					key = strings.ReplaceAll(key, "-", "_")
+					key = strings.ReplaceAll(key, ".", "_")
+					metric := "aerospike_sets_" + key
+					valuesArr := lExpectedMetricNamedValues[metric]
+					labelsArr := lExpectedMetricLabels[metric]
+
+					if valuesArr == nil {
+						valuesArr = []string{}
+					}
+					if labelsArr == nil {
+						labelsArr = []string{}
+					}
+
+					// [name:"cluster_name" value:"null"  name:"ns" value:"bar"  name:"service" value:"172.17.0.3:3000"  name:"set" value:"west_region" ]
+					mapKeyname := makeKeyname(setName, metric, true)
+					mapKeyname = makeKeyname(namespace, mapKeyname, true)
+
+					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"  name:\"set\" value:\"" + setName + "\"" + " ]"
+
+					labelsMap := copyConfigLabels()
+					labelsMap["ns"] = namespace
+					labelsMap["service"] = service
+					labelsMap["cluster_name"] = clusterName
+					labelsMap["set"] = setName
+
+					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+					valuesArr = append(valuesArr, value)
+					labelsArr = append(labelsArr, sorted_label_str)
+
+					lExpectedMetricNamedValues[mapKeyname] = valuesArr
+					lExpectedMetricLabels[mapKeyname] = labelsArr
+				}
+
+			}
+		}
+	}
+
+	return lExpectedMetricNamedValues, lExpectedMetricLabels
+}
+
+func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[string][]string, map[string][]string) {
+	lExpectedMetricNamedValues := map[string][]string{}
+	lExpectedMetricLabels := map[string][]string{}
+
+	rawMetrics := getRawMetrics()
+
+	clusterName := rawMetrics["cluster-name"]
+	service := rawMetrics["service-clear-std"]
+
+	latencyLabelGroups := []string{"0", "+Inf", "1", "2", "4", "8", "16", "32", "64", "128", "256", "512", "1024", "2048", "4096", "8192", "16384", "32768", "65536"}
+	for metricsGrpKey := range rawMetrics {
+		if strings.HasPrefix(metricsGrpKey, "latencies") {
+			grpValues := rawMetrics[metricsGrpKey]
+			latencyStatsByNamespace := strings.Split(grpValues, ";")
+			for idx := range latencyStatsByNamespace {
+
+				singleLatencyOperation := latencyStatsByNamespace[idx]
+
+				allLatencyValues := splitLatencies(singleLatencyOperation)
+				if len(allLatencyValues) == 1 {
+					continue
+				}
+				namespace, operation, _ := splitLatencyDetails(allLatencyValues)
+
+				isOperationAllowed := isLatencyOperationAllowe(operation, config.Aerospike.LatenciesMetricsAllowlist, config.Aerospike.LatenciesMetricsBlocklist)
+
+				if isOperationAllowed {
+					bucket_metric := "aerospike_latencies" + "_" + operation + "_" + "ms" + "_" + "bucket"
+					count_metric := "aerospike_latencies" + "_" + operation + "_" + "ms" + "_" + "count"
+
+					mapKeyname := service + "_" + namespace + "_" + operation
+					cntValuesArr := lExpectedMetricNamedValues[count_metric]
+					cntLabelsArr := lExpectedMetricLabels[count_metric]
+
+					// Add latency-metric-COUNT
+					if cntValuesArr == nil {
+						cntValuesArr = []string{}
+					}
+					if cntLabelsArr == nil {
+						cntLabelsArr = []string{}
+					}
+
+					labelsMap := copyConfigLabels()
+					labelsMap["ns"] = namespace
+					labelsMap["service"] = service
+					labelsMap["cluster_name"] = clusterName
+
+					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+					cntValuesArr = append(cntValuesArr, allLatencyValues[1])
+					cntLabelsArr = append(cntLabelsArr, sorted_label_str)
+
+					lExpectedMetricNamedValues[mapKeyname] = cntValuesArr
+					lExpectedMetricLabels[mapKeyname] = cntLabelsArr
+
+					// Add latency-metric-BUCKET with le
+					for idx := range allLatencyValues {
+						if idx >= 1 {
+							le := latencyLabelGroups[idx]
+							value := allLatencyValues[idx]
+
+							mapKeyname := service + "_" + namespace + "_" + operation + "_" + strings.ReplaceAll(le, "+", "")
+							bktValuesArr := lExpectedMetricNamedValues[bucket_metric]
+							bktLabelsArr := lExpectedMetricLabels[bucket_metric]
+
+							// Add latency-metric-COUNT
+							if bktValuesArr == nil {
+								bktValuesArr = []string{}
+							}
+							if bktLabelsArr == nil {
+								bktLabelsArr = []string{}
+							}
+
+							labelsMap := copyConfigLabels()
+							labelsMap["ns"] = namespace
+							labelsMap["le"] = le
+							labelsMap["service"] = service
+							labelsMap["cluster_name"] = clusterName
+
+							sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+							bktValuesArr = append(bktValuesArr, value)
+							bktLabelsArr = append(bktLabelsArr, sorted_label_str)
+
+							lExpectedMetricNamedValues[mapKeyname] = bktValuesArr
+							lExpectedMetricLabels[mapKeyname] = bktLabelsArr
+
+						}
+
+					}
+
+				} else {
+					fmt.Println("operation ", operation, "\t is NOT Allowed i.e. either in block-list or not-in-allow list")
+				}
+
+			}
+		}
+	}
+
+	return lExpectedMetricNamedValues, lExpectedMetricLabels
+}
+
+// Xdr related
+
+func createXdrsWatcherExpectedOutputs(t string) (map[string][]string, map[string][]string) {
+	lExpectedMetricNamedValues := map[string][]string{}
+	lExpectedMetricLabels := map[string][]string{}
+
+	rawMetrics := getRawMetrics()
+
+	clusterName := rawMetrics["cluster-name"]
+	service := rawMetrics["service-clear-std"]
+
+	for metricsGrpKey := range rawMetrics {
+		if strings.HasPrefix(metricsGrpKey, "get-stats:context=xdr;dc=") {
+			grpValues := rawMetrics[metricsGrpKey]
+			xdrDcInfos := strings.Split(grpValues, ";")
+			for idx := range xdrDcInfos {
+
+				singleXdrDcValues := xdrDcInfos[idx]
+
+				stats := splitAndRetrieveStats(singleXdrDcValues, ":")
+
+				dcName := strings.ReplaceAll(metricsGrpKey, "get-stats:context=xdr;dc=", "")
+
+				for s, v := range stats {
+					key := s
+					convertedValue, err := convertValue(v)
+					if err != nil {
+						fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
+						continue
+					}
+
+					isBlocked := isHelperBlockedMetric(s, config.Aerospike.XdrMetricsBlocklist)
+					if isBlocked {
+						continue
+					}
+					isAllowed := isHelperAllowedMetric(s, config.Aerospike.XdrMetricsAllowlist)
+					if !isAllowed {
+						continue
+					}
+
+					// reconvert float back to string
+					value := fmt.Sprintf("%.0f", convertedValue)
+
+					key = strings.ReplaceAll(key, "-", "_")
+					key = strings.ReplaceAll(key, ".", "_")
+					metric := "aerospike_xdr" + "_" + key
+					valuesArr := lExpectedMetricNamedValues[metric]
+					labelsArr := lExpectedMetricLabels[metric]
+
+					if valuesArr == nil {
+						valuesArr = []string{}
+					}
+					if labelsArr == nil {
+						labelsArr = []string{}
+					}
+
+					// [name:"cluster_name" value:"null"  name:"dc" value:"backup_dc_asdev20"  name:"service" value:"172.17.0.3:3000" ]
+					mapKeyname := makeKeyname(dcName, metric, true)
+					mapKeyname = makeKeyname(service, mapKeyname, true)
+
+					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"  name:\"set\" value:\"" + setName + "\"" + " ]"
+
+					labelsMap := copyConfigLabels()
+					labelsMap["dc"] = dcName
+					labelsMap["service"] = service
+					labelsMap["cluster_name"] = clusterName
+
+					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+					valuesArr = append(valuesArr, value)
+					labelsArr = append(labelsArr, sorted_label_str)
+
+					lExpectedMetricNamedValues[mapKeyname] = valuesArr
+					lExpectedMetricLabels[mapKeyname] = labelsArr
+				} // end stats for-loop
+
+			} // end xdrDcInfos
+		}
+	}
+
+	return lExpectedMetricNamedValues, lExpectedMetricLabels
+}
+
+func createXdrPassTwoExpectedOutputs(rawMetrics map[string]string) []string {
+	lXdrDc := []string{}
+	rawMetricsKeys := rawMetrics["raw_metrics_keys"]
+	contextKeys := strings.Split(rawMetricsKeys, " ")
+
+	for idx := range contextKeys {
+
+		metricsGrpKeys := contextKeys[idx]
+
+		if strings.HasPrefix(metricsGrpKeys, "dcs=") {
+
+			// we are assuming only 1 xdr dc for now
+			elements := strings.Split(metricsGrpKeys, ";")
+
+			xdr_dcs_str := elements[0]
+			xdr_dcs_str = strings.ReplaceAll(xdr_dcs_str, "dcs=", "")
+			dcs := strings.Split(xdr_dcs_str, ",")
+
+			for i := range dcs {
+				lXdrDc = append(lXdrDc, "get-stats:context=xdr;dc="+dcs[i])
+			}
+		}
+
+	}
+	return lXdrDc
+}
+
+// Sindex related methods
+type MockSindexDataGen struct {
+	// this will hold the golbal array/objects for Sindex
+	lExpectedMetricNamedValues map[string][]string
+	lExpectedMetricLabels      map[string][]string
+}
+
+func (sim *MockSindexDataGen) createSindexPassTwoExpectedOutputs(rawMetrics map[string]string) []string {
+	lSindexNames := []string{}
+	rawMetricsKeys := rawMetrics["raw_metrics_keys"]
+	contextKeys := strings.Split(rawMetricsKeys, " ")
+
+	for idx := range contextKeys {
+
+		metricsGrpKeys := contextKeys[idx]
+
+		if strings.HasPrefix(metricsGrpKeys, "sindex") {
+
+			// we are assuming only 1 xdr dc for now
+			elements := splitAndRetrieveStats(metricsGrpKeys, ":")
+
+			// in mock assuming only 1 Sindex
+			lSindexNames = append(lSindexNames, "sindex/"+elements["ns"]+"/"+elements["indexname"])
+		}
+
+	}
+
+	return lSindexNames
+
+}
+
+func (sim *MockSindexDataGen) createSindexWatcherTestData() (map[string][]string, map[string][]string) {
+
+	// re-initialize whenever called
+	sim.lExpectedMetricNamedValues = make(map[string][]string)
+	sim.lExpectedMetricLabels = make(map[string][]string)
+
+	rawMetrics := getRawMetrics()
+
+	clusterName := rawMetrics["cluster-name"]
+	service := rawMetrics["service-clear-std"]
+
+	for metricsGrpKey := range rawMetrics {
+		if strings.HasPrefix(metricsGrpKey, "sindex/") {
+			sindexInfos := rawMetrics[metricsGrpKey]
+			namespace, sindexName := sim.extractNamespaceSetSindexname(metricsGrpKey)
+			stats := splitAndRetrieveStats(sindexInfos, ";")
+			for stat, value := range stats {
+				key := stat
+				convertedValue, err := convertValue(value)
+				if err != nil {
+					fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", value, ") = error: ", err)
+					continue
+				}
+
+				isBlocked := isHelperBlockedMetric(stat, config.Aerospike.SindexMetricsBlocklist)
+				if isBlocked {
+					continue
+				}
+				isAllowed := isHelperAllowedMetric(stat, config.Aerospike.SindexMetricsAllowlist)
+				if !isAllowed {
+					continue
+				}
+
+				// reconvert float back to string
+				value := fmt.Sprintf("%.0f", convertedValue)
+
+				key = strings.ReplaceAll(key, "-", "_")
+				key = strings.ReplaceAll(key, ".", "_")
+				metric := "aerospike_sindex" + "_" + key
+				valuesArr := sim.lExpectedMetricNamedValues[metric]
+				labelsArr := sim.lExpectedMetricLabels[metric]
+
+				if valuesArr == nil {
+					valuesArr = []string{}
+				}
+				if labelsArr == nil {
+					labelsArr = []string{}
+				}
+
+				// Label: [name:"cluster_name" value:"null"  name:"ns" value:"test"  name:"service" value:"172.17.0.3:3000"  name:"sindex" value:"test_sindex1" ]
+				// service/namespace/sindexname/<metric-name>
+				mapKeyname := makeKeyname(sindexName, metric, true)
+				mapKeyname = makeKeyname(namespace, mapKeyname, true)
+				mapKeyname = makeKeyname(service, mapKeyname, true)
+
+				labelsMap := copyConfigLabels()
+				labelsMap["ns"] = namespace
+				labelsMap["sindex"] = sindexName
+				labelsMap["service"] = service
+				labelsMap["cluster_name"] = clusterName
+
+				sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+				valuesArr = append(valuesArr, value)
+				labelsArr = append(labelsArr, sorted_label_str)
+
+				sim.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+				sim.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+			}
+		}
+	}
+
+	return sim.lExpectedMetricNamedValues, sim.lExpectedMetricLabels
+}
+
+func (siMock *MockSindexDataGen) extractNamespaceSetSindexname(sindexKey string) (string, string) {
+	elements := strings.Split(sindexKey, "/")
+
+	return elements[1], elements[2]
+}
+
+// User related utilities
+type MockUsersDataGen struct {
+	lExpectedMetricNamedValues map[string][]string
+	lExpectedMetricLabels      map[string][]string
+}
+
+func (mockUsers *MockUsersDataGen) createDummyUserRoles() []*aero.UserRoles {
+	userRoles := []*aero.UserRoles{}
+
+	MAX_USERS := 4
+	MAX_READINFO := 4
+	MAX_WRITEINFO := 4
+
+	userNames := []string{"test", "admin", "app_user_1", "app_user_read_1", "app_user_rw_all"}
+
+	// we always give dummy data
+	for i := 0; i <= MAX_USERS; i++ {
+
+		if mockUsers.isUserAllowed(userNames[i]) {
+			userRoles = append(userRoles, new(aero.UserRoles))
+
+			userRoles[i].User = userNames[i]
+			userRoles[i].ConnsInUse = i * 2
+
+			for k := 0; k <= MAX_READINFO; k++ {
+				userRoles[i].ReadInfo = append(userRoles[i].ReadInfo, (k+1)*5)
+			}
+			for k := 0; k <= MAX_WRITEINFO; k++ {
+				userRoles[i].WriteInfo = append(userRoles[i].WriteInfo, (k+1)*10)
+			}
+		}
+	}
+
+	return userRoles
+}
+
+func (mockUsers *MockUsersDataGen) createMockUserData() (map[string][]string, map[string][]string) {
+	userRoles := mockUsers.createDummyUserRoles()
+
+	// re-initialize whenever called
+	mockUsers.lExpectedMetricNamedValues = make(map[string][]string)
+	mockUsers.lExpectedMetricLabels = make(map[string][]string)
+
+	rawMetrics := getRawMetrics()
+
+	clusterName := rawMetrics["cluster-name"]
+	service := rawMetrics["service-clear-std"]
+
+	readInfoStats := []string{"read_quota", "read_single_record_tps", "read_scan_query_rps", "limitless_read_scan_query"}
+	writeInfoStats := []string{"write_quota", "write_single_record_tps", "write_scan_query_rps", "limitless_write_scan_query"}
+
+	for idx := range userRoles {
+		userRole := userRoles[idx]
+
+		userName := userRole.User
+
+		// conn-in-use
+		key := "conns_in_use"
+		value := strconv.Itoa(userRole.ConnsInUse)
+
+		metric := "aerospike_users" + "_" + key
+
+		valuesArr := mockUsers.lExpectedMetricNamedValues[metric]
+		labelsArr := mockUsers.lExpectedMetricLabels[metric]
+
+		if valuesArr == nil {
+			valuesArr = []string{}
+		}
+		if labelsArr == nil {
+			labelsArr = []string{}
+		}
+
+		mapKeyname := makeKeyname(userName, metric, true)
+		mapKeyname = makeKeyname(service, mapKeyname, true)
+
+		labelsMap := copyConfigLabels()
+		labelsMap["user"] = userName
+		labelsMap["service"] = service
+		labelsMap["cluster_name"] = clusterName
+
+		sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+		valuesArr = append(valuesArr, value)
+		labelsArr = append(labelsArr, sorted_label_str)
+
+		mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+		mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+		// end: conn-in-use
+
+		// Label: [name:"cluster_name" value:"null"  name:"ns" value:"bar"  name:"service" value:"172.17.0.3:3000"  name:"set" value:"west_region" ]
+		for i := 0; i < len(readInfoStats); i++ {
+
+			key := readInfoStats[i]
+			value := strconv.Itoa(userRole.ReadInfo[i])
+
+			metric := "aerospike_users" + "_" + key
+
+			valuesArr := mockUsers.lExpectedMetricNamedValues[metric]
+			labelsArr := mockUsers.lExpectedMetricLabels[metric]
+
+			if valuesArr == nil {
+				valuesArr = []string{}
+			}
+			if labelsArr == nil {
+				labelsArr = []string{}
+			}
+
+			mapKeyname := makeKeyname(userName, metric, true)
+			mapKeyname = makeKeyname(service, mapKeyname, true)
+
+			labelsMap := copyConfigLabels()
+			labelsMap["user"] = userName
+			labelsMap["service"] = service
+			labelsMap["cluster_name"] = clusterName
+
+			sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+			valuesArr = append(valuesArr, value)
+			labelsArr = append(labelsArr, sorted_label_str)
+
+			mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+			mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+		}
+
+		// Label: [name:"cluster_name" value:"null"  name:"ns" value:"bar"  name:"service" value:"172.17.0.3:3000"  name:"set" value:"west_region" ]
+		for i := 0; i < len(writeInfoStats); i++ {
+			key := writeInfoStats[i]
+			value := strconv.Itoa(userRole.WriteInfo[i])
+
+			metric := "aerospike_users" + "_" + key
+
+			valuesArr := mockUsers.lExpectedMetricNamedValues[metric]
+			labelsArr := mockUsers.lExpectedMetricLabels[metric]
+
+			if valuesArr == nil {
+				valuesArr = []string{}
+			}
+			if labelsArr == nil {
+				labelsArr = []string{}
+			}
+
+			mapKeyname := makeKeyname(userName, metric, true)
+			mapKeyname = makeKeyname(service, mapKeyname, true)
+
+			labelsMap := copyConfigLabels()
+			labelsMap["user"] = userName
+			labelsMap["service"] = service
+			labelsMap["cluster_name"] = clusterName
+
+			sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+			valuesArr = append(valuesArr, value)
+			labelsArr = append(labelsArr, sorted_label_str)
+
+			mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+			mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+		}
+
+		// create mock output
+	}
+
+	return mockUsers.lExpectedMetricNamedValues, mockUsers.lExpectedMetricLabels
+}
+
+func (mockUsers *MockUsersDataGen) isUserAllowed(username string) bool {
+	userAllowlist := config.Aerospike.UserMetricsUsersAllowlist
+	userBlocklist := config.Aerospike.UserMetricsUsersBlocklist
+	if len(userBlocklist) == 0 && len(userAllowlist) == 0 {
+		return true
+	}
+	// check blocklist
+	for i := 0; i < len(userBlocklist); i++ {
+		if strings.EqualFold(userBlocklist[i], username) {
+			return true
+		}
+	}
+
+	// check allowlist
+	for i := 0; i < len(userAllowlist); i++ {
+		if strings.EqualFold(userAllowlist[i], username) {
+			return true
+		}
+	}
+
+	return false
 }

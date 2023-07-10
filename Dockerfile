@@ -11,6 +11,7 @@ FROM alpine:latest
 
 COPY --from=builder /aerospike-prometheus-exporter /usr/bin/aerospike-prometheus-exporter
 COPY ape.toml.template /etc/aerospike-prometheus-exporter/ape.toml.template
+COPY gauge_stats_list.toml /etc/aerospike-prometheus-exporter/gauge_stats_list.toml
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 
 RUN apk add gettext libintl \

@@ -26,6 +26,11 @@ var (
 	config   *Config
 
 	version = "v1.9.0"
+
+	// Gauge related
+	//
+	gaugeStatsFile   = flag.String("gauge-list", "/etc/aerospike-prometheus-exporter/gauge_stats_list.toml", "Gauge stats File")
+	gaugeStatHandler *GaugeStats
 )
 
 func main() {
@@ -45,6 +50,10 @@ func main() {
 	config = new(Config)
 	initConfig(*configFile, config)
 	config.validateAndUpdate()
+
+	// initialize Gauge metric definitions
+	gaugeStatHandler = new(GaugeStats)
+	initGaugeStats(*gaugeStatsFile, gaugeStatHandler)
 
 	fullHost = net.JoinHostPort(config.Aerospike.Host, strconv.Itoa(int(config.Aerospike.Port)))
 
