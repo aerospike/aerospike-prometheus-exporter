@@ -57,6 +57,13 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 				continue
 			}
 
+			// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
+			defer func() {
+				if r := recover(); r != nil {
+					log.Tracef("namespace-stats: recovered from panic while handling stat %s in %s", stat, nsName)
+				}
+			}()
+
 			// to find regular metric or storage-engine metric, we split stat [using: seDynamicExtractor RegEx]
 			//    after splitting, a storage-engine stat has 4 elements other stats have 3 elements
 			match := seDynamicExtractor.FindStringSubmatch(stat)
