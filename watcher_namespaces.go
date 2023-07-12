@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -41,7 +40,6 @@ func (nw *NamespaceWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	seDynamicExtractor := regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 	if nw.namespaceStats == nil {
-		fmt.Println("Reinitializing namespaceStats(...) ")
 		nw.namespaceStats = make(map[string]AerospikeStat)
 	}
 
@@ -56,6 +54,13 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 			if err != nil {
 				continue
 			}
+
+			// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
+			defer func() {
+				if r := recover(); r != nil {
+					log.Tracef("namespace-stats: recovered from panic while handling stat %s in %s", stat, nsName)
+				}
+			}()
 
 			// to find regular metric or storage-engine metric, we split stat [using: seDynamicExtractor RegEx]
 			//    after splitting, a storage-engine stat has 4 elements other stats have 3 elements

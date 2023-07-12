@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -56,8 +55,6 @@ func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 	}
 
 	if siw.sindexMetrics == nil {
-		fmt.Println("Reinitializing sindexStats(...) ")
-
 		siw.sindexMetrics = make(map[string]AerospikeStat)
 	}
 
@@ -80,6 +77,12 @@ func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 				asMetric = newAerospikeStat(CTX_SINDEX, stat)
 				siw.sindexMetrics[stat] = asMetric
 			}
+			// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
+			defer func() {
+				if r := recover(); r != nil {
+					log.Tracef("sindex-stats: recovered from panic while handling stat %s in %s", stat, sindexName)
+				}
+			}()
 
 			if asMetric.isAllowed {
 				desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_SINDEX)

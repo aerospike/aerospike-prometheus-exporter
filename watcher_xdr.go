@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -40,7 +39,6 @@ func (xw *XdrWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 
 	if xw.xdrMetrics == nil {
-		fmt.Println("Reinitializing xdrStats(...) ")
 		xw.xdrMetrics = make(map[string]AerospikeStat)
 	}
 
@@ -61,12 +59,18 @@ func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 				xw.xdrMetrics[stat] = asMetric
 			}
 
+			// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
+			defer func() {
+				if r := recover(); r != nil {
+					log.Tracef("xdr-stats: recovered from panic while handling stat %s in %s", stat, dcName)
+				}
+			}()
+
 			if asMetric.isAllowed {
 				desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_DC_NAME)
 				ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], dcName)
 			}
 		}
-
 	}
 
 	return nil

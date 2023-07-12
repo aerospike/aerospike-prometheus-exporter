@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,7 +30,6 @@ func (sw *SetWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 	log.Tracef("set-stats:%v", setStats)
 
 	if sw.setMetrics == nil {
-		fmt.Println("Reinitializing setStats (...)")
 		sw.setMetrics = make(map[string]AerospikeStat)
 	}
 
@@ -49,6 +47,13 @@ func (sw *SetWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 				asMetric = newAerospikeStat(CTX_SETS, stat)
 				sw.setMetrics[stat] = asMetric
 			}
+
+			// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
+			defer func() {
+				if r := recover(); r != nil {
+					log.Tracef("set-stats: recovered from panic while handling stat %s in %s", stat, stats["set"])
+				}
+			}()
 
 			if asMetric.isAllowed {
 				desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_SET)
