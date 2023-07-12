@@ -2,7 +2,8 @@ name: manual_continuous_deploy
 
 on:
  push:
-   tags: FR*
+  branches:
+    - OM72
 #    workflow_dispatch:
 #      inputs:
 #         release_tag_info:
