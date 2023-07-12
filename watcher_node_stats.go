@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/prometheus/client_golang/prometheus"
 
 	log "github.com/sirupsen/logrus"
@@ -30,7 +28,6 @@ func (sw *StatsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[s
 	log.Tracef("node-stats:%s", rawMetrics["statistics"])
 
 	if sw.nodeMetrics == nil {
-		fmt.Println("Reinitializing nodeStats(...) ")
 		sw.nodeMetrics = make(map[string]AerospikeStat)
 	}
 

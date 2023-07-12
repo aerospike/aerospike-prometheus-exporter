@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -56,8 +55,6 @@ func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 	}
 
 	if siw.sindexMetrics == nil {
-		fmt.Println("Reinitializing sindexStats(...) ")
-
 		siw.sindexMetrics = make(map[string]AerospikeStat)
 	}
 

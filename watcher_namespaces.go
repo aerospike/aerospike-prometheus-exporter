@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -41,7 +40,6 @@ func (nw *NamespaceWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	seDynamicExtractor := regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 	if nw.namespaceStats == nil {
-		fmt.Println("Reinitializing namespaceStats(...) ")
 		nw.namespaceStats = make(map[string]AerospikeStat)
 	}
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -40,7 +39,6 @@ func (xw *XdrWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 
 	if xw.xdrMetrics == nil {
-		fmt.Println("Reinitializing xdrStats(...) ")
 		xw.xdrMetrics = make(map[string]AerospikeStat)
 	}
 
@@ -73,7 +71,6 @@ func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 				ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], dcName)
 			}
 		}
-
 	}
 
 	return nil

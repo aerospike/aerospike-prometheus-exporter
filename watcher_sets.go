@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,7 +30,6 @@ func (sw *SetWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 	log.Tracef("set-stats:%v", setStats)
 
 	if sw.setMetrics == nil {
-		fmt.Println("Reinitializing setStats (...)")
 		sw.setMetrics = make(map[string]AerospikeStat)
 	}
 
