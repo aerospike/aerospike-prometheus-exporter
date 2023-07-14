@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -38,8 +39,8 @@ func (nw *NamespaceWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 // Regex for identifying storage-engine stats.
 
 func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
-	seDynamicExtractor := regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 	if nw.namespaceStats == nil {
+		fmt.Println("Reinitializing namespaceStats(...) ")
 		nw.namespaceStats = make(map[string]AerospikeStat)
 	}
 
@@ -55,38 +56,17 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 				continue
 			}
 
-			// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
-			defer func() {
-				if r := recover(); r != nil {
-					log.Tracef("namespace-stats: recovered from panic while handling stat %s in %s", stat, nsName)
-				}
-			}()
-
 			// to find regular metric or storage-engine metric, we split stat [using: seDynamicExtractor RegEx]
 			//    after splitting, a storage-engine stat has 4 elements other stats have 3 elements
-			match := seDynamicExtractor.FindStringSubmatch(stat)
 
-			// process storage engine stat
-			if len(match) == 4 {
-				statType := match[1]
-				statIndex := match[2]
-				statName := match[3]
+			fmt.Print("\t ... > Namespace: checking stat " + stat + " \t belongs to \t\t ")
+			fmt.Println(strings.HasPrefix(stat, "storage_engine"))
 
-				compositeStatName := STORAGE_ENGINE + statType + "_" + statName
-				asMetric, exists := nw.namespaceStats[compositeStatName]
-
-				if !exists {
-					asMetric = newAerospikeStat(CTX_NAMESPACE, compositeStatName)
-					nw.namespaceStats[compositeStatName] = asMetric
-				}
-
-				if asMetric.isAllowed {
-					deviceOrFileName := stats["storage-engine."+statType+"["+statIndex+"]"]
-
-					desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType)
-					ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName)
-				}
-			} else { // regular stat (i.e. non-storage-engine related)
+			if strings.HasPrefix(stat, "storage-engine") {
+				nw.handleStorageEngineStat(nsName, stat, pv, stats, ch)
+			} else if strings.HasPrefix(stat, "index-type") {
+				nw.handleIndexStat(nsName, stat, pv, stats, ch)
+			} else {
 				asMetric, exists := nw.namespaceStats[stat]
 
 				if !exists {
@@ -98,10 +78,81 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 					desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS)
 					ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName)
 				}
-
 			}
-
 		}
 	}
+	return nil
+}
+
+func (nw *NamespaceWatcher) handleStorageEngineStat(nsName string, statToProcess string, pv float64,
+	allNamespaceStats map[string]string, ch chan<- prometheus.Metric) error {
+	seDynamicExtractor := regexp.MustCompile(`(storage\-engine\|index\-type).(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
+
+	// to find regular metric or storage-engine metric, we split stat [using: seDynamicExtractor RegEx]
+	//    after splitting, a storage-engine stat has 4 elements other stats have 3 elements
+	match := seDynamicExtractor.FindStringSubmatch(statToProcess)
+	if len(match) == 4 {
+		statType := match[1]
+		statIndex := match[2]
+		statName := match[3]
+
+		compositeStatName := STORAGE_ENGINE + statType + "_" + statName
+		asMetric, exists := nw.namespaceStats[compositeStatName]
+
+		if !exists {
+			asMetric = newAerospikeStat(CTX_NAMESPACE, compositeStatName)
+			nw.namespaceStats[compositeStatName] = asMetric
+		}
+
+		defer func() {
+			// recover from panic if one occured. Set err to nil otherwise.
+			if recover() != nil {
+				log.Tracef("namespace-stats: recovered from panic while handling stat %s in %s", statToProcess, nsName)
+			}
+		}()
+
+		if asMetric.isAllowed {
+			deviceOrFileName := allNamespaceStats["storage-engine."+statType+"["+statIndex+"]"]
+
+			desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType)
+			ch <- prometheus.MustNewConstMetric(desc, valueType, pv, gClusterName, gService, nsName, statIndex, deviceOrFileName)
+		}
+	}
+
+	return nil
+}
+
+func (nw *NamespaceWatcher) handleIndexStat(nsName string, statToProcess string, pv float64,
+	allNamespaceStats map[string]string, ch chan<- prometheus.Metric) error {
+
+	fmt.Print(" \t >> \t .. Processing index-stat: ", statToProcess+" and its value: ")
+	fmt.Println(pv)
+	// indexTypeMountDynamicExtractor := regexp.MustCompile(`index\-type\.mount\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
+
+	// // to find regular metric or storage-engine metric, we split stat [using: seDynamicExtractor RegEx]
+	// //    after splitting, a storage-engine stat has 4 elements other stats have 3 elements
+	// match := indexTypeMountDynamicExtractor.FindStringSubmatch(statToProcess)
+
+	// // 0-full stat, 1-index, 2-metric-name
+	// if len(match) == 3 {
+	// 	statIndex := match[1]
+	// 	statName := match[2]
+
+	// 	compositeStatName := "INDEX_TYPE_MOUNT" + statType + "_" + statName
+	// 	asMetric, exists := nw.namespaceStats[compositeStatName]
+
+	// 	if !exists {
+	// 		asMetric = newAerospikeStat(CTX_NAMESPACE, compositeStatName)
+	// 		nw.namespaceStats[compositeStatName] = asMetric
+	// 	}
+
+	// 	if asMetric.isAllowed {
+	// 		deviceOrFileName := allNamespaceStats["storage-engine."+statType+"["+statIndex+"]"]
+
+	// 		desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType)
+	// 		ch <- prometheus.MustNewConstMetric(desc, valueType, pv, gClusterName, gService, nsName, statIndex, deviceOrFileName)
+	// 	}
+	// }
+
 	return nil
 }
