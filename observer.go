@@ -232,7 +232,9 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 		}
 	}
 
-	// info request for first set of info keys
+	// info request for first set of info keys, this retrives configs from server
+	//   from namespaces,server/node-stats, xdr
+	//   if for any context (like jobs, latencies etc.,) no configs, they are not sent to server
 	rawMetrics, err := o.requestInfo(retryCount, infoKeys)
 	if err != nil {
 		return nil, err
@@ -248,16 +250,19 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 		}
 	}
 
-	// info request for second set of info keys
+	// info request for second set of info keys, this retrieves all the stats from server
 	nRawMetrics, err := o.requestInfo(retryCount, infoKeys)
 	if err != nil {
 		return rawMetrics, err
 	}
 
+	// re-assign the stats retrieved from passTwoKeys to rawMetrics
 	rawMetrics = nRawMetrics
 
 	// sanitize the utf8 strings before sending them to watchers
-	for k, v := range rawMetrics {
+	// TODO: appending the stat to the retrieved map which is holding configs from passTwoKeys steps
+	// for k, v := range rawMetrics {  // existing code
+	for k, v := range nRawMetrics { // new change
 		rawMetrics[k] = sanitizeUTF8(v)
 	}
 
