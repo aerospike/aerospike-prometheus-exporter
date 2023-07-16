@@ -37,17 +37,17 @@ const (
 	CTX_LATENCIES  ContextType = "latencies"
 )
 
-const STORAGE_ENGINE = "storage-engine_"
-
 // below constant represent the labels we send along with metrics to Prometheus or something
-const METRIC_LABEL_CLUSTER_NAME = "cluster_name"
-const METRIC_LABEL_SERVICE = "service"
-const METRIC_LABEL_NS = "ns"
-const METRIC_LABEL_SET = "set"
-const METRIC_LABEL_LE = "le"
-const METRIC_LABEL_DC_NAME = "dc"
-const METRIC_LABEL_SINDEX = "sindex"
-const METRIC_LABEL_USER = "user"
+const (
+	METRIC_LABEL_CLUSTER_NAME = "cluster_name"
+	METRIC_LABEL_SERVICE      = "service"
+	METRIC_LABEL_NS           = "ns"
+	METRIC_LABEL_SET          = "set"
+	METRIC_LABEL_LE           = "le"
+	METRIC_LABEL_DC_NAME      = "dc"
+	METRIC_LABEL_SINDEX       = "sindex"
+	METRIC_LABEL_USER         = "user"
+)
 
 func makeMetric(namespace, name string, t metricType, constLabels map[string]string, labels ...string) promMetric {
 	promDesc := prometheus.NewDesc(
