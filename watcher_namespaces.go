@@ -9,6 +9,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	KEY_NS_METADATA = "namespaces"
+)
+
 type NamespaceWatcher struct {
 	namespaceStats map[string]AerospikeStat
 }
@@ -16,11 +20,12 @@ type NamespaceWatcher struct {
 func (nw *NamespaceWatcher) describe(ch chan<- *prometheus.Desc) {}
 
 func (nw *NamespaceWatcher) passOneKeys() []string {
-	return []string{"namespaces"}
+	// we are sending key "namespaces", server returns all the configs and stats in single call, unlike node-stats, xdr
+	return []string{KEY_NS_METADATA}
 }
 
 func (nw *NamespaceWatcher) passTwoKeys(rawMetrics map[string]string) []string {
-	s := rawMetrics["namespaces"]
+	s := rawMetrics[KEY_NS_METADATA]
 	list := strings.Split(s, ";")
 
 	var infoKeys []string
