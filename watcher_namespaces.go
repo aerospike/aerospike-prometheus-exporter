@@ -63,7 +63,7 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 			//
 			deviceType, isArrayType := nw.isStatDeviceArrayType(stat)
 			if isArrayType {
-				nw.handleArrayStats(nsName, stat, pv, stats, deviceType, ch)
+				nw.handleArrayStats(nsName, stat, pv, stats, deviceType, rawMetrics, ch)
 			} else {
 				asMetric, exists := nw.namespaceStats[stat]
 
@@ -110,7 +110,7 @@ func (nw *NamespaceWatcher) isStatDeviceArrayType(statToProcess string) (string,
 // each value of the 4 groups represents type like stats-type, index-number, sub-stat-name (like file[0].age)
 // - example: group[0]=<full-stat> , group[1]= stat-type, group[2]= array-index, group[3]= sub-stat-name
 func (nw *NamespaceWatcher) handleArrayStats(nsName string, statToProcess string, pv float64,
-	allNamespaceStats map[string]string, deviceType string,
+	allNamespaceStats map[string]string, deviceType string, rawMetrics map[string]string,
 	ch chan<- prometheus.Metric) {
 
 	regexStr := regexToExtractArrayStats[deviceType]
@@ -149,7 +149,7 @@ func (nw *NamespaceWatcher) handleArrayStats(nsName string, statToProcess string
 		deviceOrFileName := allNamespaceStats[deviceType+"."+statType+"["+statIndex+"]"]
 
 		desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType)
-		ch <- prometheus.MustNewConstMetric(desc, valueType, pv, allNamespaceStats[ikClusterName], allNamespaceStats[ikService], nsName, statIndex, deviceOrFileName)
+		ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName)
 	}
 
 }
