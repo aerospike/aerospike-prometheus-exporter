@@ -109,6 +109,8 @@ func TestNamespaceRefreshBlocklist(t *testing.T) {
  */
 func runTestcase(t *testing.T) {
 
+	nsdg := new(MockNamespaceDataGen)
+
 	gaugeStatHandler = new(GaugeStats)
 
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
@@ -178,7 +180,7 @@ func runTestcase(t *testing.T) {
 
 		for nsIndex := range arrNames {
 			tnsForNamespace := arrNames[nsIndex]
-			lExpectedMetricNamedValues, lExpectedMetricLabels := createNamespaceWatcherExpectedOutputs(tnsForNamespace, true)
+			lExpectedMetricNamedValues, lExpectedMetricLabels := nsdg.createNamespaceWatcherExpectedOutputs(tnsForNamespace, true)
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]

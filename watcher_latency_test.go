@@ -123,6 +123,8 @@ func TestLatencies_RefreshWithLabelsConfig(t *testing.T) {
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
 func latencies_runTestCase(t *testing.T) {
+	latdg := new(MockLatencyDataGen)
+
 	watcher := new(LatencyWatcher)
 
 	gaugeStatHandler = new(GaugeStats)
@@ -201,7 +203,7 @@ func latencies_runTestCase(t *testing.T) {
 		// we have only 1 service in our mock-data, however loop thru service array
 		for _, keyValue := range arrServices {
 
-			lExpectedMetricNamedValues, lExpectedMetricLabels := createLatencysWatcherExpectedOutputs(keyValue)
+			lExpectedMetricNamedValues, lExpectedMetricLabels := latdg.createLatencysWatcherExpectedOutputs(keyValue)
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]

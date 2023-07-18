@@ -128,6 +128,8 @@ func TestSets_RefreshWithLabelsConfig(t *testing.T) {
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
 func sets_runTestCase(t *testing.T) {
+	msdg := new(MockSetDataGen)
+
 	watcher := new(SetWatcher)
 
 	gaugeStatHandler = new(GaugeStats)
@@ -198,7 +200,7 @@ func sets_runTestCase(t *testing.T) {
 		// we have only 1 service in our mock-data, however loop thru service array
 		for _, namespaceWithSetName := range arrNamespaceSets {
 
-			lExpectedMetricNamedValues, lExpectedMetricLabels := createSetsWatcherExpectedOutputs(namespaceWithSetName)
+			lExpectedMetricNamedValues, lExpectedMetricLabels := msdg.createSetsWatcherExpectedOutputs(namespaceWithSetName)
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]

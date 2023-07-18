@@ -106,13 +106,20 @@ func createLabelByNames(labelsMap map[string]string) string {
 generated the output used by the Namespace-Watcher TestCases, the same output may not be suitable for other watchers,
 so for each data-context we need to have a method to generate expected output
 */
-func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[string][]string, map[string][]string) {
+// Namespace related
+type MockNamespaceDataGen struct {
+	// this will hold the golbal array/objects for Namespaces
+	lExpectedMetricNamedValues map[string][]string
+	lExpectedMetricLabels      map[string][]string
+}
+
+func (nsw *MockNamespaceDataGen) createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[string][]string, map[string][]string) {
 
 	// regex to check if a stat is storage-engine
 	seDynamicExtractor := regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 
-	lExpectedMetricNamedValues := map[string][]string{}
-	lExpectedMetricLabels := map[string][]string{}
+	nsw.lExpectedMetricNamedValues = map[string][]string{}
+	nsw.lExpectedMetricLabels = map[string][]string{}
 
 	rawMetrics := getRawMetrics()
 
@@ -153,8 +160,8 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 					key = strings.ReplaceAll(key, ".", "_")
 
 					metric := "aerospike_namespace_" + key
-					valuesArr := lExpectedMetricNamedValues[metric]
-					labelsArr := lExpectedMetricLabels[metric]
+					valuesArr := nsw.lExpectedMetricNamedValues[metric]
+					labelsArr := nsw.lExpectedMetricLabels[metric]
 					if valuesArr == nil {
 						valuesArr = []string{}
 					}
@@ -174,8 +181,8 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 					labelsArr = append(labelsArr, sorted_label_str)
 
 					mapKeyname := makeKeyname(nsName, metric, addNsToKey)
-					lExpectedMetricNamedValues[mapKeyname] = valuesArr
-					lExpectedMetricLabels[mapKeyname] = labelsArr
+					nsw.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+					nsw.lExpectedMetricLabels[mapKeyname] = labelsArr
 
 				} else {
 
@@ -186,8 +193,8 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 
 					metric := "aerospike_namespace_storage_engine_" + metricType + "_" + metricName
 
-					valuesArr := lExpectedMetricNamedValues[metric]
-					labelsArr := lExpectedMetricLabels[metric]
+					valuesArr := nsw.lExpectedMetricNamedValues[metric]
+					labelsArr := nsw.lExpectedMetricLabels[metric]
 					if valuesArr == nil {
 						valuesArr = []string{}
 					}
@@ -210,19 +217,26 @@ func createNamespaceWatcherExpectedOutputs(nsName string, addNsToKey bool) (map[
 
 					mapKeyname := makeKeyname(nsName, metric, addNsToKey)
 
-					lExpectedMetricNamedValues[mapKeyname] = valuesArr
-					lExpectedMetricLabels[mapKeyname] = labelsArr
+					nsw.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+					nsw.lExpectedMetricLabels[mapKeyname] = labelsArr
 				}
 			}
 		}
 	}
 
-	return lExpectedMetricNamedValues, lExpectedMetricLabels
+	return nsw.lExpectedMetricNamedValues, nsw.lExpectedMetricLabels
 }
 
-func createNodeStatsWatcherExpectedOutputs(serviceIp string) (map[string][]string, map[string][]string) {
-	lExpectedMetricNamedValues := map[string][]string{}
-	lExpectedMetricLabels := map[string][]string{}
+// Node-stats related
+type MockNodestatDataGen struct {
+	// this will hold the golbal array/objects for Node-stats
+	lExpectedMetricNamedValues map[string][]string
+	lExpectedMetricLabels      map[string][]string
+}
+
+func (nst *MockNodestatDataGen) createNodeStatsWatcherExpectedOutputs(serviceIp string) (map[string][]string, map[string][]string) {
+	nst.lExpectedMetricNamedValues = map[string][]string{}
+	nst.lExpectedMetricLabels = map[string][]string{}
 
 	rawMetrics := getRawMetrics()
 
@@ -256,8 +270,8 @@ func createNodeStatsWatcherExpectedOutputs(serviceIp string) (map[string][]strin
 				key = strings.ReplaceAll(key, "-", "_")
 				key = strings.ReplaceAll(key, ".", "_")
 				metric := "aerospike_node_stats_" + key
-				valuesArr := lExpectedMetricNamedValues[metric]
-				labelsArr := lExpectedMetricLabels[metric]
+				valuesArr := nst.lExpectedMetricNamedValues[metric]
+				labelsArr := nst.lExpectedMetricLabels[metric]
 
 				if valuesArr == nil {
 					valuesArr = []string{}
@@ -277,19 +291,26 @@ func createNodeStatsWatcherExpectedOutputs(serviceIp string) (map[string][]strin
 				labelsArr = append(labelsArr, sorted_label_str)
 
 				mapKeyname := makeKeyname(serviceIp, metric, true)
-				lExpectedMetricNamedValues[mapKeyname] = valuesArr
-				lExpectedMetricLabels[mapKeyname] = labelsArr
+				nst.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+				nst.lExpectedMetricLabels[mapKeyname] = labelsArr
 
 			}
 		}
 	}
 
-	return lExpectedMetricNamedValues, lExpectedMetricLabels
+	return nst.lExpectedMetricNamedValues, nst.lExpectedMetricLabels
 }
 
-func createSetsWatcherExpectedOutputs(t string) (map[string][]string, map[string][]string) {
-	lExpectedMetricNamedValues := map[string][]string{}
-	lExpectedMetricLabels := map[string][]string{}
+// Set related
+type MockSetDataGen struct {
+	// this will hold the golbal array/objects for Sets
+	lExpectedMetricNamedValues map[string][]string
+	lExpectedMetricLabels      map[string][]string
+}
+
+func (msdg *MockSetDataGen) createSetsWatcherExpectedOutputs(t string) (map[string][]string, map[string][]string) {
+	msdg.lExpectedMetricNamedValues = map[string][]string{}
+	msdg.lExpectedMetricLabels = map[string][]string{}
 
 	rawMetrics := getRawMetrics()
 
@@ -330,8 +351,8 @@ func createSetsWatcherExpectedOutputs(t string) (map[string][]string, map[string
 					key = strings.ReplaceAll(key, "-", "_")
 					key = strings.ReplaceAll(key, ".", "_")
 					metric := "aerospike_sets_" + key
-					valuesArr := lExpectedMetricNamedValues[metric]
-					labelsArr := lExpectedMetricLabels[metric]
+					valuesArr := msdg.lExpectedMetricNamedValues[metric]
+					labelsArr := msdg.lExpectedMetricLabels[metric]
 
 					if valuesArr == nil {
 						valuesArr = []string{}
@@ -356,20 +377,27 @@ func createSetsWatcherExpectedOutputs(t string) (map[string][]string, map[string
 					valuesArr = append(valuesArr, value)
 					labelsArr = append(labelsArr, sorted_label_str)
 
-					lExpectedMetricNamedValues[mapKeyname] = valuesArr
-					lExpectedMetricLabels[mapKeyname] = labelsArr
+					msdg.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+					msdg.lExpectedMetricLabels[mapKeyname] = labelsArr
 				}
 
 			}
 		}
 	}
 
-	return lExpectedMetricNamedValues, lExpectedMetricLabels
+	return msdg.lExpectedMetricNamedValues, msdg.lExpectedMetricLabels
 }
 
-func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[string][]string, map[string][]string) {
-	lExpectedMetricNamedValues := map[string][]string{}
-	lExpectedMetricLabels := map[string][]string{}
+// Latency related
+type MockLatencyDataGen struct {
+	// this will hold the golbal array/objects for Latencies
+	lExpectedMetricNamedValues map[string][]string
+	lExpectedMetricLabels      map[string][]string
+}
+
+func (ltc *MockLatencyDataGen) createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[string][]string, map[string][]string) {
+	ltc.lExpectedMetricNamedValues = map[string][]string{}
+	ltc.lExpectedMetricLabels = map[string][]string{}
 
 	rawMetrics := getRawMetrics()
 
@@ -398,8 +426,8 @@ func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[stri
 					count_metric := "aerospike_latencies" + "_" + operation + "_" + "ms" + "_" + "count"
 
 					mapKeyname := service + "_" + namespace + "_" + operation
-					cntValuesArr := lExpectedMetricNamedValues[count_metric]
-					cntLabelsArr := lExpectedMetricLabels[count_metric]
+					cntValuesArr := ltc.lExpectedMetricNamedValues[count_metric]
+					cntLabelsArr := ltc.lExpectedMetricLabels[count_metric]
 
 					// Add latency-metric-COUNT
 					if cntValuesArr == nil {
@@ -419,8 +447,8 @@ func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[stri
 					cntValuesArr = append(cntValuesArr, allLatencyValues[1])
 					cntLabelsArr = append(cntLabelsArr, sorted_label_str)
 
-					lExpectedMetricNamedValues[mapKeyname] = cntValuesArr
-					lExpectedMetricLabels[mapKeyname] = cntLabelsArr
+					ltc.lExpectedMetricNamedValues[mapKeyname] = cntValuesArr
+					ltc.lExpectedMetricLabels[mapKeyname] = cntLabelsArr
 
 					// Add latency-metric-BUCKET with le
 					for idx := range allLatencyValues {
@@ -429,8 +457,8 @@ func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[stri
 							value := allLatencyValues[idx]
 
 							mapKeyname := service + "_" + namespace + "_" + operation + "_" + strings.ReplaceAll(le, "+", "")
-							bktValuesArr := lExpectedMetricNamedValues[bucket_metric]
-							bktLabelsArr := lExpectedMetricLabels[bucket_metric]
+							bktValuesArr := ltc.lExpectedMetricNamedValues[bucket_metric]
+							bktLabelsArr := ltc.lExpectedMetricLabels[bucket_metric]
 
 							// Add latency-metric-COUNT
 							if bktValuesArr == nil {
@@ -451,8 +479,8 @@ func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[stri
 							bktValuesArr = append(bktValuesArr, value)
 							bktLabelsArr = append(bktLabelsArr, sorted_label_str)
 
-							lExpectedMetricNamedValues[mapKeyname] = bktValuesArr
-							lExpectedMetricLabels[mapKeyname] = bktLabelsArr
+							ltc.lExpectedMetricNamedValues[mapKeyname] = bktValuesArr
+							ltc.lExpectedMetricLabels[mapKeyname] = bktLabelsArr
 
 						}
 
@@ -466,14 +494,21 @@ func createLatencysWatcherExpectedOutputs(namespaceWithSetName string) (map[stri
 		}
 	}
 
-	return lExpectedMetricNamedValues, lExpectedMetricLabels
+	return ltc.lExpectedMetricNamedValues, ltc.lExpectedMetricLabels
 }
 
 // Xdr related
+type MockXdrDataGen struct {
+	// this will hold the golbal array/objects for Xdr
+	lExpectedMetricNamedValues map[string][]string
+	lExpectedMetricLabels      map[string][]string
+}
 
-func createXdrsWatcherExpectedOutputs(t string) (map[string][]string, map[string][]string) {
-	lExpectedMetricNamedValues := map[string][]string{}
-	lExpectedMetricLabels := map[string][]string{}
+func (xdr *MockXdrDataGen) createXdrsWatcherExpectedOutputs(t string) (map[string][]string, map[string][]string) {
+
+	// re-initialize whenever called
+	xdr.lExpectedMetricNamedValues = make(map[string][]string)
+	xdr.lExpectedMetricLabels = make(map[string][]string)
 
 	rawMetrics := getRawMetrics()
 
@@ -515,8 +550,8 @@ func createXdrsWatcherExpectedOutputs(t string) (map[string][]string, map[string
 					key = strings.ReplaceAll(key, "-", "_")
 					key = strings.ReplaceAll(key, ".", "_")
 					metric := "aerospike_xdr" + "_" + key
-					valuesArr := lExpectedMetricNamedValues[metric]
-					labelsArr := lExpectedMetricLabels[metric]
+					valuesArr := xdr.lExpectedMetricNamedValues[metric]
+					labelsArr := xdr.lExpectedMetricLabels[metric]
 
 					if valuesArr == nil {
 						valuesArr = []string{}
@@ -540,18 +575,18 @@ func createXdrsWatcherExpectedOutputs(t string) (map[string][]string, map[string
 					valuesArr = append(valuesArr, value)
 					labelsArr = append(labelsArr, sorted_label_str)
 
-					lExpectedMetricNamedValues[mapKeyname] = valuesArr
-					lExpectedMetricLabels[mapKeyname] = labelsArr
+					xdr.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+					xdr.lExpectedMetricLabels[mapKeyname] = labelsArr
 				} // end stats for-loop
 
 			} // end xdrDcInfos
 		}
 	}
 
-	return lExpectedMetricNamedValues, lExpectedMetricLabels
+	return xdr.lExpectedMetricNamedValues, xdr.lExpectedMetricLabels
 }
 
-func createXdrPassTwoExpectedOutputs(rawMetrics map[string]string) []string {
+func (xdr *MockXdrDataGen) createXdrPassTwoExpectedOutputs(rawMetrics map[string]string) []string {
 	lXdrDc := []string{}
 	rawMetricsKeys := rawMetrics["raw_metrics_keys"]
 	contextKeys := strings.Split(rawMetricsKeys, " ")

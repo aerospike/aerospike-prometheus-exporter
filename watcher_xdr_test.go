@@ -23,6 +23,9 @@ func TestXdr_PassOneKeys(t *testing.T) {
 }
 
 func TestXdr_PassTwoKeys(t *testing.T) {
+
+	xdrdg := new(MockXdrDataGen)
+
 	watcher := new(XdrWatcher)
 
 	rawMetrics := getRawMetrics()
@@ -30,7 +33,7 @@ func TestXdr_PassTwoKeys(t *testing.T) {
 	// simulate, as if we are sending requestInfo to AS and get the NodeStats, these are coming from mock-data-generator
 	outputs := watcher.passTwoKeys(rawMetrics)
 
-	expectedOutputs := createXdrPassTwoExpectedOutputs(rawMetrics)
+	expectedOutputs := xdrdg.createXdrPassTwoExpectedOutputs(rawMetrics)
 
 	fmt.Println("TestXdr_PassTwoKeys: outputs: ", outputs)
 
@@ -132,6 +135,8 @@ func TestXdr_Allowlist(t *testing.T) {
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
 func xdr_runTestCase(t *testing.T) {
+	xdrdg := new(MockXdrDataGen)
+
 	watcher := new(XdrWatcher)
 
 	gaugeStatHandler = new(GaugeStats)
@@ -203,7 +208,7 @@ func xdr_runTestCase(t *testing.T) {
 		// we have only 1 service in our mock-data, however loop thru service array
 		for _, xdrDcName := range arrXdrDcSets {
 
-			lExpectedMetricNamedValues, lExpectedMetricLabels := createXdrsWatcherExpectedOutputs(xdrDcName)
+			lExpectedMetricNamedValues, lExpectedMetricLabels := xdrdg.createXdrsWatcherExpectedOutputs(xdrDcName)
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]

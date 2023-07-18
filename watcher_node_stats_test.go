@@ -84,6 +84,9 @@ func TestNodeStats_Blocklist(t *testing.T) {
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
 func nodeStats_runTestCase(t *testing.T) {
+
+	nstdg := new(MockNodestatDataGen)
+
 	watcher := new(StatsWatcher)
 
 	gaugeStatHandler = new(GaugeStats)
@@ -152,7 +155,7 @@ func nodeStats_runTestCase(t *testing.T) {
 		for serviceIndex := range arrServices {
 			serviceIp := arrServices[serviceIndex]
 
-			lExpectedMetricNamedValues, lExpectedMetricLabels := createNodeStatsWatcherExpectedOutputs(serviceIp)
+			lExpectedMetricNamedValues, lExpectedMetricLabels := nstdg.createNodeStatsWatcherExpectedOutputs(serviceIp)
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]

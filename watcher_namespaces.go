@@ -12,12 +12,13 @@ import (
 const (
 	STORAGE_ENGINE = "storage-engine"
 	INDEX_TYPE     = "index-type"
+	SINDEX_TYPE    = "sindex-type"
 )
 
 var regexToExtractArrayStats = map[string]string{
 	STORAGE_ENGINE: "storage\\-engine\\.(?P<type>file|device)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
 	INDEX_TYPE:     "index\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
-	//TODO: add sindex type ( similar to INDEX_TYPE)
+	SINDEX_TYPE:    "sindex\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
 }
 
 type NamespaceWatcher struct {
@@ -61,7 +62,7 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 
 			// to find regular metric or index-type/storage-engine metric, check prefix and is it an array [i.e.: index-type.mount[0]]
 			//
-			deviceType, isArrayType := nw.isStatDeviceArrayType(stat)
+			deviceType, isArrayType := nw.checkStatPersistanceType(stat)
 			if isArrayType {
 				nw.handleArrayStats(nsName, stat, pv, stats, deviceType, rawMetrics, ch)
 			} else {
@@ -92,10 +93,15 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 // checks if the ficen stat is a storage-engine or index-type, depending on which type we decide how to process
 //
 //	multiple values will be returnd by server as storage-engine.file[0].<remaining-stat-name>
-func (nw *NamespaceWatcher) isStatDeviceArrayType(statToProcess string) (string, bool) {
+func (nw *NamespaceWatcher) checkStatPersistanceType(statToProcess string) (string, bool) {
 
+	// if starts-with index-type
+	//   if array-
+	//   else
 	if strings.HasPrefix(statToProcess, INDEX_TYPE) && strings.Contains(statToProcess, "[") {
 		return INDEX_TYPE, true
+	} else if strings.HasPrefix(statToProcess, SINDEX_TYPE) && strings.Contains(statToProcess, "[") {
+		return SINDEX_TYPE, true
 	} else if strings.HasPrefix(statToProcess, STORAGE_ENGINE) && strings.Contains(statToProcess, "[") {
 		return STORAGE_ENGINE, true
 	}
