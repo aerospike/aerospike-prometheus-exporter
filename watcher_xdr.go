@@ -14,8 +14,6 @@ const (
 	KEY_XDR_CONFIG   = "get-config:context=xdr;dc="
 )
 
-var xdr_metric_labels []string
-
 type XdrWatcher struct {
 	xdrMetrics map[string]AerospikeStat
 }
@@ -23,7 +21,7 @@ type XdrWatcher struct {
 func (xw *XdrWatcher) describe(ch chan<- *prometheus.Desc) {}
 
 func (xw *XdrWatcher) passOneKeys() []string {
-	// this is used to fetch the dcs metadata
+	// this is used to fetch the dcs metadata, we send same get-config command to fetch the dc-names required in next steps
 	return []string{KEY_XDR_METADATA}
 }
 
@@ -33,19 +31,13 @@ func (xw *XdrWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	dcsList := strings.Split(list["dcs"], ",")
 
 	// XDR stats and configs are at Namespace level also
-	s := rawMetrics[KEY_NS_METADATA]
-	listNamespaces := strings.Split(s, ";")
+	listNamespaces := strings.Split(rawMetrics[KEY_NS_METADATA], ";")
 
 	var infoKeys []string
 	for _, dc := range dcsList {
 		if dc != "" {
 			infoKeys = append(infoKeys, KEY_XDR_STAT+dc)   // Existing: aerospike_xdr
 			infoKeys = append(infoKeys, KEY_XDR_CONFIG+dc) // TODO: aerospike_xdr_dc
-
-			// for all-namespaces
-			//     infoKeys = append(infoKeys, "get-config:context=xdr;dc="+dc+";namespace="+ns) // TODO: aerospike_xdr_dc_namespace
-			//     infoKeys = append(infoKeys, "get-stats:context=xdr;dc="+dc+";namespace="+ns) // TODO: aerospike_xdr_dc_namespace
-			//  xdr_lag
 
 			// XDR configs and stats will be for each-namespace also
 			// command structure will be like get-config:context=xdr;dc=backup_dc_as8;namespace=test
@@ -60,7 +52,7 @@ func (xw *XdrWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	return infoKeys
 }
 
-// All (allowed/blocked) XDR stats. Based on the config.Aerospike.XdrMetricsAllowlist, config.Aerospike.XdrMetricsBlocklist.
+// refresh prom metrics - parse the given rawMetrics (both config and stats ) and pushed into given channel
 func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 
 	if xw.xdrMetrics == nil {
@@ -88,11 +80,13 @@ func (xw *XdrWatcher) isProcessNewway(infoKeyToProcess string) (string, string, 
 	// get-stats:context=xdr;dc=xdr_second_backup_dc_asdev20;namespace=ns_test_4 -- Process with new-metric-name format
 	// get-config:context=xdr;dc=xdr_second_backup_dc_asdev20;namespace=vendors -- Process with new-metric-name format
 
+	// splits the string into 3 parts, is-cfg/stat, dcname and namespace
 	kvInfoKeyToProcess := parseStats(infoKeyToProcess, ";")
 	_, cfgOk := kvInfoKeyToProcess["get-config:context"]
 	dcName := kvInfoKeyToProcess["dc"]
 	ns, nsOk := kvInfoKeyToProcess["namespace"]
-	// either this is a config key or a stat having namespace (both are new use-cases) hence handle in new-way
+
+	// either this is a config key or a stat having namespace (both are new use-cases) hence handle here
 	if cfgOk || nsOk {
 		return dcName, ns, true
 	}
@@ -100,9 +94,14 @@ func (xw *XdrWatcher) isProcessNewway(infoKeyToProcess string) (string, string, 
 	return dcName, ns, false
 }
 
+// internal utility process 3 categories xdr-dc-config, xdr-dc-namespace-config, xdr-dc-namespace-stats
+// this constructs metric-name in a hierarchy like xdr_dc_<stat-name>, xdr_dc_namespace_<stat-name>,
+// to avoid bct issues, only config/dc-namespace stats are parsed here
 func (xw *XdrWatcher) processValues(o *Observer, infoKeyToProcess string, xdrRawMetrics string,
 	clusterName string, service string, dcName string, ns string,
 	ch chan<- prometheus.Metric) {
+
+	log.Tracef("xdr-%s:%s", infoKeyToProcess, xdrRawMetrics)
 
 	list := parseStats(xdrRawMetrics, ";")
 
@@ -151,7 +150,7 @@ func (xw *XdrWatcher) processValues(o *Observer, infoKeyToProcess string, xdrRaw
 func (xw *XdrWatcher) refreshStatsOldway(o *Observer, infoKeyToProcess string, xdrRawMetrics string,
 	clusterName string, service string, dcName string, ns string,
 	ch chan<- prometheus.Metric) {
-	log.Tracef("xdr-stats:%s:%s", dcName, xdrRawMetrics)
+	log.Tracef("xdr-%s:%s", infoKeyToProcess, xdrRawMetrics)
 
 	stats := parseStats(xdrRawMetrics, ";")
 	for stat, value := range stats {

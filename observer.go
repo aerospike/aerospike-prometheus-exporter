@@ -257,6 +257,12 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	if err != nil {
 		return passOneOutput, err
 	}
+
+	// sanitize the utf8 strings before sending them to watchers
+	for k, v := range rawMetrics {
+		rawMetrics[k] = sanitizeUTF8(v)
+	}
+
 	// sanitize the utf8 strings before sending them to watchers
 	for i, c := range o.watchers {
 		if err := c.refresh(o, watcherInfoKeys[i], rawMetrics, ch); err != nil {
