@@ -132,6 +132,10 @@ func (nw *NamespaceWatcher) handleArrayStats(nsName string, statToProcess string
 		return
 	}
 
+	// get persistance-type
+	indexType := allNamespaceStats[INDEX_TYPE]
+	// sindexType := allNamespaceStats[SINDEX_TYPE]
+
 	statType := match[1]
 	statIndex := match[2]
 	statName := match[3]
@@ -154,8 +158,15 @@ func (nw *NamespaceWatcher) handleArrayStats(nsName string, statToProcess string
 	if asMetric.isAllowed {
 		deviceOrFileName := allNamespaceStats[deviceType+"."+statType+"["+statIndex+"]"]
 
-		desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType)
-		ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName)
+		defer func() {
+			// recover from panic if one occures. Set err to nil otherwise.
+			if recover() != nil {
+				log.Warnf("namespace-stats: recovered from panic while handling stat %s in %s", compositeStatName, nsName)
+			}
+		}()
+
+		desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType, "persistance")
+		ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName, indexType)
 	}
 
 }

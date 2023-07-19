@@ -19,6 +19,8 @@ var TESTCASE_MODE_FALSE = "false"
 
 var METRICS_CONFIG_FILE = "gauge_stats_list.toml"
 
+var MOCK_TEST_DATA_FILE = "tests/mock_test_data.txt"
+
 // var g_ns_metric_allow_list = []string{"aerospike_namespace_master_objects", "aerospike_namespace_memory_used_bytes"}
 
 func extractNamespaceFromLabel(label string) string {
