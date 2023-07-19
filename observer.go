@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -37,6 +41,9 @@ var (
 	ikClusterName = "cluster-name"
 	ikService     = "service-clear-std"
 	ikBuild       = "build"
+
+	// dump-counter, used to validate exporter
+	dumpCounter = 0
 )
 
 func initAerospikeTLS() *tls.Config {
@@ -263,6 +270,9 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 		rawMetrics[k] = sanitizeUTF8(v)
 	}
 
+	// dump raw-metrics-to-file
+	dumpRawMetricsToFile(rawMetrics)
+
 	// sanitize the utf8 strings before sending them to watchers
 	for i, c := range o.watchers {
 		if err := c.refresh(o, watcherInfoKeys[i], rawMetrics, ch); err != nil {
@@ -273,4 +283,21 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	log.Debugf("Refreshing node was successful")
 
 	return rawMetrics, nil
+}
+
+func dumpRawMetricsToFile(rawMetrics map[string]string) {
+	dumpCounter++
+	now := time.Now()
+	file_name := "raw_metrics_dump_" + strconv.Itoa(now.Nanosecond()) + "_" + strconv.Itoa(dumpCounter)
+	file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println(" dump error: ", err)
+	} else {
+		datawriter := bufio.NewWriter(file)
+		for k, v := range rawMetrics {
+			file.WriteString(k + ":" + v + "\n")
+		}
+		datawriter.Flush()
+	}
+	file.Close()
 }
