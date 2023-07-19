@@ -271,6 +271,7 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	}
 
 	// dump raw-metrics-to-file
+	dumpCounter++
 	dumpRawMetricsToFile(rawMetrics)
 
 	// sanitize the utf8 strings before sending them to watchers
@@ -287,8 +288,7 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 
 func dumpRawMetricsToFile(rawMetrics map[string]string) {
 	dumpCounter++
-	now := time.Now()
-	file_name := "raw_metrics_dump_" + strconv.Itoa(now.Nanosecond()) + "_" + strconv.Itoa(dumpCounter)
+	file_name := "raw_metrics_dump_" + strconv.Itoa(dumpCounter) + "_" + ".txt"
 	file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Println(" dump error: ", err)
@@ -297,6 +297,19 @@ func dumpRawMetricsToFile(rawMetrics map[string]string) {
 		for k, v := range rawMetrics {
 			file.WriteString(k + ":" + v + "\n")
 		}
+		datawriter.Flush()
+	}
+	file.Close()
+}
+
+func dumpPromDescMetricsToFile(desc *prometheus.Desc) {
+	file_name := "prom_desc_dump_" + strconv.Itoa(dumpCounter) + ".txt"
+	file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println(" dump error: ", err)
+	} else {
+		datawriter := bufio.NewWriter(file)
+		datawriter.WriteString(desc.String() + "\n")
 		datawriter.Flush()
 	}
 	file.Close()

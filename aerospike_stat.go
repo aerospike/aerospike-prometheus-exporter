@@ -23,6 +23,9 @@ func (as *AerospikeStat) makePromMetric(pLabels ...string) (*prometheus.Desc, pr
 		config.AeroProm.MetricLabels,
 	)
 
+	// dump Desc to file
+	dumpPromDescMetricsToFile(promDesc)
+
 	if as.mType == mtGauge {
 		return promDesc, prometheus.GaugeValue
 	}
