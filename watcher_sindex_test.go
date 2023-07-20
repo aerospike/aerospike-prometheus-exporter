@@ -27,6 +27,8 @@ func TestSindex_PassOneKeys(t *testing.T) {
 }
 
 func TestSindex_PassTwoKeys(t *testing.T) {
+	fmt.Println("initializing config ... TestSindex_PassTwoKeys")
+
 	watcher := new(SindexWatcher)
 
 	// simulate, as if we are sending requestInfo to AS and get the NodeStats, these are coming from mock-data-generator
@@ -39,8 +41,6 @@ func TestSindex_PassTwoKeys(t *testing.T) {
 
 	expectedOutputs := mas.createSindexPassTwoExpectedOutputs(mas)
 	outputs := watcher.passTwoKeys(mas.passone_outputs_map)
-
-	fmt.Println("TestSindex_PassTwoKeys: outputs: ", outputs)
 
 	assert.Equal(t, outputs, expectedOutputs)
 }

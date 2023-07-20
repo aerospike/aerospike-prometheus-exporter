@@ -37,9 +37,6 @@ func TestXdr_PassTwoKeys(t *testing.T) {
 
 	expectedOutputs := mas.createXdrPassTwoExpectedOutputs(passOneKeyOutputs)
 
-	// fmt.Println("TestXdr_PassTwoKeys: outputs: ", outputs)
-	// fmt.Println("TestXdr_PassTwoKeys: expectedOutputs: ", expectedOutputs)
-
 	for _, xdr := range outputs {
 		assert.Contains(t, expectedOutputs, xdr)
 	}
@@ -57,11 +54,12 @@ func TestXdr_RefreshDefault(t *testing.T) {
 }
 
 func TestXdr_RefreshWithLabelsConfig(t *testing.T) {
+	fmt.Println("initializing config ... TestXdr_RefreshWithLabelsConfig")
+
 	mas := new(MockAerospikeServer)
 	mas.initialize()
 	rawMetrics := mas.fetchRawMetrics()
 
-	fmt.Println("initializing config ... TestXdr_RefreshWithLabelsConfig")
 	// Initialize and validate config
 	config = new(Config)
 	initConfig(LABELS_APE_TOML, config)
@@ -103,8 +101,6 @@ func TestXdr_RefreshWithLabelsConfig(t *testing.T) {
 
 				for eachConfigMetricLabel := range config.AeroProm.MetricLabels {
 					modifiedConfigMetricLabels := strings.ReplaceAll(eachConfigMetricLabel, "=", ":")
-
-					// fmt.Println(" \t >>>> metricLabel: ", metricLabel)
 
 					assert.Contains(t, metricLabel, modifiedConfigMetricLabels)
 				}

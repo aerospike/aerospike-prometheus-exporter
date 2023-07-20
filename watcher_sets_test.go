@@ -12,6 +12,8 @@ import (
 )
 
 func TestSets_PassOneKeys(t *testing.T) {
+	fmt.Println("initializing config ... TestSets_PassOneKeys")
+
 	watcher := new(SetWatcher)
 	// Check passoneKeys
 	passOneKeys := watcher.passOneKeys()
@@ -20,6 +22,8 @@ func TestSets_PassOneKeys(t *testing.T) {
 }
 
 func TestSets_PassTwoKeys(t *testing.T) {
+	fmt.Println("initializing config ... TestSets_PassTwoKeys")
+
 	watcher := new(SetWatcher)
 
 	// mock aerospike server
@@ -28,8 +32,6 @@ func TestSets_PassTwoKeys(t *testing.T) {
 	rawMetrics := mas.fetchRawMetrics()
 	// simulate, as if we are sending requestInfo to AS and get the NodeStats, these are coming from mock-data-generator
 	outputs := watcher.passTwoKeys(rawMetrics)
-
-	fmt.Println("TestNodeStats_PassTwoKeys: outputs: ", outputs)
 
 	assert.Equal(t, outputs, []string{"sets"})
 }

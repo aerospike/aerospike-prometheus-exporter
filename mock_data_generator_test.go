@@ -278,9 +278,9 @@ func (sim *MockAerospikeServer) createSindexPassTwoExpectedOutputs(mas *MockAero
 	// rawMetricsKeys := rawMetrics["raw_metrics_keys"]
 	rawMetricsKeys := mas.fetchRawMetrics()
 
-	for k, v := range rawMetricsKeys {
+	for k := range rawMetricsKeys {
 		if strings.HasPrefix(k, "sindex/") {
-			fmt.Println(" createSindexPassTwoExpectedOutputs: k: ", k, " \tv: ", v)
+			// fmt.Println(" createSindexPassTwoExpectedOutputs: k: ", k, " \tv: ", v)
 			lSindexNames = append(lSindexNames, k)
 		}
 	}

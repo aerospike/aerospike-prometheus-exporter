@@ -12,6 +12,8 @@ import (
 )
 
 func TestNodeStats_PassOneKeys(t *testing.T) {
+	fmt.Println("initializing config ... TestNodeStats_PassOneKeys")
+
 	watcher := new(StatsWatcher)
 	// Check passoneKeys
 	passOneKeys := watcher.passOneKeys()
@@ -20,13 +22,13 @@ func TestNodeStats_PassOneKeys(t *testing.T) {
 }
 
 func TestNodeStats_PassTwoKeys(t *testing.T) {
+	fmt.Println("initializing config ... TestNodeStats_PassTwoKeys")
+
 	watcher := new(StatsWatcher)
 
 	// simulate, as if we are sending requestInfo to AS and get the NodeStats, these are coming from mock-data-generator
 	pass2Keys := make(map[string]string)
 	outputs := watcher.passTwoKeys(pass2Keys)
-
-	fmt.Println("TestNodeStats_PassTwoKeys: outputs: ", outputs)
 
 	assert.Equal(t, outputs, []string{"statistics"})
 }
@@ -157,13 +159,6 @@ func nodeStats_runTestCase(t *testing.T) {
 
 				// assert - only if the value belongs to the service we read expected values and processing
 				if strings.HasPrefix(key, serviceIp) {
-
-					// fmt.Println("\t validating key: ", key)
-					// fmt.Println("expected labels: ", expectedLabels)
-					// fmt.Println("output   metric labels: ", outpuMetricLabels)
-
-					// fmt.Println("expected outputs: ", expectedValues)
-					// fmt.Println("output   metric values: ", outputMetricValues)
 
 					assert.Contains(t, expectedValues, outputMetricValues)
 					assert.Contains(t, expectedLabels, outpuMetricLabels)

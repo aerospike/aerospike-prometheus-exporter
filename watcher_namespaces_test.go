@@ -17,7 +17,7 @@ func TestFetchNamespaces(t *testing.T) {
 	mas.initialize()
 	namespaces := mas.listNamespaces()
 
-	fmt.Println(" namespaces: ", namespaces)
+	// fmt.Println(" namespaces: ", namespaces)
 	assert.NotEmpty(t, namespaces)
 }
 
@@ -45,8 +45,8 @@ func TestPassTwoKeys(t *testing.T) {
 
 	assert := assert.New(t)
 
-	fmt.Println(" passTwokeyOutputs: ", passTwokeyOutputs)
-	fmt.Println(" expectedOutputs: ", expectedOutputs)
+	// fmt.Println(" passTwokeyOutputs: ", passTwokeyOutputs)
+	// fmt.Println(" expectedOutputs: ", expectedOutputs)
 
 	assert.NotEmpty(passTwokeyOutputs)
 	assert.NotEmpty(expectedOutputs)
@@ -133,18 +133,6 @@ func runTestcase(t *testing.T) {
 	passOneKeyOutputs := mas.requestInfoNamespaces()
 	passTwokeyOutputs := nsWatcher.passTwoKeys(passOneKeyOutputs)
 
-	// get pass2keys
-	// pass2Metrics := requestInfoNamespaces(rawMetrics)
-
-	// nsWatcher.passTwoKeys(rawMetrics)
-
-	// nsInfoKeys := createNamespacePassTwoExpectedOutputs(rawMetrics)
-	// expectedOutputs := []string{"namespace/bar", "namespace/test"}
-	// expectedOutputs := mas.createNamespacePassTwoExpectedOutputs()
-
-	// outputs := nsWatcher.passTwoKeys(passOneKeyOutputs)
-	// assert.Equal(t, passTwokeyOutputs, expectedOutputs)
-
 	err := nsWatcher.refresh(lObserver, passTwokeyOutputs, rawMetrics, ch)
 
 	if err == nil {
@@ -177,7 +165,6 @@ func runTestcase(t *testing.T) {
 				}
 
 				// Desc{fqName: "aerospike_namespac_memory_free_pct", help: "memory free pct", constLabels: {}, variableLabels: [cluster_name service ns]}
-				// fmt.Println(description)
 				metricNameFromDesc := extractMetricNameFromDesc(description)
 				namespaceFromLabel := extractNamespaceFromLabel(metricLabel)
 				// namespaceFromLabel := extractLabelNameValueFromFullLabel(metricLabel)
@@ -202,20 +189,6 @@ func runTestcase(t *testing.T) {
 		for nsIndex := range arrNames {
 			tnsForNamespace := arrNames[nsIndex]
 			lExpectedMetricNamedValues, lExpectedMetricLabels := nsdg.createNamespaceWatcherExpectedOutputs(mas, tnsForNamespace, true)
-			// fmt.Println(" looping in namespace: ", tnsForNamespace)
-			// fmt.Println(" finding outside loop mock metric labels: ", nsdg.lExpectedMetricLabels["test_on_shmem/nameclusternamevaluenamensvaluetestonshmemnameservicevalue/aerospike_namespace_tomb_raider_period"])
-			// if strings.HasPrefix(tnsForNamespace, "test_on_shmem") {
-			// 	fmt.Println("****************** PRINTING FULL MAP *************** ")
-			// 	fmt.Println()
-			// 	fmt.Println(lExpectedMetricLabels)
-			// 	fmt.Println()
-			// 	fmt.Println("****************** END PRINTING FULL MAP *************** ")
-			// }
-
-			// fmt.Println("\n**************\n\n?")
-			// fmt.Println(" len(lExpectedMetricNamedValues): ", len(lExpectedMetricNamedValues))
-			// fmt.Println("\n**************\n\n?")
-			// fmt.Println(" len(lExpectedMetricLabels): ", (lExpectedMetricLabels))
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]
@@ -227,21 +200,6 @@ func runTestcase(t *testing.T) {
 				//  a "/" because namespace can be like test and test_on_shmem,
 				if strings.HasPrefix(key, tnsForNamespace+"/") {
 
-					// if strings.HasPrefix(key, "test_on_shmem") && strings.Contains(key, "aerospike_namespace_tomb_raider_period") {
-					// 	fmt.Println(" MOCKTEST aerospike_namespace_tomb_raider_period ... ", tnsForNamespace, "--- ", key)
-					// 	fmt.Println(" finding in mock metric labels: ", nsdg.lExpectedMetricLabels[key])
-					// 	fmt.Println(" and namespace is ", tnsForNamespace)
-					// 	fmt.Println(" finding directly mock metric labels: ", nsdg.lExpectedMetricLabels["test_on_shmem/nameclusternamevaluenamensvaluetestonshmemnameservicevalue/aerospike_namespace_tomb_raider_period"])
-
-					// }
-
-					// fmt.Println("\t validating key: ", key)
-					// fmt.Println("expected labels: ", expectedLabels)
-					// fmt.Println("output   metric labels: ", outpuMetricLabels)
-
-					// fmt.Println("expected outputs: ", expectedValues)
-					// fmt.Println("output   metric values: ", outputMetricValues)
-
 					assert.Contains(t, expectedValues, outputMetricValues)
 					assert.Contains(t, expectedLabels, outpuMetricLabels)
 				}
@@ -252,6 +210,4 @@ func runTestcase(t *testing.T) {
 		fmt.Println(" Failed Refreshing, error: ", err)
 	}
 
-	// fmt.Println(" \n\n **************")
-	// fmt.Println(nsdg.lExpectedMetricLabels)
 }
