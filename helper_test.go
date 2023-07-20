@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -13,15 +14,9 @@ var LABELS_APE_TOML = "tests/labels_ape.toml"
 var NS_ALLOWLIST_APE_TOML = "tests/ns_allowlist_ape.toml"
 var NS_BLOCKLIST_APE_TOML = "tests/ns_blocklist_ape.toml"
 
-var TESTCASE_MODE = "TESTCASE_MODE"
-var TESTCASE_MODE_TRUE = "true"
-var TESTCASE_MODE_FALSE = "false"
-
 var METRICS_CONFIG_FILE = "gauge_stats_list.toml"
 
 var MOCK_TEST_DATA_FILE = "tests/mock_test_data.txt"
-
-// var g_ns_metric_allow_list = []string{"aerospike_namespace_master_objects", "aerospike_namespace_memory_used_bytes"}
 
 func extractNamespaceFromLabel(label string) string {
 	// [name:"cluster_name" value:""  name:"ns" value:"bar"  name:"service" value:"" ]
@@ -30,6 +25,14 @@ func extractNamespaceFromLabel(label string) string {
 	nsFromLabel = nsFromLabel[0:(strings.Index(nsFromLabel, "\""))]
 
 	return nsFromLabel
+}
+
+func stringifyLabel(label string) string {
+	labelReplacerFunc := strings.NewReplacer(".", "_", "-", "_", " ", "_", " ", "_", "[", "_", "]", "_", "\"", "_", ":", "_", "/", "_")
+	hypenReplacerFunc := strings.NewReplacer("_", "")
+
+	// return labelReplacerFunc.Replace(label)
+	return hypenReplacerFunc.Replace(labelReplacerFunc.Replace(label))
 }
 
 func extractLabelNameValueFromFullLabel(fullLabel string, reqName string) string {
@@ -257,4 +260,36 @@ func extractOperationFromMetric(metricName string) string {
 	operationName = operationName[0:strings.Index(operationName, "_")]
 
 	return operationName
+}
+
+func copyConfigLabels() map[string]string {
+	cfgLabels := config.AeroProm.MetricLabels
+
+	returnLabelMap := make(map[string]string)
+	for key, value := range cfgLabels {
+		returnLabelMap[key] = value
+	}
+
+	return returnLabelMap
+}
+
+func createLabelByNames(labelsMap map[string]string) string {
+
+	arr_label_names := []string{}
+	createdLabelString := ""
+
+	for key := range labelsMap {
+		arr_label_names = append(arr_label_names, strings.TrimSpace(key))
+	}
+
+	// sort the keys
+	sort.Strings(arr_label_names)
+
+	for idx := range arr_label_names {
+		keyName := arr_label_names[idx]
+		value := labelsMap[keyName]
+		createdLabelString = createdLabelString + constructLabelElement(keyName, strings.TrimSpace(value))
+	}
+
+	return strings.TrimSpace(createdLabelString)
 }

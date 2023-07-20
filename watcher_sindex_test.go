@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -31,11 +30,15 @@ func TestSindex_PassTwoKeys(t *testing.T) {
 	watcher := new(SindexWatcher)
 
 	// simulate, as if we are sending requestInfo to AS and get the NodeStats, these are coming from mock-data-generator
-	rawMetrics := getRawMetrics()
-	msdg := new(MockSindexDataGen)
-	expectedOutputs := msdg.createSindexPassTwoExpectedOutputs(rawMetrics)
+	// rawMetrics := getRawMetrics()
+	// mock aerospike server
+	mas := new(MockAerospikeServer)
+	mas.initialize()
 
-	outputs := watcher.passTwoKeys(rawMetrics)
+	// rawMetrics := mas.fetchRawMetrics()
+
+	expectedOutputs := mas.createSindexPassTwoExpectedOutputs(mas)
+	outputs := watcher.passTwoKeys(mas.passone_outputs_map)
 
 	fmt.Println("TestSindex_PassTwoKeys: outputs: ", outputs)
 
@@ -43,8 +46,6 @@ func TestSindex_PassTwoKeys(t *testing.T) {
 }
 
 func TestSindex_RefreshDefault(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestSindex_RefreshDefault")
 	// Initialize and validate config
 	config = new(Config)
@@ -54,13 +55,9 @@ func TestSindex_RefreshDefault(t *testing.T) {
 
 	// run the test-case logic
 	sindex_runTestCase(t)
-
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
 }
 
 func TestSindex_Allowlist(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestSets_Allowlist")
 	// Initialize and validate config
 	config = new(Config)
@@ -70,12 +67,11 @@ func TestSindex_Allowlist(t *testing.T) {
 
 	// run the test-case logic
 	sindex_runTestCase(t)
-
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
 }
 
 func TestSindex_RefreshWithLabelsConfig(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
+	mas := new(MockAerospikeServer)
+	mas.initialize()
 
 	fmt.Println("initializing config ... TestSindex_RefreshWithLabelsConfig")
 	// Initialize and validate config
@@ -88,7 +84,8 @@ func TestSindex_RefreshWithLabelsConfig(t *testing.T) {
 	gaugeStatHandler = new(GaugeStats)
 
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
-	rawMetrics := getRawMetrics()
+	// rawMetrics := getRawMetrics()
+	rawMetrics := mas.fetchRawMetrics()
 
 	lObserver := &Observer{}
 	ch := make(chan prometheus.Metric, 1000)
@@ -139,12 +136,17 @@ func TestSindex_RefreshWithLabelsConfig(t *testing.T) {
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
 func sindex_runTestCase(t *testing.T) {
+
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+
 	watcher := new(SindexWatcher)
 
 	gaugeStatHandler = new(GaugeStats)
 
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
-	rawMetrics := getRawMetrics()
+	// rawMetrics := getRawMetrics()
+	rawMetrics := mas.fetchRawMetrics()
 
 	lObserver := &Observer{}
 	ch := make(chan prometheus.Metric, 1000)
@@ -158,7 +160,7 @@ func sindex_runTestCase(t *testing.T) {
 	} else {
 		domore := 1
 
-		msdg := new(MockSindexDataGen)
+		msdg := new(MockSindexPromMetricGenerator)
 
 		// map of string ==> map["namespace/metric-name"]["<Label>"]
 		//  both used to assert the return values from actual code against calculated values
@@ -215,7 +217,7 @@ func sindex_runTestCase(t *testing.T) {
 		// we have only 1 service in our mock-data, however loop thru service array
 		for _, namespaceWithSindexName := range arrSindexSets {
 
-			lExpectedMetricNamedValues, lExpectedMetricLabels := msdg.createSindexWatcherTestData()
+			lExpectedMetricNamedValues, lExpectedMetricLabels := msdg.createSindexWatcherTestData(mas)
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]

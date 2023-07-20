@@ -35,6 +35,8 @@ func (nw *NamespaceWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	s := rawMetrics["namespaces"]
 	list := strings.Split(s, ";")
 
+	log.Tracef("namespaces:%s", s)
+
 	var infoKeys []string
 	for _, k := range list {
 		infoKeys = append(infoKeys, "namespace/"+k)
@@ -48,12 +50,16 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 		nw.namespaceStats = make(map[string]AerospikeStat)
 	}
 
+	// counter := 1
 	for _, ns := range infoKeys {
 		nsName := strings.ReplaceAll(ns, "namespace/", "")
 		log.Tracef("namespace-stats:%s:%s", nsName, rawMetrics[ns])
 
 		stats := parseStats(rawMetrics[ns], ";")
 		for stat, value := range stats {
+
+			// fmt.Println(" processing stat ... ", nsName, " \t stat: ", stat, " \t ", strconv.Itoa(counter))
+			// counter++
 
 			pv, err := tryConvert(value)
 			if err != nil {
@@ -90,9 +96,9 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 	return nil
 }
 
-// checks if the ficen stat is a storage-engine or index-type, depending on which type we decide how to process
+// checks if the given stat is a storage-engine or index-type, depending on which type we decide how to process
 //
-//	multiple values will be returnd by server as storage-engine.file[0].<remaining-stat-name>
+// multiple values are returnd by server as storage-engine.file[0].<remaining-stat-name>
 func (nw *NamespaceWatcher) checkStatPersistanceType(statToProcess string) (string, bool) {
 
 	// if starts-with index-type
@@ -127,13 +133,12 @@ func (nw *NamespaceWatcher) handleArrayStats(nsName string, statToProcess string
 
 	match := dynamicExtractor.FindStringSubmatch(statToProcess)
 	if len(match) != 4 {
-		//TODO: logWarn
 		log.Warnf("namespace-stats: stat %s in unexpected format, length is not 4 as per regex", statToProcess)
 		return
 	}
 
 	// get persistance-type
-	indexType := allNamespaceStats[INDEX_TYPE]
+	// indexType := allNamespaceStats[INDEX_TYPE]
 	// sindexType := allNamespaceStats[SINDEX_TYPE]
 
 	statType := match[1]
@@ -165,8 +170,11 @@ func (nw *NamespaceWatcher) handleArrayStats(nsName string, statToProcess string
 			}
 		}()
 
-		desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType, "persistance")
-		ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName, indexType)
+		//TODO: check if "persistance" is required and sent in right metric ?, if yes, how to handle sindex-type then ?
+		// desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType, "persistance")
+		// ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName, indexType)
+		desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType)
+		ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName)
 	}
 
 }

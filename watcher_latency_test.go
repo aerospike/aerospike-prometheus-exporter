@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -23,10 +22,11 @@ func TestLatencies_PassOneKeys(t *testing.T) {
 }
 
 func TestLatencies_PassTwoKeys(t *testing.T) {
-
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestLatencies_PassTwoKeys")
+
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+
 	// Initialize and validate config
 	config = new(Config)
 	initConfig(DEFAULT_APE_TOML, config)
@@ -34,19 +34,18 @@ func TestLatencies_PassTwoKeys(t *testing.T) {
 
 	watcher := new(LatencyWatcher)
 
-	rawMetrics := getRawMetrics()
+	rawMetrics := mas.fetchRawMetrics()
 	// simulate, as if we are sending requestInfo to AS and get the Latencies, these are coming from mock-data-generator
 	outputs := watcher.passTwoKeys(rawMetrics)
 
 	fmt.Println("TestLatencies_PassTwoKeys: outputs: ", outputs)
 
+	// output is not nil
 	assert.NotNil(t, outputs, "build details returns are: ", outputs)
 	assert.Equal(t, outputs, []string{"latencies:"})
 }
 
 func TestLatencies_RefreshDefault(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestLatencies_RefreshDefault")
 	// Initialize and validate config
 	config = new(Config)
@@ -56,13 +55,14 @@ func TestLatencies_RefreshDefault(t *testing.T) {
 	// run the test-case logic
 	latencies_runTestCase(t)
 
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
 }
 
 func TestLatencies_RefreshWithLabelsConfig(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestLatencies_RefreshWithLabelsConfig")
+
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+
 	// Initialize and validate config
 	config = new(Config)
 	initConfig(LABELS_APE_TOML, config)
@@ -71,15 +71,13 @@ func TestLatencies_RefreshWithLabelsConfig(t *testing.T) {
 	watcher := new(LatencyWatcher)
 
 	gaugeStatHandler = new(GaugeStats)
-
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
-	rawMetrics := getRawMetrics()
+	rawMetrics := mas.fetchRawMetrics()
 
 	lObserver := &Observer{}
 	ch := make(chan prometheus.Metric, 1000)
 	latenciesInfoKeys := watcher.passTwoKeys(rawMetrics)
 
-	watcher.passTwoKeys(rawMetrics)
 	err := watcher.refresh(lObserver, latenciesInfoKeys, rawMetrics, ch)
 
 	if err != nil {
@@ -123,22 +121,22 @@ func TestLatencies_RefreshWithLabelsConfig(t *testing.T) {
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
 func latencies_runTestCase(t *testing.T) {
-	latdg := new(MockLatencyDataGen)
 
-	watcher := new(LatencyWatcher)
+	// mock server
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+
+	latdg := new(MockLatencyPromMetricGenerator)
 
 	gaugeStatHandler = new(GaugeStats)
-
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
-	rawMetrics := getRawMetrics()
+	rawMetrics := mas.fetchRawMetrics()
 
+	watcher := new(LatencyWatcher)
 	lObserver := &Observer{}
-	ch := make(chan prometheus.Metric, 1000)
+	ch := make(chan prometheus.Metric, 10000)
+
 	latenciesInfoKeys := watcher.passTwoKeys(rawMetrics)
-
-	fmt.Println(" processing latencies with InfoKeys: ", latenciesInfoKeys)
-
-	watcher.passTwoKeys(rawMetrics)
 	err := watcher.refresh(lObserver, latenciesInfoKeys, rawMetrics, ch)
 
 	if err != nil {
@@ -203,7 +201,7 @@ func latencies_runTestCase(t *testing.T) {
 		// we have only 1 service in our mock-data, however loop thru service array
 		for _, keyValue := range arrServices {
 
-			lExpectedMetricNamedValues, lExpectedMetricLabels := latdg.createLatencysWatcherExpectedOutputs(keyValue)
+			lExpectedMetricNamedValues, lExpectedMetricLabels := latdg.createLatencysWatcherExpectedOutputs(mas, keyValue)
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]
