@@ -90,6 +90,8 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 
 					desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType)
 					ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName)
+					// desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType)
+					// nw.pushMetricToPrometheus(stat, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, desc, valueType, ch)
 				}
 			} else { // regular stat (i.e. non-storage-engine related)
 				asMetric, exists := nw.namespaceStats[stat]
@@ -101,15 +103,18 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 
 				if asMetric.isAllowed {
 
-					// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
-					defer func() {
-						if r := recover(); r != nil {
-							log.Tracef("namespace-stats: recovered from panic while handling stat %s in %s", stat, nsName)
-						}
-					}()
+					// // handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
+					// defer func() {
+					// 	if r := recover(); r != nil {
+					// 		log.Tracef("namespace-stats: recovered from panic while handling stat %s in %s", stat, nsName)
+					// 	}
+					// }()
+
+					// desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS)
+					// ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName)
 
 					desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS)
-					ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName)
+					nw.pushMetricToPrometheus(stat, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, desc, valueType, ch)
 				}
 
 			}
@@ -117,4 +122,18 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 		}
 	}
 	return nil
+}
+
+func (nw *NamespaceWatcher) pushMetricToPrometheus(stat string, pv float64, clusterName string, service string, nsName string,
+	desc *prometheus.Desc, valueType prometheus.ValueType, ch chan<- prometheus.Metric) {
+
+	// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
+	defer func() {
+		if r := recover(); r != nil {
+			log.Tracef("namespace-stats: recovered from panic while handling stat %s in %s", stat, nsName)
+		}
+	}()
+
+	ch <- prometheus.MustNewConstMetric(desc, valueType, pv, clusterName, service, nsName)
+
 }
