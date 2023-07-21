@@ -60,13 +60,6 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 				continue
 			}
 
-			// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
-			defer func() {
-				if r := recover(); r != nil {
-					log.Tracef("namespace-stats: recovered from panic while handling stat %s in %s", stat, nsName)
-				}
-			}()
-
 			// to find regular metric or storage-engine metric, we split stat [using: seDynamicExtractor RegEx]
 			//    after splitting, a storage-engine stat has 4 elements other stats have 3 elements
 			match := seDynamicExtractor.FindStringSubmatch(stat)
@@ -88,6 +81,13 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 				if asMetric.isAllowed {
 					deviceOrFileName := stats["storage-engine."+statType+"["+statIndex+"]"]
 
+					// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
+					defer func() {
+						if r := recover(); r != nil {
+							log.Tracef("namespace-stats: recovered from panic while handling stat %s in %s", stat, nsName)
+						}
+					}()
+
 					desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType+"_index", statType)
 					ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName)
 				}
@@ -100,6 +100,14 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 				}
 
 				if asMetric.isAllowed {
+
+					// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
+					defer func() {
+						if r := recover(); r != nil {
+							log.Tracef("namespace-stats: recovered from panic while handling stat %s in %s", stat, nsName)
+						}
+					}()
+
 					desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS)
 					ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName)
 				}
