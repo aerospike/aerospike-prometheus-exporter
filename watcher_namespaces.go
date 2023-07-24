@@ -36,12 +36,6 @@ func (nw *NamespaceWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	return infoKeys
 }
 
-// All (allowed/blocked) namespace stats. Based on the config.Aerospike.NamespaceMetricsAllowlist, config.Aerospike.NamespaceMetricsBlocklist.
-// TODO: move this to NamespaceWatcher -- as thie belongs there
-// var namespaceStats = make(map[string]AerospikeStat)
-
-// Regex for identifying storage-engine stats.
-
 func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	seDynamicExtractor := regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 	if nw.namespaceStats == nil {
@@ -64,7 +58,7 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 			//    after splitting, a storage-engine stat has 4 elements other stats have 3 elements
 			match := seDynamicExtractor.FindStringSubmatch(stat)
 
-			// holds the labels, values and stat holds the values by normal-stat/storage-engine-stat
+			// holds the labels, values and stat holds the object by normal-stat/storage-engine-stat
 			var labels []string
 			var labelValues []string
 			var asMetric AerospikeStat
@@ -104,21 +98,4 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 		}
 	}
 	return nil
-}
-
-func pushToPrometheus(asMetric AerospikeStat, pv float64, labels []string, labelValues []string,
-	ch chan<- prometheus.Metric) {
-
-	if asMetric.isAllowed {
-		// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
-		defer func() {
-			if r := recover(); r != nil {
-				log.Tracef("%s recovered from panic while handling stat %s", string(asMetric.context), asMetric.name)
-			}
-		}()
-
-		desc, valueType := asMetric.makePromMetric(labels...)
-		ch <- prometheus.MustNewConstMetric(desc, valueType, pv, labelValues...)
-
-	}
 }

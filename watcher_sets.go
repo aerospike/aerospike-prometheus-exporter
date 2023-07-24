@@ -34,6 +34,8 @@ func (sw *SetWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 	}
 
 	for i := range setStats {
+		clusterName := rawMetrics[ikClusterName]
+		service := rawMetrics[ikService]
 
 		stats := parseStats(setStats[i], ":")
 		for stat, value := range stats {
@@ -48,17 +50,21 @@ func (sw *SetWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 				sw.setMetrics[stat] = asMetric
 			}
 
-			// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
-			defer func() {
-				if r := recover(); r != nil {
-					log.Tracef("set-stats: recovered from panic while handling stat %s in %s", stat, stats["set"])
-				}
-			}()
+			labels := []string{METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_SET}
+			labelsValues := []string{clusterName, service, stats["ns"], stats["set"]}
+			pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
 
-			if asMetric.isAllowed {
-				desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_SET)
-				ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], stats["ns"], stats["set"])
-			}
+			// // handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
+			// defer func() {
+			// 	if r := recover(); r != nil {
+			// 		log.Tracef("set-stats: recovered from panic while handling stat %s in %s", stat, stats["set"])
+			// 	}
+			// }()
+
+			// if asMetric.isAllowed {
+			// 	desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_SET)
+			// 	ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], stats["ns"], stats["set"])
+			// }
 
 		}
 

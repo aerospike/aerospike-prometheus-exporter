@@ -36,15 +36,14 @@ func (xw *XdrWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	var infoKeys []string
 	for _, dc := range dcsList {
 		if dc != "" {
-			infoKeys = append(infoKeys, KEY_XDR_STAT+dc)   // Existing: aerospike_xdr
-			infoKeys = append(infoKeys, KEY_XDR_CONFIG+dc) // TODO: aerospike_xdr_dc
-
+			infoKeys = append(infoKeys, KEY_XDR_STAT+dc) // Existing: aerospike_xdr
+			infoKeys = append(infoKeys, KEY_XDR_CONFIG+dc)
 			// XDR configs and stats will be for each-namespace also
 			// command structure will be like get-config:context=xdr;dc=backup_dc_as8;namespace=test
 			// command structure will be like get-stat:context=xdr;dc=backup_dc_as8;namespace=test
 			for _, ns := range listNamespaces {
-				infoKeys = append(infoKeys, KEY_XDR_CONFIG+dc+";namespace="+ns) // TODO: aerospike_xdr_dc_namespace
-				infoKeys = append(infoKeys, KEY_XDR_STAT+dc+";namespace="+ns)   // TODO: aerospike_xdr_dc_namespace
+				infoKeys = append(infoKeys, KEY_XDR_CONFIG+dc+";namespace="+ns)
+				infoKeys = append(infoKeys, KEY_XDR_STAT+dc+";namespace="+ns)
 			}
 		}
 	}
@@ -52,7 +51,7 @@ func (xw *XdrWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	return infoKeys
 }
 
-// refresh prom metrics - parse the given rawMetrics (both config and stats ) and pushed into given channel
+// refresh prom metrics - parse the given rawMetrics (both config and stats ) and push to given channel
 func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 
 	if xw.xdrMetrics == nil {
@@ -62,8 +61,11 @@ func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 	clusterName := rawMetrics[ikClusterName]
 	service := rawMetrics[ikService]
 	for _, key := range infoKeys {
+
 		xdrRawMetrics := rawMetrics[key]
-		xw.handleRefreshe(o, key, xdrRawMetrics, clusterName, service, ch)
+		// find and construct metric name
+		dcName, ns, metricPrefix := xw.constructMetricNamePrefix(key)
+		xw.handleRefresh(o, key, xdrRawMetrics, clusterName, service, dcName, ns, metricPrefix, ch)
 	}
 
 	return nil
@@ -71,7 +73,7 @@ func (xw *XdrWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 
 // utility constructs the name of the metric according to the level of the stat
 // according to the order stat dc/namespace & config dc/namespace
-func (xw *XdrWatcher) constructMetricName(infoKeyToProcess string, stat string) (string, string, string) {
+func (xw *XdrWatcher) constructMetricNamePrefix(infoKeyToProcess string) (string, string, string) {
 	// get-stats:context=xdr;dc=xdr_backup_dc_asdev20 -- Process with old-metric-name format
 	// get-config:context=xdr;dc=xdr_second_backup_dc_asdev20 -- Process with new-metric-name format
 	// get-stats:context=xdr;dc=xdr_second_backup_dc_asdev20;namespace=ns_test_4 -- Process with new-metric-name format
@@ -87,18 +89,19 @@ func (xw *XdrWatcher) constructMetricName(infoKeyToProcess string, stat string) 
 	// either this is a config key or a stat having namespace (both are new use-cases) hence handle here
 
 	if cfgOk && nsOk {
-		return dcName, nsName, ("dc_namespace" + "_" + stat)
+		return dcName, nsName, ("dc_namespace")
 	} else if statOk && nsOk {
-		return dcName, nsName, ("dc_namespace" + "_" + stat)
+		return dcName, nsName, ("dc_namespace")
 	} else if cfgOk {
-		return dcName, nsName, ("dc" + "_" + stat)
+		return dcName, nsName, ("dc")
 	}
 
-	return dcName, nsName, stat // default i.e. no suffix like "dc" / "dc_namespace"
+	return dcName, nsName, "" // no-prefix/default i.e. no suffix like "dc" / "dc_namespace"
 }
 
-func (xw *XdrWatcher) handleRefreshe(o *Observer, infoKeyToProcess string, xdrRawMetrics string,
-	clusterName string, service string, ch chan<- prometheus.Metric) {
+func (xw *XdrWatcher) handleRefresh(o *Observer, infoKeyToProcess string, xdrRawMetrics string,
+	clusterName string, service string, dcName string, ns string, metricPrefix string,
+	ch chan<- prometheus.Metric) {
 	log.Tracef("xdr-%s:%s", infoKeyToProcess, xdrRawMetrics)
 
 	stats := parseStats(xdrRawMetrics, ";")
@@ -109,27 +112,23 @@ func (xw *XdrWatcher) handleRefreshe(o *Observer, infoKeyToProcess string, xdrRa
 			continue
 		}
 		asMetric, exists := xw.xdrMetrics[stat]
-
-		dcName, ns, dynamicStatname := xw.constructMetricName(infoKeyToProcess, stat)
+		dynamicStatname := metricPrefix + "_" + stat
 
 		if !exists {
 			asMetric = newAerospikeStat(CTX_XDR, dynamicStatname)
 			xw.xdrMetrics[stat] = asMetric
 		}
 
-		if asMetric.isAllowed {
+		labels := []string{METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_DC_NAME}
+		labelsValues := []string{clusterName, service, dcName}
 
-			labels := []string{METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_DC_NAME}
-			labelsValues := []string{clusterName, service, dcName}
-
-			// if namespace exists, add it to the label and label-values array
-			if len(ns) > 0 {
-				labels = []string{METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_DC_NAME, METRIC_LABEL_NS}
-				labelsValues = []string{clusterName, service, dcName, ns}
-			}
-
-			pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
+		// if namespace exists, add it to the label and label-values array
+		if len(ns) > 0 {
+			labels = []string{METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_DC_NAME, METRIC_LABEL_NS}
+			labelsValues = []string{clusterName, service, dcName, ns}
 		}
+
+		pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
 
 	}
 
