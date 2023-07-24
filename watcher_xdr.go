@@ -89,11 +89,11 @@ func (xw *XdrWatcher) constructMetricNamePrefix(infoKeyToProcess string) (string
 	// either this is a config key or a stat having namespace (both are new use-cases) hence handle here
 
 	if cfgOk && nsOk {
-		return dcName, nsName, ("dc_namespace")
+		return dcName, nsName, ("dc_namespace_")
 	} else if statOk && nsOk {
-		return dcName, nsName, ("dc_namespace")
+		return dcName, nsName, ("dc_namespace_")
 	} else if cfgOk {
-		return dcName, nsName, ("dc")
+		return dcName, nsName, ("dc_")
 	}
 
 	return dcName, nsName, "" // no-prefix/default i.e. no suffix like "dc" / "dc_namespace"
@@ -112,7 +112,7 @@ func (xw *XdrWatcher) handleRefresh(o *Observer, infoKeyToProcess string, xdrRaw
 			continue
 		}
 		asMetric, exists := xw.xdrMetrics[stat]
-		dynamicStatname := metricPrefix + "_" + stat
+		dynamicStatname := metricPrefix + stat
 
 		if !exists {
 			asMetric = newAerospikeStat(CTX_XDR, dynamicStatname)
