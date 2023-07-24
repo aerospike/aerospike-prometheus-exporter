@@ -9,12 +9,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	STORAGE_ENGINE = "storage-engine"
-	INDEX_TYPE     = "index-type"
-	SINDEX_TYPE    = "sindex-type"
-)
-
 var regexToExtractArrayStats = map[string]string{
 	STORAGE_ENGINE: "storage\\-engine\\.(?P<type>file|device)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
 	INDEX_TYPE:     "index\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",

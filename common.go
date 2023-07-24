@@ -49,6 +49,13 @@ const (
 	METRIC_LABEL_USER         = "user"
 )
 
+// constants used to identify type of metrics
+const (
+	STORAGE_ENGINE = "storage-engine"
+	INDEX_TYPE     = "index-type"
+	SINDEX_TYPE    = "sindex-type"
+)
+
 func makeMetric(namespace, name string, t metricType, constLabels map[string]string, labels ...string) promMetric {
 	promDesc := prometheus.NewDesc(
 		namespace+"_"+normalizeMetric(name),
