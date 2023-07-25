@@ -6,6 +6,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	KEY_SERVICE_CONFIG     = "get-config:context=service"
+	KEY_SERVICE_STATISTICS = "statistics"
+)
+
 type StatsWatcher struct {
 	nodeMetrics map[string]AerospikeStat
 }
@@ -17,7 +22,8 @@ func (sw *StatsWatcher) passOneKeys() []string {
 }
 
 func (sw *StatsWatcher) passTwoKeys(rawMetrics map[string]string) []string {
-	return []string{"statistics"}
+	// we need to fetch both configs and stat
+	return []string{KEY_SERVICE_CONFIG, KEY_SERVICE_STATISTICS}
 }
 
 // All (allowed/blocked) node stats. Based on the config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsBlocklist.
@@ -25,13 +31,32 @@ func (sw *StatsWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 
 func (sw *StatsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 
-	log.Tracef("node-stats:%s", rawMetrics["statistics"])
-
 	if sw.nodeMetrics == nil {
 		sw.nodeMetrics = make(map[string]AerospikeStat)
 	}
 
-	stats := parseStats(rawMetrics["statistics"], ";")
+	nodeConfigs := rawMetrics[KEY_SERVICE_CONFIG]
+	nodeStats := rawMetrics[KEY_SERVICE_STATISTICS]
+	log.Tracef("node-configs:%s", nodeConfigs)
+	log.Tracef("node-stats:%s", nodeStats)
+
+	clusterName := rawMetrics[ikClusterName]
+	service := rawMetrics[ikService]
+
+	// we are sending configs and stats in same refresh call, as both are being sent to prom, instead of doing prom-push in 2 functions
+	// handle configs
+	sw.handleRefresh(o, nodeConfigs, clusterName, service, ch)
+
+	// handle stats
+	sw.handleRefresh(o, nodeStats, clusterName, service, ch)
+
+	return nil
+}
+
+func (sw *StatsWatcher) handleRefresh(o *Observer, nodeRawMetrics string, clusterName string, service string,
+	ch chan<- prometheus.Metric) {
+
+	stats := parseStats(nodeRawMetrics, ";")
 
 	for stat, value := range stats {
 		pv, err := tryConvert(value)
@@ -45,18 +70,10 @@ func (sw *StatsWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[s
 			sw.nodeMetrics[stat] = asMetric
 		}
 
-		// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
-		defer func() {
-			if r := recover(); r != nil {
-				log.Tracef("node-stats: recovered from panic while handling stat %s in %s", stat, gService)
-			}
-		}()
+		labels := []string{METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE}
+		labelsValues := []string{clusterName, service}
 
-		if asMetric.isAllowed {
-			desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE)
-			ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService])
-		}
+		pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
+
 	}
-
-	return nil
 }
