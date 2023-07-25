@@ -12,7 +12,8 @@ type LatencyWatcher struct {
 func (lw *LatencyWatcher) describe(ch chan<- *prometheus.Desc) {}
 
 func (lw *LatencyWatcher) passOneKeys() []string {
-	return []string{"build"}
+	// return []string{"build"}
+	return nil
 }
 
 func (lw *LatencyWatcher) passTwoKeys(rawMetrics map[string]string) (latencyCommands []string) {

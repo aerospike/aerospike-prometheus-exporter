@@ -231,9 +231,13 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 			infoKeys = append(infoKeys, keys...)
 		}
 	}
+	// append infoKey "build" - this is removed from WatcherLatencies to avoid forced watcher sequence during refresh
+	infoKeys = append(infoKeys, "build")
 
-	// info request for first set of info keys
-	rawMetrics, err := o.requestInfo(retryCount, infoKeys)
+	// info request for first set of info keys, this retrives configs from server
+	//   from namespaces,server/node-stats, xdr
+	//   if for any context (like jobs, latencies etc.,) no configs, they are not sent to server
+	passOneOutput, err := o.requestInfo(retryCount, infoKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -242,25 +246,24 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	infoKeys = []string{ikClusterName, ikService, ikBuild}
 	watcherInfoKeys := make([][]string, len(o.watchers))
 	for i, c := range o.watchers {
-		if keys := c.passTwoKeys(rawMetrics); len(keys) > 0 {
+		if keys := c.passTwoKeys(passOneOutput); len(keys) > 0 {
 			infoKeys = append(infoKeys, keys...)
 			watcherInfoKeys[i] = keys
 		}
 	}
 
-	// info request for second set of info keys
-	nRawMetrics, err := o.requestInfo(retryCount, infoKeys)
+	// info request for second set of info keys, this retrieves all the stats from server
+	rawMetrics, err := o.requestInfo(retryCount, infoKeys)
 	if err != nil {
-		return rawMetrics, err
+		return passOneOutput, err
 	}
-
-	rawMetrics = nRawMetrics
 
 	// sanitize the utf8 strings before sending them to watchers
 	for k, v := range rawMetrics {
 		rawMetrics[k] = sanitizeUTF8(v)
 	}
 
+	// sanitize the utf8 strings before sending them to watchers
 	for i, c := range o.watchers {
 		if err := c.refresh(o, watcherInfoKeys[i], rawMetrics, ch); err != nil {
 			return rawMetrics, err
