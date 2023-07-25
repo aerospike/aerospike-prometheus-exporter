@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -13,6 +12,8 @@ import (
 )
 
 func TestSets_PassOneKeys(t *testing.T) {
+	fmt.Println("initializing config ... TestSets_PassOneKeys")
+
 	watcher := new(SetWatcher)
 	// Check passoneKeys
 	passOneKeys := watcher.passOneKeys()
@@ -21,20 +22,21 @@ func TestSets_PassOneKeys(t *testing.T) {
 }
 
 func TestSets_PassTwoKeys(t *testing.T) {
+	fmt.Println("initializing config ... TestSets_PassTwoKeys")
+
 	watcher := new(SetWatcher)
 
+	// mock aerospike server
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+	rawMetrics := mas.fetchRawMetrics()
 	// simulate, as if we are sending requestInfo to AS and get the NodeStats, these are coming from mock-data-generator
-	pass2Keys := make(map[string]string)
-	outputs := watcher.passTwoKeys(pass2Keys)
-
-	fmt.Println("TestNodeStats_PassTwoKeys: outputs: ", outputs)
+	outputs := watcher.passTwoKeys(rawMetrics)
 
 	assert.Equal(t, outputs, []string{"sets"})
 }
 
 func TestSets_RefreshDefault(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestSets_RefreshDefault")
 	// Initialize and validate config
 	config = new(Config)
@@ -44,13 +46,9 @@ func TestSets_RefreshDefault(t *testing.T) {
 
 	// run the test-case logic
 	sets_runTestCase(t)
-
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
 }
 
 func TestSets_Allowlist(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestSets_Allowlist")
 	// Initialize and validate config
 	config = new(Config)
@@ -60,14 +58,14 @@ func TestSets_Allowlist(t *testing.T) {
 
 	// run the test-case logic
 	sets_runTestCase(t)
-
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
 }
 
 func TestSets_RefreshWithLabelsConfig(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestSets_RefreshWithLabelsConfig")
+
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+
 	// Initialize and validate config
 	config = new(Config)
 	initConfig(LABELS_APE_TOML, config)
@@ -78,10 +76,10 @@ func TestSets_RefreshWithLabelsConfig(t *testing.T) {
 	gaugeStatHandler = new(GaugeStats)
 
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
-	rawMetrics := getRawMetrics()
+	rawMetrics := mas.fetchRawMetrics()
 
 	lObserver := &Observer{}
-	ch := make(chan prometheus.Metric, 1000)
+	ch := make(chan prometheus.Metric, 10000)
 	setsInfoKeys := []string{}
 
 	watcher.passTwoKeys(rawMetrics)
@@ -128,12 +126,20 @@ func TestSets_RefreshWithLabelsConfig(t *testing.T) {
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
 func sets_runTestCase(t *testing.T) {
+
+	// mock aerospike server
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+
+	msdg := new(MockSetsPromMetricGenerator)
+
 	watcher := new(SetWatcher)
 
 	gaugeStatHandler = new(GaugeStats)
 
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
-	rawMetrics := getRawMetrics()
+	// rawMetrics := getRawMetrics()
+	rawMetrics := mas.fetchRawMetrics()
 
 	lObserver := &Observer{}
 	ch := make(chan prometheus.Metric, 1000)
@@ -198,7 +204,7 @@ func sets_runTestCase(t *testing.T) {
 		// we have only 1 service in our mock-data, however loop thru service array
 		for _, namespaceWithSetName := range arrNamespaceSets {
 
-			lExpectedMetricNamedValues, lExpectedMetricLabels := createSetsWatcherExpectedOutputs(namespaceWithSetName)
+			lExpectedMetricNamedValues, lExpectedMetricLabels := msdg.createSetsWatcherExpectedOutputs(mas, namespaceWithSetName)
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]

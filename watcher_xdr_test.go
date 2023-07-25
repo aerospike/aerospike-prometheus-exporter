@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -12,35 +11,55 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var TEST_XDR_PASSONE_KEYS = []string{"get-config:context=xdr"}
+
 func TestXdr_PassOneKeys(t *testing.T) {
 	fmt.Println("initializing config ... TestXdr_PassOneKeys")
 
 	watcher := new(XdrWatcher)
 	// Check passoneKeys
 	passOneKeys := watcher.passOneKeys()
-	assert.Equal(t, passOneKeys, []string{"get-config:context=xdr"})
+	assert.Equal(t, passOneKeys, TEST_XDR_PASSONE_KEYS)
 
 }
 
 func TestXdr_PassTwoKeys(t *testing.T) {
+	fmt.Println("initializing config ... TestXdr_PassTwoKeys")
+
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+
 	watcher := new(XdrWatcher)
 
-	rawMetrics := getRawMetrics()
+	// simulate, as if we are sending requestInfo to AS and get the XdrStats, these are coming from mock-data-generator
+	passOneKeyOutputs := mas.createXdrPassOneKeys()
+	outputs := watcher.passTwoKeys(passOneKeyOutputs)
 
-	// simulate, as if we are sending requestInfo to AS and get the NodeStats, these are coming from mock-data-generator
-	outputs := watcher.passTwoKeys(rawMetrics)
+	expectedOutputs := mas.createXdrPassTwoExpectedOutputs(passOneKeyOutputs)
 
-	expectedOutputs := createXdrPassTwoExpectedOutputs(rawMetrics)
+	for _, xdr := range outputs {
+		assert.Contains(t, expectedOutputs, xdr)
+	}
+}
 
-	fmt.Println("TestXdr_PassTwoKeys: outputs: ", outputs)
+func TestXdr_RefreshDefault(t *testing.T) {
+	fmt.Println("initializing config ... TestXdr_RefreshDefault")
+	// Initialize and validate config
+	config = new(Config)
+	initConfig(DEFAULT_APE_TOML, config)
+	config.validateAndUpdate()
 
-	assert.Equal(t, outputs, expectedOutputs)
+	xdr_runTestCase(t)
+
 }
 
 func TestXdr_RefreshWithLabelsConfig(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestXdr_RefreshWithLabelsConfig")
+
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+	rawMetrics := mas.fetchRawMetrics()
+
 	// Initialize and validate config
 	config = new(Config)
 	initConfig(LABELS_APE_TOML, config)
@@ -51,13 +70,12 @@ func TestXdr_RefreshWithLabelsConfig(t *testing.T) {
 	gaugeStatHandler = new(GaugeStats)
 
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
-	rawMetrics := getRawMetrics()
-
 	lObserver := &Observer{}
 	ch := make(chan prometheus.Metric, 1000)
-	xdrInfoKeys := watcher.passTwoKeys(rawMetrics)
 
-	watcher.passTwoKeys(rawMetrics)
+	passOneKeyOutputs := mas.createXdrPassOneKeys()
+	xdrInfoKeys := watcher.passTwoKeys(passOneKeyOutputs)
+
 	err := watcher.refresh(lObserver, xdrInfoKeys, rawMetrics, ch)
 
 	if err != nil {
@@ -84,8 +102,6 @@ func TestXdr_RefreshWithLabelsConfig(t *testing.T) {
 				for eachConfigMetricLabel := range config.AeroProm.MetricLabels {
 					modifiedConfigMetricLabels := strings.ReplaceAll(eachConfigMetricLabel, "=", ":")
 
-					fmt.Println(" \t >>>> metricLabel: ", metricLabel)
-
 					assert.Contains(t, metricLabel, modifiedConfigMetricLabels)
 				}
 
@@ -99,22 +115,8 @@ func TestXdr_RefreshWithLabelsConfig(t *testing.T) {
 
 }
 
-func TestXdr_RefreshDefault(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
-	fmt.Println("initializing config ... TestXdr_RefreshDefault")
-	// Initialize and validate config
-	config = new(Config)
-	initConfig(DEFAULT_APE_TOML, config)
-	config.validateAndUpdate()
-
-	xdr_runTestCase(t)
-
-}
-
+// *************************
 func TestXdr_Allowlist(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestXdr_Allowlist")
 	// Initialize and validate config
 	config = new(Config)
@@ -124,24 +126,30 @@ func TestXdr_Allowlist(t *testing.T) {
 
 	// run the test-case logic
 	xdr_runTestCase(t)
-
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
 }
 
 /**
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
 func xdr_runTestCase(t *testing.T) {
+
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+
+	xdrdg := new(MockXdrPromMetricGenerator)
+
 	watcher := new(XdrWatcher)
 
 	gaugeStatHandler = new(GaugeStats)
 
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
-	rawMetrics := getRawMetrics()
+	rawMetrics := mas.fetchRawMetrics()
 
 	lObserver := &Observer{}
-	ch := make(chan prometheus.Metric, 1000)
-	xdrInfoKeys := watcher.passTwoKeys(rawMetrics)
+	ch := make(chan prometheus.Metric, 10000)
+
+	passOneKeyOutputs := mas.createXdrPassOneKeys()
+	xdrInfoKeys := watcher.passTwoKeys(passOneKeyOutputs)
 
 	watcher.passTwoKeys(rawMetrics)
 	err := watcher.refresh(lObserver, xdrInfoKeys, rawMetrics, ch)
@@ -203,7 +211,7 @@ func xdr_runTestCase(t *testing.T) {
 		// we have only 1 service in our mock-data, however loop thru service array
 		for _, xdrDcName := range arrXdrDcSets {
 
-			lExpectedMetricNamedValues, lExpectedMetricLabels := createXdrsWatcherExpectedOutputs(xdrDcName)
+			lExpectedMetricNamedValues, lExpectedMetricLabels := xdrdg.createXdrsWatcherExpectedOutputs(mas, xdrDcName)
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]

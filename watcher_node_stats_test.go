@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -13,6 +12,8 @@ import (
 )
 
 func TestNodeStats_PassOneKeys(t *testing.T) {
+	fmt.Println("initializing config ... TestNodeStats_PassOneKeys")
+
 	watcher := new(StatsWatcher)
 	// Check passoneKeys
 	passOneKeys := watcher.passOneKeys()
@@ -21,20 +22,18 @@ func TestNodeStats_PassOneKeys(t *testing.T) {
 }
 
 func TestNodeStats_PassTwoKeys(t *testing.T) {
+	fmt.Println("initializing config ... TestNodeStats_PassTwoKeys")
+
 	watcher := new(StatsWatcher)
 
 	// simulate, as if we are sending requestInfo to AS and get the NodeStats, these are coming from mock-data-generator
 	pass2Keys := make(map[string]string)
 	outputs := watcher.passTwoKeys(pass2Keys)
 
-	fmt.Println("TestNodeStats_PassTwoKeys: outputs: ", outputs)
-
 	assert.Equal(t, outputs, []string{"statistics"})
 }
 
 func TestNodeStats_RefreshDefault(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestNodeStats_RefreshDefault")
 	// Initialize and validate config
 	config = new(Config)
@@ -44,13 +43,9 @@ func TestNodeStats_RefreshDefault(t *testing.T) {
 
 	// run the test-case logic
 	nodeStats_runTestCase(t)
-
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
 }
 
 func TestNodeStats_Allowlist(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestNodeStats_Allowlist")
 	// Initialize and validate config
 	config = new(Config)
@@ -60,13 +55,9 @@ func TestNodeStats_Allowlist(t *testing.T) {
 
 	// run the test-case logic
 	nodeStats_runTestCase(t)
-
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
 }
 
 func TestNodeStats_Blocklist(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestNodeStats_Blocklist")
 	// Initialize and validate config
 	config = new(Config)
@@ -77,24 +68,30 @@ func TestNodeStats_Blocklist(t *testing.T) {
 	// run the test-case logic
 	nodeStats_runTestCase(t)
 
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
 }
 
 /**
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
 func nodeStats_runTestCase(t *testing.T) {
-	watcher := new(StatsWatcher)
+
+	// mock aerospike server
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+
+	// mock node-stats prom metric generator
+	nstdg := new(MockNodestatPromMetricGenerator)
 
 	gaugeStatHandler = new(GaugeStats)
-
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
-	rawMetrics := getRawMetrics()
+	// rawMetrics := getRawMetrics()
+	rawMetrics := mas.fetchRawMetrics()
 
 	lObserver := &Observer{}
-	ch := make(chan prometheus.Metric, 1000)
+	ch := make(chan prometheus.Metric, 10000)
 	nodeStatsInfoKeys := []string{}
 
+	watcher := new(StatsWatcher)
 	watcher.passTwoKeys(rawMetrics)
 	err := watcher.refresh(lObserver, nodeStatsInfoKeys, rawMetrics, ch)
 
@@ -152,7 +149,7 @@ func nodeStats_runTestCase(t *testing.T) {
 		for serviceIndex := range arrServices {
 			serviceIp := arrServices[serviceIndex]
 
-			lExpectedMetricNamedValues, lExpectedMetricLabels := createNodeStatsWatcherExpectedOutputs(serviceIp)
+			lExpectedMetricNamedValues, lExpectedMetricLabels := nstdg.createNodeStatsWatcherExpectedOutputs(mas, serviceIp)
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]
@@ -162,6 +159,7 @@ func nodeStats_runTestCase(t *testing.T) {
 
 				// assert - only if the value belongs to the service we read expected values and processing
 				if strings.HasPrefix(key, serviceIp) {
+
 					assert.Contains(t, expectedValues, outputMetricValues)
 					assert.Contains(t, expectedLabels, outpuMetricLabels)
 				}
