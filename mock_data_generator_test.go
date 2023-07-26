@@ -85,19 +85,36 @@ func (md *MockAerospikeServer) initialize() {
 				// reinitialize internal map
 				md.passone_outputs_map = make(map[string]string)
 				for _, entry := range elements {
+
 					colonIndex := strings.Index(entry, ":")
 					// parts := strings.Split(entry, ":")
 					key := entry[0:colonIndex]
 					value := entry[colonIndex+1:]
-
 					md.passone_outputs_map[key] = value
 				}
 				// md.passone_outputs = splitAndRetrieveStats(str, ";")
+
 			}
 
 		}
 	}
 }
+
+// TODO: to dump expected outputs to a file, so no-need-to regenerate every-time
+// func (md *MockAerospikeServer) dumpToFile(filename string, lines []string) {
+// 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+// 	if err != nil {
+// 		fmt.Println("Unable to open file ", filename, "\n\t Error: ", err)
+// 		return
+// 	}
+// 	writer := bufio.NewWriter(file)
+// 	defer file.Close()
+
+// 	for _, line := range lines {
+// 		fmt.Fprintln(writer, line)
+// 	}
+// 	writer.Flush()
+// }
 
 func (md *MockAerospikeServer) fetchRawMetrics() map[string]string {
 	rawMetrics := make(map[string]string)
@@ -150,11 +167,9 @@ func (md *MockAerospikeServer) fetchRawMetrics() map[string]string {
 
 		if strings.HasPrefix(elements[0], "xdr-get-config") {
 			key := "get-config" + ":" + elements[1]
-			// fmt.Println("key: ", key, "\t value: ", elements[2])
 			rawMetrics[key] = elements[2]
 		} else if strings.HasPrefix(elements[0], "xdr-get-stat") {
 			key := "get-stats" + ":" + elements[1]
-			// fmt.Println("key: ", key, "\t value: ", elements[2])
 			rawMetrics[key] = elements[2]
 		}
 	}
@@ -171,7 +186,6 @@ func (md *MockAerospikeServer) getBuild() string {
 			colonIndex := strings.Index(entry, ":")
 			// parts := strings.Split(entry, ":")
 			value := entry[colonIndex+1:]
-			// fmt.Println(" build no is ", value)
 			return value
 		}
 	}
@@ -183,7 +197,7 @@ func (md *MockAerospikeServer) getClusterName() string {
 }
 
 func (md *MockAerospikeServer) getServiceClearStd() string {
-	return md.service_clear_std[0]
+	return strings.Split(md.service_clear_std[0], "=")[1]
 }
 
 func (md *MockAerospikeServer) createXdrPassOneKeys() map[string]string {
@@ -195,30 +209,18 @@ func (md *MockAerospikeServer) createXdrPassOneKeys() map[string]string {
 		if strings.HasPrefix(entry, "get-config:context=xdr") {
 			str := strings.ReplaceAll(entry, "get-config:context=xdr:", "")
 			passOneOutput["get-config:context=xdr"] = str
+		} else if strings.HasPrefix(entry, "get-stats:context=xdr") {
+			str := strings.ReplaceAll(entry, "get-stats:context=xdr:", "")
+			passOneOutput["get-stat:context=xdr"] = str
 		}
 	}
+
+	passOneOutput["namespaces"] = md.passone_outputs_map["namespaces"]
+
 	return passOneOutput
+
 }
 
-func (md *MockAerospikeServer) listNamespaces() string {
-
-	namespaces := ""
-	for _, entry := range md.namespaces_stats {
-		elements := strings.Split(entry, ":")
-		// format: namespace-stats:test:ns_cluster_size=1;effective_ ( 2nd element is the namespace name "test")
-		// fmt.Println(elements[1])
-		ns := strings.TrimSpace(elements[1])
-		if len(namespaces) > 0 {
-			namespaces = namespaces + ";" + ns
-		} else {
-			namespaces = ns
-		}
-	}
-
-	return strings.TrimSuffix(namespaces, ";")
-}
-
-// TODO: below method is similar to listNamespaces(...)
 func (md *MockAerospikeServer) requestInfoNamespaces() map[string]string {
 	pass2Metrics := make(map[string]string)
 
@@ -226,7 +228,6 @@ func (md *MockAerospikeServer) requestInfoNamespaces() map[string]string {
 	for _, entry := range md.namespaces_stats {
 		elements := strings.Split(entry, ":")
 		// format: namespace-stats:test:ns_cluster_size=1;effective_ ( 2nd element is the namespace name "test")
-		// fmt.Println(elements[1])
 		ns := strings.TrimSpace(elements[1])
 		if len(namespaces) > 0 {
 			namespaces = namespaces + ";" + ns
@@ -257,19 +258,12 @@ func (md *MockAerospikeServer) createXdrPassTwoExpectedOutputs(passOneOutputs ma
 	rawMetrics := md.fetchRawMetrics()
 
 	for k := range rawMetrics {
-		// fmt.Println(" >>>> Checking ... ", k)
-		if strings.HasPrefix(k, "get-stats:") {
-
-			elements := strings.Split(k, ";")
-			xdrKey := elements[0] + ";" + elements[1]
-			// fmt.Println("createXdrPassTwoExpectedOutputs: xdrKey: ", xdrKey, "\t value: ", v)
-			passTwoOutputs = append(passTwoOutputs, xdrKey)
-			// if len(xdrKey) == len(k) {
-			// 	fmt.Println("createXdrPassTwoExpectedOutputs: xdrKey: ", xdrKey, "\t value: ", v)
-			// 	passTwoOutputs = append(passTwoOutputs, xdrKey)
-			// }
+		if strings.HasPrefix(k, "get-stats:") || strings.HasPrefix(k, "get-config:") {
+			passTwoOutputs = append(passTwoOutputs, k)
 		}
 	}
+	// append namespaces
+
 	return passTwoOutputs
 }
 
@@ -280,7 +274,6 @@ func (sim *MockAerospikeServer) createSindexPassTwoExpectedOutputs(mas *MockAero
 
 	for k := range rawMetricsKeys {
 		if strings.HasPrefix(k, "sindex/") {
-			// fmt.Println(" createSindexPassTwoExpectedOutputs: k: ", k, " \tv: ", v)
 			lSindexNames = append(lSindexNames, k)
 		}
 	}
@@ -308,7 +301,6 @@ func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutpu
 	sintDynamicExtractor := regexp.MustCompile(`sindex\-type\.(?P<type>mount)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 
 	//
-	// fmt.Println(" REINIT MAPS createNamespaceWatcherExpectedOutputs: ", nsName)
 	nsw.lExpectedMetricNamedValues = map[string][]string{}
 	nsw.lExpectedMetricLabels = map[string][]string{}
 
@@ -348,15 +340,14 @@ func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutpu
 				// not a storage-engine or index-type or sindex-type
 				isNormalStat := !isStatArrayType(key)
 
-				// fmt.Println(" starage stat: ", isNormalStat, " \t storage?: ", strings.Contains(key, "storage-engine"))
-				// fmt.Println(" index stat: ", isNormalStat, " \t index-type?: ", strings.Contains(key, "index-type"))
-				// fmt.Println(" sindex stat: ", isNormalStat, " \t sindex-type?: ", strings.Contains(key, "sindex-type"))
-
-				// fmt.Println(" is normal stat: ", isNormalStat, " \t for key: ", key)
-
 				if isNormalStat {
 
-					// fmt.Println(" is NormalStat: ")
+					labelsMap := copyConfigLabels()
+					if strings.HasPrefix(key, "index-type") {
+						labelsMap["index"] = stats["index-type"]
+					} else if strings.HasPrefix(key, "sindex-type") {
+						labelsMap["sindex"] = stats["sindex-type"]
+					}
 
 					key = strings.ReplaceAll(key, "-", "_")
 					key = strings.ReplaceAll(key, ".", "_")
@@ -373,7 +364,6 @@ func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutpu
 
 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
 
-					labelsMap := copyConfigLabels()
 					labelsMap["ns"] = ns
 					labelsMap["service"] = service
 					labelsMap["cluster_name"] = clusterName
@@ -388,19 +378,12 @@ func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutpu
 					// key will be like <full-label>/namespace/<metric_name>, this we use this check during assertion
 					mapKeyname := makeKeyname(nsName, labelString, true)
 					mapKeyname = makeKeyname(mapKeyname, metric, true)
-					// fmt.Println("*** mock mapKeyname: ", mapKeyname)
-
 					nsw.lExpectedMetricNamedValues[mapKeyname] = valuesArr
 					nsw.lExpectedMetricLabels[mapKeyname] = labelsArr
 
-					// fmt.Println(" \t\t CHECKING for KEY test_on_shmem/nameclusternamevaluenamensvaluetestonshmemnameservicevalue/aerospike_namespace_tomb_raider_period: ")
-					// if strings.HasPrefix(mapKeyname, "test_on_shmem") && strings.Contains(mapKeyname, "aerospike_namespace_tomb_raider_period") {
-					// 	fmt.Println(" FOUND aerospike_namespace_tomb_raider_period ... ", mapKeyname)
-					// 	fmt.Println(" ADDED IN MOCK : ", nsw.lExpectedMetricLabels[mapKeyname])
-
-					// }
-
 				} else {
+
+					labelsMap := copyConfigLabels()
 
 					metricType := ""
 					metricIndex := ""
@@ -424,6 +407,7 @@ func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutpu
 						deviceOrFileName = stats["index-type."+metricType+"["+metricIndex+"]"]
 
 						metric = "aerospike_namespace_index_type_" + metricType + "_" + metricName
+						labelsMap["index"] = stats["index-type"]
 					} else if strings.HasPrefix(key, "sindex-type") {
 						match := sintDynamicExtractor.FindStringSubmatch(key)
 						metricType = match[1]
@@ -431,14 +415,8 @@ func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutpu
 						metricName = match[3]
 						deviceOrFileName = stats["sindex-type."+metricType+"["+metricIndex+"]"]
 						metric = "aerospike_namespace_sindex_type_" + metricType + "_" + metricName
+						labelsMap["sindex"] = stats["sindex-type"]
 					}
-
-					// metricType := match[1]
-					// metricIndex := match[2]
-					// metricName := match[3]
-					// deviceOrFileName := stats["storage-engine."+metricType+"["+metricIndex+"]"]
-
-					// metric := "aerospike_namespace_storage_engine_" + metricType + "_" + metricName
 
 					valuesArr := nsw.lExpectedMetricNamedValues[metric]
 					labelsArr := nsw.lExpectedMetricLabels[metric]
@@ -451,7 +429,6 @@ func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutpu
 
 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"file\" value:\"" + deviceOrFileName + "\"  name:\"file_index\" value:\"" + metricIndex + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
 
-					labelsMap := copyConfigLabels()
 					labelsMap["cluster_name"] = clusterName
 					labelsMap[metricType] = deviceOrFileName
 					labelsMap["ns"] = ns
@@ -468,8 +445,6 @@ func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutpu
 					// key will be like <full-label>/namespace/<metric_name>, this we use this check during assertion
 					mapKeyname := makeKeyname(nsName, labelString, true)
 					mapKeyname = makeKeyname(mapKeyname, metric, true)
-
-					// fmt.Println("*** mock_array mapKeyname: ", mapKeyname)
 
 					nsw.lExpectedMetricNamedValues[mapKeyname] = valuesArr
 					nsw.lExpectedMetricLabels[mapKeyname] = labelsArr
@@ -513,7 +488,6 @@ func (nst *MockNodestatPromMetricGenerator) createNodeStatsWatcherExpectedOutput
 
 	for metricsGrpKey := range rawMetrics {
 		if strings.HasPrefix(metricsGrpKey, "statistics") || strings.HasPrefix(metricsGrpKey, "get-config:context=service") {
-			fmt.Println(" processing ... key type: ", metricsGrpKey)
 			grpValues := rawMetrics[metricsGrpKey]
 			stats := splitAndRetrieveStats(grpValues, ";")
 			for s, v := range stats {
@@ -562,11 +536,6 @@ func (nst *MockNodestatPromMetricGenerator) createNodeStatsWatcherExpectedOutput
 				mapKeyname := makeKeyname(serviceIp, metric, true)
 				nst.lExpectedMetricNamedValues[mapKeyname] = valuesArr
 				nst.lExpectedMetricLabels[mapKeyname] = labelsArr
-
-				// if strings.HasPrefix(metricsGrpKey, "get-config:context=service") {
-				// 	fmt.Println("node-config: ", key)
-				// 	fmt.Println(" processing metric: ", metric)
-				// }
 
 			}
 		}
@@ -781,7 +750,7 @@ type MockXdrPromMetricGenerator struct {
 	lExpectedMetricLabels      map[string][]string
 }
 
-func (xdr *MockXdrPromMetricGenerator) createXdrsWatcherExpectedOutputs(mas *MockAerospikeServer, t string) (map[string][]string, map[string][]string) {
+func (xdr *MockXdrPromMetricGenerator) createXdrsWatcherExpectedOutputs(mas *MockAerospikeServer, xdrDcName string) (map[string][]string, map[string][]string) {
 
 	// re-initialize whenever called
 	xdr.lExpectedMetricNamedValues = make(map[string][]string)
@@ -789,11 +758,11 @@ func (xdr *MockXdrPromMetricGenerator) createXdrsWatcherExpectedOutputs(mas *Moc
 
 	rawMetrics := mas.fetchRawMetrics()
 
-	clusterName := rawMetrics["cluster-name"]
-	service := rawMetrics["service-clear-std"]
+	clusterName := mas.getClusterName()
+	service := mas.getServiceClearStd()
 
 	for metricsGrpKey := range rawMetrics {
-		if strings.HasPrefix(metricsGrpKey, "get-stats:context=xdr;dc=") {
+		if strings.HasPrefix(metricsGrpKey, "get-stats:context=xdr;dc=") || strings.HasPrefix(metricsGrpKey, "get-configs:context=xdr;dc=") {
 			grpValues := rawMetrics[metricsGrpKey]
 			xdrDcInfos := strings.Split(grpValues, ";")
 			for idx := range xdrDcInfos {
@@ -802,7 +771,12 @@ func (xdr *MockXdrPromMetricGenerator) createXdrsWatcherExpectedOutputs(mas *Moc
 
 				stats := splitAndRetrieveStats(singleXdrDcValues, ":")
 
-				dcName := strings.ReplaceAll(metricsGrpKey, "get-stats:context=xdr;dc=", "")
+				// get-config:context=xdr;dc=backup_dc_asdev20_second;namespace=bar_device
+				// get-config:context=xdr;dc=backup_dc_asdev20_second
+				// get-stats:context=xdr;dc=backup_dc_asdev20_second;namespace=bar_device
+				// get-stats:context=xdr;dc=backup_dc_asdev20_second
+				// grpSplitElements := strings.Split(metricsGrpKey, ";")
+				// dcName := strings.Split(grpSplitElements[1], "=")[1]
 
 				for s, v := range stats {
 					key := s
@@ -826,7 +800,11 @@ func (xdr *MockXdrPromMetricGenerator) createXdrsWatcherExpectedOutputs(mas *Moc
 
 					key = strings.ReplaceAll(key, "-", "_")
 					key = strings.ReplaceAll(key, ".", "_")
-					metric := "aerospike_xdr" + "_" + key
+
+					// metric := "aerospike_xdr" + "_" + key
+					// namespace := "no-namespace" // just to represent this metric is only at DC level
+					dcName, namespace, metric := xdr.constructXdrMetricname(metricsGrpKey, key)
+
 					valuesArr := xdr.lExpectedMetricNamedValues[metric]
 					labelsArr := xdr.lExpectedMetricLabels[metric]
 
@@ -838,9 +816,6 @@ func (xdr *MockXdrPromMetricGenerator) createXdrsWatcherExpectedOutputs(mas *Moc
 					}
 
 					// [name:"cluster_name" value:"null"  name:"dc" value:"backup_dc_asdev20"  name:"service" value:"172.17.0.3:3000" ]
-					mapKeyname := makeKeyname(dcName, metric, true)
-					mapKeyname = makeKeyname(service, mapKeyname, true)
-
 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"  name:\"set\" value:\"" + setName + "\"" + " ]"
 
 					labelsMap := copyConfigLabels()
@@ -848,9 +823,20 @@ func (xdr *MockXdrPromMetricGenerator) createXdrsWatcherExpectedOutputs(mas *Moc
 					labelsMap["service"] = service
 					labelsMap["cluster_name"] = clusterName
 
+					if strings.Contains(metricsGrpKey, "namespace") {
+						grpSplitElements := strings.Split(metricsGrpKey, ";")
+						// get-config:context=xdr;dc=backup_dc_asdev20_second;namespace=bar_device
+						namespace = strings.Split(grpSplitElements[2], "=")[1]
+						labelsMap["ns"] = namespace
+					}
+
 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
 					valuesArr = append(valuesArr, value)
 					labelsArr = append(labelsArr, sorted_label_str)
+
+					mapKeyname := makeKeyname(dcName, metric, true)
+					mapKeyname = makeKeyname(namespace, mapKeyname, true)
+					mapKeyname = makeKeyname(service, mapKeyname, true)
 
 					xdr.lExpectedMetricNamedValues[mapKeyname] = valuesArr
 					xdr.lExpectedMetricLabels[mapKeyname] = labelsArr
@@ -861,6 +847,28 @@ func (xdr *MockXdrPromMetricGenerator) createXdrsWatcherExpectedOutputs(mas *Moc
 	}
 
 	return xdr.lExpectedMetricNamedValues, xdr.lExpectedMetricLabels
+}
+
+func (xdr *MockXdrPromMetricGenerator) constructXdrMetricname(infoKeyToProcess string, stat string) (string, string, string) {
+
+	kvInfoKeyToProcess := parseStats(infoKeyToProcess, ";")
+	_, cfgOk := kvInfoKeyToProcess["get-config:context"]
+	_, statOk := kvInfoKeyToProcess["get-stats:context"]
+	dcName := kvInfoKeyToProcess["dc"]
+	nsName, nsOk := kvInfoKeyToProcess["namespace"]
+
+	// either this is a config key or a stat having namespace (both are new use-cases) hence handle here
+
+	if cfgOk && nsOk {
+		return dcName, nsName, ("aerospike_xdr" + "_" + "dc_namespace_" + stat)
+	} else if statOk && nsOk {
+		return dcName, nsName, ("aerospike_xdr" + "_" + "dc_namespace_" + stat)
+	} else if cfgOk {
+		return dcName, nsName, ("aerospike_xdr" + "_" + "dc_" + stat)
+	}
+
+	return dcName, "no-namespace", "aerospike_xdr" + "_" + stat // no-prefix/default i.e. no suffix like "dc" / "dc_namespace"
+
 }
 
 // Sindex related methods

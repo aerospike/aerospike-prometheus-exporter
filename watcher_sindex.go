@@ -45,9 +45,6 @@ func (siw *SindexWatcher) getSindexCommands(sindexesMeta []string) (sindexComman
 	return sindexCommands
 }
 
-// All (allowed/blocked) Sindex stats. Based on the config.Aerospike.SindexMetricsAllowlist, config.Aerospike.SindexMetricsBlocklist.
-// var sindexMetrics = make(map[string]AerospikeStat)
-
 func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	if config.Aerospike.DisableSindexMetrics {
 		// disabled
@@ -84,18 +81,6 @@ func (siw *SindexWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 			labels := []string{METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_SINDEX}
 			labelsValues := []string{clusterName, service, nsName, sindexName}
 			pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
-
-			// // handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
-			// defer func() {
-			// 	if r := recover(); r != nil {
-			// 		log.Tracef("sindex-stats: recovered from panic while handling stat %s in %s", stat, sindexName)
-			// 	}
-			// }()
-
-			// if asMetric.isAllowed {
-			// 	desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_SINDEX)
-			// 	ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], nsName, sindexName)
-			// }
 
 		}
 

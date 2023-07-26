@@ -30,7 +30,7 @@ func TestNodeStats_PassTwoKeys(t *testing.T) {
 	pass2Keys := make(map[string]string)
 	outputs := watcher.passTwoKeys(pass2Keys)
 
-	assert.Equal(t, outputs, []string{"statistics"})
+	assert.Equal(t, outputs, []string{"get-config:context=service", "statistics"})
 }
 
 func TestNodeStats_RefreshDefault(t *testing.T) {

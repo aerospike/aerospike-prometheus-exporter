@@ -34,7 +34,6 @@ func initGaugeStats(pGaugeStatsFile string, pGaugeStats *GaugeStats) {
 
 	log.Infof("Loading Gauge Stats file %s", pGaugeStatsFile)
 
-	// fmt.Println("Loading Gauge Stats file ", configFile)
 	blob, err := os.ReadFile(pGaugeStatsFile)
 	if err != nil {
 		log.Fatalln(err)

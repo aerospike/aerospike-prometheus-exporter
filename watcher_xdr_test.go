@@ -16,6 +16,9 @@ var TEST_XDR_PASSONE_KEYS = []string{"get-config:context=xdr"}
 func TestXdr_PassOneKeys(t *testing.T) {
 	fmt.Println("initializing config ... TestXdr_PassOneKeys")
 
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+
 	watcher := new(XdrWatcher)
 	// Check passoneKeys
 	passOneKeys := watcher.passOneKeys()
@@ -191,9 +194,14 @@ func xdr_runTestCase(t *testing.T) {
 				metricNameFromDesc := extractMetricNameFromDesc(description)
 				dcFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "dc")
 				serviceFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "service")
+				namespaceFromLabel := extractLabelNameValueFromFullLabel(metricLabel, "ns")
+				if len(namespaceFromLabel) == 0 {
+					namespaceFromLabel = "no-namespace"
+				}
 
 				// key will be like namespace/set/<metric_name>, this we use this check during assertion
 				keyName := makeKeyname(dcFromLabel, metricNameFromDesc, true)
+				keyName = makeKeyname(namespaceFromLabel, keyName, true)
 				keyName = makeKeyname(serviceFromLabel, keyName, true)
 
 				// appends to the xdr array
@@ -221,6 +229,7 @@ func xdr_runTestCase(t *testing.T) {
 
 				// assert - only if the value belongs to the namespace/set we read expected values and processing
 				if strings.HasPrefix(key, xdrDcName) {
+
 					assert.Contains(t, expectedValues, outputMetricValues)
 					assert.Contains(t, expectedLabels, outpuMetricLabels)
 				}

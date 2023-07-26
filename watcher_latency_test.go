@@ -18,7 +18,9 @@ func TestLatencies_PassOneKeys(t *testing.T) {
 
 	fmt.Println("TestLatencies_PassOneKeys: outputs: ", passOneKeys)
 
-	assert.Equal(t, passOneKeys, []string{"build"})
+	// assert.Equal(t, passOneKeys, []string{"build"})
+	// modified test-case as watcher-latency no more returns build, this "build" is moved to observer.go
+	assert.Nil(t, passOneKeys)
 }
 
 func TestLatencies_PassTwoKeys(t *testing.T) {

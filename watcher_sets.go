@@ -22,9 +22,6 @@ func (sw *SetWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	return []string{"sets"}
 }
 
-// All (allowed/blocked) Sets stats. Based on the config.Aerospike.SetsMetricsAllowlist, config.Aerospike.SetsMetricsBlocklist.
-// var setMetrics = make(map[string]AerospikeStat)
-
 func (sw *SetWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
 	setStats := strings.Split(rawMetrics["sets"], ";")
 	log.Tracef("set-stats:%v", setStats)
@@ -53,18 +50,6 @@ func (sw *SetWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map[str
 			labels := []string{METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_SET}
 			labelsValues := []string{clusterName, service, stats["ns"], stats["set"]}
 			pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
-
-			// // handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
-			// defer func() {
-			// 	if r := recover(); r != nil {
-			// 		log.Tracef("set-stats: recovered from panic while handling stat %s in %s", stat, stats["set"])
-			// 	}
-			// }()
-
-			// if asMetric.isAllowed {
-			// 	desc, valueType := asMetric.makePromMetric(METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_SET)
-			// 	ch <- prometheus.MustNewConstMetric(desc, valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], stats["ns"], stats["set"])
-			// }
 
 		}
 

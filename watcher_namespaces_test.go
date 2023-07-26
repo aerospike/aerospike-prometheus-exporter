@@ -15,9 +15,8 @@ func TestFetchNamespaces(t *testing.T) {
 
 	mas := new(MockAerospikeServer)
 	mas.initialize()
-	namespaces := mas.listNamespaces()
+	namespaces := mas.requestInfoNamespaces()
 
-	// fmt.Println(" namespaces: ", namespaces)
 	assert.NotEmpty(t, namespaces)
 }
 
@@ -44,9 +43,6 @@ func TestPassTwoKeys(t *testing.T) {
 	expectedOutputs := mas.createNamespacePassTwoExpectedOutputs()
 
 	assert := assert.New(t)
-
-	// fmt.Println(" passTwokeyOutputs: ", passTwokeyOutputs)
-	// fmt.Println(" expectedOutputs: ", expectedOutputs)
 
 	assert.NotEmpty(passTwokeyOutputs)
 	assert.NotEmpty(expectedOutputs)
@@ -145,6 +141,8 @@ func runTestcase(t *testing.T) {
 		// reads data from the Prom channel and creates a map of strings so we can assert in the below loop
 		domore := 1
 
+		mock_expected_filedump := []string{}
+
 		for domore == 1 {
 			select {
 
@@ -177,11 +175,19 @@ func runTestcase(t *testing.T) {
 				lOutputValues[keyName] = metricValue
 				lOutputLabels[keyName] = metricLabel
 
+				// to dump expected outputs to a file, so no-need-to regenerate every-time
+				// mock_expected_filedump = append(mock_expected_filedump, makeMetricReady2dump(namespaceFromLabel, metricNameFromDesc, description, metricValue))
+
 			case <-time.After(1 * time.Second):
 				domore = 0
 
 			} // end select
 		}
+
+		// dump them to files
+		// to dump expected outputs to a file, so no-need-to regenerate every-time
+		// TODO: revisit this
+		// mas.dumpToFile("tests/expected/ns_mock_expected_outputs.txt", mock_expected_filedump)
 
 		// loop each namespace and compare the label and value
 		arrNames := strings.Split(passOneKeyOutputs["namespaces"], ";")
@@ -195,7 +201,6 @@ func runTestcase(t *testing.T) {
 				expectedLabels := lExpectedMetricLabels[key]
 				outputMetricValues := lOutputValues[key]
 				outpuMetricLabels := lOutputLabels[key]
-
 				// assert - only if the value belongs to the namespace we read expected values and processing
 				//  a "/" because namespace can be like test and test_on_shmem,
 				if strings.HasPrefix(key, tnsForNamespace+"/") {
@@ -211,3 +216,8 @@ func runTestcase(t *testing.T) {
 	}
 
 }
+
+// to dump expected outputs to a file, so no-need-to regenerate every-time
+// func makeMetricReady2dump(ns string, metric string, desc string, value string) string {
+// 	return ns + "#" + metric + "#" + desc + "#" + value
+// }
