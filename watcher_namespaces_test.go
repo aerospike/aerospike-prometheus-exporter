@@ -141,7 +141,7 @@ func runTestcase(t *testing.T) {
 		// reads data from the Prom channel and creates a map of strings so we can assert in the below loop
 		domore := 1
 
-		mock_expected_filedump := []string{}
+		// mock_expected_filedump := []string{}
 
 		for domore == 1 {
 			select {
