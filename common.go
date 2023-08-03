@@ -46,6 +46,7 @@ const (
 	METRIC_LABEL_SET          = "set"
 	METRIC_LABEL_LE           = "le"
 	METRIC_LABEL_DC_NAME      = "dc"
+	METRIC_LABEL_INDEX        = "index"
 	METRIC_LABEL_SINDEX       = "sindex"
 	METRIC_LABEL_USER         = "user"
 )

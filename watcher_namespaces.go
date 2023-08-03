@@ -16,7 +16,12 @@ var regexToExtractArrayStats = map[string]string{
 }
 
 const (
-	KEY_NS_METADATA = "namespaces"
+	KEY_NS_METADATA       = "namespaces"
+	KEY_NS_INDEX_PRESSURE = "index-pressure"
+
+	// TODO: check if sindex-pressure is valid, while testing its not working
+	// KEY_NS_SINDEX_PRESSURE = "sindex-pressure"
+	KEY_NS_NAMESPACE = "namespace"
 )
 
 type NamespaceWatcher struct {
@@ -38,8 +43,12 @@ func (nw *NamespaceWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 
 	var infoKeys []string
 	for _, k := range list {
-		infoKeys = append(infoKeys, "namespace/"+k)
+		// infoKey ==> namespace/test, namespace/bar
+		infoKeys = append(infoKeys, KEY_NS_NAMESPACE+"/"+k)
 	}
+
+	//TODO: make the Index-Pressure refresh every N minutes ( N is configurable, as index-pressure add extra work at server side)
+	infoKeys = append(infoKeys, KEY_NS_INDEX_PRESSURE)
 
 	return infoKeys
 }
@@ -49,64 +58,132 @@ func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics
 		nw.namespaceStats = make(map[string]AerospikeStat)
 	}
 
-	// counter := 1
-	for _, ns := range infoKeys {
-		nsName := strings.ReplaceAll(ns, "namespace/", "")
-		log.Tracef("namespace-stats:%s:%s", nsName, rawMetrics[ns])
+	for _, infoKey := range infoKeys {
 
-		stats := parseStats(rawMetrics[ns], ";")
-		for stat, value := range stats {
+		// we get 2 info-key Types - examples: index-pressure or namespace/test, namespace/materials
+		if strings.HasPrefix(infoKey, KEY_NS_NAMESPACE) {
+			nw.refreshNamespaceStats(infoKey, infoKeys, rawMetrics, ch)
+		} else if strings.HasPrefix(infoKey, KEY_NS_INDEX_PRESSURE) {
+			// namespace/<ns> will be multiple times according to the # of namespaces configured in the server
+			nw.refreshIndexPressure(infoKey, infoKeys, rawMetrics, ch)
+		}
 
-			pv, err := tryConvert(value)
+	}
+
+	return nil
+}
+
+// handle IndexPressure infoKey
+func (nw *NamespaceWatcher) refreshIndexPressure(singleInfoKey string, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) {
+
+	indexPresssureStats := rawMetrics[singleInfoKey]
+
+	log.Tracef("namespace-index-pressure-stats:%s:%s", singleInfoKey, indexPresssureStats)
+
+	// Server index-pressure output: test:0:0;bar_device:0:0;materials:0:0
+	//  each namespace is split with semi-colon
+	stats := strings.Split(indexPresssureStats, ";")
+
+	// metric-names - first element is un-used, as we send namespace as a label, this also keeps the index-numbers same as the server-stats
+	indexPressureMetricNames := []string{"index_pressure_namespace", "index_pressure_total_memory", "index_pressure_dirty_memory"}
+
+	// loop thru each namespace values,
+	//   Server index-pressure output: "test:0:0" -- "bar_device:0:0"
+	// refer: https://docs.aerospike.com/reference/info#index-pressure
+	for _, nsIdxPressureValues := range stats {
+
+		// refer: https://docs.aerospike.com/reference/info#index-pressure
+		// each namespace index-pressure stat values separated using colon(:)
+		// 0= namespace, 1= total memory and 2= memory in dirty-pages
+		values := strings.Split(nsIdxPressureValues, ":")
+		nsName := values[0]
+
+		labels := []string{METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS}
+		labelValues := []string{rawMetrics[ikClusterName], rawMetrics[ikService], nsName}
+
+		// Server index-pressure output: test:0:0;bar_device:0:0;materials:0:0
+		//  ignore first element - namespace
+		for index := 1; index < len(values); index++ {
+
+			pv, err := tryConvert(values[index])
 			if err != nil {
 				continue
 			}
 
-			// to find regular metric or index-type/storage-engine metric, check prefix and is it an array [i.e.: index-type.mount[0]]
-			//
-			var labels []string
-			var labelValues []string
-			constructedStatname := ""
+			statName := indexPressureMetricNames[index]
 
-			// check persistance-type
-			deviceType, isArrayType := nw.checkStatPersistanceType(stat, stats)
-
-			constructedStatname = stat
-			labels = []string{METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS}
-			labelValues = []string{rawMetrics[ikClusterName], rawMetrics[ikService], nsName}
-
-			if isArrayType {
-				constructedStatname, labels, labelValues = nw.handleArrayStats(nsName, stat, pv, stats, deviceType, rawMetrics, ch)
+			asMetric, exists := nw.namespaceStats[statName]
+			if !exists {
+				asMetric = newAerospikeStat(CTX_NAMESPACE, statName)
+				nw.namespaceStats[statName] = asMetric
 			}
 
-			// check and include persistance-type if they are defined/found
-			indexType := stats[INDEX_TYPE]
-			sindexType := stats[SINDEX_TYPE]
-
-			// if stat is index-type or sindex-type , append addl label
-			if strings.HasPrefix(deviceType, INDEX_TYPE) && len(indexType) > 0 {
-				labels = append(labels, "index")
-				labelValues = append(labelValues, indexType)
-			} else if strings.HasPrefix(deviceType, SINDEX_TYPE) && len(sindexType) > 0 {
-				labels = append(labels, "sindex")
-				labelValues = append(labelValues, sindexType)
-			}
-
-			// handleArrayStats(..) will return empty-string if unable to handle the array-stat
-			if len(constructedStatname) > 0 {
-				asMetric, exists := nw.namespaceStats[constructedStatname]
-
-				if !exists {
-					asMetric = newAerospikeStat(CTX_NAMESPACE, constructedStatname)
-					nw.namespaceStats[constructedStatname] = asMetric
-				}
-
-				// push to prom-channel
-				pushToPrometheus(asMetric, pv, labels, labelValues, ch)
-			}
+			// push to prom-channel
+			pushToPrometheus(asMetric, pv, labels, labelValues, ch)
 		}
 	}
-	return nil
+}
+
+func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) {
+
+	// extract namespace from info-command, construct: namespace/test, namespace/bar
+	nsName := strings.ReplaceAll(singleInfoKey, (KEY_NS_NAMESPACE + "/"), "")
+
+	log.Tracef("namespace-stats:%s:%s", nsName, rawMetrics[singleInfoKey])
+
+	stats := parseStats(rawMetrics[singleInfoKey], ";")
+	for stat, value := range stats {
+
+		pv, err := tryConvert(value)
+		if err != nil {
+			continue
+		}
+
+		// to find regular metric or index-type/storage-engine metric, check prefix and is it an array [i.e.: index-type.mount[0]]
+		//
+		var labels []string
+		var labelValues []string
+		constructedStatname := ""
+
+		// check persistance-type
+		deviceType, isArrayType := nw.checkStatPersistanceType(stat, stats)
+
+		// default: aerospike_namespace_<stat-name>
+		constructedStatname = stat
+		labels = []string{METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS}
+		labelValues = []string{rawMetrics[ikClusterName], rawMetrics[ikService], nsName}
+
+		if isArrayType {
+			constructedStatname, labels, labelValues = nw.handleArrayStats(nsName, stat, pv, stats, deviceType, rawMetrics, ch)
+		}
+
+		// check and include persistance-type if they are defined/found
+		indexType := stats[INDEX_TYPE]
+		sindexType := stats[SINDEX_TYPE]
+
+		// if stat is index-type or sindex-type , append addl label
+		if strings.HasPrefix(deviceType, INDEX_TYPE) && len(indexType) > 0 {
+			labels = append(labels, METRIC_LABEL_INDEX)
+			labelValues = append(labelValues, indexType)
+		} else if strings.HasPrefix(deviceType, SINDEX_TYPE) && len(sindexType) > 0 {
+			labels = append(labels, METRIC_LABEL_SINDEX)
+			labelValues = append(labelValues, sindexType)
+		}
+
+		// handleArrayStats(..) will return empty-string if unable to handle the array-stat
+		if len(constructedStatname) > 0 {
+			asMetric, exists := nw.namespaceStats[constructedStatname]
+
+			if !exists {
+				asMetric = newAerospikeStat(CTX_NAMESPACE, constructedStatname)
+				nw.namespaceStats[constructedStatname] = asMetric
+			}
+
+			// push to prom-channel
+			pushToPrometheus(asMetric, pv, labels, labelValues, ch)
+		}
+	}
+
 }
 
 // checks if the given stat is a storage-engine or index-type, depending on which type we decide how to process
