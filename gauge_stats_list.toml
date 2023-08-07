@@ -55,9 +55,7 @@ sindex_gauge_stats = [
 #
 
 node_gauge_stats = [
-	"batch_index_created_buffers",
-	"batch_index_huge_buffers",
-	"batch_index_proto_compression_ratio",
+	"batch_index_proto_compression_ratio", 
 	"batch_index_proto_uncompressed_pct",
 	"batch_index_queue",
 	"batch_index_unused_buffers",
@@ -69,9 +67,6 @@ node_gauge_stats = [
 	"cluster_max_compatibility_id",	
 	"cluster_min_compatibility_id",
 	"cluster_size",
-	"dlog_free_pct",
-	"dlog_logged",	
-	"dlog_used_objects",
 	"fabric_bulk_recv_rate",
 	"fabric_bulk_send_rate",
 	"fabric_connections",
@@ -111,8 +106,9 @@ node_gauge_stats = [
 	"tree_gc_queue",
 	"tsvc_queue",
 	#
-	# TODO: Do we need the below XDR Stats
-	#	
+	# 4.x XDR stats
+	"dlog_free_pct",
+	"dlog_used_objects",
 	"xdr_active_failed_node_sessions",
 	"xdr_active_link_down_sessions",
 	"xdr_global_lastshiptime",
@@ -124,8 +120,6 @@ node_gauge_stats = [
 	"xdr_read_respq_used",
 	"xdr_read_txnq_used_pct",
 	"xdr_read_txnq_used",
-	"xdr_relogged_incoming",
-	"xdr_relogged_outgoing",
 	"xdr_ship_compression_avg_pct",
 	"xdr_ship_inflight_objects",
 	"xdr_ship_latency_avg",
@@ -138,13 +132,12 @@ node_gauge_stats = [
 # Namespace: below section define all Namespace stats which are treated as Gauges 
 #
 namespace_gauge_stats =[
-
 	"appeals_rx_active",
 	"appeals_tx_active",
 	"appeals_tx_remaining",
 	"available_bin_names",
 	"cache_read_pct",
-	"clock_skew_stop_writes",
+	"clock_skew_stop_writes", 
 	"dead_partitions",
 	"defrag_q",
 	"device_available_pct",
@@ -171,17 +164,13 @@ namespace_gauge_stats =[
 	"memory_used_index_bytes",
 	"memory_used_set_index_bytes",
 	"memory_used_sindex_bytes",
-	"migrate_record_receives",
-	"migrate_record_retransmits",
-	"migrate_records_skipped",
-	"migrate_records_transmitted",
-	"migrate_rx_instances",
+	"migrate_rx_instances",   
 	"migrate_rx_partitions_active",
 	"migrate_rx_partitions_initial",
 	"migrate_rx_partitions_remaining",
 	"migrate_signals_active",
 	"migrate_signals_remaining",
-	"migrate_tx_instances",
+	"migrate_tx_instances", 
 	"migrate_tx_partitions_active",
 	"migrate_tx_partitions_imbalance",
 	"migrate_tx_partitions_initial",
@@ -214,22 +203,16 @@ namespace_gauge_stats =[
 	"scan_proto_uncompressed_pct",
 	"shadow_write_q",
 	"stop_writes",
-	
 	"storage-engine.device.defrag_q",
-	"storage-engine.device.defrag_reads",
-	"storage-engine.device.defrag_writes",
 	"storage-engine.device.free_wblocks",
 	"storage-engine.device.shadow_write_q",
 	"storage-engine.device.used_bytes",
 	"storage-engine.device.write_q",
 	"storage-engine.file.defrag_q",
-	"storage-engine.file.defrag_reads",
-	"storage-engine.file.defrag_writes",
 	"storage-engine.file.free_wblocks",
 	"storage-engine.file.shadow_write_q",
 	"storage-engine.file.used_bytes",
-	"storage-engine.file.write_q",
-	
+	"storage-engine.file.write_q",	
 	"tombstones",
 	"truncate_lut",
 	"unavailable_partitions",

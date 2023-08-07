@@ -3,6 +3,7 @@ package main
 import (
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -15,13 +16,26 @@ var regexToExtractArrayStats = map[string]string{
 	SINDEX_TYPE:    "sindex\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
 }
 
+// index-pressure related variables
+var (
+	// dont fetch 1st iteration, this is made true after reading the metrics once from server and if index-type=false is enabled
+	isFlashStatSentByServer bool = false
+
+	// time interval to fetch index-pressure
+	idxPressureFetchInterval = 10.0
+
+	// Time when Index Pressure last-fetched
+	idxPressurePreviousFetchTime = time.Now()
+)
+
 const (
 	KEY_NS_METADATA       = "namespaces"
 	KEY_NS_INDEX_PRESSURE = "index-pressure"
 
-	// TODO: check if sindex-pressure is valid, while testing its not working
-	// KEY_NS_SINDEX_PRESSURE = "sindex-pressure"
 	KEY_NS_NAMESPACE = "namespace"
+
+	// values to compare while checking if refresh index-pressure or not
+	TYPE_FLASH = "flash"
 )
 
 type NamespaceWatcher struct {
@@ -47,8 +61,10 @@ func (nw *NamespaceWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 		infoKeys = append(infoKeys, KEY_NS_NAMESPACE+"/"+k)
 	}
 
-	//TODO: make the Index-Pressure refresh every N minutes ( N is configurable, as index-pressure add extra work at server side)
-	infoKeys = append(infoKeys, KEY_NS_INDEX_PRESSURE)
+	if nw.canSendIndexPressureInfoKey() {
+		infoKeys = append(infoKeys, KEY_NS_INDEX_PRESSURE)
+		idxPressurePreviousFetchTime = time.Now()
+	}
 
 	return infoKeys
 }
@@ -88,7 +104,7 @@ func (nw *NamespaceWatcher) refreshIndexPressure(singleInfoKey string, infoKeys 
 	indexPressureMetricNames := []string{"index_pressure_namespace", "index_pressure_total_memory", "index_pressure_dirty_memory"}
 
 	// loop thru each namespace values,
-	//   Server index-pressure output: "test:0:0" -- "bar_device:0:0"
+	//   Server index-pressure output: "test:0:0", "bar_device:0:0"
 	// refer: https://docs.aerospike.com/reference/info#index-pressure
 	for _, nsIdxPressureValues := range stats {
 
@@ -124,6 +140,7 @@ func (nw *NamespaceWatcher) refreshIndexPressure(singleInfoKey string, infoKeys 
 	}
 }
 
+// all namespace stats (except index-pressure)
 func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) {
 
 	// extract namespace from info-command, construct: namespace/test, namespace/bar
@@ -132,18 +149,16 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 	log.Tracef("namespace-stats:%s:%s", nsName, rawMetrics[singleInfoKey])
 
 	stats := parseStats(rawMetrics[singleInfoKey], ";")
+	var labels []string
+	var labelValues []string
+	constructedStatname := ""
+
 	for stat, value := range stats {
 
 		pv, err := tryConvert(value)
 		if err != nil {
 			continue
 		}
-
-		// to find regular metric or index-type/storage-engine metric, check prefix and is it an array [i.e.: index-type.mount[0]]
-		//
-		var labels []string
-		var labelValues []string
-		constructedStatname := ""
 
 		// check persistance-type
 		deviceType, isArrayType := nw.checkStatPersistanceType(stat, stats)
@@ -165,9 +180,16 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 		if strings.HasPrefix(deviceType, INDEX_TYPE) && len(indexType) > 0 {
 			labels = append(labels, METRIC_LABEL_INDEX)
 			labelValues = append(labelValues, indexType)
+
+			// check is it flash or pmem or shmem
+			nw.setFlagFlashStatSentByServer(indexType)
+
 		} else if strings.HasPrefix(deviceType, SINDEX_TYPE) && len(sindexType) > 0 {
 			labels = append(labels, METRIC_LABEL_SINDEX)
 			labelValues = append(labelValues, sindexType)
+
+			// check is it flash or pmem or shmem
+			nw.setFlagFlashStatSentByServer(sindexType)
 		}
 
 		// handleArrayStats(..) will return empty-string if unable to handle the array-stat
@@ -184,26 +206,6 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 		}
 	}
 
-}
-
-// checks if the given stat is a storage-engine or index-type, depending on which type we decide how to process
-//
-// multiple values are returnd by server example: storage-engine.file[0].<remaining-stat-name>
-func (nw *NamespaceWatcher) checkStatPersistanceType(statToProcess string,
-	allNamespaceStats map[string]string) (string, bool) {
-
-	// if starts-with "index-type", then
-	//    return index-type, <is-array-or-normal-stat>
-
-	if strings.HasPrefix(statToProcess, INDEX_TYPE) {
-		return INDEX_TYPE, strings.Contains(statToProcess, "[")
-	} else if strings.HasPrefix(statToProcess, SINDEX_TYPE) {
-		return SINDEX_TYPE, strings.Contains(statToProcess, "[")
-	} else if strings.HasPrefix(statToProcess, STORAGE_ENGINE) {
-		return STORAGE_ENGINE, strings.Contains(statToProcess, "[")
-	}
-
-	return "", false
 }
 
 // Utility to handle array style stats like storage-engine or index-type etc.,
@@ -238,5 +240,54 @@ func (nw *NamespaceWatcher) handleArrayStats(nsName string, statToProcess string
 	labelValues := []string{rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName}
 
 	return compositeStatName, labels, labelValues
+
+}
+
+// Utility functions used within namespace-watcher
+
+// checks if the given stat is a storage-engine or index-type, depending on which type we decide how to process
+//
+// multiple values are returnd by server example: storage-engine.file[0].<remaining-stat-name>
+func (nw *NamespaceWatcher) checkStatPersistanceType(statToProcess string,
+	allNamespaceStats map[string]string) (string, bool) {
+
+	// if starts-with "index-type", then
+	//    return index-type, <is-array-or-normal-stat>
+
+	if strings.HasPrefix(statToProcess, INDEX_TYPE) {
+		return INDEX_TYPE, strings.Contains(statToProcess, "[")
+	} else if strings.HasPrefix(statToProcess, SINDEX_TYPE) {
+		return SINDEX_TYPE, strings.Contains(statToProcess, "[")
+	} else if strings.HasPrefix(statToProcess, STORAGE_ENGINE) {
+		return STORAGE_ENGINE, strings.Contains(statToProcess, "[")
+	}
+
+	return "", false
+}
+
+// utility function to check if watcher-namespace needs to issue infoKeys command during passTwo
+// index-pressure is a costly command at server side hence we are limiting to every few minutes ( mentioned in seconds)
+func (nw *NamespaceWatcher) canSendIndexPressureInfoKey() bool {
+
+	// difference between current-time and last-fetch, if its > defined-value, then true
+	timeDiff := time.Since(idxPressurePreviousFetchTime)
+
+	// if index-type=false or sindex-type=flash is returned by server
+	//    and every N seconds - where N is mentioned "indexPressureFetchIntervalInSeconds"
+	isTimeOk := timeDiff.Minutes() >= idxPressureFetchInterval
+
+	return (isFlashStatSentByServer && isTimeOk)
+
+}
+
+// utility will check if the given value is flash and sets the flag
+func (nw *NamespaceWatcher) setFlagFlashStatSentByServer(idxType string) {
+	// index-type/sindex-type, can have values like shmem(default), flash, so if the value is flash, then set the flag to refresh in next run
+	// this check is required only if bool-fetch-indexpressure is false, because
+	//      we can have different values for each namespace, so once this flag is set, no need to change this further
+	//
+	if len(idxType) > 0 && !isFlashStatSentByServer {
+		isFlashStatSentByServer = !isFlashStatSentByServer && strings.Contains(idxType, TYPE_FLASH)
+	}
 
 }

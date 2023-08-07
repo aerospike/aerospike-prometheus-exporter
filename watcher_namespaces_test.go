@@ -184,11 +184,6 @@ func runTestcase(t *testing.T) {
 			} // end select
 		}
 
-		// dump them to files
-		// to dump expected outputs to a file, so no-need-to regenerate every-time
-		// TODO: revisit this
-		// mas.dumpToFile("tests/expected/ns_mock_expected_outputs.txt", mock_expected_filedump)
-
 		// loop each namespace and compare the label and value
 		arrNames := strings.Split(passOneKeyOutputs["namespaces"], ";")
 

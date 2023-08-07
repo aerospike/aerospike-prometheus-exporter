@@ -100,22 +100,6 @@ func (md *MockAerospikeServer) initialize() {
 	}
 }
 
-// TODO: to dump expected outputs to a file, so no-need-to regenerate every-time
-// func (md *MockAerospikeServer) dumpToFile(filename string, lines []string) {
-// 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-// 	if err != nil {
-// 		fmt.Println("Unable to open file ", filename, "\n\t Error: ", err)
-// 		return
-// 	}
-// 	writer := bufio.NewWriter(file)
-// 	defer file.Close()
-
-// 	for _, line := range lines {
-// 		fmt.Fprintln(writer, line)
-// 	}
-// 	writer.Flush()
-// }
-
 func (md *MockAerospikeServer) fetchRawMetrics() map[string]string {
 	rawMetrics := make(map[string]string)
 
