@@ -28,7 +28,7 @@ func extractNamespaceFromLabel(label string) string {
 }
 
 func stringifyLabel(label string) string {
-	labelReplacerFunc := strings.NewReplacer(".", "_", "-", "_", " ", "_", " ", "_", "[", "_", "]", "_", "\"", "_", ":", "_", "/", "_")
+	labelReplacerFunc := strings.NewReplacer(".", "_", "-", "_", " ", "_", "[", "_", "]", "_", "\"", "_", ":", "_", "/", "_")
 	hypenReplacerFunc := strings.NewReplacer("_", "")
 
 	// return labelReplacerFunc.Replace(label)
