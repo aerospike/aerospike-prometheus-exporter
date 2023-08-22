@@ -170,7 +170,7 @@ namespace_gauge_stats =[
 	"migrate_rx_partitions_remaining",
 	"migrate_signals_active",
 	"migrate_signals_remaining",
-	"migrate_tx_instances", 
+	"migrate_tx_instances",
 	"migrate_tx_partitions_active",
 	"migrate_tx_partitions_imbalance",
 	"migrate_tx_partitions_initial",
