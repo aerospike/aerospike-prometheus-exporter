@@ -137,7 +137,7 @@ namespace_gauge_stats =[
 	"appeals_tx_remaining",
 	"available_bin_names",
 	"cache_read_pct",
-	"clock_skew_stop_writes", 
+	"clock_skew_stop_writes",
 	"dead_partitions",
 	"defrag_q",
 	"device_available_pct",
