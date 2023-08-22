@@ -1,18 +1,15 @@
 name: manual_continuous_deploy
 
 on:
- push:
-  branches:
-    - OM72
-#    workflow_dispatch:
-#      inputs:
-#         release_tag_info:
-#           description: enter release tag number
-#           default: v1.0.0
-#           required: true
+  workflow_dispatch:
+     inputs:
+        release_tag_info:
+          description: enter release tag number
+          default: v1.0.0
+          required: true
 jobs:
 
-  deploy_image:
+  create_fips_binaries:
     runs-on: self-hosted
     steps:
     
@@ -84,6 +81,6 @@ jobs:
          echo
          echo "STARTING: Uploading fips-federal binary:"${{ env.FIPS_EXPORTER_RPM_FILENAME }}
          
-         gh release upload ${{ env.UPLOAD_TAG }} ${{ env.FIPS_EXPORTER_RPM_FILENAME }}
+         gh release upload ${{ github.event.inputs.release_tag_info }} ${{ env.FIPS_EXPORTER_RPM_FILENAME }}
          echo "COMPLETED: Uploading fips-federal binary:".${{env.FIPS_EXPORTER_RPM_FILENAME }}
          
