@@ -1,0 +1,86 @@
+name: manual_continuous_deploy
+
+on:
+  workflow_dispatch:
+     inputs:
+        release_tag_info:
+          description: enter release tag number
+          default: v1.0.0
+          required: true
+jobs:
+
+  create_fips_binaries:
+    runs-on: self-hosted
+    steps:
+    
+    - name: git pull latest master FIPS exporter
+      env:
+          APE_FOLDER: "/home/ec2-user/aerospike/aerospike-prometheus-exporter"
+          BUILD_GIT_BRANCH: "master"
+      run: |
+         echo "changing directoryto aerospike-prometheus-exporter"
+         cd ${{ env.APE_FOLDER }}
+         echo "Current director is:".$PWD
+         git checkout ${{ env.BUILD_GIT_BRANCH }}
+         git fetch --all
+         git pull
+
+    - name: environment variables
+      id: vars
+      run: |
+         echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT 
+         echo "actual_tag=$(git describe --tags --always --abbrev=0 | cut -c 1-)" >> $GITHUB_OUTPUT 
+      
+    - name: go mod tidy
+      env:
+          APE_FOLDER: "/home/ec2-user/aerospike/aerospike-prometheus-exporter"
+          BUILD_GIT_BRANCH: "master"
+      run: |
+         cd ${{ env.APE_FOLDER }}
+         echo "Current director is:".$PWD
+         export PATH=/home/ec2-user/go120/bin:$PATH
+         echo
+         echo "current GO version"
+         go version
+         echo "Tidying go mod"
+         go mod tidy
+         
+    - name: make fips-exporter
+      env:
+          APE_FOLDER: "/home/ec2-user/aerospike/aerospike-prometheus-exporter"
+          BUILD_GIT_BRANCH: "master"
+      run: |
+         echo "changing directoryto aerospike-prometheus-exporter"
+         cd ${{ env.APE_FOLDER }}
+         echo "Current director is:".$PWD
+         echo 
+         echo "Start building fips exporter"
+         echo
+         make fips-rpm
+         echo
+         echo "Completed fips exporter build"
+         
+    - name: upload fips exporter to a release tag
+      env:
+          APE_FOLDER: "/home/ec2-user/aerospike/aerospike-prometheus-exporter"
+          BUILD_GIT_BRANCH: "master"
+          UPLOAD_TAG: "v1.7.0"
+          FIPS_EXPORTER_RPM_FILENAME: "pkg/target/aerospike-prometheus-exporter-federal*.rpm"
+      run: |
+         echo "changing directoryto aerospike-prometheus-exporter"
+         cd ${{ env.APE_FOLDER }}
+         echo "Current director is:".$PWD
+         echo "TAG from GITHUB_REF release-tag to upload :"."${{ steps.vars.outputs.tag }}"
+         (git describe --tags --always --abbrev=0 | cut -c 1-)
+         export RELEASE_TAG=$(git describe --tags --always --abbrev=0 | cut -c 1-)
+         echo "Actual release-tag to upload :- "$RELEASE_TAG
+         echo
+         echo
+         echo "Workflow input tag is :- "${{ github.event.inputs.release_tag_info }}
+         echo
+         echo
+         echo "STARTING: Uploading fips-federal binary:"${{ env.FIPS_EXPORTER_RPM_FILENAME }}
+         
+         gh release upload ${{ github.event.inputs.release_tag_info }} ${{ env.FIPS_EXPORTER_RPM_FILENAME }}
+         echo "COMPLETED: Uploading fips-federal binary:".${{env.FIPS_EXPORTER_RPM_FILENAME }}
+         

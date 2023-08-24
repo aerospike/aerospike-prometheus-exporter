@@ -59,12 +59,15 @@ jobs:
     - name: make package-linux-amd64
       run: make package-linux-amd64
 
-    - name: make fips-deb 
-      run: make fips-deb
+    - name: gzip tar files
+      run: |
+         cd pkg/target   
+         ls -lrt *.tar
+         echo "GZipping tar files"
+         gzip aerospike-prometheus-exporter*.tar 
+         echo "gzipped files"
+         ls -lrt *.gz
 
-    - name: make fips-rpm
-      run: make fips-rpm
-      
     - name: Upload Release Asset
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -77,7 +80,7 @@ jobs:
          
          for file in $files; do
            echo "uploading file === $file"
+           # TODO: move this to gh instead of hub
            hub release edit -a $file -m "$RELEASE_NAME $TAG_NAME" "$TAG_NAME"
          done
-
-         hub release edit -a aerospike-prometheus-exporter -m "$RELEASE_NAME $TAG_NAME"  "$TAG_NAME"
+         
