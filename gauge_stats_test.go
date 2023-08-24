@@ -2,22 +2,16 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetGaugesNotEmpty(t *testing.T) {
-
-	// this is to force-reload the config in the NamespaceWatcher, this is a check on this param in NamespaceWatcher implementation
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing GaugeMetrics ... TestGetGaugesNotEmpty")
 
 	// Initialize and validate Gauge config
 	gaugeList := new(GaugeStats)
-
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeList)
 
 	nslist := gaugeList.NamespaceStats
@@ -27,10 +21,6 @@ func TestGetGaugesNotEmpty(t *testing.T) {
 }
 
 func TestGetGaugesCounts(t *testing.T) {
-
-	// this is to force-reload the config in the NamespaceWatcher, this is a check on this param in NamespaceWatcher implementation
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing GaugeMetrics ... TestGetGaugesCounts")
 
 	// Initialize and validate Gauge config
@@ -39,10 +29,10 @@ func TestGetGaugesCounts(t *testing.T) {
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeList)
 
 	glist := gaugeList.NamespaceStats
-	assert.Equal(t, len(glist), 96)
+	assert.Equal(t, len(glist), 88)
 
 	glist = gaugeList.NodeStats
-	assert.Equal(t, len(glist), 74)
+	assert.Equal(t, len(glist), 69)
 
 	glist = gaugeList.SetsStats
 	assert.Equal(t, len(glist), 7)
@@ -56,9 +46,7 @@ func TestGetGaugesCounts(t *testing.T) {
 }
 
 func TestIsAGaugeTrue(t *testing.T) {
-
-	// this is to force-reload the config in the NamespaceWatcher, this is a check on this param in NamespaceWatcher implementation
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
+	fmt.Println("initializing GaugeMetrics ... TestIsAGaugeTrue")
 
 	// Initialize and validate Gauge config
 	gaugeList := new(GaugeStats)
@@ -85,9 +73,6 @@ func TestIsAGaugeTrue(t *testing.T) {
 }
 
 func TestNoGaugeExists(t *testing.T) {
-
-	// this is to force-reload the config in the NamespaceWatcher, this is a check on this param in NamespaceWatcher implementation
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
 
 	fmt.Println("initializing GaugeMetrics ... TestNoGaugeExists")
 

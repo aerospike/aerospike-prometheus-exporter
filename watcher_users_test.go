@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -25,7 +24,10 @@ func TestUsers_PassOneKeys(t *testing.T) {
 func TestUsers_PassTwoKeys(t *testing.T) {
 	watcher := new(UserWatcher)
 
-	rawMetrics := getRawMetrics()
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+
+	rawMetrics := mas.fetchRawMetrics()
 
 	// simulate, as if we are sending requestInfo to AS and get the NodeStats, these are coming from mock-data-generator
 	outputs := watcher.passTwoKeys(rawMetrics)
@@ -34,8 +36,6 @@ func TestUsers_PassTwoKeys(t *testing.T) {
 }
 
 func TestUsers_Allowlist(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestUsers_Allowlist")
 	// Initialize and validate config
 	config = new(Config)
@@ -54,9 +54,11 @@ func TestUsers_Allowlist(t *testing.T) {
 }
 
 func TestUsers_RefreshWithLabelsConfig(t *testing.T) {
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestUsers_RefreshWithLabelsConfig")
+
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+
 	// Initialize and validate config
 	config = new(Config)
 	initConfig(LABELS_APE_TOML, config)
@@ -69,16 +71,15 @@ func TestUsers_RefreshWithLabelsConfig(t *testing.T) {
 	config.Aerospike.Password = "admin"
 
 	gaugeStatHandler = new(GaugeStats)
-
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
-	rawMetrics := getRawMetrics()
+	rawMetrics := mas.fetchRawMetrics()
 
 	lObserver := &Observer{}
 	ch := make(chan prometheus.Metric, 1000)
 	userInfoKeys := watcher.passTwoKeys(rawMetrics)
 
 	// get user data from mock
-	mUsers := new(MockUsersDataGen)
+	mUsers := new(MockUsersPromMetricGenerator)
 	users := mUsers.createDummyUserRoles()
 
 	watcher.passTwoKeys(rawMetrics)
@@ -125,19 +126,23 @@ func TestUsers_RefreshWithLabelsConfig(t *testing.T) {
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
 func users_runTestCase(t *testing.T) {
+
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+
 	watcher := new(UserWatcher)
 
 	gaugeStatHandler = new(GaugeStats)
 
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
-	rawMetrics := getRawMetrics()
+	rawMetrics := mas.fetchRawMetrics()
 
 	lObserver := &Observer{}
 	ch := make(chan prometheus.Metric, 1000)
 	userInfoKeys := watcher.passTwoKeys(rawMetrics)
 
 	// get user data from mock
-	mockUserGen := new(MockUsersDataGen)
+	mockUserGen := new(MockUsersPromMetricGenerator)
 	userRoles := mockUserGen.createDummyUserRoles()
 
 	// get user data from mock
@@ -202,7 +207,7 @@ func users_runTestCase(t *testing.T) {
 		// we have only 1 service in our mock-data, however loop thru service array
 		for _, userRole := range arrUserRoles {
 
-			lExpectedMetricNamedValues, lExpectedMetricLabels := mockUserGen.createMockUserData()
+			lExpectedMetricNamedValues, lExpectedMetricLabels := mockUserGen.createMockUserData(mas)
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]

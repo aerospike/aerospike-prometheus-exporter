@@ -2,16 +2,23 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stretchr/testify/assert"
-
 	dto "github.com/prometheus/client_model/go"
+	"github.com/stretchr/testify/assert"
 )
+
+func TestFetchNamespaces(t *testing.T) {
+
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+	namespaces := mas.requestInfoNamespaces()
+
+	assert.NotEmpty(t, namespaces)
+}
 
 func TestPassOneKeys(t *testing.T) {
 	nsWatcher := new(NamespaceWatcher)
@@ -22,28 +29,31 @@ func TestPassOneKeys(t *testing.T) {
 }
 
 func TestPassTwoKeys(t *testing.T) {
-	rawMetrics := getRawMetrics()
+	mas := new(MockAerospikeServer)
+	mas.initialize()
+
+	// rawMetrics := getRawMetrics()
 	nsWatcher := new(NamespaceWatcher)
 
 	// simulate, as if we are sending requestInfo to AS and get the namespaces, these are coming from mock-data-generator
-	pass2Keys := requestInfoNamespaces(rawMetrics)
-	nsOutputs := nsWatcher.passTwoKeys(pass2Keys)
+	passOneKeyOutputs := mas.requestInfoNamespaces()
+	passTwokeyOutputs := nsWatcher.passTwoKeys(passOneKeyOutputs)
 
-	// nsExpected := []string{"namespace/bar", "namespace/test"}
-	nsExpected := createNamespacePassTwoExpectedOutputs(rawMetrics)
+	// expectedOutputs := []string{"namespace/bar", "namespace/test"}
+	expectedOutputs := mas.createNamespacePassTwoExpectedOutputs()
 
 	assert := assert.New(t)
 
-	for idx := range nsExpected {
+	assert.NotEmpty(passTwokeyOutputs)
+	assert.NotEmpty(expectedOutputs)
+
+	for idx := range expectedOutputs {
 		// assert each element returned by NamespaceWatcher exists in expected outputs
-		assert.Contains(nsOutputs, nsExpected[idx], " value exists!")
+		assert.Contains(passTwokeyOutputs, expectedOutputs[idx], " value exists!")
 	}
 }
 
 func TestNamespaceRefreshDefault(t *testing.T) {
-
-	// this is to force-reload the config in the NamespaceWatcher, this is a check on this param in NamespaceWatcher implementation
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
 
 	fmt.Println("initializing config ... TestNamespaceRefreshDefault")
 	// Initialize and validate config
@@ -53,13 +63,9 @@ func TestNamespaceRefreshDefault(t *testing.T) {
 	config.validateAndUpdate()
 
 	runTestcase(t)
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
 }
 
 func TestNamespaceRefreshLabels(t *testing.T) {
-
-	// this is to force-reload the config in the NamespaceWatcher, this is a check on this param in NamespaceWatcher implementation
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
 
 	fmt.Println("initializing config ... TestNamespaceRefreshLabels")
 	// Initialize and validate config
@@ -69,14 +75,9 @@ func TestNamespaceRefreshLabels(t *testing.T) {
 	config.validateAndUpdate()
 
 	runTestcase(t)
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_FALSE)
 }
 
 func TestNamespaceRefreshAllowlist(t *testing.T) {
-
-	// this is to force-reload the config in the NamespaceWatcher, this is a check on this param in NamespaceWatcher implementation
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestNamespaceRefreshAllowlist")
 	// Initialize and validate config
 	config = new(Config)
@@ -89,10 +90,6 @@ func TestNamespaceRefreshAllowlist(t *testing.T) {
 }
 
 func TestNamespaceRefreshBlocklist(t *testing.T) {
-
-	// this is to force-reload the config in the NamespaceWatcher, this is a check on this param in NamespaceWatcher implementation
-	os.Setenv(TESTCASE_MODE, TESTCASE_MODE_TRUE)
-
 	fmt.Println("initializing config ... TestNamespaceRefreshBlocklist")
 	// Initialize and validate config
 	config = new(Config)
@@ -109,25 +106,30 @@ func TestNamespaceRefreshBlocklist(t *testing.T) {
  */
 func runTestcase(t *testing.T) {
 
-	gaugeStatHandler = new(GaugeStats)
+	// mock aerospike server
+	mas := new(MockAerospikeServer)
+	mas.initialize()
 
+	// mock namespace prom metric generator
+	nsdg := new(MockNamespacePromMetricGenerator)
+
+	// initialize gauges list
+	gaugeStatHandler = new(GaugeStats)
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
 
 	// read raw-metrics from mock data gen, create observer and channel prometeus metric ingestion and processing
-	rawMetrics := getRawMetrics()
+	// rawMetrics := getRawMetrics()
+	rawMetrics := mas.fetchRawMetrics()
+
+	// Actual Watcher-Namespace generator code
 	nsWatcher := new(NamespaceWatcher)
 	lObserver := &Observer{}
-	ch := make(chan prometheus.Metric, 1000)
-	pass2Metrics := requestInfoNamespaces(rawMetrics)
+	ch := make(chan prometheus.Metric, 10000)
 
-	nsWatcher.passTwoKeys(rawMetrics)
+	passOneKeyOutputs := mas.requestInfoNamespaces()
+	passTwokeyOutputs := nsWatcher.passTwoKeys(passOneKeyOutputs)
 
-	nsInfoKeys := createNamespacePassTwoExpectedOutputs(rawMetrics)
-
-	// outputs := nsWatcher.passTwoKeys(pass2Metrics)
-	// assert.Equal(t, outputs, expectedOutputs)
-
-	err := nsWatcher.refresh(lObserver, nsInfoKeys, rawMetrics, ch)
+	err := nsWatcher.refresh(lObserver, passTwokeyOutputs, rawMetrics, ch)
 
 	if err == nil {
 		// map of string ==> map["namespace/metric-name"]["<VALUE>"]
@@ -138,6 +140,8 @@ func runTestcase(t *testing.T) {
 
 		// reads data from the Prom channel and creates a map of strings so we can assert in the below loop
 		domore := 1
+
+		// mock_expected_filedump := []string{}
 
 		for domore == 1 {
 			select {
@@ -161,11 +165,18 @@ func runTestcase(t *testing.T) {
 				// Desc{fqName: "aerospike_namespac_memory_free_pct", help: "memory free pct", constLabels: {}, variableLabels: [cluster_name service ns]}
 				metricNameFromDesc := extractMetricNameFromDesc(description)
 				namespaceFromLabel := extractNamespaceFromLabel(metricLabel)
+				// namespaceFromLabel := extractLabelNameValueFromFullLabel(metricLabel)
+				labelString := stringifyLabel(metricLabel)
 
 				// key will be like namespace/<metric_name>, this we use this check during assertion
-				keyName := makeKeyname(namespaceFromLabel, metricNameFromDesc, true)
+				keyName := makeKeyname(namespaceFromLabel, labelString, true)
+				keyName = makeKeyname(keyName, metricNameFromDesc, true)
+
 				lOutputValues[keyName] = metricValue
 				lOutputLabels[keyName] = metricLabel
+
+				// to dump expected outputs to a file, so no-need-to regenerate every-time
+				// mock_expected_filedump = append(mock_expected_filedump, makeMetricReady2dump(namespaceFromLabel, metricNameFromDesc, description, metricValue))
 
 			case <-time.After(1 * time.Second):
 				domore = 0
@@ -174,20 +185,21 @@ func runTestcase(t *testing.T) {
 		}
 
 		// loop each namespace and compare the label and value
-		arrNames := strings.Split(pass2Metrics["namespaces"], ";")
+		arrNames := strings.Split(passOneKeyOutputs["namespaces"], ";")
 
 		for nsIndex := range arrNames {
 			tnsForNamespace := arrNames[nsIndex]
-			lExpectedMetricNamedValues, lExpectedMetricLabels := createNamespaceWatcherExpectedOutputs(tnsForNamespace, true)
+			lExpectedMetricNamedValues, lExpectedMetricLabels := nsdg.createNamespaceWatcherExpectedOutputs(mas, tnsForNamespace, true)
 
 			for key := range lOutputValues {
 				expectedValues := lExpectedMetricNamedValues[key]
 				expectedLabels := lExpectedMetricLabels[key]
 				outputMetricValues := lOutputValues[key]
 				outpuMetricLabels := lOutputLabels[key]
-
 				// assert - only if the value belongs to the namespace we read expected values and processing
-				if strings.HasPrefix(key, tnsForNamespace) {
+				//  a "/" because namespace can be like test and test_on_shmem,
+				if strings.HasPrefix(key, tnsForNamespace+"/") {
+
 					assert.Contains(t, expectedValues, outputMetricValues)
 					assert.Contains(t, expectedLabels, outpuMetricLabels)
 				}
@@ -197,4 +209,10 @@ func runTestcase(t *testing.T) {
 	} else {
 		fmt.Println(" Failed Refreshing, error: ", err)
 	}
+
 }
+
+// to dump expected outputs to a file, so no-need-to regenerate every-time
+// func makeMetricReady2dump(ns string, metric string, desc string, value string) string {
+// 	return ns + "#" + metric + "#" + desc + "#" + value
+// }

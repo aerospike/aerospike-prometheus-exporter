@@ -17,6 +17,7 @@ import (
 
 	"github.com/gobwas/glob"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 
 	goversion "github.com/hashicorp/go-version"
 )
@@ -37,17 +38,25 @@ const (
 	CTX_LATENCIES  ContextType = "latencies"
 )
 
-const STORAGE_ENGINE = "storage-engine_"
-
 // below constant represent the labels we send along with metrics to Prometheus or something
-const METRIC_LABEL_CLUSTER_NAME = "cluster_name"
-const METRIC_LABEL_SERVICE = "service"
-const METRIC_LABEL_NS = "ns"
-const METRIC_LABEL_SET = "set"
-const METRIC_LABEL_LE = "le"
-const METRIC_LABEL_DC_NAME = "dc"
-const METRIC_LABEL_SINDEX = "sindex"
-const METRIC_LABEL_USER = "user"
+const (
+	METRIC_LABEL_CLUSTER_NAME = "cluster_name"
+	METRIC_LABEL_SERVICE      = "service"
+	METRIC_LABEL_NS           = "ns"
+	METRIC_LABEL_SET          = "set"
+	METRIC_LABEL_LE           = "le"
+	METRIC_LABEL_DC_NAME      = "dc"
+	METRIC_LABEL_INDEX        = "index"
+	METRIC_LABEL_SINDEX       = "sindex"
+	METRIC_LABEL_USER         = "user"
+)
+
+// constants used to identify type of metrics
+const (
+	STORAGE_ENGINE = "storage-engine"
+	INDEX_TYPE     = "index-type"
+	SINDEX_TYPE    = "sindex-type"
+)
 
 func makeMetric(namespace, name string, t metricType, constLabels map[string]string, labels ...string) promMetric {
 	promDesc := prometheus.NewDesc(
@@ -423,4 +432,22 @@ func getMetricType(pContext ContextType, pRawMetricName string) metricType {
 	}
 
 	return mtCounter
+}
+
+// This is a common utility, used by all the watchers to push metric to prometheus
+func pushToPrometheus(asMetric AerospikeStat, pv float64, labels []string, labelValues []string,
+	ch chan<- prometheus.Metric) {
+
+	if asMetric.isAllowed {
+		// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
+		defer func() {
+			if r := recover(); r != nil {
+				log.Tracef("%s recovered from panic while handling stat %s", string(asMetric.context), asMetric.name)
+			}
+		}()
+
+		desc, valueType := asMetric.makePromMetric(labels...)
+		ch <- prometheus.MustNewConstMetric(desc, valueType, pv, labelValues...)
+
+	}
 }
