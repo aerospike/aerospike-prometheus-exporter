@@ -27,7 +27,12 @@ root_ca = ""
 key_file_passphrase = ""
 
 # labels to add to the prometheus metrics for e.g. labels={zone="asia-south1-a", platform="google compute engine"}
+# below labels are global and will be applied to all metrics exposed
 labels = {latitude="0",longitude="0"}
+
+# predefined label for specific context
+# below labels are applied to xdr metrics only
+predefined_xdr_labels = {}
 
 bind = ":9145"
 

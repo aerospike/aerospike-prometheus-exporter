@@ -27,7 +27,12 @@ root_ca = "${AGENT_ROOT_CA}"
 key_file_passphrase = "${AGENT_KEY_FILE_PASSPHRASE}"
 
 # labels to add to the prometheus metrics for e.g. labels={zone="asia-south1-a", platform="google compute engine"}
+# below labels are global and will be applied to all metrics exposed
 labels = {${METRIC_LABELS}}
+
+# predefined label for specific context
+# below labels are applied to xdr metrics only
+predefined_xdr_labels = {${PREDEF_XDR_LABELS}}
 
 bind = "${AGENT_BIND_HOST}:${AGENT_BIND_PORT}"
 

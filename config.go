@@ -29,6 +29,9 @@ type Config struct {
 
 		BasicAuthUsername string `toml:"basic_auth_username"`
 		BasicAuthPassword string `toml:"basic_auth_password"`
+
+		// predefined context-metric labels
+		PredefinexXdrLabels map[string]string `toml:"predefined_xdr_labels"`
 	} `toml:"Agent"`
 
 	Aerospike struct {
