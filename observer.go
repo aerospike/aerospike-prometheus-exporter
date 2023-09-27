@@ -82,8 +82,8 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 
 	// use all cpus in the system for concurrency
 	authMode := strings.ToLower(strings.TrimSpace(config.Aerospike.AuthMode))
-	if authMode != "internal" && authMode != "external" {
-		log.Fatalln("Invalid auth mode: only `internal` and `external` values are accepted.")
+	if authMode != "internal" && authMode != "external" && authMode != "pki" {
+		log.Fatalln("Invalid auth mode: only `internal`, `external`, `pki` values are accepted.")
 	}
 
 	// Get aerospike auth username
@@ -101,8 +101,11 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 	clientPolicy := aero.NewClientPolicy()
 	clientPolicy.User = string(username)
 	clientPolicy.Password = string(password)
+
 	if authMode == "external" {
 		clientPolicy.AuthMode = aero.AuthModeExternal
+	} else if authMode == "pki" {
+		clientPolicy.AuthMode = aero.AuthModePKI
 	}
 
 	// allow only ONE connection

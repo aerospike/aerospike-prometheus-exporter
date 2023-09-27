@@ -96,7 +96,7 @@ user = "${AS_AUTH_USER}"
 # database password
 password = "${AS_AUTH_PASSWORD}"
 
-# authentication mode: internal (for server), external (LDAP, etc.)
+# authentication mode: internal (for server), external (LDAP, etc.), pki
 auth_mode = "${AS_AUTH_MODE}"
 
 # timeout for sending commands to the server node in seconds
