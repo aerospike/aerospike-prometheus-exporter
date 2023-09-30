@@ -223,7 +223,7 @@ make release-docker-multi-arch
     # database password
     password=""
 
-    # authentication mode: internal (for server), external (LDAP, etc.), pki
+    # authentication mode: internal (server authentication) [default], external (e.g., LDAP), pki. 
     auth_mode=""
     ```
 
