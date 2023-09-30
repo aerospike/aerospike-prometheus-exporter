@@ -104,6 +104,9 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 	case "external":
 		clientPolicy.AuthMode = aero.AuthModeExternal
 	case "pki":
+		if len(config.Aerospike.RootCA) == 0 || len(config.Aerospike.CertFile) == 0 || len(config.Aerospike.KeyFile) == 0 {
+			log.Fatalln("Invalid certificate configuration when using auth mode PKI: cert_file, key_file, root_ca must be set")
+		}
 		clientPolicy.AuthMode = aero.AuthModePKI
 	default:
 		log.Fatalln("Invalid auth mode: only `internal`, `external`, `pki` values are accepted.")
