@@ -37,6 +37,28 @@ else
 	exit 1
 endif
 
+LSB_EXISTS := $(shell which lsb_release 2> /dev/null)
+ifeq ($(LSB_EXISTS),)
+	DISTRO_FULL := $(shell . /etc/os-release; echo $$NAME | tr ' ' '_')
+	DISTRO_VERSION := $(shell . /etc/os-release; echo $$VERSION_ID | tr ' ' '_')
+else
+	DISTRO_FULL := $(shell lsb_release -i | cut -f2- | tr ' ' '_')
+	DISTRO_VERSION := $(shell lsb_release -r | cut -f2- | tr ' ' '_')
+endif
+
+ifeq ($(DISTRO_FULL),Debian)
+	DISTRO_SHORT = debian
+else ifeq ($(DISTRO_FULL),Ubuntu)
+	DISTRO_SHORT = ubuntu
+else ifeq ($(DISTRO_FULL),Amazon_Linux)
+	DISTRO_SHORT = amzn
+else ifeq ($(DISTRO_FULL),CentOS_Linux)
+	DISTRO_SHORT = el
+else ifeq ($(DISTRO_FULL),Red_Hat_Enterprise_Linux)
+	DISTRO_SHORT = el
+else ifeq ($(DISTRO_FULL),Rocky_Linux)
+	DISTRO_SHORT = rocky
+endif
 
 .PHONY: fips-deb
 fips-deb: fipsparam deb 
@@ -59,8 +81,7 @@ deb: prep
 		--url $(URL) \
 		--vendor $(VENDOR) \
 		--architecture $(DEB_PKG_ARCH) \
-		--package $(TARGET_DIR)/$(PKG_FILENAME)_$(VERSION)_$(DEB_PKG_ARCH).deb
-
+		--package $(TARGET_DIR)/$(PKG_FILENAME)_$(VERSION)-1$(DISTRO_SHORT)$(DISTRO_VERSION)_$(DEB_PKG_ARCH).deb
 
 .PHONY: fips-rpm
 fips-rpm: fipsparam rpm 
@@ -83,7 +104,7 @@ rpm: prep
 		--url $(URL) \
 		--vendor $(VENDOR) \
 		--architecture $(ARCH) \
-		--package $(TARGET_DIR)/$(PKG_FILENAME)-$(VERSION).$(ARCH).rpm
+		--package $(TARGET_DIR)/$(PKG_FILENAME)-$(VERSION)-1.$(DISTRO_SHORT)$(DISTRO_VERSION).$(ARCH).rpm
 
 .PHONY: fips-tar
 fips-tar: fipsparam tar 
@@ -103,7 +124,7 @@ tar: prep
 		--license $(LICENSE) \
 		--url $(URL) \
 		--vendor $(VENDOR) \
-		--package $(TARGET_DIR)/$(PKG_FILENAME)_$(VERSION)_$(ARCH).tar
+		--package $(TARGET_DIR)/$(PKG_FILENAME)_$(VERSION)$(DISTRO_SHORT)$(DISTRO_VERSION)_$(ARCH).tgz
 
 .PHONY: prep
 prep:
