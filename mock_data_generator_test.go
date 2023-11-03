@@ -280,7 +280,7 @@ type MockNamespacePromMetricGenerator struct {
 func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutputs(mas *MockAerospikeServer, nsName string, addNsToKey bool) (map[string][]string, map[string][]string) {
 
 	// regex to check if a stat is storage-engine
-	seDynamicExtractor := regexp.MustCompile(`storage\-engine\.(?P<type>file|device)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
+	seDynamicExtractor := regexp.MustCompile(`storage\-engine\.(?P<type>file|device|stripe)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 	itDynamicExtractor := regexp.MustCompile(`index\-type\.(?P<type>mount)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 	sintDynamicExtractor := regexp.MustCompile(`sindex\-type\.(?P<type>mount)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
 
@@ -331,8 +331,9 @@ func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutpu
 						labelsMap["index"] = stats["index-type"]
 					} else if strings.HasPrefix(key, "sindex-type") {
 						labelsMap["sindex"] = stats["sindex-type"]
+					} else {
+						labelsMap["storage_engine"] = stats["storage-engine"]
 					}
-
 					key = strings.ReplaceAll(key, "-", "_")
 					key = strings.ReplaceAll(key, ".", "_")
 
@@ -382,6 +383,7 @@ func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutpu
 						metricName = match[3]
 						deviceOrFileName = stats["storage-engine."+metricType+"["+metricIndex+"]"]
 						metric = "aerospike_namespace_storage_engine_" + metricType + "_" + metricName
+						labelsMap["storage_engine"] = stats["storage-engine"]
 
 					} else if strings.HasPrefix(key, "index-type") {
 						match := itDynamicExtractor.FindStringSubmatch(key)

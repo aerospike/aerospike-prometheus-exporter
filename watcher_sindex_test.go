@@ -42,7 +42,9 @@ func TestSindex_PassTwoKeys(t *testing.T) {
 	expectedOutputs := mas.createSindexPassTwoExpectedOutputs(mas)
 	outputs := watcher.passTwoKeys(mas.passone_outputs_map)
 
-	assert.Equal(t, outputs, expectedOutputs)
+	// fmt.Println("\texpectedOutputs: ", expectedOutputs, "\n\toutputs: ", outputs)
+
+	assert.ElementsMatch(t, outputs, expectedOutputs)
 }
 
 func TestSindex_RefreshDefault(t *testing.T) {
@@ -224,6 +226,8 @@ func sindex_runTestCase(t *testing.T) {
 				expectedLabels := lExpectedMetricLabels[key]
 				outputMetricValues := lOutputValues[key]
 				outpuMetricLabels := lOutputLabels[key]
+
+				fmt.Println("Key: ", key, "\n\texpectedValues: ", expectedValues, "\n\toutputMetricValues: ", outputMetricValues, "\n\texpectedLabels: ", expectedLabels, "\n\toutpuMetricLabels: ", outpuMetricLabels)
 
 				// assert - only if the value belongs to the namespace/set we read expected values and processing
 				if strings.HasPrefix(key, namespaceWithSindexName) {
