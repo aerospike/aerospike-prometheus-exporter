@@ -49,7 +49,7 @@ func (md *MockAerospikeServer) initialize() {
 	var fileLines []string
 
 	for fileScanner.Scan() {
-		fileLines = append(fileLines, fileScanner.Text())
+		fileLines = append(fileLines, strings.TrimSpace(fileScanner.Text()))
 	}
 
 	readFile.Close()
@@ -170,9 +170,11 @@ func (md *MockAerospikeServer) getBuild() string {
 			colonIndex := strings.Index(entry, ":")
 			// parts := strings.Split(entry, ":")
 			value := entry[colonIndex+1:]
+			fmt.Println("getBuild(): ", value)
 			return value
 		}
 	}
+
 	return ""
 }
 
@@ -231,7 +233,7 @@ func (md *MockAerospikeServer) createNamespacePassTwoExpectedOutputs() []string 
 
 	for metricsGrpKey := range rawMetrics {
 		if strings.HasPrefix(metricsGrpKey, "namespace/") {
-			lNamespaces = append(lNamespaces, metricsGrpKey)
+			lNamespaces = append(lNamespaces, strings.TrimSpace(metricsGrpKey))
 		}
 	}
 	return lNamespaces
@@ -243,7 +245,7 @@ func (md *MockAerospikeServer) createXdrPassTwoExpectedOutputs(passOneOutputs ma
 
 	for k := range rawMetrics {
 		if strings.HasPrefix(k, "get-stats:") || strings.HasPrefix(k, "get-config:") {
-			passTwoOutputs = append(passTwoOutputs, k)
+			passTwoOutputs = append(passTwoOutputs, strings.TrimSpace(k))
 		}
 	}
 	// append namespaces
@@ -258,7 +260,7 @@ func (sim *MockAerospikeServer) createSindexPassTwoExpectedOutputs(mas *MockAero
 
 	for k := range rawMetricsKeys {
 		if strings.HasPrefix(k, "sindex/") {
-			lSindexNames = append(lSindexNames, k)
+			lSindexNames = append(lSindexNames, strings.TrimSpace(k))
 		}
 	}
 
@@ -302,7 +304,7 @@ func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutpu
 
 			// process stats and create {metricname,label} and {metric,values} map of strings
 			for s, v := range stats {
-				key := s
+				key := strings.TrimSpace(s)
 				convertedValue, err := convertValue(v)
 				if err != nil {
 					fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
@@ -355,8 +357,8 @@ func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutpu
 
 					labelByNames := createLabelByNames(labelsMap)
 					sorted_label_str := "[" + labelByNames + " ]"
-					valuesArr = append(valuesArr, value)
-					labelsArr = append(labelsArr, sorted_label_str)
+					valuesArr = append(valuesArr, strings.TrimSpace(value))
+					labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
 
 					labelString := stringifyLabel(labelByNames)
 
@@ -423,8 +425,8 @@ func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutpu
 
 					labelByNames := createLabelByNames(labelsMap)
 					sorted_label_str := "[" + labelByNames + " ]"
-					valuesArr = append(valuesArr, value)
-					labelsArr = append(labelsArr, sorted_label_str)
+					valuesArr = append(valuesArr, strings.TrimSpace(value))
+					labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
 
 					labelString := stringifyLabel(labelByNames)
 
@@ -477,7 +479,7 @@ func (nst *MockNodestatPromMetricGenerator) createNodeStatsWatcherExpectedOutput
 			grpValues := rawMetrics[metricsGrpKey]
 			stats := splitAndRetrieveStats(grpValues, ";")
 			for s, v := range stats {
-				key := s
+				key := strings.TrimSpace(s)
 				convertedValue, err := convertValue(v)
 				if err != nil {
 					fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
@@ -516,8 +518,8 @@ func (nst *MockNodestatPromMetricGenerator) createNodeStatsWatcherExpectedOutput
 
 				sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
 
-				valuesArr = append(valuesArr, value)
-				labelsArr = append(labelsArr, sorted_label_str)
+				valuesArr = append(valuesArr, strings.TrimSpace(value))
+				labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
 
 				mapKeyname := makeKeyname(serviceIp, metric, true)
 				nst.lExpectedMetricNamedValues[mapKeyname] = valuesArr
@@ -561,7 +563,7 @@ func (msdg *MockSetsPromMetricGenerator) createSetsWatcherExpectedOutputs(mas *M
 				setName := stats["set"]
 
 				for s, v := range stats {
-					key := s
+					key := strings.TrimSpace(s)
 					convertedValue, err := convertValue(v)
 					if err != nil {
 						fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
@@ -605,8 +607,8 @@ func (msdg *MockSetsPromMetricGenerator) createSetsWatcherExpectedOutputs(mas *M
 					labelsMap["set"] = setName
 
 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-					valuesArr = append(valuesArr, value)
-					labelsArr = append(labelsArr, sorted_label_str)
+					valuesArr = append(valuesArr, strings.TrimSpace(value))
+					labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
 
 					msdg.lExpectedMetricNamedValues[mapKeyname] = valuesArr
 					msdg.lExpectedMetricLabels[mapKeyname] = labelsArr
@@ -676,8 +678,8 @@ func (ltc *MockLatencyPromMetricGenerator) createLatencysWatcherExpectedOutputs(
 
 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
 
-					cntValuesArr = append(cntValuesArr, allLatencyValues[1])
-					cntLabelsArr = append(cntLabelsArr, sorted_label_str)
+					cntValuesArr = append(cntValuesArr, strings.TrimSpace(allLatencyValues[1]))
+					cntLabelsArr = append(cntLabelsArr, strings.TrimSpace(sorted_label_str))
 
 					ltc.lExpectedMetricNamedValues[mapKeyname] = cntValuesArr
 					ltc.lExpectedMetricLabels[mapKeyname] = cntLabelsArr
@@ -708,8 +710,8 @@ func (ltc *MockLatencyPromMetricGenerator) createLatencysWatcherExpectedOutputs(
 
 							sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
 
-							bktValuesArr = append(bktValuesArr, value)
-							bktLabelsArr = append(bktLabelsArr, sorted_label_str)
+							bktValuesArr = append(bktValuesArr, strings.TrimSpace(value))
+							bktLabelsArr = append(bktLabelsArr, strings.TrimSpace(sorted_label_str))
 
 							ltc.lExpectedMetricNamedValues[mapKeyname] = bktValuesArr
 							ltc.lExpectedMetricLabels[mapKeyname] = bktLabelsArr
@@ -765,7 +767,7 @@ func (xdr *MockXdrPromMetricGenerator) createXdrsWatcherExpectedOutputs(mas *Moc
 				// dcName := strings.Split(grpSplitElements[1], "=")[1]
 
 				for s, v := range stats {
-					key := s
+					key := strings.TrimSpace(s)
 					convertedValue, err := convertValue(v)
 					if err != nil {
 						fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
@@ -817,8 +819,8 @@ func (xdr *MockXdrPromMetricGenerator) createXdrsWatcherExpectedOutputs(mas *Moc
 					}
 
 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-					valuesArr = append(valuesArr, value)
-					labelsArr = append(labelsArr, sorted_label_str)
+					valuesArr = append(valuesArr, strings.TrimSpace(value))
+					labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
 
 					mapKeyname := makeKeyname(dcName, metric, true)
 					mapKeyname = makeKeyname(namespace, mapKeyname, true)
@@ -882,7 +884,7 @@ func (sim *MockSindexPromMetricGenerator) createSindexWatcherTestData(mas *MockA
 			namespace, sindexName := sim.extractNamespaceSetSindexname(metricsGrpKey)
 			stats := splitAndRetrieveStats(sindexInfos, ";")
 			for stat, value := range stats {
-				key := stat
+				key := strings.TrimSpace(stat)
 				convertedValue, err := convertValue(value)
 				if err != nil {
 					fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", value, ") = error: ", err)
@@ -928,8 +930,8 @@ func (sim *MockSindexPromMetricGenerator) createSindexWatcherTestData(mas *MockA
 
 				sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
 
-				valuesArr = append(valuesArr, value)
-				labelsArr = append(labelsArr, sorted_label_str)
+				valuesArr = append(valuesArr, strings.TrimSpace(value))
+				labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
 
 				sim.lExpectedMetricNamedValues[mapKeyname] = valuesArr
 				sim.lExpectedMetricLabels[mapKeyname] = labelsArr
@@ -1029,8 +1031,8 @@ func (mockUsers *MockUsersPromMetricGenerator) createMockUserData(mas *MockAeros
 
 		sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
 
-		valuesArr = append(valuesArr, value)
-		labelsArr = append(labelsArr, sorted_label_str)
+		valuesArr = append(valuesArr, strings.TrimSpace(value))
+		labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
 
 		mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
 		mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
@@ -1065,8 +1067,8 @@ func (mockUsers *MockUsersPromMetricGenerator) createMockUserData(mas *MockAeros
 
 			sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
 
-			valuesArr = append(valuesArr, value)
-			labelsArr = append(labelsArr, sorted_label_str)
+			valuesArr = append(valuesArr, strings.TrimSpace(value))
+			labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
 
 			mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
 			mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
@@ -1100,8 +1102,8 @@ func (mockUsers *MockUsersPromMetricGenerator) createMockUserData(mas *MockAeros
 
 			sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
 
-			valuesArr = append(valuesArr, value)
-			labelsArr = append(labelsArr, sorted_label_str)
+			valuesArr = append(valuesArr, strings.TrimSpace(value))
+			labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
 
 			mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
 			mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
