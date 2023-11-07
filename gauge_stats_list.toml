@@ -13,6 +13,11 @@ sets_gauge_stats = [
 	"sindexes",
 	"tombstones",
 	"truncate_lut",
+
+	# 7.0 changes
+	"data_used_bytes",
+	"truncating",
+	
 ]
 
 #
@@ -220,4 +225,18 @@ namespace_gauge_stats =[
 	"write_q",
 	"xdr_bin_cemeteries",
 	"xdr_tombstones",
+
+    # added in 7.0
+	"data_avail_pct",
+	"data_compression_ratio",
+	"data_total_bytes",
+	"data_used_bytes",
+	"data_used_pct",
+	"index_mounts_used_pct",
+	"index_used_bytes",
+	"set_index_used_bytes",
+	"sindex_mounts_used_pct",
+	"sindex_used_bytes",
+	"truncating",
+	
 ]

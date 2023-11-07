@@ -105,11 +105,12 @@ func splitAndRetrieveStats(s, sep string) map[string]string {
 }
 
 func convertValue(s string) (float64, error) {
-	if f, err := strconv.ParseFloat(s, 64); err == nil {
+	temp_s := strings.TrimSpace(s)
+	if f, err := strconv.ParseFloat(temp_s, 64); err == nil {
 		return f, nil
 	}
 
-	if b, err := strconv.ParseBool(s); err == nil {
+	if b, err := strconv.ParseBool(temp_s); err == nil {
 		if b {
 			return 1, nil
 		}

@@ -29,13 +29,13 @@ func TestGetGaugesCounts(t *testing.T) {
 	initGaugeStats(METRICS_CONFIG_FILE, gaugeList)
 
 	glist := gaugeList.NamespaceStats
-	assert.Equal(t, len(glist), 88)
+	assert.Equal(t, len(glist), 99)
 
 	glist = gaugeList.NodeStats
 	assert.Equal(t, len(glist), 69)
 
 	glist = gaugeList.SetsStats
-	assert.Equal(t, len(glist), 7)
+	assert.Equal(t, len(glist), 9)
 
 	glist = gaugeList.SindexStats
 	assert.Equal(t, len(glist), 13)

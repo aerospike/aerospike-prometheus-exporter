@@ -11,7 +11,7 @@ import (
 )
 
 var regexToExtractArrayStats = map[string]string{
-	STORAGE_ENGINE: "storage\\-engine\\.(?P<type>file|device)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
+	STORAGE_ENGINE: "storage\\-engine\\.(?P<type>file|device|stripe)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
 	INDEX_TYPE:     "index\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
 	SINDEX_TYPE:    "sindex\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
 }
@@ -175,6 +175,9 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 		// check and include persistance-type if they are defined/found
 		indexType := stats[INDEX_TYPE]
 		sindexType := stats[SINDEX_TYPE]
+		storageEngine := stats[STORAGE_ENGINE]
+
+		// fmt.Println(" storageEngine: ", storageEngine)
 
 		// if stat is index-type or sindex-type , append addl label
 		if strings.HasPrefix(deviceType, INDEX_TYPE) && len(indexType) > 0 {
@@ -190,6 +193,9 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 
 			// check is it flash or pmem or shmem
 			nw.setFlagFlashStatSentByServer(sindexType)
+		} else if len(storageEngine) > 0 {
+			labels = append(labels, METRIC_LABEL_STORAGE_ENGINE)
+			labelValues = append(labelValues, storageEngine)
 		}
 
 		// handleArrayStats(..) will return empty-string if unable to handle the array-stat
