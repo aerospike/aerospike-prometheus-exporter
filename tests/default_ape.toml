@@ -96,7 +96,7 @@ user = ""
 # database password
 password = ""
 
-# authentication mode: internal (for server), external (LDAP, etc.)
+# authentication mode: internal (server authentication) [default], external (e.g., LDAP), pki. 
 auth_mode = ""
 
 # timeout for sending commands to the server node in seconds
