@@ -1,4 +1,4 @@
-package main
+package commons
 
 import (
 	"bytes"
@@ -24,6 +24,11 @@ import (
 
 // this is used as a prefix to qualify a metric while pushing to Prometheus or something
 var PREFIX_AEROSPIKE = "aerospike_"
+
+// Default info commands
+var Infokey_ClusterName = "cluster-name"
+var Infokey_Service = "service-clear-std"
+var Infokey_Build = "build"
 
 // used to define context of stat types (like namespace, set, xdr etc.,)
 type ContextType string
@@ -59,7 +64,7 @@ const (
 	SINDEX_TYPE    = "sindex-type"
 )
 
-func makeMetric(namespace, name string, t metricType, constLabels map[string]string, labels ...string) promMetric {
+func MakeMetric(namespace, name string, t metricType, constLabels map[string]string, labels ...string) promMetric {
 	promDesc := prometheus.NewDesc(
 		namespace+"_"+normalizeMetric(name),
 		normalizeDesc(name),
@@ -97,7 +102,7 @@ func normalizeMetric(s string) string {
 	return metricReplacerFunc.Replace(s)
 }
 
-func parseStats(s, sep string) map[string]string {
+func ParseStats(s, sep string) map[string]string {
 	stats := make(map[string]string, strings.Count(s, sep)+1)
 	s2 := strings.Split(s, sep)
 	for _, s := range s2 {
@@ -114,7 +119,7 @@ func parseStats(s, sep string) map[string]string {
 	return stats
 }
 
-func tryConvert(s string) (float64, error) {
+func TryConvert(s string) (float64, error) {
 	if f, err := strconv.ParseFloat(s, 64); err == nil {
 		return f, nil
 	}
@@ -131,7 +136,7 @@ func tryConvert(s string) (float64, error) {
 
 // Check HTTP Basic Authentication.
 // Validate username, password from the http request against the configured values.
-func validateBasicAuth(r *http.Request, username string, password string) bool {
+func ValidateBasicAuth(r *http.Request, username string, password string) bool {
 	user, pass, ok := r.BasicAuth()
 
 	if !ok || subtle.ConstantTimeCompare([]byte(user), []byte(username)) != 1 || subtle.ConstantTimeCompare([]byte(pass), []byte(password)) != 1 {
@@ -142,11 +147,11 @@ func validateBasicAuth(r *http.Request, username string, password string) bool {
 }
 
 // Regex for indentifying globbing patterns (or standard wildcards) in the metrics allowlist and blocklist.
-var globbingPattern = regexp.MustCompile(`\[|\]|\*|\?|\{|\}|\\|!`)
+var GlobbingPattern = regexp.MustCompile(`\[|\]|\*|\?|\{|\}|\\|!`)
 
 // Filter metrics
 // Runs the raw metrics through allowlist first and the resulting metrics through blocklist
-func getFilteredMetrics(rawMetrics map[string]metricType, allowlist []string, allowlistEnabled bool, blocklist []string) map[string]metricType {
+func GetFilteredMetrics(rawMetrics map[string]metricType, allowlist []string, allowlistEnabled bool, blocklist []string) map[string]metricType {
 	filteredMetrics := filterAllowedMetrics(rawMetrics, allowlist, allowlistEnabled)
 	filterBlockedMetrics(filteredMetrics, blocklist)
 
@@ -162,7 +167,7 @@ func filterAllowedMetrics(rawMetrics map[string]metricType, allowlist []string, 
 	filteredMetrics := make(map[string]metricType)
 
 	for _, stat := range allowlist {
-		if globbingPattern.MatchString(stat) {
+		if GlobbingPattern.MatchString(stat) {
 			ge := glob.MustCompile(stat)
 
 			for k, v := range rawMetrics {
@@ -187,7 +192,7 @@ func filterBlockedMetrics(filteredMetrics map[string]metricType, blocklist []str
 	}
 
 	for _, stat := range blocklist {
-		if globbingPattern.MatchString(stat) {
+		if GlobbingPattern.MatchString(stat) {
 			ge := glob.MustCompile(stat)
 
 			for k := range filteredMetrics {
@@ -208,7 +213,7 @@ func filterBlockedMetrics(filteredMetrics map[string]metricType, blocklist []str
 // 3. "env:<environment-variable-that-contains-secret>" (environment variable containing secret)
 // 4. "env-b64:<environment-variable-that-contains-base64-encoded-secret>" (environment variable containing base64 encoded secret)
 // 5. "b64:<base64-encoded-secret>" (base64 encoded secret)
-func getSecret(secretConfig string) ([]byte, error) {
+func GetSecret(secretConfig string) ([]byte, error) {
 	secretSource := strings.SplitN(secretConfig, ":", 2)
 
 	if len(secretSource) == 2 {
@@ -225,10 +230,10 @@ func getSecret(secretConfig string) ([]byte, error) {
 			return []byte(secret), nil
 
 		case "env-b64":
-			return getValueFromBase64EnvVar(secretSource[1])
+			return GetValueFromBase64EnvVar(secretSource[1])
 
 		case "b64":
-			return getValueFromBase64(secretSource[1])
+			return GetValueFromBase64(secretSource[1])
 
 		default:
 			return nil, fmt.Errorf("invalid source: %s", secretSource[0])
@@ -253,10 +258,10 @@ func getCertificate(certConfig string) ([]byte, error) {
 			return readFromFile(certificateSource[1])
 
 		case "env-b64":
-			return getValueFromBase64EnvVar(certificateSource[1])
+			return GetValueFromBase64EnvVar(certificateSource[1])
 
 		case "b64":
-			return getValueFromBase64(certificateSource[1])
+			return GetValueFromBase64(certificateSource[1])
 
 		default:
 			return nil, fmt.Errorf("invalid source %s", certificateSource[0])
@@ -280,17 +285,17 @@ func readFromFile(filePath string) ([]byte, error) {
 }
 
 // Get decoded base64 value from environment variable
-func getValueFromBase64EnvVar(envVar string) ([]byte, error) {
+func GetValueFromBase64EnvVar(envVar string) ([]byte, error) {
 	b64Value, ok := os.LookupEnv(envVar)
 	if !ok {
 		return nil, fmt.Errorf("environment variable %s not set", envVar)
 	}
 
-	return getValueFromBase64(b64Value)
+	return GetValueFromBase64(b64Value)
 }
 
 // Get decoded base64 value
-func getValueFromBase64(b64Value string) ([]byte, error) {
+func GetValueFromBase64(b64Value string) ([]byte, error) {
 	value, err := base64.StdEncoding.DecodeString(b64Value)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode base64 value: %v", err)
@@ -301,7 +306,7 @@ func getValueFromBase64(b64Value string) ([]byte, error) {
 
 // loadCACert returns CA set of certificates (cert pool)
 // reads CA certificate based on the certConfig and adds it to the pool
-func loadCACert(certConfig string) (*x509.CertPool, error) {
+func LoadCACert(certConfig string) (*x509.CertPool, error) {
 	certificates, err := x509.SystemCertPool()
 	if certificates == nil || err != nil {
 		certificates = x509.NewCertPool()
@@ -322,7 +327,7 @@ func loadCACert(certConfig string) (*x509.CertPool, error) {
 // loadServerCertAndKey reads server certificate and associated key file based on certConfig and keyConfig
 // returns parsed server certificate
 // if the private key is encrypted, it will be decrypted using key file passphrase
-func loadServerCertAndKey(certConfig, keyConfig, keyPassConfig string) ([]tls.Certificate, error) {
+func LoadServerCertAndKey(certConfig, keyConfig, keyPassConfig string) ([]tls.Certificate, error) {
 	var certificates []tls.Certificate
 
 	// Read cert file
@@ -346,7 +351,7 @@ func loadServerCertAndKey(certConfig, keyConfig, keyPassConfig string) ([]tls.Ce
 
 	// Check and Decrypt the the Key Block using passphrase
 	if x509.IsEncryptedPEMBlock(keyBlock) { // nolint:staticcheck
-		keyFilePassphraseBytes, err := getSecret(keyPassConfig)
+		keyFilePassphraseBytes, err := GetSecret(keyPassConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get key passphrase: `%s`", err)
 		}
@@ -377,7 +382,7 @@ func loadServerCertAndKey(certConfig, keyConfig, keyPassConfig string) ([]tls.Ce
 	return certificates, nil
 }
 
-func sanitizeUTF8(lv string) string {
+func SanitizeUTF8(lv string) string {
 	if utf8.ValidString(lv) {
 		return lv
 	}
@@ -391,7 +396,7 @@ func sanitizeUTF8(lv string) string {
 	return strings.Map(fixUtf, lv)
 }
 
-func buildVersionGreaterThanOrEqual(rawMetrics map[string]string, ref string) (bool, error) {
+func BuildVersionGreaterThanOrEqual(rawMetrics map[string]string, ref string) (bool, error) {
 	if len(rawMetrics["build"]) == 0 {
 		return false, fmt.Errorf("couldn't get build version")
 	}
@@ -417,7 +422,7 @@ func buildVersionGreaterThanOrEqual(rawMetrics map[string]string, ref string) (b
 /*
 Validates if given stat is having - or defined in gauge-stat list, if not, return default metric-type (i.e. Counter)
 */
-func getMetricType(pContext ContextType, pRawMetricName string) metricType {
+func GetMetricType(pContext ContextType, pRawMetricName string) metricType {
 
 	// condition#1 : Config ( which has a - in the stat) is always a Gauge
 	// condition#2 : or - it is marked as Gauge in the configuration file
@@ -428,7 +433,7 @@ func getMetricType(pContext ContextType, pRawMetricName string) metricType {
 	tmpRawMetricName := strings.ReplaceAll(pRawMetricName, STORAGE_ENGINE, "")
 
 	if strings.Contains(tmpRawMetricName, "-") ||
-		gaugeStatHandler.isGauge(pContext, tmpRawMetricName) {
+		GaugeStatHandler.isGauge(pContext, tmpRawMetricName) {
 		return mtGauge
 	}
 
@@ -436,7 +441,7 @@ func getMetricType(pContext ContextType, pRawMetricName string) metricType {
 }
 
 // This is a common utility, used by all the watchers to push metric to prometheus
-func pushToPrometheus(asMetric AerospikeStat, pv float64, labels []string, labelValues []string,
+func PushToPrometheus(asMetric AerospikeStat, pv float64, labels []string, labelValues []string,
 	ch chan<- prometheus.Metric) {
 
 	if asMetric.isAllowed {

@@ -1,4 +1,4 @@
-package main
+package commons
 
 import "github.com/prometheus/client_golang/prometheus"
 
@@ -14,7 +14,8 @@ const (
 type Watcher interface {
 	passOneKeys() []string
 	passTwoKeys(rawMetrics map[string]string) []string
-	refresh(o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error
+	// refresh( o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error
+	refresh(infoKeys []string, rawMetrics map[string]string) error
 	describe(ch chan<- *prometheus.Desc)
 }
 

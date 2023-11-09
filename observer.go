@@ -11,6 +11,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	aero "github.com/aerospike/aerospike-client-go/v6"
+	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	watchers "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/watchers"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,7 +21,7 @@ type Observer struct {
 	conn          *aero.Connection
 	newConnection func() (*aero.Connection, error)
 	ticks         prometheus.Counter
-	watchers      []Watcher
+	watchers      []watchers.Watcher
 	mutex         sync.Mutex
 }
 
@@ -32,15 +34,10 @@ var (
 
 	// Number of retries on info request
 	retryCount = 3
-
-	// Default info commands
-	ikClusterName = "cluster-name"
-	ikService     = "service-clear-std"
-	ikBuild       = "build"
 )
 
 func initAerospikeTLS() *tls.Config {
-	if len(config.Aerospike.RootCA) == 0 && len(config.Aerospike.CertFile) == 0 && len(config.Aerospike.KeyFile) == 0 {
+	if len(commons.Cfg.Aerospike.RootCA) == 0 && len(commons.Cfg.Aerospike.CertFile) == 0 && len(commons.Cfg.Aerospike.KeyFile) == 0 {
 		return nil
 	}
 
@@ -48,13 +45,13 @@ func initAerospikeTLS() *tls.Config {
 	var serverPool *x509.CertPool
 	var err error
 
-	serverPool, err = loadCACert(config.Aerospike.RootCA)
+	serverPool, err = commons.LoadCACert(commons.Cfg.Aerospike.RootCA)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if len(config.Aerospike.CertFile) > 0 || len(config.Aerospike.KeyFile) > 0 {
-		clientPool, err = loadServerCertAndKey(config.Aerospike.CertFile, config.Aerospike.KeyFile, config.Aerospike.KeyFilePassphrase)
+	if len(commons.Cfg.Aerospike.CertFile) > 0 || len(commons.Cfg.Aerospike.KeyFile) > 0 {
+		clientPool, err = commons.LoadServerCertAndKey(commons.Cfg.Aerospike.CertFile, commons.Cfg.Aerospike.KeyFile, commons.Cfg.Aerospike.KeyFilePassphrase)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -77,17 +74,17 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 		"aerospike_node_up",
 		"Aerospike node active status",
 		[]string{"cluster_name", "service", "build"},
-		config.AeroProm.MetricLabels,
+		commons.Cfg.AeroProm.MetricLabels,
 	)
 
 	// Get aerospike auth username
-	username, err := getSecret(user)
+	username, err := commons.GetSecret(user)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Get aerospike auth password
-	password, err := getSecret(pass)
+	password, err := commons.GetSecret(pass)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,7 +93,7 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 	clientPolicy.User = string(username)
 	clientPolicy.Password = string(password)
 
-	authMode := strings.ToLower(strings.TrimSpace(config.Aerospike.AuthMode))
+	authMode := strings.ToLower(strings.TrimSpace(commons.Cfg.Aerospike.AuthMode))
 
 	switch authMode {
 	case "internal", "":
@@ -104,7 +101,7 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 	case "external":
 		clientPolicy.AuthMode = aero.AuthModeExternal
 	case "pki":
-		if len(config.Aerospike.CertFile) == 0 || len(config.Aerospike.KeyFile) == 0 {
+		if len(commons.Cfg.Aerospike.CertFile) == 0 || len(commons.Cfg.Aerospike.KeyFile) == 0 {
 			log.Fatalln("Invalid certificate configuration when using auth mode PKI: cert_file and key_file must be set")
 		}
 		clientPolicy.AuthMode = aero.AuthModePKI
@@ -114,12 +111,12 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 
 	// allow only ONE connection
 	clientPolicy.ConnectionQueueSize = 1
-	clientPolicy.Timeout = time.Duration(config.Aerospike.Timeout) * time.Second
+	clientPolicy.Timeout = time.Duration(commons.Cfg.Aerospike.Timeout) * time.Second
 
 	clientPolicy.TlsConfig = initAerospikeTLS()
 
 	if clientPolicy.TlsConfig != nil {
-		ikService = "service-tls-std"
+		commons.Infokey_Service = "service-tls-std"
 	}
 
 	createNewConnection := func() (*aero.Connection, error) {
@@ -153,15 +150,9 @@ func newObserver(server *aero.Host, user, pass string) (o *Observer, err error) 
 				Name:      "ticks",
 				Help:      "Counter that detemines how many times the Aerospike node was scraped for metrics.",
 			}),
-		watchers: []Watcher{
-			&NamespaceWatcher{},
-			&SetWatcher{},
-			&LatencyWatcher{}, // gets the build version, used by watchers below
-			&StatsWatcher{},
-			&XdrWatcher{},
-			&UserWatcher{},
-			&JobsWatcher{},
-			&SindexWatcher{}}, // the order is important here
+		watchers: []watchers.Watcher{
+			&watchers.NamespaceWatcher{},
+		}, // the order is important here
 	}
 
 	return o, nil
@@ -179,14 +170,19 @@ func (o *Observer) Collect(ch chan<- prometheus.Metric) {
 	o.ticks.Inc()
 	ch <- o.ticks
 
-	stats, err := o.refresh(ch)
+	// refresh metrics from various watchers,
+	watcher_metrics, err := o.refresh(ch)
 	if err != nil {
 		log.Errorln(err)
 		ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 0.0, gClusterName, gService, gBuild)
 		return
 	}
 
-	gClusterName, gService, gBuild = stats[ikClusterName], stats[ikService], stats[ikBuild]
+	// push the fetched metrics to prometheus
+	for _, wm := range watcher_metrics {
+		commons.PushToPrometheus(wm.Metric, wm.Value, wm.Labels, wm.LabelValues, ch)
+	}
+
 	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, gClusterName, gService, gBuild)
 }
 
@@ -228,13 +224,16 @@ func (o *Observer) requestInfo(retryCount int, infoKeys []string) (map[string]st
 	return rawMetrics, err
 }
 
-func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, error) {
+func (o *Observer) refresh(ch chan<- prometheus.Metric) ([]watchers.WatcherMetric, error) {
 	log.Debugf("Refreshing node %s", fullHost)
+
+	// array to accumulate all metrics, which later will be dispatched by various observers
+	var all_metrics_to_send = []watchers.WatcherMetric{}
 
 	// fetch first set of info keys
 	var infoKeys []string
 	for _, c := range o.watchers {
-		if keys := c.passOneKeys(); len(keys) > 0 {
+		if keys := c.PassOneKeys(); len(keys) > 0 {
 			infoKeys = append(infoKeys, keys...)
 		}
 	}
@@ -250,10 +249,10 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	}
 
 	// fetch second second set of info keys
-	infoKeys = []string{ikClusterName, ikService, ikBuild}
+	infoKeys = []string{commons.Infokey_ClusterName, commons.Infokey_Service, commons.Infokey_Build}
 	watcherInfoKeys := make([][]string, len(o.watchers))
 	for i, c := range o.watchers {
-		if keys := c.passTwoKeys(passOneOutput); len(keys) > 0 {
+		if keys := c.PassTwoKeys(passOneOutput); len(keys) > 0 {
 			infoKeys = append(infoKeys, keys...)
 			watcherInfoKeys[i] = keys
 		}
@@ -262,22 +261,27 @@ func (o *Observer) refresh(ch chan<- prometheus.Metric) (map[string]string, erro
 	// info request for second set of info keys, this retrieves all the stats from server
 	rawMetrics, err := o.requestInfo(retryCount, infoKeys)
 	if err != nil {
-		return passOneOutput, err
+		return all_metrics_to_send, err
 	}
+
+	// set global values
+	gClusterName, gService, gBuild = rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], rawMetrics[commons.Infokey_Build]
 
 	// sanitize the utf8 strings before sending them to watchers
 	for k, v := range rawMetrics {
-		rawMetrics[k] = sanitizeUTF8(v)
+		rawMetrics[k] = commons.SanitizeUTF8(v)
 	}
 
 	// sanitize the utf8 strings before sending them to watchers
 	for i, c := range o.watchers {
-		if err := c.refresh(o, watcherInfoKeys[i], rawMetrics, ch); err != nil {
-			return rawMetrics, err
+		l_watcher_metrics, err := c.Refresh(watcherInfoKeys[i], rawMetrics)
+		if err != nil {
+			return all_metrics_to_send, err
 		}
+		all_metrics_to_send = append(all_metrics_to_send, l_watcher_metrics...)
 	}
 
 	log.Debugf("Refreshing node was successful")
 
-	return rawMetrics, nil
+	return all_metrics_to_send, nil
 }

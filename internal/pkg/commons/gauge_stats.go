@@ -1,4 +1,4 @@
-package main
+package commons
 
 import (
 	"os"
@@ -7,6 +7,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 )
+
+var GaugeStatHandler GaugeStats
 
 /**
  * Defines the structure which holds various Gauge stats for each contexts from a toml file
@@ -30,7 +32,7 @@ type GaugeStats struct {
 }
 
 // Initialize exporter configuration
-func initGaugeStats(pGaugeStatsFile string, pGaugeStats *GaugeStats) {
+func InitGaugeStats(pGaugeStatsFile string, pGaugeStats *GaugeStats) {
 
 	log.Infof("Loading Gauge Stats file %s", pGaugeStatsFile)
 

@@ -1,19 +1,19 @@
-package main
+package watchers
 
 import (
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 
 	log "github.com/sirupsen/logrus"
 )
 
 var regexToExtractArrayStats = map[string]string{
-	STORAGE_ENGINE: "storage\\-engine\\.(?P<type>file|device|stripe)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
-	INDEX_TYPE:     "index\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
-	SINDEX_TYPE:    "sindex\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
+	commons.STORAGE_ENGINE: "storage\\-engine\\.(?P<type>file|device|stripe)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
+	commons.INDEX_TYPE:     "index\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
+	commons.SINDEX_TYPE:    "sindex\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
 }
 
 // index-pressure related variables
@@ -39,17 +39,15 @@ const (
 )
 
 type NamespaceWatcher struct {
-	namespaceStats map[string]AerospikeStat
+	namespaceStats map[string]commons.AerospikeStat
 }
 
-func (nw *NamespaceWatcher) describe(ch chan<- *prometheus.Desc) {}
-
-func (nw *NamespaceWatcher) passOneKeys() []string {
+func (nw *NamespaceWatcher) PassOneKeys() []string {
 	// we are sending key "namespaces", server returns all the configs and stats in single call, unlike node-stats, xdr
 	return []string{KEY_NS_METADATA}
 }
 
-func (nw *NamespaceWatcher) passTwoKeys(rawMetrics map[string]string) []string {
+func (nw *NamespaceWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
 	s := rawMetrics[KEY_NS_METADATA]
 	list := strings.Split(s, ";")
 
@@ -69,28 +67,32 @@ func (nw *NamespaceWatcher) passTwoKeys(rawMetrics map[string]string) []string {
 	return infoKeys
 }
 
-func (nw *NamespaceWatcher) refresh(ott *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error {
+func (nw *NamespaceWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]WatcherMetric, error) {
 	if nw.namespaceStats == nil {
-		nw.namespaceStats = make(map[string]AerospikeStat)
+		nw.namespaceStats = make(map[string]commons.AerospikeStat)
 	}
 
+	var metrics_to_send = []WatcherMetric{}
 	for _, infoKey := range infoKeys {
 
 		// we get 2 info-key Types - examples: index-pressure or namespace/test, namespace/materials
 		if strings.HasPrefix(infoKey, KEY_NS_NAMESPACE) {
-			nw.refreshNamespaceStats(infoKey, infoKeys, rawMetrics, ch)
+			l_w_metrics := nw.refreshNamespaceStats(infoKey, infoKeys, rawMetrics)
+			metrics_to_send = append(metrics_to_send, l_w_metrics...)
+
 		} else if strings.HasPrefix(infoKey, KEY_NS_INDEX_PRESSURE) {
 			// namespace/<ns> will be multiple times according to the # of namespaces configured in the server
-			nw.refreshIndexPressure(infoKey, infoKeys, rawMetrics, ch)
+			l_w_metrics := nw.refreshIndexPressure(infoKey, infoKeys, rawMetrics)
+			metrics_to_send = append(metrics_to_send, l_w_metrics...)
 		}
 
 	}
 
-	return nil
+	return metrics_to_send, nil
 }
 
 // handle IndexPressure infoKey
-func (nw *NamespaceWatcher) refreshIndexPressure(singleInfoKey string, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) {
+func (nw *NamespaceWatcher) refreshIndexPressure(singleInfoKey string, infoKeys []string, rawMetrics map[string]string) []WatcherMetric {
 
 	indexPresssureStats := rawMetrics[singleInfoKey]
 
@@ -103,6 +105,8 @@ func (nw *NamespaceWatcher) refreshIndexPressure(singleInfoKey string, infoKeys 
 	// metric-names - first element is un-used, as we send namespace as a label, this also keeps the index-numbers same as the server-stats
 	indexPressureMetricNames := []string{"index_pressure_namespace", "index_pressure_total_memory", "index_pressure_dirty_memory"}
 
+	var metrics_to_send = []WatcherMetric{}
+
 	// loop thru each namespace values,
 	//   Server index-pressure output: "test:0:0", "bar_device:0:0"
 	// refer: https://docs.aerospike.com/reference/info#index-pressure
@@ -114,14 +118,14 @@ func (nw *NamespaceWatcher) refreshIndexPressure(singleInfoKey string, infoKeys 
 		values := strings.Split(nsIdxPressureValues, ":")
 		nsName := values[0]
 
-		labels := []string{METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS}
-		labelValues := []string{rawMetrics[ikClusterName], rawMetrics[ikService], nsName}
+		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS}
+		labelValues := []string{rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], nsName}
 
 		// Server index-pressure output: test:0:0;bar_device:0:0;materials:0:0
 		//  ignore first element - namespace
 		for index := 1; index < len(values); index++ {
 
-			pv, err := tryConvert(values[index])
+			pv, err := commons.TryConvert(values[index])
 			if err != nil {
 				continue
 			}
@@ -130,32 +134,37 @@ func (nw *NamespaceWatcher) refreshIndexPressure(singleInfoKey string, infoKeys 
 
 			asMetric, exists := nw.namespaceStats[statName]
 			if !exists {
-				asMetric = newAerospikeStat(CTX_NAMESPACE, statName)
+				asMetric = commons.NewAerospikeStat(commons.CTX_NAMESPACE, statName)
 				nw.namespaceStats[statName] = asMetric
 			}
 
 			// push to prom-channel
-			pushToPrometheus(asMetric, pv, labels, labelValues, ch)
+			// commons.PushToPrometheus(asMetric, pv, labels, labelValues, ch)
+			metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, pv, labels, labelValues})
 		}
 	}
+
+	return metrics_to_send
 }
 
 // all namespace stats (except index-pressure)
-func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) {
+func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys []string, rawMetrics map[string]string) []WatcherMetric {
 
 	// extract namespace from info-command, construct: namespace/test, namespace/bar
 	nsName := strings.ReplaceAll(singleInfoKey, (KEY_NS_NAMESPACE + "/"), "")
 
 	log.Tracef("namespace-stats:%s:%s", nsName, rawMetrics[singleInfoKey])
 
-	stats := parseStats(rawMetrics[singleInfoKey], ";")
+	stats := commons.ParseStats(rawMetrics[singleInfoKey], ";")
 	var labels []string
 	var labelValues []string
 	constructedStatname := ""
 
+	var metrics_to_send = []WatcherMetric{}
+
 	for stat, value := range stats {
 
-		pv, err := tryConvert(value)
+		pv, err := commons.TryConvert(value)
 		if err != nil {
 			continue
 		}
@@ -165,36 +174,36 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 
 		// default: aerospike_namespace_<stat-name>
 		constructedStatname = stat
-		labels = []string{METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS}
-		labelValues = []string{rawMetrics[ikClusterName], rawMetrics[ikService], nsName}
+		labels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS}
+		labelValues = []string{rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], nsName}
 
 		if isArrayType {
-			constructedStatname, labels, labelValues = nw.handleArrayStats(nsName, stat, pv, stats, deviceType, rawMetrics, ch)
+			constructedStatname, labels, labelValues = nw.handleArrayStats(nsName, stat, pv, stats, deviceType, rawMetrics)
 		}
 
 		// check and include persistance-type if they are defined/found
-		indexType := stats[INDEX_TYPE]
-		sindexType := stats[SINDEX_TYPE]
-		storageEngine := stats[STORAGE_ENGINE]
+		indexType := stats[commons.INDEX_TYPE]
+		sindexType := stats[commons.SINDEX_TYPE]
+		storageEngine := stats[commons.STORAGE_ENGINE]
 
 		// fmt.Println(" storageEngine: ", storageEngine)
 
 		// if stat is index-type or sindex-type , append addl label
-		if strings.HasPrefix(deviceType, INDEX_TYPE) && len(indexType) > 0 {
-			labels = append(labels, METRIC_LABEL_INDEX)
+		if strings.HasPrefix(deviceType, commons.INDEX_TYPE) && len(indexType) > 0 {
+			labels = append(labels, commons.METRIC_LABEL_INDEX)
 			labelValues = append(labelValues, indexType)
 
 			// check is it flash or pmem or shmem
 			nw.setFlagFlashStatSentByServer(indexType)
 
-		} else if strings.HasPrefix(deviceType, SINDEX_TYPE) && len(sindexType) > 0 {
-			labels = append(labels, METRIC_LABEL_SINDEX)
+		} else if strings.HasPrefix(deviceType, commons.SINDEX_TYPE) && len(sindexType) > 0 {
+			labels = append(labels, commons.METRIC_LABEL_SINDEX)
 			labelValues = append(labelValues, sindexType)
 
 			// check is it flash or pmem or shmem
 			nw.setFlagFlashStatSentByServer(sindexType)
 		} else if len(storageEngine) > 0 {
-			labels = append(labels, METRIC_LABEL_STORAGE_ENGINE)
+			labels = append(labels, commons.METRIC_LABEL_STORAGE_ENGINE)
 			labelValues = append(labelValues, storageEngine)
 		}
 
@@ -203,15 +212,17 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 			asMetric, exists := nw.namespaceStats[constructedStatname]
 
 			if !exists {
-				asMetric = newAerospikeStat(CTX_NAMESPACE, constructedStatname)
+				asMetric = commons.NewAerospikeStat(commons.CTX_NAMESPACE, constructedStatname)
 				nw.namespaceStats[constructedStatname] = asMetric
 			}
 
 			// push to prom-channel
-			pushToPrometheus(asMetric, pv, labels, labelValues, ch)
+			// commons.PushToPrometheus(asMetric, pv, labels, labelValues, ch)
+			metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, pv, labels, labelValues})
 		}
 	}
 
+	return metrics_to_send
 }
 
 // Utility to handle array style stats like storage-engine or index-type etc.,
@@ -221,8 +232,8 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 // each value of the 4 groups represents type like stats-type, index-number, sub-stat-name (like file[0].age)
 // - example: group[0]=<full-stat> , group[1]= stat-type, group[2]= array-index, group[3]= sub-stat-name
 func (nw *NamespaceWatcher) handleArrayStats(nsName string, statToProcess string, pv float64,
-	allNamespaceStats map[string]string, deviceType string, rawMetrics map[string]string,
-	ch chan<- prometheus.Metric) (string, []string, []string) {
+	allNamespaceStats map[string]string, deviceType string,
+	rawMetrics map[string]string) (string, []string, []string) {
 
 	regexStr := regexToExtractArrayStats[deviceType]
 	dynamicExtractor := regexp.MustCompile(regexStr)
@@ -242,8 +253,8 @@ func (nw *NamespaceWatcher) handleArrayStats(nsName string, statToProcess string
 
 	compositeStatName := deviceType + "_" + statType + "_" + statName
 	deviceOrFileName := allNamespaceStats[deviceType+"."+statType+"["+statIndex+"]"]
-	labels := []string{METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, statType + "_index", statType}
-	labelValues := []string{rawMetrics[ikClusterName], rawMetrics[ikService], nsName, statIndex, deviceOrFileName}
+	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, statType + "_index", statType}
+	labelValues := []string{rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], nsName, statIndex, deviceOrFileName}
 
 	return compositeStatName, labels, labelValues
 
@@ -260,12 +271,12 @@ func (nw *NamespaceWatcher) checkStatPersistanceType(statToProcess string,
 	// if starts-with "index-type", then
 	//    return index-type, <is-array-or-normal-stat>
 
-	if strings.HasPrefix(statToProcess, INDEX_TYPE) {
-		return INDEX_TYPE, strings.Contains(statToProcess, "[")
-	} else if strings.HasPrefix(statToProcess, SINDEX_TYPE) {
-		return SINDEX_TYPE, strings.Contains(statToProcess, "[")
-	} else if strings.HasPrefix(statToProcess, STORAGE_ENGINE) {
-		return STORAGE_ENGINE, strings.Contains(statToProcess, "[")
+	if strings.HasPrefix(statToProcess, commons.INDEX_TYPE) {
+		return commons.INDEX_TYPE, strings.Contains(statToProcess, "[")
+	} else if strings.HasPrefix(statToProcess, commons.SINDEX_TYPE) {
+		return commons.SINDEX_TYPE, strings.Contains(statToProcess, "[")
+	} else if strings.HasPrefix(statToProcess, commons.STORAGE_ENGINE) {
+		return commons.STORAGE_ENGINE, strings.Contains(statToProcess, "[")
 	}
 
 	return "", false

@@ -1,4 +1,4 @@
-package main
+package commons
 
 import "github.com/prometheus/client_golang/prometheus"
 
@@ -20,7 +20,7 @@ func (as *AerospikeStat) makePromMetric(pLabels ...string) (*prometheus.Desc, pr
 		qualifiedName,
 		normalizeDesc(as.name),
 		pLabels,
-		config.AeroProm.MetricLabels,
+		Cfg.AeroProm.MetricLabels,
 	)
 
 	if as.mType == mtGauge {
@@ -40,10 +40,10 @@ func (as *AerospikeStat) qualifyMetricContext() string {
 /*
 Utility, constructs a new AerospikeStat object with required checks like is-allowed, metric-type
 */
-func newAerospikeStat(pContext ContextType, pStatName string) AerospikeStat {
+func NewAerospikeStat(pContext ContextType, pStatName string) AerospikeStat {
 
-	isAllowed := config.isMetricAllowed(pContext, pStatName)
-	mType := getMetricType(pContext, pStatName)
+	isAllowed := Cfg.isMetricAllowed(pContext, pStatName)
+	mType := GetMetricType(pContext, pStatName)
 
 	return AerospikeStat{pContext, pStatName, mType, isAllowed}
 }

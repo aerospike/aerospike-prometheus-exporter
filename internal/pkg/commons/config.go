@@ -1,4 +1,4 @@
-package main
+package commons
 
 import (
 	"os"
@@ -10,6 +10,8 @@ import (
 	aslog "github.com/aerospike/aerospike-client-go/v6/logger"
 	log "github.com/sirupsen/logrus"
 )
+
+var Cfg Config
 
 // Config represents the aerospike-prometheus-exporter configuration
 type Config struct {
@@ -123,7 +125,7 @@ type Config struct {
 }
 
 // Validate and update exporter configuration
-func (c *Config) validateAndUpdate() {
+func (c *Config) ValidateAndUpdate() {
 	if c.AeroProm.Bind == "" {
 		c.AeroProm.Bind = ":9145"
 	}
@@ -142,7 +144,7 @@ func (c *Config) validateAndUpdate() {
 }
 
 // Initialize exporter configuration
-func initConfig(configFile string, config *Config) {
+func InitConfig(configFile string) {
 	// to print everything out regarding reading the config in app init
 	log.SetLevel(log.DebugLevel)
 
@@ -152,17 +154,17 @@ func initConfig(configFile string, config *Config) {
 		log.Fatalln(err)
 	}
 
-	md, err := toml.Decode(string(blob), &config)
+	md, err := toml.Decode(string(blob), &Cfg)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	initAllowlistAndBlocklistConfigs(config, md)
+	initAllowlistAndBlocklistConfigs(md)
 
-	config.LogFile = setLogFile(config.AeroProm.LogFile)
+	Cfg.LogFile = setLogFile(Cfg.AeroProm.LogFile)
 
 	aslog.Logger.SetLogger(log.StandardLogger())
-	setLogLevel(config.AeroProm.LogLevel)
+	setLogLevel(Cfg.AeroProm.LogLevel)
 }
 
 // Set log file path
@@ -206,86 +208,86 @@ func setLogLevel(level string) {
 }
 
 // Initialize Allowlist and Blocklist configurations
-func initAllowlistAndBlocklistConfigs(config *Config, md toml.MetaData) {
+func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 	// Initialize AllowlistEnabled config
-	config.Aerospike.NamespaceMetricsAllowlistEnabled = md.IsDefined("Aerospike", "namespace_metrics_allowlist")
-	config.Aerospike.SetMetricsAllowlistEnabled = md.IsDefined("Aerospike", "set_metrics_allowlist")
-	config.Aerospike.NodeMetricsAllowlistEnabled = md.IsDefined("Aerospike", "node_metrics_allowlist")
-	config.Aerospike.XdrMetricsAllowlistEnabled = md.IsDefined("Aerospike", "xdr_metrics_allowlist")
-	config.Aerospike.UserMetricsUsersAllowlistEnabled = md.IsDefined("Aerospike", "user_metrics_users_allowlist")
-	config.Aerospike.JobMetricsAllowlistEnabled = md.IsDefined("Aerospike", "job_metrics_allowlist")
-	config.Aerospike.SindexMetricsAllowlistEnabled = md.IsDefined("Aerospike", "sindex_metrics_allowlist")
-	config.Aerospike.LatenciesMetricsAllowlistEnabled = md.IsDefined("Aerospike", "latencies_metrics_allowlist")
+	Cfg.Aerospike.NamespaceMetricsAllowlistEnabled = md.IsDefined("Aerospike", "namespace_metrics_allowlist")
+	Cfg.Aerospike.SetMetricsAllowlistEnabled = md.IsDefined("Aerospike", "set_metrics_allowlist")
+	Cfg.Aerospike.NodeMetricsAllowlistEnabled = md.IsDefined("Aerospike", "node_metrics_allowlist")
+	Cfg.Aerospike.XdrMetricsAllowlistEnabled = md.IsDefined("Aerospike", "xdr_metrics_allowlist")
+	Cfg.Aerospike.UserMetricsUsersAllowlistEnabled = md.IsDefined("Aerospike", "user_metrics_users_allowlist")
+	Cfg.Aerospike.JobMetricsAllowlistEnabled = md.IsDefined("Aerospike", "job_metrics_allowlist")
+	Cfg.Aerospike.SindexMetricsAllowlistEnabled = md.IsDefined("Aerospike", "sindex_metrics_allowlist")
+	Cfg.Aerospike.LatenciesMetricsAllowlistEnabled = md.IsDefined("Aerospike", "latencies_metrics_allowlist")
 
 	// Tolerate older whitelist and blacklist configurations for a while.
 	// If whitelist and blacklist configs are defined copy them into allowlist and blocklist.
 	// Error out if both configurations are used at the same time.
 	if md.IsDefined("Aerospike", "namespace_metrics_whitelist") {
-		if config.Aerospike.NamespaceMetricsAllowlistEnabled {
+		if Cfg.Aerospike.NamespaceMetricsAllowlistEnabled {
 			log.Fatalf("namespace_metrics_whitelist and namespace_metrics_allowlist are mutually exclusive!")
 		}
 
-		config.Aerospike.NamespaceMetricsAllowlistEnabled = true
-		config.Aerospike.NamespaceMetricsAllowlist = config.Aerospike.NamespaceMetricsWhitelist
+		Cfg.Aerospike.NamespaceMetricsAllowlistEnabled = true
+		Cfg.Aerospike.NamespaceMetricsAllowlist = Cfg.Aerospike.NamespaceMetricsWhitelist
 	}
 
 	if md.IsDefined("Aerospike", "set_metrics_whitelist") {
-		if config.Aerospike.SetMetricsAllowlistEnabled {
+		if Cfg.Aerospike.SetMetricsAllowlistEnabled {
 			log.Fatalf("set_metrics_whitelist and set_metrics_allowlist are mutually exclusive!")
 		}
 
-		config.Aerospike.SetMetricsAllowlistEnabled = true
-		config.Aerospike.SetMetricsAllowlist = config.Aerospike.SetMetricsWhitelist
+		Cfg.Aerospike.SetMetricsAllowlistEnabled = true
+		Cfg.Aerospike.SetMetricsAllowlist = Cfg.Aerospike.SetMetricsWhitelist
 	}
 
 	if md.IsDefined("Aerospike", "node_metrics_whitelist") {
-		if config.Aerospike.NodeMetricsAllowlistEnabled {
+		if Cfg.Aerospike.NodeMetricsAllowlistEnabled {
 			log.Fatalf("node_metrics_whitelist and node_metrics_allowlist are mutually exclusive!")
 		}
 
-		config.Aerospike.NodeMetricsAllowlistEnabled = true
-		config.Aerospike.NodeMetricsAllowlist = config.Aerospike.NodeMetricsWhitelist
+		Cfg.Aerospike.NodeMetricsAllowlistEnabled = true
+		Cfg.Aerospike.NodeMetricsAllowlist = Cfg.Aerospike.NodeMetricsWhitelist
 	}
 
 	if md.IsDefined("Aerospike", "xdr_metrics_whitelist") {
-		if config.Aerospike.XdrMetricsAllowlistEnabled {
+		if Cfg.Aerospike.XdrMetricsAllowlistEnabled {
 			log.Fatalf("xdr_metrics_whitelist and xdr_metrics_allowlist are mutually exclusive!")
 		}
 
-		config.Aerospike.XdrMetricsAllowlistEnabled = true
-		config.Aerospike.XdrMetricsAllowlist = config.Aerospike.XdrMetricsWhitelist
+		Cfg.Aerospike.XdrMetricsAllowlistEnabled = true
+		Cfg.Aerospike.XdrMetricsAllowlist = Cfg.Aerospike.XdrMetricsWhitelist
 	}
 
 	if md.IsDefined("Aerospike", "namespace_metrics_blacklist") {
-		if len(config.Aerospike.NamespaceMetricsBlocklist) > 0 {
+		if len(Cfg.Aerospike.NamespaceMetricsBlocklist) > 0 {
 			log.Fatalf("namespace_metrics_blacklist and namespace_metrics_blocklist are mutually exclusive!")
 		}
 
-		config.Aerospike.NamespaceMetricsBlocklist = config.Aerospike.NamespaceMetricsBlacklist
+		Cfg.Aerospike.NamespaceMetricsBlocklist = Cfg.Aerospike.NamespaceMetricsBlacklist
 	}
 
 	if md.IsDefined("Aerospike", "set_metrics_blacklist") {
-		if len(config.Aerospike.SetMetricsBlocklist) > 0 {
+		if len(Cfg.Aerospike.SetMetricsBlocklist) > 0 {
 			log.Fatalf("set_metrics_blacklist and set_metrics_blocklist are mutually exclusive!")
 		}
 
-		config.Aerospike.SetMetricsBlocklist = config.Aerospike.SetMetricsBlacklist
+		Cfg.Aerospike.SetMetricsBlocklist = Cfg.Aerospike.SetMetricsBlacklist
 	}
 
 	if md.IsDefined("Aerospike", "node_metrics_blacklist") {
-		if len(config.Aerospike.NodeMetricsBlocklist) > 0 {
+		if len(Cfg.Aerospike.NodeMetricsBlocklist) > 0 {
 			log.Fatalf("node_metrics_blacklist and node_metrics_blocklist are mutually exclusive!")
 		}
 
-		config.Aerospike.NodeMetricsBlocklist = config.Aerospike.NodeMetricsBlacklist
+		Cfg.Aerospike.NodeMetricsBlocklist = Cfg.Aerospike.NodeMetricsBlacklist
 	}
 
 	if md.IsDefined("Aerospike", "xdr_metrics_blacklist") {
-		if len(config.Aerospike.XdrMetricsBlocklist) > 0 {
+		if len(Cfg.Aerospike.XdrMetricsBlocklist) > 0 {
 			log.Fatalf("xdr_metrics_blacklist and xdr_metrics_blocklist are mutually exclusive!")
 		}
 
-		config.Aerospike.XdrMetricsBlocklist = config.Aerospike.XdrMetricsBlacklist
+		Cfg.Aerospike.XdrMetricsBlocklist = Cfg.Aerospike.XdrMetricsBlacklist
 	}
 }
 
