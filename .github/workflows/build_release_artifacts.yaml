@@ -58,21 +58,6 @@ jobs:
 
     - name: make package-linux-amd64
       run: make package-linux-amd64
-
-    # - name: gzip tar files
-    #   run: |
-    #      cd pkg/target   
-    #      ls -lrt *.tar
-    #      echo "GZipping tar files"
-    #      gzip aerospike-prometheus-exporter*.tar 
-    #      echo "gzipped files"
-    #      ls -lrt *.gz
-
-    - name: install hub utility (as workaround)
-      run: |
-          sudo apt update && sudo apt install -y git wget
-          url="$(sudo wget -qO- https://api.github.com/repos/github/hub/releases/latest | tr '"' '\n' | grep '.*/download/.*/hub-linux-amd64-.*.tgz')"
-          sudo wget -qO- "$url" | sudo tar -xzvf- -C /usr/bin --strip-components=2 --wildcards "*/bin/hub"
         
     - name: Upload Release Asset
       env:
@@ -87,6 +72,8 @@ jobs:
          for file in $files; do
            echo "uploading file === $file"
            # TODO: move this to gh instead of hub
-           hub release edit -a $file -m "$RELEASE_NAME $TAG_NAME" "$TAG_NAME"
+           gh release upload "$TAG_NAME" "$file"
+           # hub release edit -a $file -m "$RELEASE_NAME $TAG_NAME" "$TAG_NAME"
          done
-         
+
+    
