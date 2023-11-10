@@ -24,7 +24,7 @@ var (
 	asServerHost *aero.Host
 )
 
-func NewAerospikeConnection() {
+func NewAerospikeConnection() (*aero.Connection, error) {
 
 	fullHost = commons.GetFullHost()
 
@@ -77,6 +77,7 @@ func NewAerospikeConnection() {
 		commons.Infokey_Service = "service-tls-std"
 	}
 
+	return createNewConnection()
 }
 
 func InitAerospikeTLS() *tls.Config {
@@ -143,7 +144,7 @@ func RequestInfo(infoKeys []string) (map[string]string, error) {
 		// Validate existing connection
 		if asConnection == nil || !asConnection.IsConnected() {
 			// Create new connection
-			asConnection, err = createNewConnection()
+			asConnection, err = NewAerospikeConnection()
 			if err != nil {
 				logrus.Debug("Error while connecting to aerospike server: ", err)
 				continue

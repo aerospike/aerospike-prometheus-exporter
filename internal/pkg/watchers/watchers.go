@@ -38,6 +38,12 @@ func GetClusterBasicInfo() (string, string, string) {
 }
 
 func Refresh() ([]WatcherMetric, error) {
+	// mock or aerospike
+	return aerospikeRefresh()
+}
+
+func aerospikeRefresh() ([]WatcherMetric, error) {
+
 	fullHost := commons.GetFullHost()
 	log.Debugf("Refreshing node %s", fullHost)
 
