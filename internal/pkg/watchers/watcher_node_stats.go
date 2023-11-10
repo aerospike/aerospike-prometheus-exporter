@@ -2,7 +2,6 @@ package watchers
 
 import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
-	"github.com/prometheus/client_golang/prometheus"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -12,15 +11,15 @@ const (
 	KEY_SERVICE_STATISTICS = "statistics"
 )
 
-type StatsWatcher struct {
+type NodeStatsWatcher struct {
 	nodeMetrics map[string]commons.AerospikeStat
 }
 
-func (sw *StatsWatcher) PassOneKeys() []string {
+func (sw *NodeStatsWatcher) PassOneKeys() []string {
 	return nil
 }
 
-func (sw *StatsWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
+func (sw *NodeStatsWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
 	// we need to fetch both configs and stat
 	return []string{KEY_SERVICE_CONFIG, KEY_SERVICE_STATISTICS}
 }
@@ -28,7 +27,7 @@ func (sw *StatsWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
 // All (allowed/blocked) node stats. Based on the config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsBlocklist.
 // var nodeMetrics = make(map[string]AerospikeStat)
 
-func (sw *StatsWatcher) Refresh(infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) ([]WatcherMetric, error) {
+func (sw *NodeStatsWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]WatcherMetric, error) {
 
 	if sw.nodeMetrics == nil {
 		sw.nodeMetrics = make(map[string]commons.AerospikeStat)
@@ -58,7 +57,7 @@ func (sw *StatsWatcher) Refresh(infoKeys []string, rawMetrics map[string]string,
 	return metrics_to_send, nil
 }
 
-func (sw *StatsWatcher) handleRefresh(nodeRawMetrics string, clusterName string, service string) []WatcherMetric {
+func (sw *NodeStatsWatcher) handleRefresh(nodeRawMetrics string, clusterName string, service string) []WatcherMetric {
 
 	stats := commons.ParseStats(nodeRawMetrics, ";")
 
