@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"regexp"
@@ -456,4 +457,8 @@ func PushToPrometheus(asMetric AerospikeStat, pv float64, labels []string, label
 		ch <- prometheus.MustNewConstMetric(desc, valueType, pv, labelValues...)
 
 	}
+}
+
+func GetFullHost() string {
+	return net.JoinHostPort(Cfg.Aerospike.Host, strconv.Itoa(int(Cfg.Aerospike.Port)))
 }

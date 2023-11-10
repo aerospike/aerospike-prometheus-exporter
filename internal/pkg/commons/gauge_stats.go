@@ -32,7 +32,7 @@ type GaugeStats struct {
 }
 
 // Initialize exporter configuration
-func InitGaugeStats(pGaugeStatsFile string, pGaugeStats *GaugeStats) {
+func InitGaugeStats(pGaugeStatsFile string) {
 
 	log.Infof("Loading Gauge Stats file %s", pGaugeStatsFile)
 
@@ -41,24 +41,24 @@ func InitGaugeStats(pGaugeStatsFile string, pGaugeStats *GaugeStats) {
 		log.Fatalln(err)
 	}
 
-	md, err := toml.Decode(string(blob), &pGaugeStats)
+	md, err := toml.Decode(string(blob), &GaugeStatHandler)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// create maps from read stats, this is done as we check each stat if it is a gauge or not
-	pGaugeStats.NamespaceStats = pGaugeStats.createMapFromArray(pGaugeStats.Namespace)
-	pGaugeStats.NodeStats = pGaugeStats.createMapFromArray(pGaugeStats.Node)
-	pGaugeStats.SindexStats = pGaugeStats.createMapFromArray(pGaugeStats.Sindex)
-	pGaugeStats.SetsStats = pGaugeStats.createMapFromArray(pGaugeStats.Sets)
-	pGaugeStats.XdrStats = pGaugeStats.createMapFromArray(pGaugeStats.Xdr)
+	GaugeStatHandler.NamespaceStats = GaugeStatHandler.createMapFromArray(GaugeStatHandler.Namespace)
+	GaugeStatHandler.NodeStats = GaugeStatHandler.createMapFromArray(GaugeStatHandler.Node)
+	GaugeStatHandler.SindexStats = GaugeStatHandler.createMapFromArray(GaugeStatHandler.Sindex)
+	GaugeStatHandler.SetsStats = GaugeStatHandler.createMapFromArray(GaugeStatHandler.Sets)
+	GaugeStatHandler.XdrStats = GaugeStatHandler.createMapFromArray(GaugeStatHandler.Xdr)
 
 	// Nullify/empty the Arrays to avoid duplicate stats-copy
-	pGaugeStats.Namespace = nil
-	pGaugeStats.Node = nil
-	pGaugeStats.Sindex = nil
-	pGaugeStats.Sets = nil
-	pGaugeStats.Xdr = nil
+	GaugeStatHandler.Namespace = nil
+	GaugeStatHandler.Node = nil
+	GaugeStatHandler.Sindex = nil
+	GaugeStatHandler.Sets = nil
+	GaugeStatHandler.Xdr = nil
 
 	log.Debugln("# of Gauge Keys defined at Gauge Stat level are: ", len(md.Keys()))
 }

@@ -165,6 +165,8 @@ func InitConfig(configFile string) {
 
 	aslog.Logger.SetLogger(log.StandardLogger())
 	setLogLevel(Cfg.AeroProm.LogLevel)
+
+	Cfg.ValidateAndUpdate()
 }
 
 // Set log file path
