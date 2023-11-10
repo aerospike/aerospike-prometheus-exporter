@@ -33,9 +33,7 @@ func GetWatchers() []Watcher {
 	return watchers
 }
 
-func GetClusterBasicInfo() (string, string, string) {
-	return ClusterName, Service, Build
-}
+// public and utility functions
 
 func Refresh() ([]WatcherMetric, error) {
 	// mock or aerospike

@@ -131,3 +131,42 @@ func initExporterTLS() *tls.Config {
 
 	return tlsConfig
 }
+
+/**
+ * Constructs Prometheus parameters required which are needed to push metrics to Prometheus
+ */
+
+func makePromMetric(as commons.AerospikeStat, pLabels ...string) (*prometheus.Desc, prometheus.ValueType) {
+
+	qualifiedName := as.QualifyMetricContext() + "_" + commons.NormalizeMetric(as.Name)
+	promDesc := prometheus.NewDesc(
+		qualifiedName,
+		commons.NormalizeDesc(as.Name),
+		pLabels,
+		commons.Cfg.AeroProm.MetricLabels,
+	)
+
+	if as.MType == commons.MetricTypeGauge {
+		return promDesc, prometheus.GaugeValue
+	}
+
+	return promDesc, prometheus.CounterValue
+}
+
+// This is a common utility, used by all the watchers to push metric to prometheus
+func PushToPrometheus(asMetric commons.AerospikeStat, pv float64, labels []string, labelValues []string,
+	ch chan<- prometheus.Metric) {
+
+	if asMetric.IsAllowed {
+		// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
+		defer func() {
+			if r := recover(); r != nil {
+				log.Tracef("%s recovered from panic while handling stat %s", string(asMetric.Context), asMetric.Name)
+			}
+		}()
+
+		desc, valueType := makePromMetric(asMetric, labels...)
+		ch <- prometheus.MustNewConstMetric(desc, valueType, pv, labelValues...)
+
+	}
+}

@@ -33,9 +33,14 @@ func main() {
 	commons.InitConfig(*configFile)
 	commons.InitGaugeStats(*gaugeStatsFile)
 
-	handles := GetSupportedHandlers()
+	handles := handlers.GetMetricHandlers()
+
 	fmt.Println("Metrics handling mode is ", *handle_mode)
-	handles[*handle_mode].Initialize()
+	err := handles[*handle_mode].Initialize()
+	if err != nil {
+		log.Errorln(err)
+	}
+
 }
 
 func parseCommandlineArgs() {
@@ -49,12 +54,4 @@ func parseCommandlineArgs() {
 		fmt.Println(version)
 		os.Exit(0)
 	}
-}
-
-func GetSupportedHandlers() map[string]handlers.MetricHandlers {
-	handles := map[string]handlers.MetricHandlers{
-		"prometheus": &handlers.PrometheusMetrics{},
-	}
-
-	return handles
 }

@@ -1,40 +1,17 @@
 package commons
 
-import "github.com/prometheus/client_golang/prometheus"
-
 type AerospikeStat struct {
-	context   ContextType
-	name      string
-	mType     metricType
-	isAllowed bool
-}
-
-/**
- * Constructs Prometheus parameters required which are needed to push metrics to Prometheus
- */
-
-func (as *AerospikeStat) makePromMetric(pLabels ...string) (*prometheus.Desc, prometheus.ValueType) {
-
-	qualifiedName := as.qualifyMetricContext() + "_" + normalizeMetric(as.name)
-	promDesc := prometheus.NewDesc(
-		qualifiedName,
-		normalizeDesc(as.name),
-		pLabels,
-		Cfg.AeroProm.MetricLabels,
-	)
-
-	if as.mType == mtGauge {
-		return promDesc, prometheus.GaugeValue
-	}
-
-	return promDesc, prometheus.CounterValue
+	Context   ContextType
+	Name      string
+	MType     metricType
+	IsAllowed bool
 }
 
 /**
  * prefixs a Context with Aerospike qualifier
  */
-func (as *AerospikeStat) qualifyMetricContext() string {
-	return PREFIX_AEROSPIKE + string(as.context)
+func (as *AerospikeStat) QualifyMetricContext() string {
+	return PREFIX_AEROSPIKE + string(as.Context)
 }
 
 /*

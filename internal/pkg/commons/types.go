@@ -2,13 +2,11 @@ package commons
 
 import "github.com/prometheus/client_golang/prometheus"
 
-type MetricMap map[string]promMetric
-
 type metricType byte
 
 const (
-	mtGauge   metricType = 'G'
-	mtCounter metricType = 'C'
+	MetricTypeGauge   metricType = 'G'
+	MetricTypeCounter metricType = 'C'
 )
 
 type Watcher interface {
@@ -17,12 +15,6 @@ type Watcher interface {
 	// refresh( o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error
 	refresh(infoKeys []string, rawMetrics map[string]string) error
 	describe(ch chan<- *prometheus.Desc)
-}
-
-type promMetric struct {
-	origDesc  string
-	desc      *prometheus.Desc
-	valueType prometheus.ValueType
 }
 
 type StatsMap map[string]interface{}

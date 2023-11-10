@@ -17,8 +17,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/gobwas/glob"
-	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 
 	goversion "github.com/hashicorp/go-version"
 )
@@ -65,41 +63,15 @@ const (
 	SINDEX_TYPE    = "sindex-type"
 )
 
-func MakeMetric(namespace, name string, t metricType, constLabels map[string]string, labels ...string) promMetric {
-	promDesc := prometheus.NewDesc(
-		namespace+"_"+normalizeMetric(name),
-		normalizeDesc(name),
-		labels,
-		constLabels,
-	)
-
-	switch t {
-	case mtCounter:
-		return promMetric{
-			origDesc:  name,
-			desc:      promDesc,
-			valueType: prometheus.CounterValue,
-		}
-	case mtGauge:
-		return promMetric{
-			origDesc:  name,
-			desc:      promDesc,
-			valueType: prometheus.GaugeValue,
-		}
-	}
-
-	panic("Should not reach here...")
-}
-
 var descReplacerFunc = strings.NewReplacer("_", " ", "-", " ", ".", " ")
 
-func normalizeDesc(s string) string {
+func NormalizeDesc(s string) string {
 	return descReplacerFunc.Replace(s)
 }
 
 var metricReplacerFunc = strings.NewReplacer(".", "_", "-", "_", " ", "_")
 
-func normalizeMetric(s string) string {
+func NormalizeMetric(s string) string {
 	return metricReplacerFunc.Replace(s)
 }
 
@@ -435,28 +407,10 @@ func GetMetricType(pContext ContextType, pRawMetricName string) metricType {
 
 	if strings.Contains(tmpRawMetricName, "-") ||
 		GaugeStatHandler.isGauge(pContext, tmpRawMetricName) {
-		return mtGauge
+		return MetricTypeGauge
 	}
 
-	return mtCounter
-}
-
-// This is a common utility, used by all the watchers to push metric to prometheus
-func PushToPrometheus(asMetric AerospikeStat, pv float64, labels []string, labelValues []string,
-	ch chan<- prometheus.Metric) {
-
-	if asMetric.isAllowed {
-		// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
-		defer func() {
-			if r := recover(); r != nil {
-				log.Tracef("%s recovered from panic while handling stat %s", string(asMetric.context), asMetric.name)
-			}
-		}()
-
-		desc, valueType := asMetric.makePromMetric(labels...)
-		ch <- prometheus.MustNewConstMetric(desc, valueType, pv, labelValues...)
-
-	}
+	return MetricTypeCounter
 }
 
 func GetFullHost() string {

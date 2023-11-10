@@ -19,9 +19,7 @@ var (
 	// aerospike_node_up metric descriptor
 	nodeActiveDesc *prometheus.Desc
 
-	// Number of retries on info request
-	retryCount = 3
-	mutex      sync.Mutex
+	mutex sync.Mutex
 )
 
 func NewObserver() (o *Observer) {
@@ -69,7 +67,7 @@ func (o *Observer) Collect(ch chan<- prometheus.Metric) {
 
 	// push the fetched metrics to prometheus
 	for _, wm := range watcher_metrics {
-		commons.PushToPrometheus(wm.Metric, wm.Value, wm.Labels, wm.LabelValues, ch)
+		PushToPrometheus(wm.Metric, wm.Value, wm.Labels, wm.LabelValues, ch)
 	}
 
 	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, watchers.ClusterName, watchers.Service, watchers.Build)
