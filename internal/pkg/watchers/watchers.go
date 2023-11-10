@@ -2,6 +2,7 @@ package watchers
 
 import (
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
 	log "github.com/sirupsen/logrus"
 )
@@ -38,6 +39,9 @@ func GetWatchers() []Watcher {
 
 func Refresh() ([]WatcherMetric, error) {
 	// mock or aerospike
+	if config.Cfg.AeroProm.UseMockDatasource == 0 {
+		return MockAerospikeServer()
+	}
 	return aerospikeRefresh()
 }
 

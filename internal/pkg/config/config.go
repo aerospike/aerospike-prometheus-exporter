@@ -22,6 +22,8 @@ type Config struct {
 
 		MetricLabels map[string]string `toml:"labels"`
 
+		UseMockDatasource uint8 `toml:"use_mock_datasource"`
+
 		Bind    string `toml:"bind"`
 		Timeout uint8  `toml:"timeout"`
 

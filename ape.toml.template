@@ -31,6 +31,9 @@ labels = {${METRIC_LABELS}}
 
 bind = "${AGENT_BIND_HOST}:${AGENT_BIND_PORT}"
 
+# is exporter running in mock test mode
+use_mock_datasource = ${USE_MOCK_DATASOURCE}
+
 # metrics server timeout in seconds
 timeout = ${AGENT_TIMEOUT}
 

@@ -31,6 +31,9 @@ labels = {latitude="0",longitude="0"}
 
 bind = ":9145"
 
+# is exporter running in mock test mode
+use_mock_datasource = 0
+
 # metrics server timeout in seconds
 timeout = 10
 
