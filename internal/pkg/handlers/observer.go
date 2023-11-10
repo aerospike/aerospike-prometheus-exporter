@@ -5,7 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/watchers"
 	log "github.com/sirupsen/logrus"
 )
@@ -29,7 +29,7 @@ func NewObserver() (o *Observer) {
 		"aerospike_node_up",
 		"Aerospike node active status",
 		[]string{"cluster_name", "service", "build"},
-		commons.Cfg.AeroProm.MetricLabels,
+		config.Cfg.AeroProm.MetricLabels,
 	)
 
 	o = &Observer{

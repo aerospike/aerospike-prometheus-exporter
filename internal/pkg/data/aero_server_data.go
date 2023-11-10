@@ -10,6 +10,7 @@ import (
 
 	aero "github.com/aerospike/aerospike-client-go/v6"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,10 +31,10 @@ func NewAerospikeConnection() (*aero.Connection, error) {
 
 	logrus.Debugf("Connecting to host %s ", fullHost)
 
-	asServerHost = aero.NewHost(commons.Cfg.Aerospike.Host, int(commons.Cfg.Aerospike.Port))
-	asServerHost.TLSName = commons.Cfg.Aerospike.NodeTLSName
-	user = commons.Cfg.Aerospike.User
-	pass = commons.Cfg.Aerospike.Password
+	asServerHost = aero.NewHost(config.Cfg.Aerospike.Host, int(config.Cfg.Aerospike.Port))
+	asServerHost.TLSName = config.Cfg.Aerospike.NodeTLSName
+	user = config.Cfg.Aerospike.User
+	pass = config.Cfg.Aerospike.Password
 
 	// Get aerospike auth username
 	username, err := commons.GetSecret(user)
@@ -51,7 +52,7 @@ func NewAerospikeConnection() (*aero.Connection, error) {
 	clientPolicy.User = string(username)
 	clientPolicy.Password = string(password)
 
-	authMode := strings.ToLower(strings.TrimSpace(commons.Cfg.Aerospike.AuthMode))
+	authMode := strings.ToLower(strings.TrimSpace(config.Cfg.Aerospike.AuthMode))
 
 	switch authMode {
 	case "internal", "":
@@ -59,7 +60,7 @@ func NewAerospikeConnection() (*aero.Connection, error) {
 	case "external":
 		clientPolicy.AuthMode = aero.AuthModeExternal
 	case "pki":
-		if len(commons.Cfg.Aerospike.CertFile) == 0 || len(commons.Cfg.Aerospike.KeyFile) == 0 {
+		if len(config.Cfg.Aerospike.CertFile) == 0 || len(config.Cfg.Aerospike.KeyFile) == 0 {
 			log.Fatalln("Invalid certificate configuration when using auth mode PKI: cert_file and key_file must be set")
 		}
 		clientPolicy.AuthMode = aero.AuthModePKI
@@ -69,7 +70,7 @@ func NewAerospikeConnection() (*aero.Connection, error) {
 
 	// allow only ONE connection
 	clientPolicy.ConnectionQueueSize = 1
-	clientPolicy.Timeout = time.Duration(commons.Cfg.Aerospike.Timeout) * time.Second
+	clientPolicy.Timeout = time.Duration(config.Cfg.Aerospike.Timeout) * time.Second
 
 	clientPolicy.TlsConfig = InitAerospikeTLS()
 
@@ -81,7 +82,7 @@ func NewAerospikeConnection() (*aero.Connection, error) {
 }
 
 func InitAerospikeTLS() *tls.Config {
-	if len(commons.Cfg.Aerospike.RootCA) == 0 && len(commons.Cfg.Aerospike.CertFile) == 0 && len(commons.Cfg.Aerospike.KeyFile) == 0 {
+	if len(config.Cfg.Aerospike.RootCA) == 0 && len(config.Cfg.Aerospike.CertFile) == 0 && len(config.Cfg.Aerospike.KeyFile) == 0 {
 		return nil
 	}
 
@@ -89,13 +90,13 @@ func InitAerospikeTLS() *tls.Config {
 	var serverPool *x509.CertPool
 	var err error
 
-	serverPool, err = commons.LoadCACert(commons.Cfg.Aerospike.RootCA)
+	serverPool, err = commons.LoadCACert(config.Cfg.Aerospike.RootCA)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if len(commons.Cfg.Aerospike.CertFile) > 0 || len(commons.Cfg.Aerospike.KeyFile) > 0 {
-		clientPool, err = commons.LoadServerCertAndKey(commons.Cfg.Aerospike.CertFile, commons.Cfg.Aerospike.KeyFile, commons.Cfg.Aerospike.KeyFilePassphrase)
+	if len(config.Cfg.Aerospike.CertFile) > 0 || len(config.Cfg.Aerospike.KeyFile) > 0 {
+		clientPool, err = commons.LoadServerCertAndKey(config.Cfg.Aerospike.CertFile, config.Cfg.Aerospike.KeyFile, config.Cfg.Aerospike.KeyFilePassphrase)
 		if err != nil {
 			log.Fatal(err)
 		}

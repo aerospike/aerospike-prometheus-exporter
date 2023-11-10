@@ -1,4 +1,4 @@
-package commons
+package config
 
 import (
 	"os"
@@ -61,27 +61,6 @@ func InitGaugeStats(pGaugeStatsFile string) {
 	GaugeStatHandler.Xdr = nil
 
 	log.Debugln("# of Gauge Keys defined at Gauge Stat level are: ", len(md.Keys()))
-}
-
-/**
- * Check if given stat is a Gauge in a given context like Node, Namespace etc.,
- */
-func (gm *GaugeStats) isGauge(pContextType ContextType, pStat string) bool {
-
-	switch pContextType {
-	case CTX_NAMESPACE:
-		return gm.NamespaceStats[pStat]
-	case CTX_NODE_STATS:
-		return gm.NodeStats[pStat]
-	case CTX_SETS:
-		return gm.SetsStats[pStat]
-	case CTX_SINDEX:
-		return gm.SindexStats[pStat]
-	case CTX_XDR:
-		return gm.XdrStats[pStat]
-	}
-
-	return false
 }
 
 /**

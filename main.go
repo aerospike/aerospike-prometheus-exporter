@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/handlers"
 
 	log "github.com/sirupsen/logrus"
@@ -30,8 +30,8 @@ func main() {
 	parseCommandlineArgs()
 
 	// initialize configs and gauge-stats
-	commons.InitConfig(*configFile)
-	commons.InitGaugeStats(*gaugeStatsFile)
+	config.InitConfig(*configFile)
+	config.InitGaugeStats(*gaugeStatsFile)
 
 	handles := handlers.GetMetricHandlers()
 

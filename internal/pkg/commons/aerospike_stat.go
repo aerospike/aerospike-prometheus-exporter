@@ -19,7 +19,7 @@ Utility, constructs a new AerospikeStat object with required checks like is-allo
 */
 func NewAerospikeStat(pContext ContextType, pStatName string) AerospikeStat {
 
-	isAllowed := Cfg.isMetricAllowed(pContext, pStatName)
+	isAllowed := IsMetricAllowed(pContext, pStatName)
 	mType := GetMetricType(pContext, pStatName)
 
 	return AerospikeStat{pContext, pStatName, mType, isAllowed}

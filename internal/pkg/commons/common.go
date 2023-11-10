@@ -16,6 +16,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/gobwas/glob"
 
 	goversion "github.com/hashicorp/go-version"
@@ -406,7 +407,7 @@ func GetMetricType(pContext ContextType, pRawMetricName string) metricType {
 	tmpRawMetricName := strings.ReplaceAll(pRawMetricName, STORAGE_ENGINE, "")
 
 	if strings.Contains(tmpRawMetricName, "-") ||
-		GaugeStatHandler.isGauge(pContext, tmpRawMetricName) {
+		isGauge(pContext, tmpRawMetricName) {
 		return MetricTypeGauge
 	}
 
@@ -414,5 +415,122 @@ func GetMetricType(pContext ContextType, pRawMetricName string) metricType {
 }
 
 func GetFullHost() string {
-	return net.JoinHostPort(Cfg.Aerospike.Host, strconv.Itoa(int(Cfg.Aerospike.Port)))
+	return net.JoinHostPort(config.Cfg.Aerospike.Host, strconv.Itoa(int(config.Cfg.Aerospike.Port)))
+}
+
+/**
+ * this function check is a given stat is allowed or blocked against given patterns
+ * these patterns are defined within ape.toml
+ *
+ * NOTE: when a stat falls within intersection of allow-list & block-list, we block that stat
+ *
+ *             | empty         | no-pattern-match-found | pattern-match-found
+ *  allow-list | allowed/true  |   not-allowed/ false   |    allowed/true
+ *  block-list | blocked/false |   not-blocked/ false   |    blocked/true
+ *
+ *  by checking the blocklist first,
+ *     we avoid processing the allow-list for some of the metrics
+ *
+ */
+func IsMetricAllowed(pContextType ContextType, pRawStatName string) bool {
+
+	pAllowlist := []string{}
+	pBlocklist := []string{}
+
+	switch pContextType {
+	case CTX_NAMESPACE:
+		pAllowlist = config.Cfg.Aerospike.NamespaceMetricsAllowlist
+		pBlocklist = config.Cfg.Aerospike.NamespaceMetricsBlocklist
+	case CTX_NODE_STATS:
+		pAllowlist = config.Cfg.Aerospike.NodeMetricsAllowlist
+		pBlocklist = config.Cfg.Aerospike.NodeMetricsBlocklist
+	case CTX_SETS:
+		pAllowlist = config.Cfg.Aerospike.SetMetricsAllowlist
+		pBlocklist = config.Cfg.Aerospike.SetMetricsBlocklist
+	case CTX_SINDEX:
+		pAllowlist = config.Cfg.Aerospike.SindexMetricsAllowlist
+		pBlocklist = config.Cfg.Aerospike.SindexMetricsBlocklist
+	case CTX_XDR:
+		pAllowlist = config.Cfg.Aerospike.XdrMetricsAllowlist
+		pBlocklist = config.Cfg.Aerospike.XdrMetricsBlocklist
+
+	}
+
+	/**
+		* is this stat is in blocked list
+	    *    if is-block-list array not-defined or is-empty, then false (i.e. STAT-IS-NOT-BLOCKED)
+		*    else
+		*       match stat with "all-block-list-patterns",
+		*             if-any-pattern-match-found,
+		*                    return true (i.e. STAT-IS-BLOCKED)
+		* if stat-is-not-blocked
+		*    if is-allow-list array not-defined or is-empty, then true (i.e. STAT-IS-ALLOWED)
+		*    else
+		*      match stat with "all-allow-list-patterns"
+		*             if-any-pattern-match-found,
+		*                    return true (i.e. STAT-IS-ALLOWED)
+	*/
+	if len(pBlocklist) > 0 {
+		isBlocked := loopPatterns(pRawStatName, pBlocklist)
+		if isBlocked {
+			return false
+		}
+	}
+
+	// as it is already blocked, we dont need to check in allow-list,
+	// i.e. when a stat falls within intersection of allow-list & block-list, we block that stat
+	//
+
+	if len(pAllowlist) == 0 {
+		return true
+	}
+
+	return loopPatterns(pRawStatName, pAllowlist)
+}
+
+/**
+ *  this function is used to loop thru any given regex-pattern-list, [ master_objects or *master* ]
+ *
+ *             | empty         | no-pattern-match-found | pattern-match-found
+ *  allow-list | allowed/true  |   not-allowed/ false   |    allowed/true
+ *  block-list | blocked/false |   not-blocked/ false   |    blocked/true
+ *
+ *
+ */
+
+func loopPatterns(pRawStatName string, pPatternList []string) bool {
+
+	for _, statPattern := range pPatternList {
+		if len(statPattern) > 0 {
+
+			ge := glob.MustCompile(statPattern)
+
+			if ge.Match(pRawStatName) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+/**
+ * Check if given stat is a Gauge in a given context like Node, Namespace etc.,
+ */
+func isGauge(pContextType ContextType, pStat string) bool {
+
+	switch pContextType {
+	case CTX_NAMESPACE:
+		return config.GaugeStatHandler.NamespaceStats[pStat]
+	case CTX_NODE_STATS:
+		return config.GaugeStatHandler.NodeStats[pStat]
+	case CTX_SETS:
+		return config.GaugeStatHandler.SetsStats[pStat]
+	case CTX_SINDEX:
+		return config.GaugeStatHandler.SindexStats[pStat]
+	case CTX_XDR:
+		return config.GaugeStatHandler.XdrStats[pStat]
+	}
+
+	return false
 }
