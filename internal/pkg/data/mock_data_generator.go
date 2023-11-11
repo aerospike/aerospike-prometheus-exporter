@@ -154,7 +154,7 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 
 	for _, k := range infokeys {
 
-		fmt.Println("fetchRequestInfoFromFile(): processing key: ", k)
+		fmt.Println("fetchRequestInfoFromFile(): processing key: ", k, "\t===> strings.HasPrefix(k, MOCK_IK_SINDEX_STATISTICS) ", strings.HasPrefix(k, MOCK_IK_SINDEX_STATISTICS))
 		switch true {
 		case strings.HasPrefix(k, MOCK_IK_BUILD):
 			l_mock_data_map[k] = md.getBuild(k)
