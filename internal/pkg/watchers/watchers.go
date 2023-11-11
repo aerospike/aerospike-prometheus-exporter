@@ -30,8 +30,8 @@ func GetWatchers() []Watcher {
 		// &NamespaceWatcher{},
 		// &NodeStatsWatcher{},
 		// &SetWatcher{},
-		&SindexWatcher{},
-		// &XdrWatcher{},
+		// &SindexWatcher{},
+		&XdrWatcher{},
 	}
 
 	return watchers
