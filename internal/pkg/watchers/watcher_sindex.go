@@ -28,6 +28,8 @@ func (siw *SindexWatcher) PassTwoKeys(rawMetrics map[string]string) (sindexComma
 		return nil
 	}
 
+	log.Tracef("sindexs:%v", rawMetrics["sindex"])
+
 	sindexesMeta := strings.Split(rawMetrics["sindex"], ";")
 	sindexCommands = siw.getSindexCommands(sindexesMeta)
 
