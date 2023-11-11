@@ -271,7 +271,7 @@ func (md *MockAerospikeServer) getSindex(key string) string {
 	rawMetrics := ""
 	// node-stats & node-configs
 	for _, entry := range md.Sindexes {
-
+		fmt.Println("\tgetSindex() ... processing ", entry)
 		if strings.HasPrefix(key, "sindex") && strings.HasPrefix(entry, "sindex:") {
 			// set-stats:<node-configs>
 			elements := strings.Replace(entry, "sindex:", "", 1)
