@@ -60,6 +60,8 @@ const (
 	MOCK_IK_NAMESPACE_SLASH            string = "namespace/"
 	MOCK_IK_SINDEX_SLASH               string = "sindex/"
 	MOCK_IK_XDR_CONFIG                 string = "get-config:context=xdr"
+	MOCK_IK_XDR_STATS_DC               string = "get-stats:context=xdr;dc"
+	MOCK_IK_XDR_CONFIG_DC              string = "get-config:context=xdr;dc"
 )
 
 // var request_info_key_to_func_map = map[string]func(){
@@ -182,7 +184,11 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 			// fmt.Println("\n\t^^^^^^^^ ===> strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH) ", strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH))
 			l_mock_data_map[k] = md.getSingleSindexStatistics(k)
 		case strings.HasPrefix(k, MOCK_IK_XDR_CONFIG):
-			l_mock_data_map[k] = md.getXdrConfigs(k)
+			l_mock_data_map[k] = md.getXdrConfigsContext(k)
+		case strings.HasPrefix(k, MOCK_IK_XDR_CONFIG_DC):
+			l_mock_data_map[k] = md.getSingleXdrKeys(k)
+		case strings.HasPrefix(k, MOCK_IK_XDR_STATS_DC):
+			l_mock_data_map[k] = md.getSingleXdrKeys(k)
 		}
 	}
 	// fmt.Println("requested keys : ", infokeys, "\n\t values returned: ", l_mock_data_map)
@@ -313,7 +319,7 @@ func (md *MockAerospikeServer) getSingleSindexStatistics(key string) string {
 
 }
 
-func (md *MockAerospikeServer) getXdrConfigs(key string) string {
+func (md *MockAerospikeServer) getXdrConfigsContext(key string) string {
 	rawMetrics := ""
 	// sindex
 	for _, entry := range md.XdrContext {
@@ -329,6 +335,26 @@ func (md *MockAerospikeServer) getXdrConfigs(key string) string {
 
 	return rawMetrics
 
+}
+
+func (md *MockAerospikeServer) getSingleXdrKeys(key string) string {
+	rawMetrics := ""
+	// xdr-stats and xdr-configs
+	for _, entry := range md.Xdr_stats {
+		elements := ""
+
+		fmt.Println("\n\t*** getSingleXdrKeys: ",
+			"\n\t key: ", key,
+			"\n\t entry: ", entry,
+			"\n\t strings.Contains(entry, key): ", strings.Contains(entry, key))
+		if strings.HasPrefix(entry, "xdr") && strings.Contains(entry, key) {
+			// key := "xdr-"
+			rawMetrics = elements
+		}
+	}
+
+	// fmt.Println(" ** getSingleSindexStatistics() key: ", key, "\n\t values: ", rawMetrics)
+	return rawMetrics
 }
 
 // func (md *MockAerospikeServer) requestInfoNamespaces() map[string]string {
