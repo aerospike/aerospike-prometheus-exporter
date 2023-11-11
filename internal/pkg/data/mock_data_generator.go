@@ -349,6 +349,9 @@ func (md *MockAerospikeServer) getSingleXdrKeys(key string) string {
 			"\n\t strings.Contains(entry, key): ", strings.Contains(entry, key))
 		if strings.HasPrefix(entry, "xdr") && strings.Contains(entry, key) {
 			// key := "xdr-"
+			elements = strings.Replace(entry, "xdr-", "", 1)
+			elements = strings.Replace(elements, key, "", 1)
+
 			rawMetrics = elements
 		}
 	}
