@@ -36,7 +36,7 @@ var (
 	asServerHost *aero.Host
 )
 
-func NewAerospikeConnection() (*aero.Connection, error) {
+func initializeAndConnectAerospikeServer() (*aero.Connection, error) {
 
 	fullHost = commons.GetFullHost()
 
@@ -83,7 +83,7 @@ func NewAerospikeConnection() (*aero.Connection, error) {
 	clientPolicy.ConnectionQueueSize = 1
 	clientPolicy.Timeout = time.Duration(config.Cfg.Aerospike.Timeout) * time.Second
 
-	clientPolicy.TlsConfig = InitAerospikeTLS()
+	clientPolicy.TlsConfig = initAerospikeTLS()
 
 	if clientPolicy.TlsConfig != nil {
 		commons.Infokey_Service = "service-tls-std"
@@ -92,7 +92,7 @@ func NewAerospikeConnection() (*aero.Connection, error) {
 	return createNewConnection()
 }
 
-func InitAerospikeTLS() *tls.Config {
+func initAerospikeTLS() *tls.Config {
 	if len(config.Cfg.Aerospike.RootCA) == 0 && len(config.Cfg.Aerospike.CertFile) == 0 && len(config.Cfg.Aerospike.KeyFile) == 0 {
 		return nil
 	}
@@ -156,7 +156,7 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 		// Validate existing connection
 		if asConnection == nil || !asConnection.IsConnected() {
 			// Create new connection
-			asConnection, err = NewAerospikeConnection()
+			asConnection, err = initializeAndConnectAerospikeServer()
 			if err != nil {
 				logrus.Debug("Error while connecting to aerospike server: ", err)
 				continue

@@ -55,6 +55,7 @@ const (
 	MOCK_IK_NODE_STATISTICS            string = "statistics"
 	MOCK_IK_GET_CONFIG_CONTEXT_SERVICE string = "get-config:context=service"
 	MOCK_IK_SETS                       string = "sets"
+	MOCK_IK_SINDEX_STATISTICS          string = "sindex-stats"
 )
 
 // var request_info_key_to_func_map = map[string]func(){

@@ -29,8 +29,8 @@ func GetWatchers() []Watcher {
 	watchers := []Watcher{
 		// &NamespaceWatcher{},
 		// &NodeStatsWatcher{},
-		&SetWatcher{},
-		// &SindexWatcher{},
+		// &SetWatcher{},
+		&SindexWatcher{},
 		// &XdrWatcher{},
 	}
 

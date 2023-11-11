@@ -57,11 +57,13 @@ func (siw *SindexWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 	var metrics_to_send = []WatcherMetric{}
 
 	for _, sindex := range infoKeys {
+		log.Tracef("sindex-stats:%v", rawMetrics[sindex])
+
 		sindexInfoKey := strings.ReplaceAll(sindex, "sindex/", "")
 		sindexInfoKeySplit := strings.Split(sindexInfoKey, "/")
 		nsName := sindexInfoKeySplit[0]
 		sindexName := sindexInfoKeySplit[1]
-		log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
+		// log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
 
 		clusterName := rawMetrics[commons.Infokey_ClusterName]
 		service := rawMetrics[commons.Infokey_Service]
