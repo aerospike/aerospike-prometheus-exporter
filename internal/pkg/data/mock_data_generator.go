@@ -1,5 +1,12 @@
 package data
 
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+)
+
 /*
 Dummy Raw Metrics, copied from local Aerospike Server
 returns static test data copied from running an Aerospike Server with test namespaces, sets, sindex, jobs, latencies etc.,
@@ -13,174 +20,177 @@ once we have output from watcher-implementations ( like watcher_namespaces.go, w
 var MOCK_TEST_DATA_FILE = "tests/mock_test_data.txt"
 
 func (mas MockAerospikeServer) RequestInfo(infokeys []string) (map[string]string, error) {
+	fmt.Println(" keys requested for processing: ", infokeys)
+	// return mas.fetchRawMetrics(infokeys), nil
 	return nil, nil
 }
 
 // Mock Data Provider related code
 type MockAerospikeServer struct {
-	Tmp_namespaces_stats    []string
-	Tmp_sets_stats          []string
-	Tmp_xdr_stats           []string
-	Tmp_node_stats          []string
-	Tmp_latencies_stats     []string
-	Tmp_sindex_stats        []string
-	Tmp_build               []string
-	Tmp_cluster_name        []string
-	Tmp_service_clear_std   []string
-	Tmp_passone_output_str  string
-	Tmp_passone_outputs_map map[string]string
+	Namespaces_stats []string
+	Sets_stats       []string
+	Xdr_stats        []string
+	Node_stats       []string
+	Latencies_stats  []string
+	Sindex_stats     []string
+
+	Build               []string
+	Cluster_name        []string
+	Service_clear_std   []string
+	Passone_output_str  string
+	Passone_outputs_map map[string]string
 }
 
-// // read mock test data from a file
-// func (md *MockAerospikeServer) initialize() {
+// read mock test data from a file
+func (md *MockAerospikeServer) initialize() {
 
-// 	filePath := MOCK_TEST_DATA_FILE
-// 	readFile, err := os.Open(filePath)
+	filePath := MOCK_TEST_DATA_FILE
+	readFile, err := os.Open(filePath)
 
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	fileScanner := bufio.NewScanner(readFile)
-// 	fileScanner.Split(bufio.ScanLines)
-// 	var fileLines []string
+	if err != nil {
+		fmt.Println(err)
+	}
+	fileScanner := bufio.NewScanner(readFile)
+	fileScanner.Split(bufio.ScanLines)
+	var fileLines []string
 
-// 	for fileScanner.Scan() {
-// 		fileLines = append(fileLines, strings.TrimSpace(fileScanner.Text()))
-// 	}
+	for fileScanner.Scan() {
+		fileLines = append(fileLines, strings.TrimSpace(fileScanner.Text()))
+	}
 
-// 	readFile.Close()
+	readFile.Close()
 
-// 	for _, line := range fileLines {
-// 		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
-// 			// ignore, comments
-// 		} else if len(line) > 0 {
-// 			if strings.HasPrefix(line, "namespace-") {
-// 				md.namespaces_stats = append(md.namespaces_stats, line)
-// 			} else if strings.HasPrefix(line, "set-stats") {
-// 				md.sets_stats = append(md.sets_stats, line)
-// 			} else if strings.HasPrefix(line, "latency-stats") {
-// 				md.latencies_stats = append(md.latencies_stats, line)
-// 			} else if strings.HasPrefix(line, "node-") {
-// 				md.node_stats = append(md.node_stats, line)
-// 			} else if strings.HasPrefix(line, "xdr-") {
-// 				md.xdr_stats = append(md.xdr_stats, line)
-// 			} else if strings.HasPrefix(line, "sindex-") {
-// 				md.sindex_stats = append(md.sindex_stats, line)
-// 			} else if strings.HasPrefix(line, "build") {
-// 				md.build = append(md.build, line)
-// 			} else if strings.HasPrefix(line, "service-clear-std") {
-// 				md.service_clear_std = append(md.service_clear_std, line)
-// 			} else if strings.HasPrefix(line, "cluster-name") {
-// 				md.cluster_name = append(md.cluster_name, line)
-// 			} else if strings.HasPrefix(line, "passone_output") {
-// 				// passone_output:build:6.4.0.0-rc4 get-config:context=xdr:dcs=backup_dc_asdev20,backup_dc_asdev20_second;src-id=0;trace-sample=0 namespaces:test;bar_device;materials;ns_test_on_flash;test_on_shmem;bar_on_flash;pmkohl_on_device sindex:ns=test:indexname=test_sindex1:set=from_branch_2:bin=occurred:type=numeric:indextype=default:context=null:state=RW
-// 				str := strings.ReplaceAll(line, "passone_output:", "")
-// 				// store full string also
-// 				md.passone_output_str = str
-// 				elements := strings.Split(md.passone_output_str, " ")
-// 				// reinitialize internal map
-// 				md.passone_outputs_map = make(map[string]string)
-// 				for _, entry := range elements {
+	for _, line := range fileLines {
+		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
+			// ignore, comments
+		} else if len(line) > 0 {
+			if strings.HasPrefix(line, "namespace-") {
+				md.Namespaces_stats = append(md.Namespaces_stats, line)
+			} else if strings.HasPrefix(line, "set-stats") {
+				md.Sets_stats = append(md.Sets_stats, line)
+			} else if strings.HasPrefix(line, "latency-stats") {
+				md.Latencies_stats = append(md.Latencies_stats, line)
+			} else if strings.HasPrefix(line, "node-") {
+				md.Node_stats = append(md.Node_stats, line)
+			} else if strings.HasPrefix(line, "xdr-") {
+				md.Xdr_stats = append(md.Xdr_stats, line)
+			} else if strings.HasPrefix(line, "sindex-") {
+				md.Sindex_stats = append(md.Sindex_stats, line)
+			} else if strings.HasPrefix(line, "build") {
+				md.Build = append(md.Build, line)
+			} else if strings.HasPrefix(line, "service-clear-std") {
+				md.Service_clear_std = append(md.Service_clear_std, line)
+			} else if strings.HasPrefix(line, "cluster-name") {
+				md.Cluster_name = append(md.Cluster_name, line)
+			} else if strings.HasPrefix(line, "passone_output") {
+				// passone_output:build:6.4.0.0-rc4 get-config:context=xdr:dcs=backup_dc_asdev20,backup_dc_asdev20_second;src-id=0;trace-sample=0 namespaces:test;bar_device;materials;ns_test_on_flash;test_on_shmem;bar_on_flash;pmkohl_on_device sindex:ns=test:indexname=test_sindex1:set=from_branch_2:bin=occurred:type=numeric:indextype=default:context=null:state=RW
+				str := strings.ReplaceAll(line, "passone_output:", "")
+				// store full string also
+				md.Passone_output_str = str
+				elements := strings.Split(md.Passone_output_str, " ")
+				// reinitialize internal map
+				md.Passone_outputs_map = make(map[string]string)
+				for _, entry := range elements {
 
-// 					colonIndex := strings.Index(entry, ":")
-// 					// parts := strings.Split(entry, ":")
-// 					key := entry[0:colonIndex]
-// 					value := entry[colonIndex+1:]
-// 					md.passone_outputs_map[key] = value
-// 				}
-// 				// md.passone_outputs = splitAndRetrieveStats(str, ";")
+					colonIndex := strings.Index(entry, ":")
+					// parts := strings.Split(entry, ":")
+					key := entry[0:colonIndex]
+					value := entry[colonIndex+1:]
+					md.Passone_outputs_map[key] = value
+				}
+				// md.passone_outputs = splitAndRetrieveStats(str, ";")
 
-// 			}
+			}
 
-// 		}
-// 	}
-// }
+		}
+	}
+}
 
-// func (md *MockAerospikeServer) fetchRawMetrics() map[string]string {
-// 	rawMetrics := make(map[string]string)
+func (md *MockAerospikeServer) fetchRawMetrics() map[string]string {
+	rawMetrics := make(map[string]string)
 
-// 	// build, cluster-name, service-ip
-// 	rawMetrics["build"] = md.getBuild()
-// 	rawMetrics["cluster-name"] = md.getClusterName()
-// 	rawMetrics["service-clear-std"] = md.getServiceClearStd()
+	// build, cluster-name, service-ip
+	rawMetrics["build"] = md.getBuild()
+	rawMetrics["cluster-name"] = md.getClusterName()
+	rawMetrics["service-clear-std"] = md.getServiceClearStd()
 
-// 	// namespace
-// 	for _, entry := range md.namespaces_stats {
-// 		elements := strings.Split(entry, ":")
-// 		// format: namespace-stats:test:ns_cluster_size=1;effective_ ( 2nd element is the namespace name "test")
-// 		key := "namespace/" + elements[1]
-// 		rawMetrics[key] = elements[2]
-// 	}
+	// namespace
+	for _, entry := range md.Namespaces_stats {
+		elements := strings.Split(entry, ":")
+		// format: namespace-stats:test:ns_cluster_size=1;effective_ ( 2nd element is the namespace name "test")
+		key := "namespace/" + elements[1]
+		rawMetrics[key] = elements[2]
+	}
 
-// 	// node-stats & node-configs
-// 	for _, entry := range md.node_stats {
+	// node-stats & node-configs
+	for _, entry := range md.Node_stats {
 
-// 		// node-configs:<node-configs> & node-stats:<node-stats>
-// 		elements := strings.Split(entry, ":")
+		// node-configs:<node-configs> & node-stats:<node-stats>
+		elements := strings.Split(entry, ":")
 
-// 		if strings.HasPrefix(elements[0], "node-stats") {
-// 			key := "statistics"
-// 			rawMetrics[key] = elements[1]
-// 		} else if strings.HasPrefix(elements[0], "node-config") {
-// 			key := "get-config:context=service"
-// 			rawMetrics[key] = elements[1]
-// 		}
-// 	}
+		if strings.HasPrefix(elements[0], "node-stats") {
+			key := "statistics"
+			rawMetrics[key] = elements[1]
+		} else if strings.HasPrefix(elements[0], "node-config") {
+			key := "get-config:context=service"
+			rawMetrics[key] = elements[1]
+		}
+	}
 
-// 	// sindex-stats
-// 	for _, entry := range md.sindex_stats {
+	// sindex-stats
+	for _, entry := range md.Sindex_stats {
 
-// 		// sindex-stats:test:test_sindex1:<sindex-stats>
-// 		elements := strings.Split(entry, ":")
+		// sindex-stats:test:test_sindex1:<sindex-stats>
+		elements := strings.Split(entry, ":")
 
-// 		if strings.HasPrefix(elements[0], "sindex-stats") {
-// 			key := "sindex/" + elements[1] + "/" + elements[2]
-// 			rawMetrics[key] = elements[3]
-// 		}
-// 	}
+		if strings.HasPrefix(elements[0], "sindex-stats") {
+			key := "sindex/" + elements[1] + "/" + elements[2]
+			rawMetrics[key] = elements[3]
+		}
+	}
 
-// 	// xdr- (dc/namespace) (config/stats)
-// 	for _, entry := range md.xdr_stats {
+	// xdr- (dc/namespace) (config/stats)
+	for _, entry := range md.Xdr_stats {
 
-// 		// sindex-stats:test:test_sindex1:<sindex-stats>
-// 		elements := strings.Split(entry, ":")
+		// sindex-stats:test:test_sindex1:<sindex-stats>
+		elements := strings.Split(entry, ":")
 
-// 		if strings.HasPrefix(elements[0], "xdr-get-config") {
-// 			key := "get-config" + ":" + elements[1]
-// 			rawMetrics[key] = elements[2]
-// 		} else if strings.HasPrefix(elements[0], "xdr-get-stat") {
-// 			key := "get-stats" + ":" + elements[1]
-// 			rawMetrics[key] = elements[2]
-// 		}
-// 	}
+		if strings.HasPrefix(elements[0], "xdr-get-config") {
+			key := "get-config" + ":" + elements[1]
+			rawMetrics[key] = elements[2]
+		} else if strings.HasPrefix(elements[0], "xdr-get-stat") {
+			key := "get-stats" + ":" + elements[1]
+			rawMetrics[key] = elements[2]
+		}
+	}
 
-// 	return rawMetrics
-// }
+	return rawMetrics
+}
 
-// func (md *MockAerospikeServer) getBuild() string {
-// 	elements := strings.Split(md.passone_output_str, " ")
+func (md *MockAerospikeServer) getBuild() string {
+	elements := strings.Split(md.Passone_output_str, " ")
 
-// 	for _, entry := range elements {
+	for _, entry := range elements {
 
-// 		if strings.HasPrefix(entry, "build") {
-// 			colonIndex := strings.Index(entry, ":")
-// 			// parts := strings.Split(entry, ":")
-// 			value := entry[colonIndex+1:]
-// 			fmt.Println("getBuild(): ", value)
-// 			return value
-// 		}
-// 	}
+		if strings.HasPrefix(entry, "build") {
+			colonIndex := strings.Index(entry, ":")
+			// parts := strings.Split(entry, ":")
+			value := entry[colonIndex+1:]
+			fmt.Println("getBuild(): ", value)
+			return value
+		}
+	}
 
-// 	return ""
-// }
+	return ""
+}
 
-// func (md *MockAerospikeServer) getClusterName() string {
-// 	return md.cluster_name[0]
-// }
+func (md *MockAerospikeServer) getClusterName() string {
+	return md.Cluster_name[0]
+}
 
-// func (md *MockAerospikeServer) getServiceClearStd() string {
-// 	return strings.Split(md.service_clear_std[0], "=")[1]
-// }
+func (md *MockAerospikeServer) getServiceClearStd() string {
+	return strings.Split(md.Service_clear_std[0], "=")[1]
+}
 
 // // func (md *MockAerospikeServer) createXdrPassOneKeys() map[string]string {
 // // 	passOneOutput := make(map[string]string)
