@@ -46,7 +46,7 @@ var Is_Mock_Initialized = 0
 
 var mock_tes_data_map = make(map[string]string)
 
-func (md *MockAerospikeServer) initialize() {
+func (md *MockAerospikeServer) Initialize() {
 
 	// avoid multiple initializations
 	if Is_Mock_Initialized == 1 {
