@@ -168,7 +168,7 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 		case strings.HasPrefix(k, MOCK_IK_SETS):
 			l_mock_data_map[k] = md.getSetsStatistics(k)
 		case strings.HasPrefix(k, MOCK_IK_SINDEX):
-			l_mock_data_map[k] = md.getSindexStatistics(k)
+			l_mock_data_map[k] = md.getSindex(k)
 		}
 	}
 	// fmt.Println("requested keys : ", infokeys, "\n\t values returned: ", l_mock_data_map)
