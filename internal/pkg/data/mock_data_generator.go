@@ -51,12 +51,13 @@ const (
 	MOCK_IK_BUILD                      string = "build"
 	MOCK_IK_CLUSTER_NAME               string = "cluster-name"
 	MOCK_IK_SERVICE_CLEAR_STD          string = "service-clear-std"
-	MOCK_IK_NAMESPACES                 string = "namespaces"
 	MOCK_IK_A_NAMESPACE_SLASH          string = "namespace/"
 	MOCK_IK_NODE_STATISTICS            string = "statistics"
 	MOCK_IK_GET_CONFIG_CONTEXT_SERVICE string = "get-config:context=service"
 	MOCK_IK_SETS                       string = "sets"
+	MOCK_IK_NAMESPACES                 string = "namespaces"
 	MOCK_IK_SINDEX                     string = "sindex"
+	MOCK_IK_SINDEX_STATISTICS          string = "sindex/"
 )
 
 // var request_info_key_to_func_map = map[string]func(){
@@ -172,6 +173,8 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 			l_mock_data_map[k] = md.getSetsStatistics(k)
 		case strings.HasPrefix(k, MOCK_IK_SINDEX):
 			l_mock_data_map[k] = md.getSindex(k)
+		case strings.HasPrefix(k, MOCK_IK_SINDEX_STATISTICS):
+			l_mock_data_map[k] = md.getSingleSindexStatistics(k)
 		}
 	}
 	// fmt.Println("requested keys : ", infokeys, "\n\t values returned: ", l_mock_data_map)
@@ -282,6 +285,26 @@ func (md *MockAerospikeServer) getSindex(key string) string {
 	}
 
 	fmt.Println(" ** getSindex() key: ", key, "\n\t values: ", rawMetrics)
+	return rawMetrics
+
+}
+
+func (md *MockAerospikeServer) getSingleSindexStatistics(key string) string {
+	rawMetrics := ""
+	// node-stats & node-configs
+	for _, entry := range md.Sindex_stats {
+		fmt.Println("\t getSingleSindexStatistics ... processing ", entry)
+		if strings.HasPrefix(key, "sindex/") && strings.HasPrefix(entry, "sindex-stats:") {
+			// sindex-stats:<sindex/namespace/sindex-name>
+			elements := strings.Replace(entry, "sindex-stats:", "", 1)
+			elements = strings.Replace(entry, key, "", 1)
+
+			// key := "sindex"
+			rawMetrics = elements
+		}
+	}
+
+	fmt.Println(" ** getSingleSindexStatistics() key: ", key, "\n\t values: ", rawMetrics)
 	return rawMetrics
 
 }
