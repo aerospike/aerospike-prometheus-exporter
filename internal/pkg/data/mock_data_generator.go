@@ -160,7 +160,7 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 			l_mock_data_map[k] = md.getSingleNamespaceStats(k)
 		}
 	}
-	fmt.Println("requested keys : ", infokeys, "\n\t values returned: ", l_mock_data_map)
+	// fmt.Println("requested keys : ", infokeys, "\n\t values returned: ", l_mock_data_map)
 	return l_mock_data_map
 }
 
