@@ -37,6 +37,7 @@ type MockAerospikeServer struct {
 	Cluster_name        []string
 	Service_clear_std   []string
 	Namespaces          []string
+	Sindexes            []string
 	Passone_output_str  string
 	Passone_outputs_map map[string]string
 }
@@ -109,6 +110,8 @@ func (md *MockAerospikeServer) Initialize() {
 				md.Xdr_stats = append(md.Xdr_stats, line)
 			} else if strings.HasPrefix(line, "sindex-") {
 				md.Sindex_stats = append(md.Sindex_stats, line)
+			} else if strings.HasPrefix(line, "sindex:") {
+				md.Sindexes = append(md.Sindexes, line)
 			} else if strings.HasPrefix(line, "build") {
 				md.Build = append(md.Build, line)
 				// mock_tes_data_map["build"] = strings.TrimSpace(line)
