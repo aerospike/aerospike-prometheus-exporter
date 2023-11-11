@@ -38,6 +38,7 @@ type MockAerospikeServer struct {
 	Service_clear_std   []string
 	Namespaces          []string
 	Sindexes            []string
+	XdrContext          []string
 	Passone_output_str  string
 	Passone_outputs_map map[string]string
 }
@@ -58,6 +59,7 @@ const (
 	MOCK_IK_SINDEX                     string = "sindex"
 	MOCK_IK_NAMESPACE_SLASH            string = "namespace/"
 	MOCK_IK_SINDEX_SLASH               string = "sindex/"
+	MOCK_IK_XDR_CONFIG                 string = "get-config:context=xdr"
 )
 
 // var request_info_key_to_func_map = map[string]func(){
@@ -109,6 +111,8 @@ func (md *MockAerospikeServer) Initialize() {
 				md.Node_stats = append(md.Node_stats, line)
 			} else if strings.HasPrefix(line, "xdr-") {
 				md.Xdr_stats = append(md.Xdr_stats, line)
+			} else if strings.HasPrefix(line, "get-config:context=xdr") { // Xdr configs
+				md.XdrContext = append(md.XdrContext, line)
 			} else if strings.HasPrefix(line, "sindex-stats:") {
 				md.Sindex_stats = append(md.Sindex_stats, line)
 			} else if strings.HasPrefix(line, "sindex:") {
@@ -177,6 +181,8 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 		case strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH):
 			// fmt.Println("\n\t^^^^^^^^ ===> strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH) ", strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH))
 			l_mock_data_map[k] = md.getSingleSindexStatistics(k)
+		case strings.HasPrefix(k, MOCK_IK_XDR_CONFIG):
+			l_mock_data_map[k] = md.getXdrConfigs(k)
 		}
 	}
 	// fmt.Println("requested keys : ", infokeys, "\n\t values returned: ", l_mock_data_map)
@@ -274,7 +280,7 @@ func (md *MockAerospikeServer) getSetsStatistics(key string) string {
 
 func (md *MockAerospikeServer) getSindex(key string) string {
 	rawMetrics := ""
-	// node-stats & node-configs
+	// sindex
 	for _, entry := range md.Sindexes {
 		// fmt.Println("\tgetSindex() ... processing ", entry)
 		if strings.HasPrefix(key, "sindex") && strings.HasPrefix(entry, "sindex:") {
@@ -286,35 +292,41 @@ func (md *MockAerospikeServer) getSindex(key string) string {
 		}
 	}
 
-	// fmt.Println(" ** getSindex() key: ", key, "\n\t values: ", rawMetrics)
 	return rawMetrics
 
 }
 
 func (md *MockAerospikeServer) getSingleSindexStatistics(key string) string {
 	rawMetrics := ""
-	// node-stats & node-configs
-	// fmt.Println("\t*** getSingleSindexStatistics(): ", len(md.Sindex_stats))
+	// sindex-stats
 	for _, entry := range md.Sindex_stats {
 		elements := strings.Split(entry, ":")
-		// fmt.Println(
-		// 	"\n\n\t##### getSingleSindexStatistics ... processing ", entry,
-		// 	"\n\n\t##### key: ", key,
-		// 	"\n\t elements: ", elements,
-		// 	"\n\t has-prefix: (elements[1], key) ", strings.HasPrefix(elements[1], key),
-		// 	"\n\t has-prefix: (elements[0], sindex-stats) ", strings.HasPrefix(elements[1], key))
 
 		if strings.HasPrefix(entry, "sindex-stats") && strings.HasPrefix(elements[1], key) {
-			// sindex-stats:<sindex/namespace/sindex-name>
-			// elements = strings.Replace(elements, (key + ":"), "", 1)
-			// fmt.Println("\t\t^^^^ Elements after replacing key: ", (key + ":"), "\t ^^^^ ", elements)
-
 			// key := "sindex"
 			rawMetrics = elements[3]
 		}
 	}
 
 	// fmt.Println(" ** getSingleSindexStatistics() key: ", key, "\n\t values: ", rawMetrics)
+	return rawMetrics
+
+}
+
+func (md *MockAerospikeServer) getXdrConfigs(key string) string {
+	rawMetrics := ""
+	// sindex
+	for _, entry := range md.XdrContext {
+		// fmt.Println("\tgetSindex() ... processing ", entry)
+		if strings.HasPrefix(key, "get-config:context=xdr") {
+			// set-stats:<node-configs>
+			elements := strings.Replace(entry, "get-config:context=xdr:", "", 1)
+
+			// key := "sets"
+			rawMetrics = elements
+		}
+	}
+
 	return rawMetrics
 
 }

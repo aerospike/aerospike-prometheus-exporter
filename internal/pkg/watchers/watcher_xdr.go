@@ -23,6 +23,8 @@ func (xw *XdrWatcher) PassOneKeys() []string {
 }
 
 func (xw *XdrWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
+	log.Tracef("get-config:context=xdr:%s", rawMetrics[KEY_NS_METADATA])
+
 	res := rawMetrics[KEY_XDR_METADATA]
 	list := commons.ParseStats(res, ";")
 	dcsList := strings.Split(list["dcs"], ",")
