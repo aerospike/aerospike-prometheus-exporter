@@ -73,6 +73,7 @@ func (xw *XdrWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) (
 		// find and construct metric name
 		dcName, ns, metricPrefix := xw.constructMetricNamePrefix(key)
 		l_metrics_to_send := xw.handleRefresh(key, xdrRawMetrics, clusterName, service, dcName, ns, metricPrefix)
+		fmt.Println("\n******************************  watcher_xdr: len(l_metrics_to_send) : ", len(l_metrics_to_send))
 		metrics_to_send = append(metrics_to_send, l_metrics_to_send...)
 	}
 
