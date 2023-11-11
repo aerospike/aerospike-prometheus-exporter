@@ -187,7 +187,7 @@ func (md *MockAerospikeServer) getServiceClearStd() string {
 }
 
 func (md *MockAerospikeServer) getNamespaces() string {
-	return strings.Split(md.Service_clear_std[0], ":")[1]
+	return strings.Split(md.Namespaces[0], ":")[1]
 }
 
 // func (md *MockAerospikeServer) fetchRawMetrics() map[string]string {
