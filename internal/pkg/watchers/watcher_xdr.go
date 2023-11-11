@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -23,7 +24,7 @@ func (xw *XdrWatcher) PassOneKeys() []string {
 }
 
 func (xw *XdrWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
-	log.Tracef("get-config:context=xdr:%s", rawMetrics[KEY_NS_METADATA])
+	log.Tracef("get-config:context=xdr %s", rawMetrics[KEY_XDR_METADATA])
 
 	res := rawMetrics[KEY_XDR_METADATA]
 	list := commons.ParseStats(res, ";")
@@ -69,10 +70,8 @@ func (xw *XdrWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) (
 		xdrRawMetrics := rawMetrics[key]
 		// find and construct metric name
 		dcName, ns, metricPrefix := xw.constructMetricNamePrefix(key)
-		l_cfg_metrics_to_send := xw.handleRefresh(key, xdrRawMetrics, clusterName, service, dcName, ns, metricPrefix)
-
-		metrics_to_send = append(metrics_to_send, l_cfg_metrics_to_send...)
-
+		l_metrics_to_send := xw.handleRefresh(key, xdrRawMetrics, clusterName, service, dcName, ns, metricPrefix)
+		metrics_to_send = append(metrics_to_send, l_metrics_to_send...)
 	}
 
 	return metrics_to_send, nil
@@ -112,7 +111,6 @@ func (xw *XdrWatcher) handleRefresh(infoKeyToProcess string, xdrRawMetrics strin
 
 	stats := commons.ParseStats(xdrRawMetrics, ";")
 	var metrics_to_send = []WatcherMetric{}
-
 	for stat, value := range stats {
 
 		pv, err := commons.TryConvert(value)
@@ -138,9 +136,7 @@ func (xw *XdrWatcher) handleRefresh(infoKeyToProcess string, xdrRawMetrics strin
 
 		// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
 		metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, pv, labels, labelValues})
-
 	}
 
 	return metrics_to_send
-
 }
