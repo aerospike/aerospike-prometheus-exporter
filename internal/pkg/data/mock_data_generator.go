@@ -109,7 +109,7 @@ func (md *MockAerospikeServer) Initialize() {
 				md.Node_stats = append(md.Node_stats, line)
 			} else if strings.HasPrefix(line, "xdr-") {
 				md.Xdr_stats = append(md.Xdr_stats, line)
-			} else if strings.HasPrefix(line, "sindex-") {
+			} else if strings.HasPrefix(line, "sindex-stats:") {
 				md.Sindex_stats = append(md.Sindex_stats, line)
 			} else if strings.HasPrefix(line, "sindex:") {
 				md.Sindexes = append(md.Sindexes, line)
@@ -293,6 +293,7 @@ func (md *MockAerospikeServer) getSindex(key string) string {
 func (md *MockAerospikeServer) getSingleSindexStatistics(key string) string {
 	rawMetrics := ""
 	// node-stats & node-configs
+	fmt.Println("\t*** getSingleSindexStatistics(): ", len(md.Sindex_stats))
 	for _, entry := range md.Sindex_stats {
 		fmt.Println("\t getSingleSindexStatistics ... processing ", entry)
 		if strings.HasPrefix(key, "sindex/") && strings.HasPrefix(entry, "sindex-stats:") {
