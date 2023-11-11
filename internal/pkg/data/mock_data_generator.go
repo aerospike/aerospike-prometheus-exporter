@@ -270,7 +270,7 @@ func (md *MockAerospikeServer) getSetsStatistics(key string) string {
 func (md *MockAerospikeServer) getSindex(key string) string {
 	rawMetrics := ""
 	// node-stats & node-configs
-	for _, entry := range md.Sindex_stats {
+	for _, entry := range md.Sindexes {
 
 		if strings.HasPrefix(key, "sindex") && strings.HasPrefix(entry, "sindex:") {
 			// set-stats:<node-configs>
