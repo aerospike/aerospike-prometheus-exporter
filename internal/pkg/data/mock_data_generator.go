@@ -127,6 +127,7 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 	for _, k := range infokeys {
 		l_mock_data_map[k] = mock_tes_data_map[k]
 	}
+	fmt.Println("requested keys : ", infokeys, "\n\t values returned: ", l_mock_data_map)
 	return l_mock_data_map
 }
 
