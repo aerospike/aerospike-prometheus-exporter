@@ -297,7 +297,12 @@ func (md *MockAerospikeServer) getSingleSindexStatistics(key string) string {
 	// fmt.Println("\t*** getSingleSindexStatistics(): ", len(md.Sindex_stats))
 	for _, entry := range md.Sindex_stats {
 		elements := strings.Replace(entry, "sindex-stats:", "", 1)
-		fmt.Println("\t getSingleSindexStatistics ... processing ", entry, " \n\n\t##### key: ", key, "\n\t entry: ", entry, "\n\t has-prefix: ", strings.HasPrefix(elements, entry))
+		fmt.Println(
+			"\n\n\t##### getSingleSindexStatistics ... processing ", entry,
+			"\n\n\t##### key: ", key,
+			"\n\t elements: ", elements,
+			"\n\t has-prefix: ", strings.HasPrefix(elements, entry))
+
 		if strings.HasPrefix(elements, entry) {
 			// sindex-stats:<sindex/namespace/sindex-name>
 			elements = strings.Replace(elements, (key + ":"), "", 1)
