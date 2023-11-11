@@ -93,13 +93,16 @@ func (md *MockAerospikeServer) Initialize() {
 				md.Sindex_stats = append(md.Sindex_stats, line)
 			} else if strings.HasPrefix(line, "build") {
 				md.Build = append(md.Build, line)
-				mock_tes_data_map["service-clear-std"] = strings.TrimSpace(line)
+				mock_tes_data_map["build"] = strings.TrimSpace(line)
 			} else if strings.HasPrefix(line, "service-clear-std") {
 				md.Service_clear_std = append(md.Service_clear_std, line)
 				mock_tes_data_map["service-clear-std"] = strings.TrimSpace(line)
 			} else if strings.HasPrefix(line, "cluster-name") {
 				md.Cluster_name = append(md.Cluster_name, line)
 				mock_tes_data_map["cluster-name"] = strings.TrimSpace(line)
+			} else if strings.HasPrefix(line, "namespaces") {
+				md.Cluster_name = append(md.Cluster_name, line)
+				mock_tes_data_map["namespaces"] = strings.TrimSpace(line)
 			} else if strings.HasPrefix(line, "passone_output") {
 				// passone_output:build:6.4.0.0-rc4 get-config:context=xdr:dcs=backup_dc_asdev20,backup_dc_asdev20_second;src-id=0;trace-sample=0 namespaces:test;bar_device;materials;ns_test_on_flash;test_on_shmem;bar_on_flash;pmkohl_on_device sindex:ns=test:indexname=test_sindex1:set=from_branch_2:bin=occurred:type=numeric:indextype=default:context=null:state=RW
 				str := strings.ReplaceAll(line, "passone_output:", "")
