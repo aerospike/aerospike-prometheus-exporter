@@ -296,20 +296,20 @@ func (md *MockAerospikeServer) getSingleSindexStatistics(key string) string {
 	// node-stats & node-configs
 	// fmt.Println("\t*** getSingleSindexStatistics(): ", len(md.Sindex_stats))
 	for _, entry := range md.Sindex_stats {
-		elements := strings.Replace(entry, "sindex-stats:", "", 1)
-		fmt.Println(
-			"\n\n\t##### getSingleSindexStatistics ... processing ", entry,
-			"\n\n\t##### key: ", key,
-			"\n\t elements: ", elements,
-			"\n\t has-prefix: ", strings.HasPrefix(elements, key))
+		elements := strings.Split(entry, ":")
+		// fmt.Println(
+		// 	"\n\n\t##### getSingleSindexStatistics ... processing ", entry,
+		// 	"\n\n\t##### key: ", key,
+		// 	"\n\t elements: ", elements,
+		// 	"\n\t has-prefix: ", strings.HasPrefix(elements, key))
 
-		if strings.HasPrefix(elements, key) {
+		if strings.HasPrefix(elements[0], "sindex-stats") && strings.HasPrefix(elements[1], key) {
 			// sindex-stats:<sindex/namespace/sindex-name>
-			elements = strings.Replace(elements, (key + ":"), "", 1)
-			fmt.Println("\t\t^^^^ Elements after replacing key: ", (key + ":"), "\t ^^^^ ", elements)
+			// elements = strings.Replace(elements, (key + ":"), "", 1)
+			// fmt.Println("\t\t^^^^ Elements after replacing key: ", (key + ":"), "\t ^^^^ ", elements)
 
 			// key := "sindex"
-			rawMetrics = elements
+			rawMetrics = elements[3]
 		}
 	}
 
