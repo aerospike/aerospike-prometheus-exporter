@@ -175,6 +175,7 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 		case strings.HasPrefix(k, MOCK_IK_SINDEX):
 			l_mock_data_map[k] = md.getSindex(k)
 		case strings.HasPrefix(k, MOCK_IK_SINDEX_STATISTICS):
+			fmt.Println("\n\t^^^^^^^^ ===> strings.HasPrefix(k, MOCK_IK_SINDEX_STATISTICS) ", strings.HasPrefix(k, MOCK_IK_SINDEX_STATISTICS))
 			l_mock_data_map[k] = md.getSingleSindexStatistics(k)
 		}
 	}
