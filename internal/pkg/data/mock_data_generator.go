@@ -37,6 +37,7 @@ type MockAerospikeServer struct {
 	Build               []string
 	Cluster_name        []string
 	Service_clear_std   []string
+	Namespaces          []string
 	Passone_output_str  string
 	Passone_outputs_map map[string]string
 }
@@ -45,6 +46,19 @@ type MockAerospikeServer struct {
 var Is_Mock_Initialized = 0
 
 var mock_tes_data_map = make(map[string]string)
+
+const (
+	IK_BUILD             string = "build"
+	IK_CLUSTER_NAME      string = "cluster-name"
+	IK_SERVICE_CLEAR_STD string = "service-clear-std"
+	IK_NAMESPACES        string = "namespaces"
+)
+
+// var request_info_key_to_func_map = map[string]func(){
+// 	"build": getBuild(),
+// }
+
+// var request_info_key_to_func_map = awsMetrics{fetchLatency: metrics.CreateQuantileMetric()}
 
 func (md *MockAerospikeServer) Initialize() {
 
@@ -93,16 +107,16 @@ func (md *MockAerospikeServer) Initialize() {
 				md.Sindex_stats = append(md.Sindex_stats, line)
 			} else if strings.HasPrefix(line, "build") {
 				md.Build = append(md.Build, line)
-				mock_tes_data_map["build"] = strings.TrimSpace(line)
+				// mock_tes_data_map["build"] = strings.TrimSpace(line)
 			} else if strings.HasPrefix(line, "service-clear-std") {
 				md.Service_clear_std = append(md.Service_clear_std, line)
-				mock_tes_data_map["service-clear-std"] = strings.TrimSpace(line)
+				// mock_tes_data_map["service-clear-std"] = strings.TrimSpace(line)
 			} else if strings.HasPrefix(line, "cluster-name") {
 				md.Cluster_name = append(md.Cluster_name, line)
-				mock_tes_data_map["cluster-name"] = strings.TrimSpace(line)
+				// mock_tes_data_map["cluster-name"] = strings.TrimSpace(line)
 			} else if strings.HasPrefix(line, "namespaces") {
-				md.Cluster_name = append(md.Cluster_name, line)
-				mock_tes_data_map["namespaces"] = strings.TrimSpace(line)
+				md.Namespaces = append(md.Namespaces, line)
+				// mock_tes_data_map["namespaces"] = strings.TrimSpace(line)
 			} else if strings.HasPrefix(line, "passone_output") {
 				// passone_output:build:6.4.0.0-rc4 get-config:context=xdr:dcs=backup_dc_asdev20,backup_dc_asdev20_second;src-id=0;trace-sample=0 namespaces:test;bar_device;materials;ns_test_on_flash;test_on_shmem;bar_on_flash;pmkohl_on_device sindex:ns=test:indexname=test_sindex1:set=from_branch_2:bin=occurred:type=numeric:indextype=default:context=null:state=RW
 				str := strings.ReplaceAll(line, "passone_output:", "")
@@ -131,71 +145,20 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 	var l_mock_data_map = make(map[string]string)
 
 	for _, k := range infokeys {
-		l_mock_data_map[k] = mock_tes_data_map[k]
+
+		switch k {
+		case IK_BUILD:
+			l_mock_data_map[k] = md.getBuild()
+		case IK_CLUSTER_NAME:
+			l_mock_data_map[k] = md.getClusterName()
+		case IK_NAMESPACES:
+			l_mock_data_map[k] = md.getNamespaces()
+		case IK_SERVICE_CLEAR_STD:
+			l_mock_data_map[k] = md.getServiceClearStd()
+		}
 	}
 	fmt.Println("requested keys : ", infokeys, "\n\t values returned: ", l_mock_data_map)
 	return l_mock_data_map
-}
-
-func (md *MockAerospikeServer) fetchRawMetrics() map[string]string {
-	rawMetrics := make(map[string]string)
-
-	// build, cluster-name, service-ip
-	rawMetrics["build"] = md.getBuild()
-	rawMetrics["cluster-name"] = md.getClusterName()
-	rawMetrics["service-clear-std"] = md.getServiceClearStd()
-
-	// namespace
-	for _, entry := range md.Namespaces_stats {
-		elements := strings.Split(entry, ":")
-		// format: namespace-stats:test:ns_cluster_size=1;effective_ ( 2nd element is the namespace name "test")
-		key := "namespace/" + elements[1]
-		rawMetrics[key] = elements[2]
-	}
-
-	// node-stats & node-configs
-	for _, entry := range md.Node_stats {
-
-		// node-configs:<node-configs> & node-stats:<node-stats>
-		elements := strings.Split(entry, ":")
-
-		if strings.HasPrefix(elements[0], "node-stats") {
-			key := "statistics"
-			rawMetrics[key] = elements[1]
-		} else if strings.HasPrefix(elements[0], "node-config") {
-			key := "get-config:context=service"
-			rawMetrics[key] = elements[1]
-		}
-	}
-
-	// sindex-stats
-	for _, entry := range md.Sindex_stats {
-
-		// sindex-stats:test:test_sindex1:<sindex-stats>
-		elements := strings.Split(entry, ":")
-
-		if strings.HasPrefix(elements[0], "sindex-stats") {
-			key := "sindex/" + elements[1] + "/" + elements[2]
-			rawMetrics[key] = elements[3]
-		}
-	}
-
-	// xdr- (dc/namespace) (config/stats)
-	for _, entry := range md.Xdr_stats {
-
-		// sindex-stats:test:test_sindex1:<sindex-stats>
-		elements := strings.Split(entry, ":")
-
-		if strings.HasPrefix(elements[0], "xdr-get-config") {
-			key := "get-config" + ":" + elements[1]
-			rawMetrics[key] = elements[2]
-		} else if strings.HasPrefix(elements[0], "xdr-get-stat") {
-			key := "get-stats" + ":" + elements[1]
-			rawMetrics[key] = elements[2]
-		}
-	}
-
-	return rawMetrics
 }
 
 func (md *MockAerospikeServer) getBuild() string {
@@ -223,6 +186,71 @@ func (md *MockAerospikeServer) getServiceClearStd() string {
 	return strings.Split(md.Service_clear_std[0], "=")[1]
 }
 
+func (md *MockAerospikeServer) getNamespaces() string {
+	return strings.Split(md.Service_clear_std[0], "=")[1]
+}
+
+// func (md *MockAerospikeServer) fetchRawMetrics() map[string]string {
+// 	rawMetrics := make(map[string]string)
+
+// 	// build, cluster-name, service-ip
+// 	rawMetrics["build"] = md.getBuild()
+// 	rawMetrics["cluster-name"] = md.getClusterName()
+// 	rawMetrics["service-clear-std"] = md.getServiceClearStd()
+
+// 	// namespace
+// 	for _, entry := range md.Namespaces_stats {
+// 		elements := strings.Split(entry, ":")
+// 		// format: namespace-stats:test:ns_cluster_size=1;effective_ ( 2nd element is the namespace name "test")
+// 		key := "namespace/" + elements[1]
+// 		rawMetrics[key] = elements[2]
+// 	}
+
+// 	// node-stats & node-configs
+// 	for _, entry := range md.Node_stats {
+
+// 		// node-configs:<node-configs> & node-stats:<node-stats>
+// 		elements := strings.Split(entry, ":")
+
+// 		if strings.HasPrefix(elements[0], "node-stats") {
+// 			key := "statistics"
+// 			rawMetrics[key] = elements[1]
+// 		} else if strings.HasPrefix(elements[0], "node-config") {
+// 			key := "get-config:context=service"
+// 			rawMetrics[key] = elements[1]
+// 		}
+// 	}
+
+// 	// sindex-stats
+// 	for _, entry := range md.Sindex_stats {
+
+// 		// sindex-stats:test:test_sindex1:<sindex-stats>
+// 		elements := strings.Split(entry, ":")
+
+// 		if strings.HasPrefix(elements[0], "sindex-stats") {
+// 			key := "sindex/" + elements[1] + "/" + elements[2]
+// 			rawMetrics[key] = elements[3]
+// 		}
+// 	}
+
+// 	// xdr- (dc/namespace) (config/stats)
+// 	for _, entry := range md.Xdr_stats {
+
+// 		// sindex-stats:test:test_sindex1:<sindex-stats>
+// 		elements := strings.Split(entry, ":")
+
+// 		if strings.HasPrefix(elements[0], "xdr-get-config") {
+// 			key := "get-config" + ":" + elements[1]
+// 			rawMetrics[key] = elements[2]
+// 		} else if strings.HasPrefix(elements[0], "xdr-get-stat") {
+// 			key := "get-stats" + ":" + elements[1]
+// 			rawMetrics[key] = elements[2]
+// 		}
+// 	}
+
+// 	return rawMetrics
+// }
+
 // // func (md *MockAerospikeServer) createXdrPassOneKeys() map[string]string {
 // // 	passOneOutput := make(map[string]string)
 // // 	elements := strings.Split(md.passone_output_str, " ")
@@ -242,27 +270,27 @@ func (md *MockAerospikeServer) getServiceClearStd() string {
 
 // // 	return passOneOutput
 
-// // }
+// }
 
-// // func (md *MockAerospikeServer) requestInfoNamespaces() map[string]string {
-// // 	pass2Metrics := make(map[string]string)
+// func (md *MockAerospikeServer) requestInfoNamespaces() map[string]string {
+// 	pass2Metrics := make(map[string]string)
 
-// // 	namespaces := ""
-// // 	for _, entry := range md.namespaces_stats {
-// // 		elements := strings.Split(entry, ":")
-// // 		// format: namespace-stats:test:ns_cluster_size=1;effective_ ( 2nd element is the namespace name "test")
-// // 		ns := strings.TrimSpace(elements[1])
-// // 		if len(namespaces) > 0 {
-// // 			namespaces = namespaces + ";" + ns
-// // 		} else {
-// // 			namespaces = ns
-// // 		}
-// // 	}
+// 	namespaces := ""
+// 	for _, entry := range md.namespaces_stats {
+// 		elements := strings.Split(entry, ":")
+// 		// format: namespace-stats:test:ns_cluster_size=1;effective_ ( 2nd element is the namespace name "test")
+// 		ns := strings.TrimSpace(elements[1])
+// 		if len(namespaces) > 0 {
+// 			namespaces = namespaces + ";" + ns
+// 		} else {
+// 			namespaces = ns
+// 		}
+// 	}
 
-// // 	pass2Metrics["namespaces"] = strings.TrimSuffix(namespaces, ";")
+// 	pass2Metrics["namespaces"] = strings.TrimSuffix(namespaces, ";")
 
-// // 	return pass2Metrics
-// // }
+// 	return pass2Metrics
+// }
 
 // // func (md *MockAerospikeServer) createNamespacePassTwoExpectedOutputs() []string {
 // // 	lNamespaces := []string{}
