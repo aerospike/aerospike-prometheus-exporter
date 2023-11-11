@@ -50,8 +50,11 @@ func (md *MockAerospikeServer) Initialize() {
 
 	// avoid multiple initializations
 	if Is_Mock_Initialized == 1 {
+		fmt.Println("Mock data provider already Initialized: ")
 		return
 	}
+
+	fmt.Println("**** Initializing mock-data-provider from file ", MOCK_TEST_DATA_FILE)
 
 	// Mark as initialized
 	Is_Mock_Initialized = 1
