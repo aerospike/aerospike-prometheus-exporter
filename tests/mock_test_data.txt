@@ -2,6 +2,7 @@ build=7.0.0.0-rc4
 service-clear-std=172.17.0.6:3000
 cluster-name=70_aus_perth_1
 namespaces:test;bar;test_on_shmem         
+sindex:ns=test:indexname=test_sindex1:set=from_branch_2:bin=occurred:type=numeric:indextype=default:context=null:state=RW;ns=test:indexname=7x_sindex_1:set=NULL:bin=occurred:type=numeric:indextype=default:context=null:state=RW;ns=bar:indexname=7x_sindex_bar_2:set=NULL:bin=occurred:type=numeric:indextype=default:context=null:state=RW
 
 passone_output:build:7.0.0.0-rc4 get-config:context=xdr:dcs=172.17.0.10,64_asia_sng_dr_1;src-id=0;trace-sample=0 namespaces:test;bar;bar_pmem;employees_flash sindex:ns=test:indexname=test_sindex1:set=from_branch_2:bin=occurred:type=numeric:indextype=default:context=null:state=RW;ns=test:indexname=7x_sindex_1:set=NULL:bin=occurred:type=numeric:indextype=default:context=null:state=RW;ns=bar:indexname=7x_sindex_bar_2:set=NULL:bin=occurred:type=numeric:indextype=default:context=null:state=RW
 

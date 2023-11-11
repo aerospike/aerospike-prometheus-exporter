@@ -29,7 +29,7 @@ func GetWatchers() []Watcher {
 	watchers := []Watcher{
 		// &NamespaceWatcher{},
 		// &NodeStatsWatcher{},
-		&SetWatcher{},
+		// &SetWatcher{},
 		&SindexWatcher{},
 		// &XdrWatcher{},
 	}

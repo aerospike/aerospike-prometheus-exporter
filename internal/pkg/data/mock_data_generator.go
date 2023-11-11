@@ -55,7 +55,7 @@ const (
 	MOCK_IK_NODE_STATISTICS            string = "statistics"
 	MOCK_IK_GET_CONFIG_CONTEXT_SERVICE string = "get-config:context=service"
 	MOCK_IK_SETS                       string = "sets"
-	MOCK_IK_SINDEX_STATISTICS          string = "sindex-stats"
+	MOCK_IK_SINDEX                     string = "sindex"
 )
 
 // var request_info_key_to_func_map = map[string]func(){
@@ -167,7 +167,7 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 			l_mock_data_map[k] = md.getNodeStatistics(k)
 		case strings.HasPrefix(k, MOCK_IK_SETS):
 			l_mock_data_map[k] = md.getSetsStatistics(k)
-		case strings.HasPrefix(k, MOCK_IK_SINDEX_STATISTICS):
+		case strings.HasPrefix(k, MOCK_IK_SINDEX):
 			l_mock_data_map[k] = md.getSindexStatistics(k)
 		}
 	}
@@ -264,22 +264,21 @@ func (md *MockAerospikeServer) getSetsStatistics(key string) string {
 
 }
 
-func (md *MockAerospikeServer) getSindexStatistics(key string) string {
+func (md *MockAerospikeServer) getSindex(key string) string {
 	rawMetrics := ""
 	// node-stats & node-configs
 	for _, entry := range md.Sindex_stats {
 
-		if strings.HasPrefix(key, "sindex") && strings.HasPrefix(entry, "sindex-stats:") {
+		if strings.HasPrefix(key, "sindex") && strings.HasPrefix(entry, "sindex:") {
 			// set-stats:<node-configs>
-			elements := strings.Replace(entry, "sindex-stats:[", "", 1)
-			elements = strings.Replace(elements, "]", "", 1)
+			elements := strings.Replace(entry, "sindex:", "", 1)
 
 			// key := "sets"
 			rawMetrics = elements
 		}
 	}
 
-	fmt.Println(" ** getSindexStatistics() key: ", key, "\n\t values: ", rawMetrics)
+	fmt.Println(" ** getSindex() key: ", key, "\n\t values: ", rawMetrics)
 	return rawMetrics
 
 }
