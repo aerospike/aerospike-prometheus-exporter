@@ -51,13 +51,13 @@ const (
 	MOCK_IK_BUILD                      string = "build"
 	MOCK_IK_CLUSTER_NAME               string = "cluster-name"
 	MOCK_IK_SERVICE_CLEAR_STD          string = "service-clear-std"
-	MOCK_IK_A_NAMESPACE_SLASH          string = "namespace/"
 	MOCK_IK_NODE_STATISTICS            string = "statistics"
 	MOCK_IK_GET_CONFIG_CONTEXT_SERVICE string = "get-config:context=service"
 	MOCK_IK_SETS                       string = "sets"
 	MOCK_IK_NAMESPACES                 string = "namespaces"
 	MOCK_IK_SINDEX                     string = "sindex"
-	MOCK_IK_SINDEX_STATISTICS          string = "sindex/"
+	MOCK_IK_NAMESPACE_SLASH            string = "namespace/"
+	MOCK_IK_SINDEX_SLASH               string = "sindex/"
 )
 
 // var request_info_key_to_func_map = map[string]func(){
@@ -154,7 +154,7 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 
 	for _, k := range infokeys {
 
-		fmt.Println("fetchRequestInfoFromFile(): processing key: ", k, "\t===> strings.HasPrefix(k, MOCK_IK_SINDEX_STATISTICS) ", strings.HasPrefix(k, MOCK_IK_SINDEX_STATISTICS))
+		fmt.Println("fetchRequestInfoFromFile(): processing key: ", k, "\t===> strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH) ", strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH))
 		switch true {
 		case strings.HasPrefix(k, MOCK_IK_BUILD):
 			l_mock_data_map[k] = md.getBuild(k)
@@ -164,7 +164,7 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 			l_mock_data_map[k] = md.getServiceClearStd(k)
 		case strings.HasPrefix(k, MOCK_IK_NAMESPACES):
 			l_mock_data_map[k] = md.getNamespaces(k)
-		case strings.HasPrefix(k, MOCK_IK_A_NAMESPACE_SLASH):
+		case strings.HasPrefix(k, MOCK_IK_NAMESPACE_SLASH):
 			l_mock_data_map[k] = md.getSingleNamespaceStats(k)
 		case strings.HasPrefix(k, MOCK_IK_NODE_STATISTICS):
 			l_mock_data_map[k] = md.getNodeStatistics(k)
@@ -172,10 +172,10 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 			l_mock_data_map[k] = md.getNodeStatistics(k)
 		case strings.HasPrefix(k, MOCK_IK_SETS):
 			l_mock_data_map[k] = md.getSetsStatistics(k)
-		case strings.HasPrefix(k, MOCK_IK_SINDEX):
+		case (strings.HasPrefix(k, MOCK_IK_SINDEX) && !strings.Contains(k, "/")):
 			l_mock_data_map[k] = md.getSindex(k)
-		case strings.HasPrefix(k, MOCK_IK_SINDEX_STATISTICS):
-			fmt.Println("\n\t^^^^^^^^ ===> strings.HasPrefix(k, MOCK_IK_SINDEX_STATISTICS) ", strings.HasPrefix(k, MOCK_IK_SINDEX_STATISTICS))
+		case strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH):
+			fmt.Println("\n\t^^^^^^^^ ===> strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH) ", strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH))
 			l_mock_data_map[k] = md.getSingleSindexStatistics(k)
 		}
 	}
