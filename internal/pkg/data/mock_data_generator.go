@@ -154,7 +154,7 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 
 	for _, k := range infokeys {
 
-		fmt.Println("fetchRequestInfoFromFile(): processing key: ", k, "\t===> strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH) ", strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH))
+		// fmt.Println("fetchRequestInfoFromFile(): processing key: ", k, "\t===> strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH) ", strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH))
 		switch true {
 		case strings.HasPrefix(k, MOCK_IK_BUILD):
 			l_mock_data_map[k] = md.getBuild(k)
@@ -175,7 +175,7 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 		case (strings.HasPrefix(k, MOCK_IK_SINDEX) && !strings.Contains(k, "/")):
 			l_mock_data_map[k] = md.getSindex(k)
 		case strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH):
-			fmt.Println("\n\t^^^^^^^^ ===> strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH) ", strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH))
+			// fmt.Println("\n\t^^^^^^^^ ===> strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH) ", strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH))
 			l_mock_data_map[k] = md.getSingleSindexStatistics(k)
 		}
 	}
@@ -294,13 +294,14 @@ func (md *MockAerospikeServer) getSindex(key string) string {
 func (md *MockAerospikeServer) getSingleSindexStatistics(key string) string {
 	rawMetrics := ""
 	// node-stats & node-configs
-	fmt.Println("\t*** getSingleSindexStatistics(): ", len(md.Sindex_stats))
+	// fmt.Println("\t*** getSingleSindexStatistics(): ", len(md.Sindex_stats))
 	for _, entry := range md.Sindex_stats {
 		fmt.Println("\t getSingleSindexStatistics ... processing ", entry)
 		if strings.HasPrefix(key, "sindex/") && strings.HasPrefix(entry, "sindex-stats:") {
 			// sindex-stats:<sindex/namespace/sindex-name>
 			elements := strings.Replace(entry, "sindex-stats:", "", 1)
-			elements = strings.Replace(elements, key, "", 1)
+			elements = strings.Replace(elements, (key + ":"), "", 1)
+			fmt.Println("\t\t^^^^ Elements after replacing key: ", (key + ":"), "\t ^^^^ ", elements)
 
 			// key := "sindex"
 			rawMetrics = elements
