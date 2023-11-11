@@ -1,7 +1,6 @@
 package watchers
 
 import (
-	"fmt"
 	"strings"
 
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -69,13 +68,13 @@ func (xw *XdrWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) (
 	for _, key := range infoKeys {
 
 		xdrRawMetrics := rawMetrics[key]
-		fmt.Println("\n\nwatcher_xdr: xdrRawMetrics: ", xdrRawMetrics+"\n===========================")
+		// fmt.Println("\n\nwatcher_xdr: xdrRawMetrics: ", xdrRawMetrics+"\n===========================")
 		// find and construct metric name
 		dcName, ns, metricPrefix := xw.constructMetricNamePrefix(key)
 		l_metrics_to_send := xw.handleRefresh(key, xdrRawMetrics, clusterName, service, dcName, ns, metricPrefix)
 		metrics_to_send = append(metrics_to_send, l_metrics_to_send...)
 	}
-	fmt.Println("\n******************************  watcher_xdr: len(l_metrics_to_send) : ", len(metrics_to_send))
+	// fmt.Println("\n******************************  watcher_xdr: len(l_metrics_to_send) : ", len(metrics_to_send))
 
 	return metrics_to_send, nil
 }

@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -180,8 +179,6 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 			}
 		}
 	}
-
-	fmt.Println("**** infoKeys: ", infoKeys, "\n\t===> rawMetrics: ", rawMetrics)
 
 	return rawMetrics, err
 }

@@ -35,7 +35,7 @@ func main() {
 
 	handles := handlers.GetMetricHandlers()
 
-	fmt.Println("Metrics handling mode is ", *handle_mode)
+	log.Infof("Metrics handling mode is %s", *handle_mode)
 	err := handles[*handle_mode].Initialize()
 	if err != nil {
 		log.Errorln(err)

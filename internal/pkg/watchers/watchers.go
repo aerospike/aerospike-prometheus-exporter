@@ -28,9 +28,9 @@ type Watcher interface {
 func GetWatchers() []Watcher {
 	watchers := []Watcher{
 		&NamespaceWatcher{},
-		// &NodeStatsWatcher{},
-		// &SetWatcher{},
-		// &SindexWatcher{},
+		&NodeStatsWatcher{},
+		&SetWatcher{},
+		&SindexWatcher{},
 		&XdrWatcher{},
 	}
 
