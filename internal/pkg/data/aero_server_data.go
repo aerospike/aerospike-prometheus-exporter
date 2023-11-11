@@ -14,6 +14,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type AerospikeServerProvider struct {
+}
+
+func (asm AerospikeServerProvider) RequestInfo(infoKeys []string) (map[string]string, error) {
+	return fetchRequestInfoFromAerospike(infoKeys)
+}
+
+// Aerospike server interaction related code
+
 var (
 	fullHost   string
 	user       string
@@ -135,7 +144,7 @@ func createNewConnection() (*aero.Connection, error) {
 	return asConnection, nil
 }
 
-func RequestInfo(infoKeys []string) (map[string]string, error) {
+func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error) {
 	var err error
 	rawMetrics := make(map[string]string)
 

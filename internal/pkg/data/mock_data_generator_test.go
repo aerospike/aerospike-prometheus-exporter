@@ -1,12 +1,5 @@
 package data
 
-import (
-	"bufio"
-	"fmt"
-	"os"
-	"strings"
-)
-
 /*
 Dummy Raw Metrics, copied from local Aerospike Server
 returns static test data copied from running an Aerospike Server with test namespaces, sets, sindex, jobs, latencies etc.,
@@ -19,1120 +12,1125 @@ once we have output from watcher-implementations ( like watcher_namespaces.go, w
 
 var MOCK_TEST_DATA_FILE = "tests/mock_test_data.txt"
 
+func (mas MockAerospikeServer) RequestInfo(infokeys []string) (map[string]string, error) {
+	return nil, nil
+}
+
+// Mock Data Provider related code
 type MockAerospikeServer struct {
-	namespaces_stats    []string
-	sets_stats          []string
-	xdr_stats           []string
-	node_stats          []string
-	latencies_stats     []string
-	sindex_stats        []string
-	build               []string
-	cluster_name        []string
-	service_clear_std   []string
-	passone_output_str  string
-	passone_outputs_map map[string]string
+	Tmp_namespaces_stats    []string
+	Tmp_sets_stats          []string
+	Tmp_xdr_stats           []string
+	Tmp_node_stats          []string
+	Tmp_latencies_stats     []string
+	Tmp_sindex_stats        []string
+	Tmp_build               []string
+	Tmp_cluster_name        []string
+	Tmp_service_clear_std   []string
+	Tmp_passone_output_str  string
+	Tmp_passone_outputs_map map[string]string
 }
 
-// read mock test data from a file
-func (md *MockAerospikeServer) initialize() {
+// // read mock test data from a file
+// func (md *MockAerospikeServer) initialize() {
 
-	filePath := MOCK_TEST_DATA_FILE
-	readFile, err := os.Open(filePath)
+// 	filePath := MOCK_TEST_DATA_FILE
+// 	readFile, err := os.Open(filePath)
 
-	if err != nil {
-		fmt.Println(err)
-	}
-	fileScanner := bufio.NewScanner(readFile)
-	fileScanner.Split(bufio.ScanLines)
-	var fileLines []string
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
+// 	fileScanner := bufio.NewScanner(readFile)
+// 	fileScanner.Split(bufio.ScanLines)
+// 	var fileLines []string
 
-	for fileScanner.Scan() {
-		fileLines = append(fileLines, strings.TrimSpace(fileScanner.Text()))
-	}
+// 	for fileScanner.Scan() {
+// 		fileLines = append(fileLines, strings.TrimSpace(fileScanner.Text()))
+// 	}
 
-	readFile.Close()
+// 	readFile.Close()
 
-	for _, line := range fileLines {
-		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
-			// ignore, comments
-		} else if len(line) > 0 {
-			if strings.HasPrefix(line, "namespace-") {
-				md.namespaces_stats = append(md.namespaces_stats, line)
-			} else if strings.HasPrefix(line, "set-stats") {
-				md.sets_stats = append(md.sets_stats, line)
-			} else if strings.HasPrefix(line, "latency-stats") {
-				md.latencies_stats = append(md.latencies_stats, line)
-			} else if strings.HasPrefix(line, "node-") {
-				md.node_stats = append(md.node_stats, line)
-			} else if strings.HasPrefix(line, "xdr-") {
-				md.xdr_stats = append(md.xdr_stats, line)
-			} else if strings.HasPrefix(line, "sindex-") {
-				md.sindex_stats = append(md.sindex_stats, line)
-			} else if strings.HasPrefix(line, "build") {
-				md.build = append(md.build, line)
-			} else if strings.HasPrefix(line, "service-clear-std") {
-				md.service_clear_std = append(md.service_clear_std, line)
-			} else if strings.HasPrefix(line, "cluster-name") {
-				md.cluster_name = append(md.cluster_name, line)
-			} else if strings.HasPrefix(line, "passone_output") {
-				// passone_output:build:6.4.0.0-rc4 get-config:context=xdr:dcs=backup_dc_asdev20,backup_dc_asdev20_second;src-id=0;trace-sample=0 namespaces:test;bar_device;materials;ns_test_on_flash;test_on_shmem;bar_on_flash;pmkohl_on_device sindex:ns=test:indexname=test_sindex1:set=from_branch_2:bin=occurred:type=numeric:indextype=default:context=null:state=RW
-				str := strings.ReplaceAll(line, "passone_output:", "")
-				// store full string also
-				md.passone_output_str = str
-				elements := strings.Split(md.passone_output_str, " ")
-				// reinitialize internal map
-				md.passone_outputs_map = make(map[string]string)
-				for _, entry := range elements {
+// 	for _, line := range fileLines {
+// 		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
+// 			// ignore, comments
+// 		} else if len(line) > 0 {
+// 			if strings.HasPrefix(line, "namespace-") {
+// 				md.namespaces_stats = append(md.namespaces_stats, line)
+// 			} else if strings.HasPrefix(line, "set-stats") {
+// 				md.sets_stats = append(md.sets_stats, line)
+// 			} else if strings.HasPrefix(line, "latency-stats") {
+// 				md.latencies_stats = append(md.latencies_stats, line)
+// 			} else if strings.HasPrefix(line, "node-") {
+// 				md.node_stats = append(md.node_stats, line)
+// 			} else if strings.HasPrefix(line, "xdr-") {
+// 				md.xdr_stats = append(md.xdr_stats, line)
+// 			} else if strings.HasPrefix(line, "sindex-") {
+// 				md.sindex_stats = append(md.sindex_stats, line)
+// 			} else if strings.HasPrefix(line, "build") {
+// 				md.build = append(md.build, line)
+// 			} else if strings.HasPrefix(line, "service-clear-std") {
+// 				md.service_clear_std = append(md.service_clear_std, line)
+// 			} else if strings.HasPrefix(line, "cluster-name") {
+// 				md.cluster_name = append(md.cluster_name, line)
+// 			} else if strings.HasPrefix(line, "passone_output") {
+// 				// passone_output:build:6.4.0.0-rc4 get-config:context=xdr:dcs=backup_dc_asdev20,backup_dc_asdev20_second;src-id=0;trace-sample=0 namespaces:test;bar_device;materials;ns_test_on_flash;test_on_shmem;bar_on_flash;pmkohl_on_device sindex:ns=test:indexname=test_sindex1:set=from_branch_2:bin=occurred:type=numeric:indextype=default:context=null:state=RW
+// 				str := strings.ReplaceAll(line, "passone_output:", "")
+// 				// store full string also
+// 				md.passone_output_str = str
+// 				elements := strings.Split(md.passone_output_str, " ")
+// 				// reinitialize internal map
+// 				md.passone_outputs_map = make(map[string]string)
+// 				for _, entry := range elements {
 
-					colonIndex := strings.Index(entry, ":")
-					// parts := strings.Split(entry, ":")
-					key := entry[0:colonIndex]
-					value := entry[colonIndex+1:]
-					md.passone_outputs_map[key] = value
-				}
-				// md.passone_outputs = splitAndRetrieveStats(str, ";")
+// 					colonIndex := strings.Index(entry, ":")
+// 					// parts := strings.Split(entry, ":")
+// 					key := entry[0:colonIndex]
+// 					value := entry[colonIndex+1:]
+// 					md.passone_outputs_map[key] = value
+// 				}
+// 				// md.passone_outputs = splitAndRetrieveStats(str, ";")
 
-			}
+// 			}
 
-		}
-	}
-}
+// 		}
+// 	}
+// }
 
-func (md *MockAerospikeServer) fetchRawMetrics() map[string]string {
-	rawMetrics := make(map[string]string)
+// func (md *MockAerospikeServer) fetchRawMetrics() map[string]string {
+// 	rawMetrics := make(map[string]string)
 
-	// build, cluster-name, service-ip
-	rawMetrics["build"] = md.getBuild()
-	rawMetrics["cluster-name"] = md.getClusterName()
-	rawMetrics["service-clear-std"] = md.getServiceClearStd()
+// 	// build, cluster-name, service-ip
+// 	rawMetrics["build"] = md.getBuild()
+// 	rawMetrics["cluster-name"] = md.getClusterName()
+// 	rawMetrics["service-clear-std"] = md.getServiceClearStd()
 
-	// namespace
-	for _, entry := range md.namespaces_stats {
-		elements := strings.Split(entry, ":")
-		// format: namespace-stats:test:ns_cluster_size=1;effective_ ( 2nd element is the namespace name "test")
-		key := "namespace/" + elements[1]
-		rawMetrics[key] = elements[2]
-	}
+// 	// namespace
+// 	for _, entry := range md.namespaces_stats {
+// 		elements := strings.Split(entry, ":")
+// 		// format: namespace-stats:test:ns_cluster_size=1;effective_ ( 2nd element is the namespace name "test")
+// 		key := "namespace/" + elements[1]
+// 		rawMetrics[key] = elements[2]
+// 	}
 
-	// node-stats & node-configs
-	for _, entry := range md.node_stats {
+// 	// node-stats & node-configs
+// 	for _, entry := range md.node_stats {
 
-		// node-configs:<node-configs> & node-stats:<node-stats>
-		elements := strings.Split(entry, ":")
+// 		// node-configs:<node-configs> & node-stats:<node-stats>
+// 		elements := strings.Split(entry, ":")
 
-		if strings.HasPrefix(elements[0], "node-stats") {
-			key := "statistics"
-			rawMetrics[key] = elements[1]
-		} else if strings.HasPrefix(elements[0], "node-config") {
-			key := "get-config:context=service"
-			rawMetrics[key] = elements[1]
-		}
-	}
+// 		if strings.HasPrefix(elements[0], "node-stats") {
+// 			key := "statistics"
+// 			rawMetrics[key] = elements[1]
+// 		} else if strings.HasPrefix(elements[0], "node-config") {
+// 			key := "get-config:context=service"
+// 			rawMetrics[key] = elements[1]
+// 		}
+// 	}
 
-	// sindex-stats
-	for _, entry := range md.sindex_stats {
+// 	// sindex-stats
+// 	for _, entry := range md.sindex_stats {
 
-		// sindex-stats:test:test_sindex1:<sindex-stats>
-		elements := strings.Split(entry, ":")
+// 		// sindex-stats:test:test_sindex1:<sindex-stats>
+// 		elements := strings.Split(entry, ":")
 
-		if strings.HasPrefix(elements[0], "sindex-stats") {
-			key := "sindex/" + elements[1] + "/" + elements[2]
-			rawMetrics[key] = elements[3]
-		}
-	}
+// 		if strings.HasPrefix(elements[0], "sindex-stats") {
+// 			key := "sindex/" + elements[1] + "/" + elements[2]
+// 			rawMetrics[key] = elements[3]
+// 		}
+// 	}
 
-	// xdr- (dc/namespace) (config/stats)
-	for _, entry := range md.xdr_stats {
+// 	// xdr- (dc/namespace) (config/stats)
+// 	for _, entry := range md.xdr_stats {
 
-		// sindex-stats:test:test_sindex1:<sindex-stats>
-		elements := strings.Split(entry, ":")
+// 		// sindex-stats:test:test_sindex1:<sindex-stats>
+// 		elements := strings.Split(entry, ":")
 
-		if strings.HasPrefix(elements[0], "xdr-get-config") {
-			key := "get-config" + ":" + elements[1]
-			rawMetrics[key] = elements[2]
-		} else if strings.HasPrefix(elements[0], "xdr-get-stat") {
-			key := "get-stats" + ":" + elements[1]
-			rawMetrics[key] = elements[2]
-		}
-	}
+// 		if strings.HasPrefix(elements[0], "xdr-get-config") {
+// 			key := "get-config" + ":" + elements[1]
+// 			rawMetrics[key] = elements[2]
+// 		} else if strings.HasPrefix(elements[0], "xdr-get-stat") {
+// 			key := "get-stats" + ":" + elements[1]
+// 			rawMetrics[key] = elements[2]
+// 		}
+// 	}
 
-	return rawMetrics
-}
+// 	return rawMetrics
+// }
 
-func (md *MockAerospikeServer) getBuild() string {
-	elements := strings.Split(md.passone_output_str, " ")
-
-	for _, entry := range elements {
-
-		if strings.HasPrefix(entry, "build") {
-			colonIndex := strings.Index(entry, ":")
-			// parts := strings.Split(entry, ":")
-			value := entry[colonIndex+1:]
-			fmt.Println("getBuild(): ", value)
-			return value
-		}
-	}
-
-	return ""
-}
-
-func (md *MockAerospikeServer) getClusterName() string {
-	return md.cluster_name[0]
-}
-
-func (md *MockAerospikeServer) getServiceClearStd() string {
-	return strings.Split(md.service_clear_std[0], "=")[1]
-}
-
-// func (md *MockAerospikeServer) createXdrPassOneKeys() map[string]string {
-// 	passOneOutput := make(map[string]string)
+// func (md *MockAerospikeServer) getBuild() string {
 // 	elements := strings.Split(md.passone_output_str, " ")
 
 // 	for _, entry := range elements {
 
-// 		if strings.HasPrefix(entry, "get-config:context=xdr") {
-// 			str := strings.ReplaceAll(entry, "get-config:context=xdr:", "")
-// 			passOneOutput["get-config:context=xdr"] = str
-// 		} else if strings.HasPrefix(entry, "get-stats:context=xdr") {
-// 			str := strings.ReplaceAll(entry, "get-stats:context=xdr:", "")
-// 			passOneOutput["get-stat:context=xdr"] = str
+// 		if strings.HasPrefix(entry, "build") {
+// 			colonIndex := strings.Index(entry, ":")
+// 			// parts := strings.Split(entry, ":")
+// 			value := entry[colonIndex+1:]
+// 			fmt.Println("getBuild(): ", value)
+// 			return value
 // 		}
 // 	}
 
-// 	passOneOutput["namespaces"] = md.passone_outputs_map["namespaces"]
-
-// 	return passOneOutput
-
+// 	return ""
 // }
 
-// func (md *MockAerospikeServer) requestInfoNamespaces() map[string]string {
-// 	pass2Metrics := make(map[string]string)
-
-// 	namespaces := ""
-// 	for _, entry := range md.namespaces_stats {
-// 		elements := strings.Split(entry, ":")
-// 		// format: namespace-stats:test:ns_cluster_size=1;effective_ ( 2nd element is the namespace name "test")
-// 		ns := strings.TrimSpace(elements[1])
-// 		if len(namespaces) > 0 {
-// 			namespaces = namespaces + ";" + ns
-// 		} else {
-// 			namespaces = ns
-// 		}
-// 	}
-
-// 	pass2Metrics["namespaces"] = strings.TrimSuffix(namespaces, ";")
-
-// 	return pass2Metrics
+// func (md *MockAerospikeServer) getClusterName() string {
+// 	return md.cluster_name[0]
 // }
 
-// func (md *MockAerospikeServer) createNamespacePassTwoExpectedOutputs() []string {
-// 	lNamespaces := []string{}
-// 	rawMetrics := md.fetchRawMetrics()
-
-// 	for metricsGrpKey := range rawMetrics {
-// 		if strings.HasPrefix(metricsGrpKey, "namespace/") {
-// 			lNamespaces = append(lNamespaces, strings.TrimSpace(metricsGrpKey))
-// 		}
-// 	}
-// 	return lNamespaces
+// func (md *MockAerospikeServer) getServiceClearStd() string {
+// 	return strings.Split(md.service_clear_std[0], "=")[1]
 // }
 
-// func (md *MockAerospikeServer) createXdrPassTwoExpectedOutputs(passOneOutputs map[string]string) []string {
-// 	passTwoOutputs := []string{}
-// 	rawMetrics := md.fetchRawMetrics()
-
-// 	for k := range rawMetrics {
-// 		if strings.HasPrefix(k, "get-stats:") || strings.HasPrefix(k, "get-config:") {
-// 			passTwoOutputs = append(passTwoOutputs, strings.TrimSpace(k))
-// 		}
-// 	}
-// 	// append namespaces
-
-// 	return passTwoOutputs
-// }
-
-// func (sim *MockAerospikeServer) createSindexPassTwoExpectedOutputs(mas *MockAerospikeServer) []string {
-// 	lSindexNames := []string{}
-// 	// rawMetricsKeys := rawMetrics["raw_metrics_keys"]
-// 	rawMetricsKeys := mas.fetchRawMetrics()
-
-// 	for k := range rawMetricsKeys {
-// 		if strings.HasPrefix(k, "sindex/") {
-// 			lSindexNames = append(lSindexNames, strings.TrimSpace(k))
-// 		}
-// 	}
-
-// 	return lSindexNames
-
-// }
-
-// /*
-// generated the output used by the Namespace-Watcher TestCases, the same output may not be suitable for other watchers,
-// so for each data-context we need to have a method to generate expected output
-// */
-// // Namespace related
-// type MockNamespacePromMetricGenerator struct {
-// 	// this will hold the golbal array/objects for Namespaces
-// 	lExpectedMetricNamedValues map[string][]string
-// 	lExpectedMetricLabels      map[string][]string
-// }
-
-// func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutputs(mas *MockAerospikeServer, nsName string, addNsToKey bool) (map[string][]string, map[string][]string) {
-
-// 	// regex to check if a stat is storage-engine
-// 	seDynamicExtractor := regexp.MustCompile(`storage\-engine\.(?P<type>file|device|stripe)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
-// 	itDynamicExtractor := regexp.MustCompile(`index\-type\.(?P<type>mount)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
-// 	sintDynamicExtractor := regexp.MustCompile(`sindex\-type\.(?P<type>mount)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
-
-// 	//
-// 	nsw.lExpectedMetricNamedValues = map[string][]string{}
-// 	nsw.lExpectedMetricLabels = map[string][]string{}
-
-// 	// rawMetrics := getRawMetrics()
-// 	rawMetrics := mas.fetchRawMetrics()
-
-// 	clusterName := rawMetrics["cluster-name"]
-// 	service := rawMetrics["service-clear-std"]
-
-// 	for metricsGrpKey := range rawMetrics {
-// 		if strings.HasPrefix(metricsGrpKey, "namespace/") && strings.HasSuffix(metricsGrpKey, nsName) {
-// 			ns := strings.Split(metricsGrpKey, "/")[1]
-// 			grpValues := rawMetrics[metricsGrpKey]
-// 			stats := splitAndRetrieveStats(grpValues, ";")
-
-// 			// process stats and create {metricname,label} and {metric,values} map of strings
-// 			for s, v := range stats {
-// 				key := strings.TrimSpace(s)
-// 				convertedValue, err := convertValue(v)
-// 				if err != nil {
-// 					fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
-// 					continue
-// 				}
-
-// 				isBlocked := isHelperBlockedMetric(s, config.Cfg.Aerospike.NamespaceMetricsBlocklist)
-// 				if isBlocked {
-// 					continue
-// 				}
-// 				isAllowed := isHelperAllowedMetric(s, config.Cfg.Aerospike.NamespaceMetricsAllowlist)
-// 				if !isAllowed {
-// 					continue
-// 				}
-
-// 				// reconvert float back to string
-// 				value := fmt.Sprintf("%.0f", convertedValue)
-
-// 				// not a storage-engine or index-type or sindex-type
-// 				isNormalStat := !isStatArrayType(key)
-
-// 				if isNormalStat {
-
-// 					labelsMap := copyConfigLabels()
-// 					if strings.HasPrefix(key, "index-type") {
-// 						labelsMap["index"] = stats["index-type"]
-// 					} else if strings.HasPrefix(key, "sindex-type") {
-// 						labelsMap["sindex"] = stats["sindex-type"]
-// 					} else {
-// 						labelsMap["storage_engine"] = stats["storage-engine"]
-// 					}
-// 					key = strings.ReplaceAll(key, "-", "_")
-// 					key = strings.ReplaceAll(key, ".", "_")
-
-// 					metric := "aerospike_namespace_" + key
-// 					valuesArr := nsw.lExpectedMetricNamedValues[metric]
-// 					labelsArr := nsw.lExpectedMetricLabels[metric]
-// 					if valuesArr == nil {
-// 						valuesArr = []string{}
-// 					}
-// 					if labelsArr == nil {
-// 						labelsArr = []string{}
-// 					}
-
-// 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
-
-// 					labelsMap["ns"] = ns
-// 					labelsMap["service"] = service
-// 					labelsMap["cluster_name"] = clusterName
-
-// 					labelByNames := createLabelByNames(labelsMap)
-// 					sorted_label_str := "[" + labelByNames + " ]"
-// 					valuesArr = append(valuesArr, strings.TrimSpace(value))
-// 					labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
-
-// 					labelString := stringifyLabel(labelByNames)
-
-// 					// key will be like <full-label>/namespace/<metric_name>, this we use this check during assertion
-// 					mapKeyname := makeKeyname(nsName, labelString, true)
-// 					mapKeyname = makeKeyname(mapKeyname, metric, true)
-// 					nsw.lExpectedMetricNamedValues[mapKeyname] = valuesArr
-// 					nsw.lExpectedMetricLabels[mapKeyname] = labelsArr
-
-// 				} else {
-
-// 					labelsMap := copyConfigLabels()
-
-// 					metricType := ""
-// 					metricIndex := ""
-// 					metricName := ""
-// 					deviceOrFileName := ""
-// 					metric := ""
-
-// 					if strings.HasPrefix(key, "storage-engine") {
-// 						match := seDynamicExtractor.FindStringSubmatch(key)
-// 						metricType = match[1]
-// 						metricIndex = match[2]
-// 						metricName = match[3]
-// 						deviceOrFileName = stats["storage-engine."+metricType+"["+metricIndex+"]"]
-// 						metric = "aerospike_namespace_storage_engine_" + metricType + "_" + metricName
-// 						labelsMap["storage_engine"] = stats["storage-engine"]
-
-// 					} else if strings.HasPrefix(key, "index-type") {
-// 						match := itDynamicExtractor.FindStringSubmatch(key)
-// 						metricType = match[1]
-// 						metricIndex = match[2]
-// 						metricName = match[3]
-// 						deviceOrFileName = stats["index-type."+metricType+"["+metricIndex+"]"]
-
-// 						metric = "aerospike_namespace_index_type_" + metricType + "_" + metricName
-// 						labelsMap["index"] = stats["index-type"]
-// 					} else if strings.HasPrefix(key, "sindex-type") {
-// 						match := sintDynamicExtractor.FindStringSubmatch(key)
-// 						metricType = match[1]
-// 						metricIndex = match[2]
-// 						metricName = match[3]
-// 						deviceOrFileName = stats["sindex-type."+metricType+"["+metricIndex+"]"]
-// 						metric = "aerospike_namespace_sindex_type_" + metricType + "_" + metricName
-// 						labelsMap["sindex"] = stats["sindex-type"]
-// 					}
-
-// 					valuesArr := nsw.lExpectedMetricNamedValues[metric]
-// 					labelsArr := nsw.lExpectedMetricLabels[metric]
-// 					if valuesArr == nil {
-// 						valuesArr = []string{}
-// 					}
-// 					if labelsArr == nil {
-// 						labelsArr = []string{}
-// 					}
-
-// 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"file\" value:\"" + deviceOrFileName + "\"  name:\"file_index\" value:\"" + metricIndex + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
-
-// 					labelsMap["cluster_name"] = clusterName
-// 					labelsMap[metricType] = deviceOrFileName
-// 					labelsMap["ns"] = ns
-// 					labelsMap[metricType+"_index"] = metricIndex
-// 					labelsMap["service"] = service
-
-// 					labelByNames := createLabelByNames(labelsMap)
-// 					sorted_label_str := "[" + labelByNames + " ]"
-// 					valuesArr = append(valuesArr, strings.TrimSpace(value))
-// 					labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
-
-// 					labelString := stringifyLabel(labelByNames)
-
-// 					// key will be like <full-label>/namespace/<metric_name>, this we use this check during assertion
-// 					mapKeyname := makeKeyname(nsName, labelString, true)
-// 					mapKeyname = makeKeyname(mapKeyname, metric, true)
-
-// 					nsw.lExpectedMetricNamedValues[mapKeyname] = valuesArr
-// 					nsw.lExpectedMetricLabels[mapKeyname] = labelsArr
-
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	return nsw.lExpectedMetricNamedValues, nsw.lExpectedMetricLabels
-// }
-
-// func isStatArrayType(statToProcess string) bool {
-// 	if strings.HasPrefix(statToProcess, commons.INDEX_TYPE) && strings.Contains(statToProcess, "[") {
-// 		return true
-// 	} else if strings.HasPrefix(statToProcess, commons.SINDEX_TYPE) && strings.Contains(statToProcess, "[") {
-// 		return true
-// 	} else if strings.HasPrefix(statToProcess, commons.STORAGE_ENGINE) && strings.Contains(statToProcess, "[") {
-// 		return true
-// 	}
-
-// 	return false
-// }
-
-// // Node-stats related
-// type MockNodestatPromMetricGenerator struct {
-// 	// this will hold the golbal array/objects for Node-stats
-// 	lExpectedMetricNamedValues map[string][]string
-// 	lExpectedMetricLabels      map[string][]string
-// }
-
-// func (nst *MockNodestatPromMetricGenerator) createNodeStatsWatcherExpectedOutputs(mas *MockAerospikeServer, serviceIp string) (map[string][]string, map[string][]string) {
-// 	nst.lExpectedMetricNamedValues = map[string][]string{}
-// 	nst.lExpectedMetricLabels = map[string][]string{}
-
-// 	// rawMetrics := getRawMetrics()
-// 	rawMetrics := mas.fetchRawMetrics()
-
-// 	clusterName := rawMetrics["cluster-name"]
-// 	service := rawMetrics["service-clear-std"]
-
-// 	for metricsGrpKey := range rawMetrics {
-// 		if strings.HasPrefix(metricsGrpKey, "statistics") || strings.HasPrefix(metricsGrpKey, "get-config:context=service") {
-// 			grpValues := rawMetrics[metricsGrpKey]
-// 			stats := splitAndRetrieveStats(grpValues, ";")
-// 			for s, v := range stats {
-// 				key := strings.TrimSpace(s)
-// 				convertedValue, err := convertValue(v)
-// 				if err != nil {
-// 					fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
-// 					continue
-// 				}
-
-// 				isBlocked := isHelperBlockedMetric(s, config.Aerospike.NodeMetricsBlocklist)
-// 				if isBlocked {
-// 					continue
-// 				}
-// 				isAllowed := isHelperAllowedMetric(s, config.Aerospike.NodeMetricsAllowlist)
-// 				if !isAllowed {
-// 					continue
-// 				}
-
-// 				// reconvert float back to string
-// 				value := fmt.Sprintf("%.0f", convertedValue)
-
-// 				key = strings.ReplaceAll(key, "-", "_")
-// 				key = strings.ReplaceAll(key, ".", "_")
-// 				metric := "aerospike_node_stats_" + key
-// 				valuesArr := nst.lExpectedMetricNamedValues[metric]
-// 				labelsArr := nst.lExpectedMetricLabels[metric]
-
-// 				if valuesArr == nil {
-// 					valuesArr = []string{}
-// 				}
-// 				if labelsArr == nil {
-// 					labelsArr = []string{}
-// 				}
-
-// 				// [name:"cluster_name" value:"null"  name:"service" value:"172.17.0.3:3000" ]
-// 				labelsMap := copyConfigLabels()
-// 				labelsMap["service"] = service
-// 				labelsMap["cluster_name"] = clusterName
-
-// 				sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-
-// 				valuesArr = append(valuesArr, strings.TrimSpace(value))
-// 				labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
-
-// 				mapKeyname := makeKeyname(serviceIp, metric, true)
-// 				nst.lExpectedMetricNamedValues[mapKeyname] = valuesArr
-// 				nst.lExpectedMetricLabels[mapKeyname] = labelsArr
-
-// 			}
-// 		}
-// 	}
-
-// 	return nst.lExpectedMetricNamedValues, nst.lExpectedMetricLabels
-// }
-
-// // Set related
-// type MockSetsPromMetricGenerator struct {
-// 	// this will hold the golbal array/objects for Sets
-// 	lExpectedMetricNamedValues map[string][]string
-// 	lExpectedMetricLabels      map[string][]string
-// }
-
-// func (msdg *MockSetsPromMetricGenerator) createSetsWatcherExpectedOutputs(mas *MockAerospikeServer, setName string) (map[string][]string, map[string][]string) {
-// 	msdg.lExpectedMetricNamedValues = map[string][]string{}
-// 	msdg.lExpectedMetricLabels = map[string][]string{}
-
-// 	// rawMetrics := getRawMetrics()
-
-// 	rawMetrics := mas.fetchRawMetrics()
-
-// 	clusterName := rawMetrics["cluster-name"]
-// 	service := rawMetrics["service-clear-std"]
-
-// 	for metricsGrpKey := range rawMetrics {
-// 		if strings.HasPrefix(metricsGrpKey, "sets") {
-// 			grpValues := rawMetrics[metricsGrpKey]
-// 			nsWithSets := strings.Split(grpValues, ";")
-// 			for idx := range nsWithSets {
-
-// 				singleSetKeyValues := nsWithSets[idx]
-
-// 				stats := splitAndRetrieveStats(singleSetKeyValues, ":")
-// 				namespace := stats["ns"]
-// 				setName := stats["set"]
-
-// 				for s, v := range stats {
-// 					key := strings.TrimSpace(s)
-// 					convertedValue, err := convertValue(v)
-// 					if err != nil {
-// 						fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
-// 						continue
-// 					}
-
-// 					isBlocked := isHelperBlockedMetric(s, config.Aerospike.SetMetricsBlocklist)
-// 					if isBlocked {
-// 						continue
-// 					}
-// 					isAllowed := isHelperAllowedMetric(s, config.Aerospike.SetMetricsAllowlist)
-// 					if !isAllowed {
-// 						continue
-// 					}
-// 					// reconvert float back to string
-// 					value := fmt.Sprintf("%.0f", convertedValue)
-
-// 					key = strings.ReplaceAll(key, "-", "_")
-// 					key = strings.ReplaceAll(key, ".", "_")
-// 					metric := "aerospike_sets_" + key
-// 					valuesArr := msdg.lExpectedMetricNamedValues[metric]
-// 					labelsArr := msdg.lExpectedMetricLabels[metric]
-
-// 					if valuesArr == nil {
-// 						valuesArr = []string{}
-// 					}
-// 					if labelsArr == nil {
-// 						labelsArr = []string{}
-// 					}
-
-// 					// [name:"cluster_name" value:"null"  name:"ns" value:"bar"  name:"service" value:"172.17.0.3:3000"  name:"set" value:"west_region" ]
-// 					mapKeyname := makeKeyname(setName, metric, true)
-// 					mapKeyname = makeKeyname(namespace, mapKeyname, true)
-
-// 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"  name:\"set\" value:\"" + setName + "\"" + " ]"
-
-// 					labelsMap := copyConfigLabels()
-// 					labelsMap["ns"] = namespace
-// 					labelsMap["service"] = service
-// 					labelsMap["cluster_name"] = clusterName
-// 					labelsMap["set"] = setName
-
-// 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-// 					valuesArr = append(valuesArr, strings.TrimSpace(value))
-// 					labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
-
-// 					msdg.lExpectedMetricNamedValues[mapKeyname] = valuesArr
-// 					msdg.lExpectedMetricLabels[mapKeyname] = labelsArr
-// 				}
-
-// 			}
-// 		}
-// 	}
-
-// 	return msdg.lExpectedMetricNamedValues, msdg.lExpectedMetricLabels
-// }
-
-// // Latency related
-// type MockLatencyPromMetricGenerator struct {
-// 	// this will hold the golbal array/objects for Latencies
-// 	lExpectedMetricNamedValues map[string][]string
-// 	lExpectedMetricLabels      map[string][]string
-// }
-
-// func (ltc *MockLatencyPromMetricGenerator) createLatencysWatcherExpectedOutputs(mas *MockAerospikeServer, namespaceWithSetName string) (map[string][]string, map[string][]string) {
-// 	ltc.lExpectedMetricNamedValues = map[string][]string{}
-// 	ltc.lExpectedMetricLabels = map[string][]string{}
-
-// 	rawMetrics := mas.fetchRawMetrics()
-
-// 	clusterName := rawMetrics["cluster-name"]
-// 	service := rawMetrics["service-clear-std"]
-
-// 	latencyLabelGroups := []string{"0", "+Inf", "1", "2", "4", "8", "16", "32", "64", "128", "256", "512", "1024", "2048", "4096", "8192", "16384", "32768", "65536"}
-
-// 	for metricsGrpKey := range rawMetrics {
-// 		if strings.HasPrefix(metricsGrpKey, "latencies") {
-// 			grpValues := rawMetrics[metricsGrpKey]
-// 			latencyStatsByNamespace := strings.Split(grpValues, ";")
-// 			for idx := range latencyStatsByNamespace {
-
-// 				singleLatencyOperation := latencyStatsByNamespace[idx]
-
-// 				allLatencyValues := splitLatencies(singleLatencyOperation)
-// 				if len(allLatencyValues) == 1 {
-// 					continue
-// 				}
-// 				namespace, operation, _ := splitLatencyDetails(allLatencyValues)
-
-// 				isOperationAllowed := isLatencyOperationAllowe(operation, config.Aerospike.LatenciesMetricsAllowlist, config.Aerospike.LatenciesMetricsBlocklist)
-
-// 				if isOperationAllowed {
-// 					bucket_metric := "aerospike_latencies" + "_" + operation + "_" + "ms" + "_" + "bucket"
-// 					count_metric := "aerospike_latencies" + "_" + operation + "_" + "ms" + "_" + "count"
-
-// 					mapKeyname := service + "_" + namespace + "_" + operation
-// 					cntValuesArr := ltc.lExpectedMetricNamedValues[count_metric]
-// 					cntLabelsArr := ltc.lExpectedMetricLabels[count_metric]
-
-// 					// Add latency-metric-COUNT
-// 					if cntValuesArr == nil {
-// 						cntValuesArr = []string{}
-// 					}
-// 					if cntLabelsArr == nil {
-// 						cntLabelsArr = []string{}
-// 					}
-
-// 					labelsMap := copyConfigLabels()
-// 					labelsMap["ns"] = namespace
-// 					labelsMap["service"] = service
-// 					labelsMap["cluster_name"] = clusterName
-
-// 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-
-// 					cntValuesArr = append(cntValuesArr, strings.TrimSpace(allLatencyValues[1]))
-// 					cntLabelsArr = append(cntLabelsArr, strings.TrimSpace(sorted_label_str))
-
-// 					ltc.lExpectedMetricNamedValues[mapKeyname] = cntValuesArr
-// 					ltc.lExpectedMetricLabels[mapKeyname] = cntLabelsArr
-
-// 					// Add latency-metric-BUCKET with le
-// 					for idx := range allLatencyValues {
-// 						if idx >= 1 {
-// 							le := latencyLabelGroups[idx]
-// 							value := allLatencyValues[idx]
-
-// 							mapKeyname := service + "_" + namespace + "_" + operation + "_" + strings.ReplaceAll(le, "+", "")
-// 							bktValuesArr := ltc.lExpectedMetricNamedValues[bucket_metric]
-// 							bktLabelsArr := ltc.lExpectedMetricLabels[bucket_metric]
-
-// 							// Add latency-metric-COUNT
-// 							if bktValuesArr == nil {
-// 								bktValuesArr = []string{}
-// 							}
-// 							if bktLabelsArr == nil {
-// 								bktLabelsArr = []string{}
-// 							}
-
-// 							labelsMap := copyConfigLabels()
-// 							labelsMap["ns"] = namespace
-// 							labelsMap["le"] = le
-// 							labelsMap["service"] = service
-// 							labelsMap["cluster_name"] = clusterName
-
-// 							sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-
-// 							bktValuesArr = append(bktValuesArr, strings.TrimSpace(value))
-// 							bktLabelsArr = append(bktLabelsArr, strings.TrimSpace(sorted_label_str))
-
-// 							ltc.lExpectedMetricNamedValues[mapKeyname] = bktValuesArr
-// 							ltc.lExpectedMetricLabels[mapKeyname] = bktLabelsArr
-
-// 						}
-
-// 					}
-
-// 				} else {
-// 					fmt.Println("operation ", operation, "\t is NOT Allowed i.e. either in block-list or not-in-allow list")
-// 				}
-
-// 			}
-// 		}
-// 	}
-
-// 	return ltc.lExpectedMetricNamedValues, ltc.lExpectedMetricLabels
-// }
-
-// // Xdr related
-// type MockXdrPromMetricGenerator struct {
-// 	// this will hold the golbal array/objects for Xdr
-// 	lExpectedMetricNamedValues map[string][]string
-// 	lExpectedMetricLabels      map[string][]string
-// }
-
-// func (xdr *MockXdrPromMetricGenerator) createXdrsWatcherExpectedOutputs(mas *MockAerospikeServer, xdrDcName string) (map[string][]string, map[string][]string) {
-
-// 	// re-initialize whenever called
-// 	xdr.lExpectedMetricNamedValues = make(map[string][]string)
-// 	xdr.lExpectedMetricLabels = make(map[string][]string)
-
-// 	rawMetrics := mas.fetchRawMetrics()
-
-// 	clusterName := mas.getClusterName()
-// 	service := mas.getServiceClearStd()
-
-// 	for metricsGrpKey := range rawMetrics {
-// 		if strings.HasPrefix(metricsGrpKey, "get-stats:context=xdr;dc=") || strings.HasPrefix(metricsGrpKey, "get-configs:context=xdr;dc=") {
-// 			grpValues := rawMetrics[metricsGrpKey]
-// 			xdrDcInfos := strings.Split(grpValues, ";")
-// 			for idx := range xdrDcInfos {
-
-// 				singleXdrDcValues := xdrDcInfos[idx]
-
-// 				stats := splitAndRetrieveStats(singleXdrDcValues, ":")
-
-// 				// get-config:context=xdr;dc=backup_dc_asdev20_second;namespace=bar_device
-// 				// get-config:context=xdr;dc=backup_dc_asdev20_second
-// 				// get-stats:context=xdr;dc=backup_dc_asdev20_second;namespace=bar_device
-// 				// get-stats:context=xdr;dc=backup_dc_asdev20_second
-// 				// grpSplitElements := strings.Split(metricsGrpKey, ";")
-// 				// dcName := strings.Split(grpSplitElements[1], "=")[1]
-
-// 				for s, v := range stats {
-// 					key := strings.TrimSpace(s)
-// 					convertedValue, err := convertValue(v)
-// 					if err != nil {
-// 						fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
-// 						continue
-// 					}
-
-// 					isBlocked := isHelperBlockedMetric(s, config.Aerospike.XdrMetricsBlocklist)
-// 					if isBlocked {
-// 						continue
-// 					}
-// 					isAllowed := isHelperAllowedMetric(s, config.Aerospike.XdrMetricsAllowlist)
-// 					if !isAllowed {
-// 						continue
-// 					}
-
-// 					// reconvert float back to string
-// 					value := fmt.Sprintf("%.0f", convertedValue)
-
-// 					key = strings.ReplaceAll(key, "-", "_")
-// 					key = strings.ReplaceAll(key, ".", "_")
-
-// 					// metric := "aerospike_xdr" + "_" + key
-// 					// namespace := "no-namespace" // just to represent this metric is only at DC level
-// 					dcName, namespace, metric := xdr.constructXdrMetricname(metricsGrpKey, key)
-
-// 					valuesArr := xdr.lExpectedMetricNamedValues[metric]
-// 					labelsArr := xdr.lExpectedMetricLabels[metric]
-
-// 					if valuesArr == nil {
-// 						valuesArr = []string{}
-// 					}
-// 					if labelsArr == nil {
-// 						labelsArr = []string{}
-// 					}
-
-// 					// [name:"cluster_name" value:"null"  name:"dc" value:"backup_dc_asdev20"  name:"service" value:"172.17.0.3:3000" ]
-// 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"  name:\"set\" value:\"" + setName + "\"" + " ]"
-
-// 					labelsMap := copyConfigLabels()
-// 					labelsMap["dc"] = dcName
-// 					labelsMap["service"] = service
-// 					labelsMap["cluster_name"] = clusterName
-
-// 					if strings.Contains(metricsGrpKey, "namespace") {
-// 						grpSplitElements := strings.Split(metricsGrpKey, ";")
-// 						// get-config:context=xdr;dc=backup_dc_asdev20_second;namespace=bar_device
-// 						namespace = strings.Split(grpSplitElements[2], "=")[1]
-// 						labelsMap["ns"] = namespace
-// 					}
-
-// 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-// 					valuesArr = append(valuesArr, strings.TrimSpace(value))
-// 					labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
-
-// 					mapKeyname := makeKeyname(dcName, metric, true)
-// 					mapKeyname = makeKeyname(namespace, mapKeyname, true)
-// 					mapKeyname = makeKeyname(service, mapKeyname, true)
-
-// 					xdr.lExpectedMetricNamedValues[mapKeyname] = valuesArr
-// 					xdr.lExpectedMetricLabels[mapKeyname] = labelsArr
-// 				} // end stats for-loop
-
-// 			} // end xdrDcInfos
-// 		}
-// 	}
-
-// 	return xdr.lExpectedMetricNamedValues, xdr.lExpectedMetricLabels
-// }
-
-// func (xdr *MockXdrPromMetricGenerator) constructXdrMetricname(infoKeyToProcess string, stat string) (string, string, string) {
-
-// 	kvInfoKeyToProcess := parseStats(infoKeyToProcess, ";")
-// 	_, cfgOk := kvInfoKeyToProcess["get-config:context"]
-// 	_, statOk := kvInfoKeyToProcess["get-stats:context"]
-// 	dcName := kvInfoKeyToProcess["dc"]
-// 	nsName, nsOk := kvInfoKeyToProcess["namespace"]
-
-// 	// either this is a config key or a stat having namespace (both are new use-cases) hence handle here
-
-// 	if cfgOk && nsOk {
-// 		return dcName, nsName, ("aerospike_xdr" + "_" + "dc_namespace_" + stat)
-// 	} else if statOk && nsOk {
-// 		return dcName, nsName, ("aerospike_xdr" + "_" + "dc_namespace_" + stat)
-// 	} else if cfgOk {
-// 		return dcName, nsName, ("aerospike_xdr" + "_" + "dc_" + stat)
-// 	}
-
-// 	return dcName, "no-namespace", "aerospike_xdr" + "_" + stat // no-prefix/default i.e. no suffix like "dc" / "dc_namespace"
-
-// }
-
-// // Sindex related methods
-// type MockSindexPromMetricGenerator struct {
-// 	// this will hold the golbal array/objects for Sindex
-// 	lExpectedMetricNamedValues map[string][]string
-// 	lExpectedMetricLabels      map[string][]string
-// }
-
-// func (sim *MockSindexPromMetricGenerator) createSindexWatcherTestData(mas *MockAerospikeServer) (map[string][]string, map[string][]string) {
-
-// 	// re-initialize whenever called
-// 	sim.lExpectedMetricNamedValues = make(map[string][]string)
-// 	sim.lExpectedMetricLabels = make(map[string][]string)
-
-// 	// rawMetrics := getRawMetrics()
-// 	rawMetrics := mas.fetchRawMetrics()
-
-// 	clusterName := rawMetrics["cluster-name"]
-// 	service := rawMetrics["service-clear-std"]
-
-// 	for metricsGrpKey := range rawMetrics {
-// 		if strings.HasPrefix(metricsGrpKey, "sindex/") {
-// 			sindexInfos := rawMetrics[metricsGrpKey]
-// 			namespace, sindexName := sim.extractNamespaceSetSindexname(metricsGrpKey)
-// 			stats := splitAndRetrieveStats(sindexInfos, ";")
-// 			for stat, value := range stats {
-// 				key := strings.TrimSpace(stat)
-// 				convertedValue, err := convertValue(value)
-// 				if err != nil {
-// 					fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", value, ") = error: ", err)
-// 					continue
-// 				}
-
-// 				isBlocked := isHelperBlockedMetric(stat, config.Aerospike.SindexMetricsBlocklist)
-// 				if isBlocked {
-// 					continue
-// 				}
-// 				isAllowed := isHelperAllowedMetric(stat, config.Aerospike.SindexMetricsAllowlist)
-// 				if !isAllowed {
-// 					continue
-// 				}
-
-// 				// reconvert float back to string
-// 				value := fmt.Sprintf("%.0f", convertedValue)
-
-// 				key = strings.ReplaceAll(key, "-", "_")
-// 				key = strings.ReplaceAll(key, ".", "_")
-// 				metric := "aerospike_sindex" + "_" + key
-// 				valuesArr := sim.lExpectedMetricNamedValues[metric]
-// 				labelsArr := sim.lExpectedMetricLabels[metric]
-
-// 				if valuesArr == nil {
-// 					valuesArr = []string{}
-// 				}
-// 				if labelsArr == nil {
-// 					labelsArr = []string{}
-// 				}
-
-// 				// Label: [name:"cluster_name" value:"null"  name:"ns" value:"test"  name:"service" value:"172.17.0.3:3000"  name:"sindex" value:"test_sindex1" ]
-// 				// service/namespace/sindexname/<metric-name>
-// 				mapKeyname := makeKeyname(sindexName, metric, true)
-// 				mapKeyname = makeKeyname(namespace, mapKeyname, true)
-// 				mapKeyname = makeKeyname(service, mapKeyname, true)
-
-// 				labelsMap := copyConfigLabels()
-// 				labelsMap["ns"] = namespace
-// 				labelsMap["sindex"] = sindexName
-// 				labelsMap["service"] = service
-// 				labelsMap["cluster_name"] = clusterName
-
-// 				sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-
-// 				valuesArr = append(valuesArr, strings.TrimSpace(value))
-// 				labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
-
-// 				sim.lExpectedMetricNamedValues[mapKeyname] = valuesArr
-// 				sim.lExpectedMetricLabels[mapKeyname] = labelsArr
-
-// 			}
-// 		}
-// 	}
-
-// 	return sim.lExpectedMetricNamedValues, sim.lExpectedMetricLabels
-// }
-
-// func (siMock *MockSindexPromMetricGenerator) extractNamespaceSetSindexname(sindexKey string) (string, string) {
-// 	elements := strings.Split(sindexKey, "/")
-
-// 	return elements[1], elements[2]
-// }
-
-// // User related utilities
-// type MockUsersPromMetricGenerator struct {
-// 	lExpectedMetricNamedValues map[string][]string
-// 	lExpectedMetricLabels      map[string][]string
-// }
-
-// func (mockUsers *MockUsersPromMetricGenerator) createDummyUserRoles() []*aero.UserRoles {
-// 	userRoles := []*aero.UserRoles{}
-
-// 	MAX_USERS := 4
-// 	MAX_READINFO := 4
-// 	MAX_WRITEINFO := 4
-
-// 	userNames := []string{"test", "admin", "app_user_1", "app_user_read_1", "app_user_rw_all"}
-
-// 	// we always give dummy data
-// 	for i := 0; i <= MAX_USERS; i++ {
-
-// 		if mockUsers.isUserAllowed(userNames[i]) {
-// 			userRoles = append(userRoles, new(aero.UserRoles))
-
-// 			userRoles[i].User = userNames[i]
-// 			userRoles[i].ConnsInUse = i * 2
-
-// 			for k := 0; k <= MAX_READINFO; k++ {
-// 				userRoles[i].ReadInfo = append(userRoles[i].ReadInfo, (k+1)*5)
-// 			}
-// 			for k := 0; k <= MAX_WRITEINFO; k++ {
-// 				userRoles[i].WriteInfo = append(userRoles[i].WriteInfo, (k+1)*10)
-// 			}
-// 		}
-// 	}
-
-// 	return userRoles
-// }
-
-// func (mockUsers *MockUsersPromMetricGenerator) createMockUserData(mas *MockAerospikeServer) (map[string][]string, map[string][]string) {
-// 	userRoles := mockUsers.createDummyUserRoles()
-
-// 	// re-initialize whenever called
-// 	mockUsers.lExpectedMetricNamedValues = make(map[string][]string)
-// 	mockUsers.lExpectedMetricLabels = make(map[string][]string)
-
-// 	rawMetrics := mas.fetchRawMetrics()
-
-// 	clusterName := rawMetrics["cluster-name"]
-// 	service := rawMetrics["service-clear-std"]
-
-// 	readInfoStats := []string{"read_quota", "read_single_record_tps", "read_scan_query_rps", "limitless_read_scan_query"}
-// 	writeInfoStats := []string{"write_quota", "write_single_record_tps", "write_scan_query_rps", "limitless_write_scan_query"}
-
-// 	for idx := range userRoles {
-// 		userRole := userRoles[idx]
-
-// 		userName := userRole.User
-
-// 		// conn-in-use
-// 		key := "conns_in_use"
-// 		value := strconv.Itoa(userRole.ConnsInUse)
-
-// 		metric := "aerospike_users" + "_" + key
-
-// 		valuesArr := mockUsers.lExpectedMetricNamedValues[metric]
-// 		labelsArr := mockUsers.lExpectedMetricLabels[metric]
-
-// 		if valuesArr == nil {
-// 			valuesArr = []string{}
-// 		}
-// 		if labelsArr == nil {
-// 			labelsArr = []string{}
-// 		}
-
-// 		mapKeyname := makeKeyname(userName, metric, true)
-// 		mapKeyname = makeKeyname(service, mapKeyname, true)
-
-// 		labelsMap := copyConfigLabels()
-// 		labelsMap["user"] = userName
-// 		labelsMap["service"] = service
-// 		labelsMap["cluster_name"] = clusterName
-
-// 		sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-
-// 		valuesArr = append(valuesArr, strings.TrimSpace(value))
-// 		labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
-
-// 		mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
-// 		mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
-
-// 		// end: conn-in-use
-
-// 		// Label: [name:"cluster_name" value:"null"  name:"ns" value:"bar"  name:"service" value:"172.17.0.3:3000"  name:"set" value:"west_region" ]
-// 		for i := 0; i < len(readInfoStats); i++ {
-
-// 			key := readInfoStats[i]
-// 			value := strconv.Itoa(userRole.ReadInfo[i])
-
-// 			metric := "aerospike_users" + "_" + key
-
-// 			valuesArr := mockUsers.lExpectedMetricNamedValues[metric]
-// 			labelsArr := mockUsers.lExpectedMetricLabels[metric]
-
-// 			if valuesArr == nil {
-// 				valuesArr = []string{}
-// 			}
-// 			if labelsArr == nil {
-// 				labelsArr = []string{}
-// 			}
-
-// 			mapKeyname := makeKeyname(userName, metric, true)
-// 			mapKeyname = makeKeyname(service, mapKeyname, true)
-
-// 			labelsMap := copyConfigLabels()
-// 			labelsMap["user"] = userName
-// 			labelsMap["service"] = service
-// 			labelsMap["cluster_name"] = clusterName
-
-// 			sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-
-// 			valuesArr = append(valuesArr, strings.TrimSpace(value))
-// 			labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
-
-// 			mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
-// 			mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
-
-// 		}
-
-// 		// Label: [name:"cluster_name" value:"null"  name:"ns" value:"bar"  name:"service" value:"172.17.0.3:3000"  name:"set" value:"west_region" ]
-// 		for i := 0; i < len(writeInfoStats); i++ {
-// 			key := writeInfoStats[i]
-// 			value := strconv.Itoa(userRole.WriteInfo[i])
-
-// 			metric := "aerospike_users" + "_" + key
-
-// 			valuesArr := mockUsers.lExpectedMetricNamedValues[metric]
-// 			labelsArr := mockUsers.lExpectedMetricLabels[metric]
-
-// 			if valuesArr == nil {
-// 				valuesArr = []string{}
-// 			}
-// 			if labelsArr == nil {
-// 				labelsArr = []string{}
-// 			}
-
-// 			mapKeyname := makeKeyname(userName, metric, true)
-// 			mapKeyname = makeKeyname(service, mapKeyname, true)
-
-// 			labelsMap := copyConfigLabels()
-// 			labelsMap["user"] = userName
-// 			labelsMap["service"] = service
-// 			labelsMap["cluster_name"] = clusterName
-
-// 			sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
-
-// 			valuesArr = append(valuesArr, strings.TrimSpace(value))
-// 			labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
-
-// 			mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
-// 			mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
-
-// 		}
-
-// 		// create mock output
-// 	}
-
-// 	return mockUsers.lExpectedMetricNamedValues, mockUsers.lExpectedMetricLabels
-// }
-
-// func (mockUsers *MockUsersPromMetricGenerator) isUserAllowed(username string) bool {
-// 	userAllowlist := config.Aerospike.UserMetricsUsersAllowlist
-// 	userBlocklist := config.Aerospike.UserMetricsUsersBlocklist
-// 	if len(userBlocklist) == 0 && len(userAllowlist) == 0 {
-// 		return true
-// 	}
-// 	// check blocklist
-// 	for i := 0; i < len(userBlocklist); i++ {
-// 		if strings.EqualFold(userBlocklist[i], username) {
-// 			return true
-// 		}
-// 	}
-
-// 	// check allowlist
-// 	for i := 0; i < len(userAllowlist); i++ {
-// 		if strings.EqualFold(userAllowlist[i], username) {
-// 			return true
-// 		}
-// 	}
-
-// 	return false
-// }
+// // func (md *MockAerospikeServer) createXdrPassOneKeys() map[string]string {
+// // 	passOneOutput := make(map[string]string)
+// // 	elements := strings.Split(md.passone_output_str, " ")
+
+// // 	for _, entry := range elements {
+
+// // 		if strings.HasPrefix(entry, "get-config:context=xdr") {
+// // 			str := strings.ReplaceAll(entry, "get-config:context=xdr:", "")
+// // 			passOneOutput["get-config:context=xdr"] = str
+// // 		} else if strings.HasPrefix(entry, "get-stats:context=xdr") {
+// // 			str := strings.ReplaceAll(entry, "get-stats:context=xdr:", "")
+// // 			passOneOutput["get-stat:context=xdr"] = str
+// // 		}
+// // 	}
+
+// // 	passOneOutput["namespaces"] = md.passone_outputs_map["namespaces"]
+
+// // 	return passOneOutput
+
+// // }
+
+// // func (md *MockAerospikeServer) requestInfoNamespaces() map[string]string {
+// // 	pass2Metrics := make(map[string]string)
+
+// // 	namespaces := ""
+// // 	for _, entry := range md.namespaces_stats {
+// // 		elements := strings.Split(entry, ":")
+// // 		// format: namespace-stats:test:ns_cluster_size=1;effective_ ( 2nd element is the namespace name "test")
+// // 		ns := strings.TrimSpace(elements[1])
+// // 		if len(namespaces) > 0 {
+// // 			namespaces = namespaces + ";" + ns
+// // 		} else {
+// // 			namespaces = ns
+// // 		}
+// // 	}
+
+// // 	pass2Metrics["namespaces"] = strings.TrimSuffix(namespaces, ";")
+
+// // 	return pass2Metrics
+// // }
+
+// // func (md *MockAerospikeServer) createNamespacePassTwoExpectedOutputs() []string {
+// // 	lNamespaces := []string{}
+// // 	rawMetrics := md.fetchRawMetrics()
+
+// // 	for metricsGrpKey := range rawMetrics {
+// // 		if strings.HasPrefix(metricsGrpKey, "namespace/") {
+// // 			lNamespaces = append(lNamespaces, strings.TrimSpace(metricsGrpKey))
+// // 		}
+// // 	}
+// // 	return lNamespaces
+// // }
+
+// // func (md *MockAerospikeServer) createXdrPassTwoExpectedOutputs(passOneOutputs map[string]string) []string {
+// // 	passTwoOutputs := []string{}
+// // 	rawMetrics := md.fetchRawMetrics()
+
+// // 	for k := range rawMetrics {
+// // 		if strings.HasPrefix(k, "get-stats:") || strings.HasPrefix(k, "get-config:") {
+// // 			passTwoOutputs = append(passTwoOutputs, strings.TrimSpace(k))
+// // 		}
+// // 	}
+// // 	// append namespaces
+
+// // 	return passTwoOutputs
+// // }
+
+// // func (sim *MockAerospikeServer) createSindexPassTwoExpectedOutputs(mas *MockAerospikeServer) []string {
+// // 	lSindexNames := []string{}
+// // 	// rawMetricsKeys := rawMetrics["raw_metrics_keys"]
+// // 	rawMetricsKeys := mas.fetchRawMetrics()
+
+// // 	for k := range rawMetricsKeys {
+// // 		if strings.HasPrefix(k, "sindex/") {
+// // 			lSindexNames = append(lSindexNames, strings.TrimSpace(k))
+// // 		}
+// // 	}
+
+// // 	return lSindexNames
+
+// // }
+
+// // /*
+// // generated the output used by the Namespace-Watcher TestCases, the same output may not be suitable for other watchers,
+// // so for each data-context we need to have a method to generate expected output
+// // */
+// // // Namespace related
+// // type MockNamespacePromMetricGenerator struct {
+// // 	// this will hold the golbal array/objects for Namespaces
+// // 	lExpectedMetricNamedValues map[string][]string
+// // 	lExpectedMetricLabels      map[string][]string
+// // }
+
+// // func (nsw *MockNamespacePromMetricGenerator) createNamespaceWatcherExpectedOutputs(mas *MockAerospikeServer, nsName string, addNsToKey bool) (map[string][]string, map[string][]string) {
+
+// // 	// regex to check if a stat is storage-engine
+// // 	seDynamicExtractor := regexp.MustCompile(`storage\-engine\.(?P<type>file|device|stripe)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
+// // 	itDynamicExtractor := regexp.MustCompile(`index\-type\.(?P<type>mount)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
+// // 	sintDynamicExtractor := regexp.MustCompile(`sindex\-type\.(?P<type>mount)\[(?P<idx>\d+)\]\.(?P<metric>.+)`)
+
+// // 	//
+// // 	nsw.lExpectedMetricNamedValues = map[string][]string{}
+// // 	nsw.lExpectedMetricLabels = map[string][]string{}
+
+// // 	// rawMetrics := getRawMetrics()
+// // 	rawMetrics := mas.fetchRawMetrics()
+
+// // 	clusterName := rawMetrics["cluster-name"]
+// // 	service := rawMetrics["service-clear-std"]
+
+// // 	for metricsGrpKey := range rawMetrics {
+// // 		if strings.HasPrefix(metricsGrpKey, "namespace/") && strings.HasSuffix(metricsGrpKey, nsName) {
+// // 			ns := strings.Split(metricsGrpKey, "/")[1]
+// // 			grpValues := rawMetrics[metricsGrpKey]
+// // 			stats := splitAndRetrieveStats(grpValues, ";")
+
+// // 			// process stats and create {metricname,label} and {metric,values} map of strings
+// // 			for s, v := range stats {
+// // 				key := strings.TrimSpace(s)
+// // 				convertedValue, err := convertValue(v)
+// // 				if err != nil {
+// // 					fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
+// // 					continue
+// // 				}
+
+// // 				isBlocked := isHelperBlockedMetric(s, config.Cfg.Aerospike.NamespaceMetricsBlocklist)
+// // 				if isBlocked {
+// // 					continue
+// // 				}
+// // 				isAllowed := isHelperAllowedMetric(s, config.Cfg.Aerospike.NamespaceMetricsAllowlist)
+// // 				if !isAllowed {
+// // 					continue
+// // 				}
+
+// // 				// reconvert float back to string
+// // 				value := fmt.Sprintf("%.0f", convertedValue)
+
+// // 				// not a storage-engine or index-type or sindex-type
+// // 				isNormalStat := !isStatArrayType(key)
+
+// // 				if isNormalStat {
+
+// // 					labelsMap := copyConfigLabels()
+// // 					if strings.HasPrefix(key, "index-type") {
+// // 						labelsMap["index"] = stats["index-type"]
+// // 					} else if strings.HasPrefix(key, "sindex-type") {
+// // 						labelsMap["sindex"] = stats["sindex-type"]
+// // 					} else {
+// // 						labelsMap["storage_engine"] = stats["storage-engine"]
+// // 					}
+// // 					key = strings.ReplaceAll(key, "-", "_")
+// // 					key = strings.ReplaceAll(key, ".", "_")
+
+// // 					metric := "aerospike_namespace_" + key
+// // 					valuesArr := nsw.lExpectedMetricNamedValues[metric]
+// // 					labelsArr := nsw.lExpectedMetricLabels[metric]
+// // 					if valuesArr == nil {
+// // 						valuesArr = []string{}
+// // 					}
+// // 					if labelsArr == nil {
+// // 						labelsArr = []string{}
+// // 					}
+
+// // 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
+
+// // 					labelsMap["ns"] = ns
+// // 					labelsMap["service"] = service
+// // 					labelsMap["cluster_name"] = clusterName
+
+// // 					labelByNames := createLabelByNames(labelsMap)
+// // 					sorted_label_str := "[" + labelByNames + " ]"
+// // 					valuesArr = append(valuesArr, strings.TrimSpace(value))
+// // 					labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
+
+// // 					labelString := stringifyLabel(labelByNames)
+
+// // 					// key will be like <full-label>/namespace/<metric_name>, this we use this check during assertion
+// // 					mapKeyname := makeKeyname(nsName, labelString, true)
+// // 					mapKeyname = makeKeyname(mapKeyname, metric, true)
+// // 					nsw.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+// // 					nsw.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+// // 				} else {
+
+// // 					labelsMap := copyConfigLabels()
+
+// // 					metricType := ""
+// // 					metricIndex := ""
+// // 					metricName := ""
+// // 					deviceOrFileName := ""
+// // 					metric := ""
+
+// // 					if strings.HasPrefix(key, "storage-engine") {
+// // 						match := seDynamicExtractor.FindStringSubmatch(key)
+// // 						metricType = match[1]
+// // 						metricIndex = match[2]
+// // 						metricName = match[3]
+// // 						deviceOrFileName = stats["storage-engine."+metricType+"["+metricIndex+"]"]
+// // 						metric = "aerospike_namespace_storage_engine_" + metricType + "_" + metricName
+// // 						labelsMap["storage_engine"] = stats["storage-engine"]
+
+// // 					} else if strings.HasPrefix(key, "index-type") {
+// // 						match := itDynamicExtractor.FindStringSubmatch(key)
+// // 						metricType = match[1]
+// // 						metricIndex = match[2]
+// // 						metricName = match[3]
+// // 						deviceOrFileName = stats["index-type."+metricType+"["+metricIndex+"]"]
+
+// // 						metric = "aerospike_namespace_index_type_" + metricType + "_" + metricName
+// // 						labelsMap["index"] = stats["index-type"]
+// // 					} else if strings.HasPrefix(key, "sindex-type") {
+// // 						match := sintDynamicExtractor.FindStringSubmatch(key)
+// // 						metricType = match[1]
+// // 						metricIndex = match[2]
+// // 						metricName = match[3]
+// // 						deviceOrFileName = stats["sindex-type."+metricType+"["+metricIndex+"]"]
+// // 						metric = "aerospike_namespace_sindex_type_" + metricType + "_" + metricName
+// // 						labelsMap["sindex"] = stats["sindex-type"]
+// // 					}
+
+// // 					valuesArr := nsw.lExpectedMetricNamedValues[metric]
+// // 					labelsArr := nsw.lExpectedMetricLabels[metric]
+// // 					if valuesArr == nil {
+// // 						valuesArr = []string{}
+// // 					}
+// // 					if labelsArr == nil {
+// // 						labelsArr = []string{}
+// // 					}
+
+// // 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"file\" value:\"" + deviceOrFileName + "\"  name:\"file_index\" value:\"" + metricIndex + "\"  name:\"ns\" value:\"" + ns + "\"  name:\"service\" value:\"" + service + "\" ]"
+
+// // 					labelsMap["cluster_name"] = clusterName
+// // 					labelsMap[metricType] = deviceOrFileName
+// // 					labelsMap["ns"] = ns
+// // 					labelsMap[metricType+"_index"] = metricIndex
+// // 					labelsMap["service"] = service
+
+// // 					labelByNames := createLabelByNames(labelsMap)
+// // 					sorted_label_str := "[" + labelByNames + " ]"
+// // 					valuesArr = append(valuesArr, strings.TrimSpace(value))
+// // 					labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
+
+// // 					labelString := stringifyLabel(labelByNames)
+
+// // 					// key will be like <full-label>/namespace/<metric_name>, this we use this check during assertion
+// // 					mapKeyname := makeKeyname(nsName, labelString, true)
+// // 					mapKeyname = makeKeyname(mapKeyname, metric, true)
+
+// // 					nsw.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+// // 					nsw.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+// // 				}
+// // 			}
+// // 		}
+// // 	}
+
+// // 	return nsw.lExpectedMetricNamedValues, nsw.lExpectedMetricLabels
+// // }
+
+// // func isStatArrayType(statToProcess string) bool {
+// // 	if strings.HasPrefix(statToProcess, commons.INDEX_TYPE) && strings.Contains(statToProcess, "[") {
+// // 		return true
+// // 	} else if strings.HasPrefix(statToProcess, commons.SINDEX_TYPE) && strings.Contains(statToProcess, "[") {
+// // 		return true
+// // 	} else if strings.HasPrefix(statToProcess, commons.STORAGE_ENGINE) && strings.Contains(statToProcess, "[") {
+// // 		return true
+// // 	}
+
+// // 	return false
+// // }
+
+// // // Node-stats related
+// // type MockNodestatPromMetricGenerator struct {
+// // 	// this will hold the golbal array/objects for Node-stats
+// // 	lExpectedMetricNamedValues map[string][]string
+// // 	lExpectedMetricLabels      map[string][]string
+// // }
+
+// // func (nst *MockNodestatPromMetricGenerator) createNodeStatsWatcherExpectedOutputs(mas *MockAerospikeServer, serviceIp string) (map[string][]string, map[string][]string) {
+// // 	nst.lExpectedMetricNamedValues = map[string][]string{}
+// // 	nst.lExpectedMetricLabels = map[string][]string{}
+
+// // 	// rawMetrics := getRawMetrics()
+// // 	rawMetrics := mas.fetchRawMetrics()
+
+// // 	clusterName := rawMetrics["cluster-name"]
+// // 	service := rawMetrics["service-clear-std"]
+
+// // 	for metricsGrpKey := range rawMetrics {
+// // 		if strings.HasPrefix(metricsGrpKey, "statistics") || strings.HasPrefix(metricsGrpKey, "get-config:context=service") {
+// // 			grpValues := rawMetrics[metricsGrpKey]
+// // 			stats := splitAndRetrieveStats(grpValues, ";")
+// // 			for s, v := range stats {
+// // 				key := strings.TrimSpace(s)
+// // 				convertedValue, err := convertValue(v)
+// // 				if err != nil {
+// // 					fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
+// // 					continue
+// // 				}
+
+// // 				isBlocked := isHelperBlockedMetric(s, config.Aerospike.NodeMetricsBlocklist)
+// // 				if isBlocked {
+// // 					continue
+// // 				}
+// // 				isAllowed := isHelperAllowedMetric(s, config.Aerospike.NodeMetricsAllowlist)
+// // 				if !isAllowed {
+// // 					continue
+// // 				}
+
+// // 				// reconvert float back to string
+// // 				value := fmt.Sprintf("%.0f", convertedValue)
+
+// // 				key = strings.ReplaceAll(key, "-", "_")
+// // 				key = strings.ReplaceAll(key, ".", "_")
+// // 				metric := "aerospike_node_stats_" + key
+// // 				valuesArr := nst.lExpectedMetricNamedValues[metric]
+// // 				labelsArr := nst.lExpectedMetricLabels[metric]
+
+// // 				if valuesArr == nil {
+// // 					valuesArr = []string{}
+// // 				}
+// // 				if labelsArr == nil {
+// // 					labelsArr = []string{}
+// // 				}
+
+// // 				// [name:"cluster_name" value:"null"  name:"service" value:"172.17.0.3:3000" ]
+// // 				labelsMap := copyConfigLabels()
+// // 				labelsMap["service"] = service
+// // 				labelsMap["cluster_name"] = clusterName
+
+// // 				sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+// // 				valuesArr = append(valuesArr, strings.TrimSpace(value))
+// // 				labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
+
+// // 				mapKeyname := makeKeyname(serviceIp, metric, true)
+// // 				nst.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+// // 				nst.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+// // 			}
+// // 		}
+// // 	}
+
+// // 	return nst.lExpectedMetricNamedValues, nst.lExpectedMetricLabels
+// // }
+
+// // // Set related
+// // type MockSetsPromMetricGenerator struct {
+// // 	// this will hold the golbal array/objects for Sets
+// // 	lExpectedMetricNamedValues map[string][]string
+// // 	lExpectedMetricLabels      map[string][]string
+// // }
+
+// // func (msdg *MockSetsPromMetricGenerator) createSetsWatcherExpectedOutputs(mas *MockAerospikeServer, setName string) (map[string][]string, map[string][]string) {
+// // 	msdg.lExpectedMetricNamedValues = map[string][]string{}
+// // 	msdg.lExpectedMetricLabels = map[string][]string{}
+
+// // 	// rawMetrics := getRawMetrics()
+
+// // 	rawMetrics := mas.fetchRawMetrics()
+
+// // 	clusterName := rawMetrics["cluster-name"]
+// // 	service := rawMetrics["service-clear-std"]
+
+// // 	for metricsGrpKey := range rawMetrics {
+// // 		if strings.HasPrefix(metricsGrpKey, "sets") {
+// // 			grpValues := rawMetrics[metricsGrpKey]
+// // 			nsWithSets := strings.Split(grpValues, ";")
+// // 			for idx := range nsWithSets {
+
+// // 				singleSetKeyValues := nsWithSets[idx]
+
+// // 				stats := splitAndRetrieveStats(singleSetKeyValues, ":")
+// // 				namespace := stats["ns"]
+// // 				setName := stats["set"]
+
+// // 				for s, v := range stats {
+// // 					key := strings.TrimSpace(s)
+// // 					convertedValue, err := convertValue(v)
+// // 					if err != nil {
+// // 						fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
+// // 						continue
+// // 					}
+
+// // 					isBlocked := isHelperBlockedMetric(s, config.Aerospike.SetMetricsBlocklist)
+// // 					if isBlocked {
+// // 						continue
+// // 					}
+// // 					isAllowed := isHelperAllowedMetric(s, config.Aerospike.SetMetricsAllowlist)
+// // 					if !isAllowed {
+// // 						continue
+// // 					}
+// // 					// reconvert float back to string
+// // 					value := fmt.Sprintf("%.0f", convertedValue)
+
+// // 					key = strings.ReplaceAll(key, "-", "_")
+// // 					key = strings.ReplaceAll(key, ".", "_")
+// // 					metric := "aerospike_sets_" + key
+// // 					valuesArr := msdg.lExpectedMetricNamedValues[metric]
+// // 					labelsArr := msdg.lExpectedMetricLabels[metric]
+
+// // 					if valuesArr == nil {
+// // 						valuesArr = []string{}
+// // 					}
+// // 					if labelsArr == nil {
+// // 						labelsArr = []string{}
+// // 					}
+
+// // 					// [name:"cluster_name" value:"null"  name:"ns" value:"bar"  name:"service" value:"172.17.0.3:3000"  name:"set" value:"west_region" ]
+// // 					mapKeyname := makeKeyname(setName, metric, true)
+// // 					mapKeyname = makeKeyname(namespace, mapKeyname, true)
+
+// // 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"  name:\"set\" value:\"" + setName + "\"" + " ]"
+
+// // 					labelsMap := copyConfigLabels()
+// // 					labelsMap["ns"] = namespace
+// // 					labelsMap["service"] = service
+// // 					labelsMap["cluster_name"] = clusterName
+// // 					labelsMap["set"] = setName
+
+// // 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+// // 					valuesArr = append(valuesArr, strings.TrimSpace(value))
+// // 					labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
+
+// // 					msdg.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+// // 					msdg.lExpectedMetricLabels[mapKeyname] = labelsArr
+// // 				}
+
+// // 			}
+// // 		}
+// // 	}
+
+// // 	return msdg.lExpectedMetricNamedValues, msdg.lExpectedMetricLabels
+// // }
+
+// // // Latency related
+// // type MockLatencyPromMetricGenerator struct {
+// // 	// this will hold the golbal array/objects for Latencies
+// // 	lExpectedMetricNamedValues map[string][]string
+// // 	lExpectedMetricLabels      map[string][]string
+// // }
+
+// // func (ltc *MockLatencyPromMetricGenerator) createLatencysWatcherExpectedOutputs(mas *MockAerospikeServer, namespaceWithSetName string) (map[string][]string, map[string][]string) {
+// // 	ltc.lExpectedMetricNamedValues = map[string][]string{}
+// // 	ltc.lExpectedMetricLabels = map[string][]string{}
+
+// // 	rawMetrics := mas.fetchRawMetrics()
+
+// // 	clusterName := rawMetrics["cluster-name"]
+// // 	service := rawMetrics["service-clear-std"]
+
+// // 	latencyLabelGroups := []string{"0", "+Inf", "1", "2", "4", "8", "16", "32", "64", "128", "256", "512", "1024", "2048", "4096", "8192", "16384", "32768", "65536"}
+
+// // 	for metricsGrpKey := range rawMetrics {
+// // 		if strings.HasPrefix(metricsGrpKey, "latencies") {
+// // 			grpValues := rawMetrics[metricsGrpKey]
+// // 			latencyStatsByNamespace := strings.Split(grpValues, ";")
+// // 			for idx := range latencyStatsByNamespace {
+
+// // 				singleLatencyOperation := latencyStatsByNamespace[idx]
+
+// // 				allLatencyValues := splitLatencies(singleLatencyOperation)
+// // 				if len(allLatencyValues) == 1 {
+// // 					continue
+// // 				}
+// // 				namespace, operation, _ := splitLatencyDetails(allLatencyValues)
+
+// // 				isOperationAllowed := isLatencyOperationAllowe(operation, config.Aerospike.LatenciesMetricsAllowlist, config.Aerospike.LatenciesMetricsBlocklist)
+
+// // 				if isOperationAllowed {
+// // 					bucket_metric := "aerospike_latencies" + "_" + operation + "_" + "ms" + "_" + "bucket"
+// // 					count_metric := "aerospike_latencies" + "_" + operation + "_" + "ms" + "_" + "count"
+
+// // 					mapKeyname := service + "_" + namespace + "_" + operation
+// // 					cntValuesArr := ltc.lExpectedMetricNamedValues[count_metric]
+// // 					cntLabelsArr := ltc.lExpectedMetricLabels[count_metric]
+
+// // 					// Add latency-metric-COUNT
+// // 					if cntValuesArr == nil {
+// // 						cntValuesArr = []string{}
+// // 					}
+// // 					if cntLabelsArr == nil {
+// // 						cntLabelsArr = []string{}
+// // 					}
+
+// // 					labelsMap := copyConfigLabels()
+// // 					labelsMap["ns"] = namespace
+// // 					labelsMap["service"] = service
+// // 					labelsMap["cluster_name"] = clusterName
+
+// // 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+// // 					cntValuesArr = append(cntValuesArr, strings.TrimSpace(allLatencyValues[1]))
+// // 					cntLabelsArr = append(cntLabelsArr, strings.TrimSpace(sorted_label_str))
+
+// // 					ltc.lExpectedMetricNamedValues[mapKeyname] = cntValuesArr
+// // 					ltc.lExpectedMetricLabels[mapKeyname] = cntLabelsArr
+
+// // 					// Add latency-metric-BUCKET with le
+// // 					for idx := range allLatencyValues {
+// // 						if idx >= 1 {
+// // 							le := latencyLabelGroups[idx]
+// // 							value := allLatencyValues[idx]
+
+// // 							mapKeyname := service + "_" + namespace + "_" + operation + "_" + strings.ReplaceAll(le, "+", "")
+// // 							bktValuesArr := ltc.lExpectedMetricNamedValues[bucket_metric]
+// // 							bktLabelsArr := ltc.lExpectedMetricLabels[bucket_metric]
+
+// // 							// Add latency-metric-COUNT
+// // 							if bktValuesArr == nil {
+// // 								bktValuesArr = []string{}
+// // 							}
+// // 							if bktLabelsArr == nil {
+// // 								bktLabelsArr = []string{}
+// // 							}
+
+// // 							labelsMap := copyConfigLabels()
+// // 							labelsMap["ns"] = namespace
+// // 							labelsMap["le"] = le
+// // 							labelsMap["service"] = service
+// // 							labelsMap["cluster_name"] = clusterName
+
+// // 							sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+// // 							bktValuesArr = append(bktValuesArr, strings.TrimSpace(value))
+// // 							bktLabelsArr = append(bktLabelsArr, strings.TrimSpace(sorted_label_str))
+
+// // 							ltc.lExpectedMetricNamedValues[mapKeyname] = bktValuesArr
+// // 							ltc.lExpectedMetricLabels[mapKeyname] = bktLabelsArr
+
+// // 						}
+
+// // 					}
+
+// // 				} else {
+// // 					fmt.Println("operation ", operation, "\t is NOT Allowed i.e. either in block-list or not-in-allow list")
+// // 				}
+
+// // 			}
+// // 		}
+// // 	}
+
+// // 	return ltc.lExpectedMetricNamedValues, ltc.lExpectedMetricLabels
+// // }
+
+// // // Xdr related
+// // type MockXdrPromMetricGenerator struct {
+// // 	// this will hold the golbal array/objects for Xdr
+// // 	lExpectedMetricNamedValues map[string][]string
+// // 	lExpectedMetricLabels      map[string][]string
+// // }
+
+// // func (xdr *MockXdrPromMetricGenerator) createXdrsWatcherExpectedOutputs(mas *MockAerospikeServer, xdrDcName string) (map[string][]string, map[string][]string) {
+
+// // 	// re-initialize whenever called
+// // 	xdr.lExpectedMetricNamedValues = make(map[string][]string)
+// // 	xdr.lExpectedMetricLabels = make(map[string][]string)
+
+// // 	rawMetrics := mas.fetchRawMetrics()
+
+// // 	clusterName := mas.getClusterName()
+// // 	service := mas.getServiceClearStd()
+
+// // 	for metricsGrpKey := range rawMetrics {
+// // 		if strings.HasPrefix(metricsGrpKey, "get-stats:context=xdr;dc=") || strings.HasPrefix(metricsGrpKey, "get-configs:context=xdr;dc=") {
+// // 			grpValues := rawMetrics[metricsGrpKey]
+// // 			xdrDcInfos := strings.Split(grpValues, ";")
+// // 			for idx := range xdrDcInfos {
+
+// // 				singleXdrDcValues := xdrDcInfos[idx]
+
+// // 				stats := splitAndRetrieveStats(singleXdrDcValues, ":")
+
+// // 				// get-config:context=xdr;dc=backup_dc_asdev20_second;namespace=bar_device
+// // 				// get-config:context=xdr;dc=backup_dc_asdev20_second
+// // 				// get-stats:context=xdr;dc=backup_dc_asdev20_second;namespace=bar_device
+// // 				// get-stats:context=xdr;dc=backup_dc_asdev20_second
+// // 				// grpSplitElements := strings.Split(metricsGrpKey, ";")
+// // 				// dcName := strings.Split(grpSplitElements[1], "=")[1]
+
+// // 				for s, v := range stats {
+// // 					key := strings.TrimSpace(s)
+// // 					convertedValue, err := convertValue(v)
+// // 					if err != nil {
+// // 						fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", v, ") = error: ", err)
+// // 						continue
+// // 					}
+
+// // 					isBlocked := isHelperBlockedMetric(s, config.Aerospike.XdrMetricsBlocklist)
+// // 					if isBlocked {
+// // 						continue
+// // 					}
+// // 					isAllowed := isHelperAllowedMetric(s, config.Aerospike.XdrMetricsAllowlist)
+// // 					if !isAllowed {
+// // 						continue
+// // 					}
+
+// // 					// reconvert float back to string
+// // 					value := fmt.Sprintf("%.0f", convertedValue)
+
+// // 					key = strings.ReplaceAll(key, "-", "_")
+// // 					key = strings.ReplaceAll(key, ".", "_")
+
+// // 					// metric := "aerospike_xdr" + "_" + key
+// // 					// namespace := "no-namespace" // just to represent this metric is only at DC level
+// // 					dcName, namespace, metric := xdr.constructXdrMetricname(metricsGrpKey, key)
+
+// // 					valuesArr := xdr.lExpectedMetricNamedValues[metric]
+// // 					labelsArr := xdr.lExpectedMetricLabels[metric]
+
+// // 					if valuesArr == nil {
+// // 						valuesArr = []string{}
+// // 					}
+// // 					if labelsArr == nil {
+// // 						labelsArr = []string{}
+// // 					}
+
+// // 					// [name:"cluster_name" value:"null"  name:"dc" value:"backup_dc_asdev20"  name:"service" value:"172.17.0.3:3000" ]
+// // 					// labelStr := "[" + cfgLabelsToAdd + "name:\"cluster_name\" value:\"" + clusterName + "\"  name:\"ns\" value:\"" + namespace + "\"  name:\"service\" value:\"" + service + "\"  name:\"set\" value:\"" + setName + "\"" + " ]"
+
+// // 					labelsMap := copyConfigLabels()
+// // 					labelsMap["dc"] = dcName
+// // 					labelsMap["service"] = service
+// // 					labelsMap["cluster_name"] = clusterName
+
+// // 					if strings.Contains(metricsGrpKey, "namespace") {
+// // 						grpSplitElements := strings.Split(metricsGrpKey, ";")
+// // 						// get-config:context=xdr;dc=backup_dc_asdev20_second;namespace=bar_device
+// // 						namespace = strings.Split(grpSplitElements[2], "=")[1]
+// // 						labelsMap["ns"] = namespace
+// // 					}
+
+// // 					sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+// // 					valuesArr = append(valuesArr, strings.TrimSpace(value))
+// // 					labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
+
+// // 					mapKeyname := makeKeyname(dcName, metric, true)
+// // 					mapKeyname = makeKeyname(namespace, mapKeyname, true)
+// // 					mapKeyname = makeKeyname(service, mapKeyname, true)
+
+// // 					xdr.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+// // 					xdr.lExpectedMetricLabels[mapKeyname] = labelsArr
+// // 				} // end stats for-loop
+
+// // 			} // end xdrDcInfos
+// // 		}
+// // 	}
+
+// // 	return xdr.lExpectedMetricNamedValues, xdr.lExpectedMetricLabels
+// // }
+
+// // func (xdr *MockXdrPromMetricGenerator) constructXdrMetricname(infoKeyToProcess string, stat string) (string, string, string) {
+
+// // 	kvInfoKeyToProcess := parseStats(infoKeyToProcess, ";")
+// // 	_, cfgOk := kvInfoKeyToProcess["get-config:context"]
+// // 	_, statOk := kvInfoKeyToProcess["get-stats:context"]
+// // 	dcName := kvInfoKeyToProcess["dc"]
+// // 	nsName, nsOk := kvInfoKeyToProcess["namespace"]
+
+// // 	// either this is a config key or a stat having namespace (both are new use-cases) hence handle here
+
+// // 	if cfgOk && nsOk {
+// // 		return dcName, nsName, ("aerospike_xdr" + "_" + "dc_namespace_" + stat)
+// // 	} else if statOk && nsOk {
+// // 		return dcName, nsName, ("aerospike_xdr" + "_" + "dc_namespace_" + stat)
+// // 	} else if cfgOk {
+// // 		return dcName, nsName, ("aerospike_xdr" + "_" + "dc_" + stat)
+// // 	}
+
+// // 	return dcName, "no-namespace", "aerospike_xdr" + "_" + stat // no-prefix/default i.e. no suffix like "dc" / "dc_namespace"
+
+// // }
+
+// // // Sindex related methods
+// // type MockSindexPromMetricGenerator struct {
+// // 	// this will hold the golbal array/objects for Sindex
+// // 	lExpectedMetricNamedValues map[string][]string
+// // 	lExpectedMetricLabels      map[string][]string
+// // }
+
+// // func (sim *MockSindexPromMetricGenerator) createSindexWatcherTestData(mas *MockAerospikeServer) (map[string][]string, map[string][]string) {
+
+// // 	// re-initialize whenever called
+// // 	sim.lExpectedMetricNamedValues = make(map[string][]string)
+// // 	sim.lExpectedMetricLabels = make(map[string][]string)
+
+// // 	// rawMetrics := getRawMetrics()
+// // 	rawMetrics := mas.fetchRawMetrics()
+
+// // 	clusterName := rawMetrics["cluster-name"]
+// // 	service := rawMetrics["service-clear-std"]
+
+// // 	for metricsGrpKey := range rawMetrics {
+// // 		if strings.HasPrefix(metricsGrpKey, "sindex/") {
+// // 			sindexInfos := rawMetrics[metricsGrpKey]
+// // 			namespace, sindexName := sim.extractNamespaceSetSindexname(metricsGrpKey)
+// // 			stats := splitAndRetrieveStats(sindexInfos, ";")
+// // 			for stat, value := range stats {
+// // 				key := strings.TrimSpace(stat)
+// // 				convertedValue, err := convertValue(value)
+// // 				if err != nil {
+// // 					fmt.Println("IGNORING, failed converting value ( key: ", key, " - value: ", value, ") = error: ", err)
+// // 					continue
+// // 				}
+
+// // 				isBlocked := isHelperBlockedMetric(stat, config.Aerospike.SindexMetricsBlocklist)
+// // 				if isBlocked {
+// // 					continue
+// // 				}
+// // 				isAllowed := isHelperAllowedMetric(stat, config.Aerospike.SindexMetricsAllowlist)
+// // 				if !isAllowed {
+// // 					continue
+// // 				}
+
+// // 				// reconvert float back to string
+// // 				value := fmt.Sprintf("%.0f", convertedValue)
+
+// // 				key = strings.ReplaceAll(key, "-", "_")
+// // 				key = strings.ReplaceAll(key, ".", "_")
+// // 				metric := "aerospike_sindex" + "_" + key
+// // 				valuesArr := sim.lExpectedMetricNamedValues[metric]
+// // 				labelsArr := sim.lExpectedMetricLabels[metric]
+
+// // 				if valuesArr == nil {
+// // 					valuesArr = []string{}
+// // 				}
+// // 				if labelsArr == nil {
+// // 					labelsArr = []string{}
+// // 				}
+
+// // 				// Label: [name:"cluster_name" value:"null"  name:"ns" value:"test"  name:"service" value:"172.17.0.3:3000"  name:"sindex" value:"test_sindex1" ]
+// // 				// service/namespace/sindexname/<metric-name>
+// // 				mapKeyname := makeKeyname(sindexName, metric, true)
+// // 				mapKeyname = makeKeyname(namespace, mapKeyname, true)
+// // 				mapKeyname = makeKeyname(service, mapKeyname, true)
+
+// // 				labelsMap := copyConfigLabels()
+// // 				labelsMap["ns"] = namespace
+// // 				labelsMap["sindex"] = sindexName
+// // 				labelsMap["service"] = service
+// // 				labelsMap["cluster_name"] = clusterName
+
+// // 				sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+// // 				valuesArr = append(valuesArr, strings.TrimSpace(value))
+// // 				labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
+
+// // 				sim.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+// // 				sim.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+// // 			}
+// // 		}
+// // 	}
+
+// // 	return sim.lExpectedMetricNamedValues, sim.lExpectedMetricLabels
+// // }
+
+// // func (siMock *MockSindexPromMetricGenerator) extractNamespaceSetSindexname(sindexKey string) (string, string) {
+// // 	elements := strings.Split(sindexKey, "/")
+
+// // 	return elements[1], elements[2]
+// // }
+
+// // // User related utilities
+// // type MockUsersPromMetricGenerator struct {
+// // 	lExpectedMetricNamedValues map[string][]string
+// // 	lExpectedMetricLabels      map[string][]string
+// // }
+
+// // func (mockUsers *MockUsersPromMetricGenerator) createDummyUserRoles() []*aero.UserRoles {
+// // 	userRoles := []*aero.UserRoles{}
+
+// // 	MAX_USERS := 4
+// // 	MAX_READINFO := 4
+// // 	MAX_WRITEINFO := 4
+
+// // 	userNames := []string{"test", "admin", "app_user_1", "app_user_read_1", "app_user_rw_all"}
+
+// // 	// we always give dummy data
+// // 	for i := 0; i <= MAX_USERS; i++ {
+
+// // 		if mockUsers.isUserAllowed(userNames[i]) {
+// // 			userRoles = append(userRoles, new(aero.UserRoles))
+
+// // 			userRoles[i].User = userNames[i]
+// // 			userRoles[i].ConnsInUse = i * 2
+
+// // 			for k := 0; k <= MAX_READINFO; k++ {
+// // 				userRoles[i].ReadInfo = append(userRoles[i].ReadInfo, (k+1)*5)
+// // 			}
+// // 			for k := 0; k <= MAX_WRITEINFO; k++ {
+// // 				userRoles[i].WriteInfo = append(userRoles[i].WriteInfo, (k+1)*10)
+// // 			}
+// // 		}
+// // 	}
+
+// // 	return userRoles
+// // }
+
+// // func (mockUsers *MockUsersPromMetricGenerator) createMockUserData(mas *MockAerospikeServer) (map[string][]string, map[string][]string) {
+// // 	userRoles := mockUsers.createDummyUserRoles()
+
+// // 	// re-initialize whenever called
+// // 	mockUsers.lExpectedMetricNamedValues = make(map[string][]string)
+// // 	mockUsers.lExpectedMetricLabels = make(map[string][]string)
+
+// // 	rawMetrics := mas.fetchRawMetrics()
+
+// // 	clusterName := rawMetrics["cluster-name"]
+// // 	service := rawMetrics["service-clear-std"]
+
+// // 	readInfoStats := []string{"read_quota", "read_single_record_tps", "read_scan_query_rps", "limitless_read_scan_query"}
+// // 	writeInfoStats := []string{"write_quota", "write_single_record_tps", "write_scan_query_rps", "limitless_write_scan_query"}
+
+// // 	for idx := range userRoles {
+// // 		userRole := userRoles[idx]
+
+// // 		userName := userRole.User
+
+// // 		// conn-in-use
+// // 		key := "conns_in_use"
+// // 		value := strconv.Itoa(userRole.ConnsInUse)
+
+// // 		metric := "aerospike_users" + "_" + key
+
+// // 		valuesArr := mockUsers.lExpectedMetricNamedValues[metric]
+// // 		labelsArr := mockUsers.lExpectedMetricLabels[metric]
+
+// // 		if valuesArr == nil {
+// // 			valuesArr = []string{}
+// // 		}
+// // 		if labelsArr == nil {
+// // 			labelsArr = []string{}
+// // 		}
+
+// // 		mapKeyname := makeKeyname(userName, metric, true)
+// // 		mapKeyname = makeKeyname(service, mapKeyname, true)
+
+// // 		labelsMap := copyConfigLabels()
+// // 		labelsMap["user"] = userName
+// // 		labelsMap["service"] = service
+// // 		labelsMap["cluster_name"] = clusterName
+
+// // 		sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+// // 		valuesArr = append(valuesArr, strings.TrimSpace(value))
+// // 		labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
+
+// // 		mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+// // 		mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+// // 		// end: conn-in-use
+
+// // 		// Label: [name:"cluster_name" value:"null"  name:"ns" value:"bar"  name:"service" value:"172.17.0.3:3000"  name:"set" value:"west_region" ]
+// // 		for i := 0; i < len(readInfoStats); i++ {
+
+// // 			key := readInfoStats[i]
+// // 			value := strconv.Itoa(userRole.ReadInfo[i])
+
+// // 			metric := "aerospike_users" + "_" + key
+
+// // 			valuesArr := mockUsers.lExpectedMetricNamedValues[metric]
+// // 			labelsArr := mockUsers.lExpectedMetricLabels[metric]
+
+// // 			if valuesArr == nil {
+// // 				valuesArr = []string{}
+// // 			}
+// // 			if labelsArr == nil {
+// // 				labelsArr = []string{}
+// // 			}
+
+// // 			mapKeyname := makeKeyname(userName, metric, true)
+// // 			mapKeyname = makeKeyname(service, mapKeyname, true)
+
+// // 			labelsMap := copyConfigLabels()
+// // 			labelsMap["user"] = userName
+// // 			labelsMap["service"] = service
+// // 			labelsMap["cluster_name"] = clusterName
+
+// // 			sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+// // 			valuesArr = append(valuesArr, strings.TrimSpace(value))
+// // 			labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
+
+// // 			mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+// // 			mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+// // 		}
+
+// // 		// Label: [name:"cluster_name" value:"null"  name:"ns" value:"bar"  name:"service" value:"172.17.0.3:3000"  name:"set" value:"west_region" ]
+// // 		for i := 0; i < len(writeInfoStats); i++ {
+// // 			key := writeInfoStats[i]
+// // 			value := strconv.Itoa(userRole.WriteInfo[i])
+
+// // 			metric := "aerospike_users" + "_" + key
+
+// // 			valuesArr := mockUsers.lExpectedMetricNamedValues[metric]
+// // 			labelsArr := mockUsers.lExpectedMetricLabels[metric]
+
+// // 			if valuesArr == nil {
+// // 				valuesArr = []string{}
+// // 			}
+// // 			if labelsArr == nil {
+// // 				labelsArr = []string{}
+// // 			}
+
+// // 			mapKeyname := makeKeyname(userName, metric, true)
+// // 			mapKeyname = makeKeyname(service, mapKeyname, true)
+
+// // 			labelsMap := copyConfigLabels()
+// // 			labelsMap["user"] = userName
+// // 			labelsMap["service"] = service
+// // 			labelsMap["cluster_name"] = clusterName
+
+// // 			sorted_label_str := "[" + createLabelByNames(labelsMap) + " ]"
+
+// // 			valuesArr = append(valuesArr, strings.TrimSpace(value))
+// // 			labelsArr = append(labelsArr, strings.TrimSpace(sorted_label_str))
+
+// // 			mockUsers.lExpectedMetricNamedValues[mapKeyname] = valuesArr
+// // 			mockUsers.lExpectedMetricLabels[mapKeyname] = labelsArr
+
+// // 		}
+
+// // 		// create mock output
+// // 	}
+
+// // 	return mockUsers.lExpectedMetricNamedValues, mockUsers.lExpectedMetricLabels
+// // }
+
+// // func (mockUsers *MockUsersPromMetricGenerator) isUserAllowed(username string) bool {
+// // 	userAllowlist := config.Aerospike.UserMetricsUsersAllowlist
+// // 	userBlocklist := config.Aerospike.UserMetricsUsersBlocklist
+// // 	if len(userBlocklist) == 0 && len(userAllowlist) == 0 {
+// // 		return true
+// // 	}
+// // 	// check blocklist
+// // 	for i := 0; i < len(userBlocklist); i++ {
+// // 		if strings.EqualFold(userBlocklist[i], username) {
+// // 			return true
+// // 		}
+// // 	}
+
+// // 	// check allowlist
+// // 	for i := 0; i < len(userAllowlist); i++ {
+// // 		if strings.EqualFold(userAllowlist[i], username) {
+// // 			return true
+// // 		}
+// // 	}
+
+// // 	return false
+// // }

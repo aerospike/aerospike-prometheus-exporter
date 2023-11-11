@@ -2,7 +2,6 @@ package watchers
 
 import (
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
 	log "github.com/sirupsen/logrus"
 )
@@ -38,14 +37,6 @@ func GetWatchers() []Watcher {
 // public and utility functions
 
 func Refresh() ([]WatcherMetric, error) {
-	// mock or aerospike
-	if config.Cfg.AeroProm.UseMockDatasource == 0 {
-		return MockAerospikeServer()
-	}
-	return aerospikeRefresh()
-}
-
-func aerospikeRefresh() ([]WatcherMetric, error) {
 
 	fullHost := commons.GetFullHost()
 	log.Debugf("Refreshing node %s", fullHost)
@@ -66,7 +57,7 @@ func aerospikeRefresh() ([]WatcherMetric, error) {
 	// info request for first set of info keys, this retrives configs from server
 	//   from namespaces,server/node-stats, xdr
 	//   if for any context (like jobs, latencies etc.,) no configs, they are not sent to server
-	passOneOutput, err := data.RequestInfo(infoKeys)
+	passOneOutput, err := data.GetDataProvider().RequestInfo(infoKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +73,7 @@ func aerospikeRefresh() ([]WatcherMetric, error) {
 	}
 
 	// info request for second set of info keys, this retrieves all the stats from server
-	rawMetrics, err := data.RequestInfo(infoKeys)
+	rawMetrics, err := data.GetDataProvider().RequestInfo(infoKeys)
 	if err != nil {
 		return all_metrics_to_send, err
 	}

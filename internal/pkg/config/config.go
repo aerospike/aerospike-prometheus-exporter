@@ -142,6 +142,11 @@ func (c *Config) ValidateAndUpdate() {
 	if c.Aerospike.Timeout == 0 {
 		c.Aerospike.Timeout = 5
 	}
+
+	if c.AeroProm.UseMockDatasource > 1 {
+		c.AeroProm.UseMockDatasource = 0
+	}
+
 }
 
 // Initialize exporter configuration
