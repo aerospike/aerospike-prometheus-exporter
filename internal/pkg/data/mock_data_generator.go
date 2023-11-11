@@ -246,12 +246,13 @@ func (md *MockAerospikeServer) getSetsStatistics(key string) string {
 	// node-stats & node-configs
 	for _, entry := range md.Sets_stats {
 
-		// set-stats:<node-configs>
-		elements := strings.Split(entry, ":")
+		if strings.HasPrefix(key, "sets") && strings.HasPrefix(entry, "set-stats:") {
+			// set-stats:<node-configs>
+			elements := strings.Replace(entry, "set-stats:[", "", 1)
+			elements = strings.Replace(elements, "]", "", 1)
 
-		if strings.HasPrefix(key, "sets") && strings.HasPrefix(elements[0], "set-stats") {
 			// key := "sets"
-			rawMetrics = elements[1]
+			rawMetrics = elements
 		}
 	}
 
