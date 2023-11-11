@@ -52,8 +52,9 @@ const (
 	MOCK_IK_SERVICE_CLEAR_STD          string = "service-clear-std"
 	MOCK_IK_NAMESPACES                 string = "namespaces"
 	MOCK_IK_A_NAMESPACE_SLASH          string = "namespace/"
-	MOCK_IK_STATISTICS                 string = "statistics"
+	MOCK_IK_NODE_STATISTICS            string = "statistics"
 	MOCK_IK_GET_CONFIG_CONTEXT_SERVICE string = "get-config:context=service"
+	MOCK_IK_SETS                       string = "sets"
 )
 
 // var request_info_key_to_func_map = map[string]func(){
@@ -159,10 +160,12 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 			l_mock_data_map[k] = md.getNamespaces(k)
 		case strings.HasPrefix(k, MOCK_IK_A_NAMESPACE_SLASH):
 			l_mock_data_map[k] = md.getSingleNamespaceStats(k)
-		case strings.HasPrefix(k, MOCK_IK_STATISTICS):
+		case strings.HasPrefix(k, MOCK_IK_NODE_STATISTICS):
 			l_mock_data_map[k] = md.getNodeStatistics(k)
 		case strings.HasPrefix(k, MOCK_IK_GET_CONFIG_CONTEXT_SERVICE):
 			l_mock_data_map[k] = md.getNodeStatistics(k)
+		case strings.HasPrefix(k, MOCK_IK_SETS):
+			l_mock_data_map[k] = md.getSetsStatistics(k)
 		}
 	}
 	// fmt.Println("requested keys : ", infokeys, "\n\t values returned: ", l_mock_data_map)
@@ -230,6 +233,24 @@ func (md *MockAerospikeServer) getNodeStatistics(key string) string {
 			rawMetrics = elements[1]
 		} else if strings.HasPrefix(key, "get-config:context=service") && strings.HasPrefix(elements[0], "node-config") {
 			// key := "get-config:context=service"
+			rawMetrics = elements[1]
+		}
+	}
+
+	return rawMetrics
+
+}
+
+func (md *MockAerospikeServer) getSetsStatistics(key string) string {
+	rawMetrics := ""
+	// node-stats & node-configs
+	for _, entry := range md.Node_stats {
+
+		// set-stats:<node-configs>
+		elements := strings.Split(entry, ":")
+
+		if strings.HasPrefix(key, "sets") && strings.HasPrefix(elements[0], "set-stats") {
+			// key := "sets"
 			rawMetrics = elements[1]
 		}
 	}
