@@ -57,7 +57,7 @@ func (siw *SindexWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 	var metrics_to_send = []WatcherMetric{}
 
 	for _, sindex := range infoKeys {
-		log.Tracef("sindex-stats:%v", rawMetrics[sindex])
+		log.Tracef("sindex-stats:%v:%v", sindex, rawMetrics[sindex])
 
 		sindexInfoKey := strings.ReplaceAll(sindex, "sindex/", "")
 		sindexInfoKeySplit := strings.Split(sindexInfoKey, "/")

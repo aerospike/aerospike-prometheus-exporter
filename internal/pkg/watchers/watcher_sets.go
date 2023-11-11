@@ -12,17 +12,23 @@ type SetWatcher struct {
 	setMetrics map[string]commons.AerospikeStat
 }
 
+const (
+	KEY_SETS = "sets"
+)
+
 func (sw *SetWatcher) PassOneKeys() []string {
 	return nil
 }
 
 func (sw *SetWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
-	return []string{"sets"}
+	return []string{KEY_SETS}
 }
 
 func (sw *SetWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]WatcherMetric, error) {
-	setStats := strings.Split(rawMetrics["sets"], ";")
-	log.Tracef("set-stats:%v", setStats)
+
+	setStats := strings.Split(rawMetrics[KEY_SETS], ";")
+
+	log.Tracef("set-stats:%v", rawMetrics[KEY_SETS])
 
 	if sw.setMetrics == nil {
 		sw.setMetrics = make(map[string]commons.AerospikeStat)
