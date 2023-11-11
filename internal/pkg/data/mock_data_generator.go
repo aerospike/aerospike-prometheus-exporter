@@ -22,7 +22,7 @@ var MOCK_TEST_DATA_FILE = "tests/mock_test_data.txt"
 func (mas MockAerospikeServer) RequestInfo(infokeys []string) (map[string]string, error) {
 	fmt.Println(" keys requested for processing: ", infokeys)
 	// return mas.fetchRawMetrics(infokeys), nil
-	return nil, nil
+	return mas.fetchRequestInfoFromFile(infokeys), nil
 }
 
 // Mock Data Provider related code
@@ -119,6 +119,15 @@ func (md *MockAerospikeServer) initialize() {
 
 		}
 	}
+}
+
+func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[string]string {
+	var l_mock_data_map = make(map[string]string)
+
+	for _, k := range infokeys {
+		l_mock_data_map[k] = mock_tes_data_map[k]
+	}
+	return l_mock_data_map
 }
 
 func (md *MockAerospikeServer) fetchRawMetrics() map[string]string {
