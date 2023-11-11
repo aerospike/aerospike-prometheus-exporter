@@ -68,8 +68,12 @@ func (md *MockAerospikeServer) Initialize() {
 		// fmt.Println("Mock data provider already Initialized: ")
 		return
 	}
-	fmt.Println(" Mock is enabled, going to use mock ")
-	fmt.Println("**** Initializing mock-data-provider from file ", MOCK_TEST_DATA_FILE)
+	fmt.Println("************************************************************************************************************")
+	fmt.Println("*                                                                                                           ")
+	fmt.Println("* Mock Aerospike Server is enabled, going to use mock                                                       ")
+	fmt.Println("* Initializing mock-data-provider-data from file ", MOCK_TEST_DATA_FILE, " ")
+	fmt.Println("*                                                                                                           ")
+	fmt.Println("************************************************************************************************************")
 
 	// Mark as initialized
 	Is_Mock_Initialized = 1
@@ -80,6 +84,7 @@ func (md *MockAerospikeServer) Initialize() {
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	fileScanner := bufio.NewScanner(readFile)
 	fileScanner.Split(bufio.ScanLines)
 	var fileLines []string
