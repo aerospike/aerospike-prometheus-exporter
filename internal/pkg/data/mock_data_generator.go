@@ -187,6 +187,8 @@ func (md *MockAerospikeServer) getServiceClearStd() string {
 }
 
 func (md *MockAerospikeServer) getNamespaces() string {
+	fmt.Println("\n\t ==> namespaces : ", md.Namespaces)
+	fmt.Println("\n\t ==> split: ", (strings.Split(md.Namespaces[0], ":")[1]), "\n\t**************")
 	return strings.Split(md.Namespaces[0], ":")[1]
 }
 
