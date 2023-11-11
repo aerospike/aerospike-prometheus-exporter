@@ -320,7 +320,7 @@ func (md *MockAerospikeServer) getXdrConfigs(key string) string {
 		// fmt.Println("\tgetSindex() ... processing ", entry)
 		if strings.HasPrefix(key, "get-config:context=xdr") {
 			// set-stats:<node-configs>
-			elements := strings.Replace(entry, "get-config:context=xdr:", "", 1)
+			elements := strings.Replace(entry, "get-config:context=xdr:dcs=", "", 1)
 
 			// key := "sets"
 			rawMetrics = elements
