@@ -255,6 +255,7 @@ func (md *MockAerospikeServer) getSetsStatistics(key string) string {
 		}
 	}
 
+	fmt.Println(" ** getSetsStatistics() key: ", key, "\n\t values: ", rawMetrics)
 	return rawMetrics
 
 }
