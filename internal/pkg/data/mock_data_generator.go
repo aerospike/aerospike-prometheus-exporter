@@ -244,7 +244,7 @@ func (md *MockAerospikeServer) getNodeStatistics(key string) string {
 func (md *MockAerospikeServer) getSetsStatistics(key string) string {
 	rawMetrics := ""
 	// node-stats & node-configs
-	for _, entry := range md.Node_stats {
+	for _, entry := range md.Sets_stats {
 
 		// set-stats:<node-configs>
 		elements := strings.Split(entry, ":")
