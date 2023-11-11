@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Inherits DataProvider interface
 type AerospikeServerProvider struct {
 }
 

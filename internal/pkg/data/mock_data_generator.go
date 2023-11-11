@@ -25,7 +25,7 @@ func (mas MockAerospikeServer) RequestInfo(infokeys []string) (map[string]string
 	return mas.fetchRequestInfoFromFile(infokeys), nil
 }
 
-// Mock Data Provider related code
+// Mock Data Provider related code, Inherits DataProvider interface
 type MockAerospikeServer struct {
 	Namespaces_stats []string
 	Sets_stats       []string
@@ -187,8 +187,6 @@ func (md *MockAerospikeServer) getServiceClearStd() string {
 }
 
 func (md *MockAerospikeServer) getNamespaces() string {
-	fmt.Println("\n\t ==> namespaces : ", md.Namespaces)
-	fmt.Println("\n\t ==> split: ", (strings.Split(md.Namespaces[0], ":")[1]), "\n\t**************")
 	return strings.Split(md.Namespaces[0], ":")[1]
 }
 
