@@ -154,6 +154,7 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 
 	for _, k := range infokeys {
 
+		fmt.Println("fetchRequestInfoFromFile(): processing key: ", k)
 		switch true {
 		case strings.HasPrefix(k, MOCK_IK_BUILD):
 			l_mock_data_map[k] = md.getBuild(k)
@@ -274,7 +275,7 @@ func (md *MockAerospikeServer) getSindex(key string) string {
 	rawMetrics := ""
 	// node-stats & node-configs
 	for _, entry := range md.Sindexes {
-		fmt.Println("\tgetSindex() ... processing ", entry)
+		// fmt.Println("\tgetSindex() ... processing ", entry)
 		if strings.HasPrefix(key, "sindex") && strings.HasPrefix(entry, "sindex:") {
 			// set-stats:<node-configs>
 			elements := strings.Replace(entry, "sindex:", "", 1)
@@ -284,7 +285,7 @@ func (md *MockAerospikeServer) getSindex(key string) string {
 		}
 	}
 
-	fmt.Println(" ** getSindex() key: ", key, "\n\t values: ", rawMetrics)
+	// fmt.Println(" ** getSindex() key: ", key, "\n\t values: ", rawMetrics)
 	return rawMetrics
 
 }
