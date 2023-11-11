@@ -45,8 +45,6 @@ type MockAerospikeServer struct {
 // read mock test data from a file
 var Is_Mock_Initialized = 0
 
-var mock_tes_data_map = make(map[string]string)
-
 const (
 	MOCK_IK_BUILD                      string = "build"
 	MOCK_IK_CLUSTER_NAME               string = "cluster-name"
@@ -62,12 +60,6 @@ const (
 	MOCK_IK_XDR_STATS_DC               string = "get-stats:context=xdr;dc"
 	MOCK_IK_XDR_CONFIG_DC              string = "get-config:context=xdr;dc"
 )
-
-// var request_info_key_to_func_map = map[string]func(){
-// 	"build": getBuild(),
-// }
-
-// var request_info_key_to_func_map = awsMetrics{fetchLatency: metrics.CreateQuantileMetric()}
 
 func (md *MockAerospikeServer) Initialize() {
 
@@ -120,16 +112,12 @@ func (md *MockAerospikeServer) Initialize() {
 				md.Sindexes = append(md.Sindexes, line)
 			} else if strings.HasPrefix(line, "build") {
 				md.Build = append(md.Build, line)
-				// mock_tes_data_map["build"] = strings.TrimSpace(line)
 			} else if strings.HasPrefix(line, "service-clear-std") {
 				md.Service_clear_std = append(md.Service_clear_std, line)
-				// mock_tes_data_map["service-clear-std"] = strings.TrimSpace(line)
 			} else if strings.HasPrefix(line, "cluster-name") {
 				md.Cluster_name = append(md.Cluster_name, line)
-				// mock_tes_data_map["cluster-name"] = strings.TrimSpace(line)
 			} else if strings.HasPrefix(line, "namespaces") {
 				md.Namespaces = append(md.Namespaces, line)
-				// mock_tes_data_map["namespaces"] = strings.TrimSpace(line)
 			} else if strings.HasPrefix(line, "passone_output") {
 				// passone_output:build:6.4.0.0-rc4 get-config:context=xdr:dcs=backup_dc_asdev20,backup_dc_asdev20_second;src-id=0;trace-sample=0 namespaces:test;bar_device;materials;ns_test_on_flash;test_on_shmem;bar_on_flash;pmkohl_on_device sindex:ns=test:indexname=test_sindex1:set=from_branch_2:bin=occurred:type=numeric:indextype=default:context=null:state=RW
 				str := strings.ReplaceAll(line, "passone_output:", "")
@@ -180,7 +168,6 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 		case (strings.HasPrefix(k, MOCK_IK_SINDEX) && !strings.Contains(k, "/")):
 			l_mock_data_map[k] = md.getSindex(k)
 		case strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH):
-			// fmt.Println("\n\t^^^^^^^^ ===> strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH) ", strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH))
 			l_mock_data_map[k] = md.getSingleSindexStatistics(k)
 		case strings.HasPrefix(k, MOCK_IK_XDR_CONFIG):
 			l_mock_data_map[k] = md.getXdrConfigsContext(k)
@@ -195,24 +182,26 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 }
 
 func (md *MockAerospikeServer) getBuild(key string) string {
-	elements := strings.Split(md.Passone_output_str, " ")
+	return strings.Split(md.Build[0], "=")[1]
 
-	for _, entry := range elements {
+	// elements := strings.Split(md.Passone_output_str, " ")
 
-		if strings.HasPrefix(entry, "build") {
-			colonIndex := strings.Index(entry, ":")
-			// parts := strings.Split(entry, ":")
-			value := entry[colonIndex+1:]
-			// fmt.Println("getBuild(): ", value)
-			return value
-		}
-	}
+	// for _, entry := range elements {
 
-	return ""
+	// 	if strings.HasPrefix(entry, "build") {
+	// 		colonIndex := strings.Index(entry, ":")
+	// 		// parts := strings.Split(entry, ":")
+	// 		value := entry[colonIndex+1:]
+	// 		// fmt.Println("getBuild(): ", value)
+	// 		return value
+	// 	}
+	// }
+
+	// return ""
 }
 
 func (md *MockAerospikeServer) getClusterName(key string) string {
-	return md.Cluster_name[0]
+	return strings.Split(md.Cluster_name[0], "=")[1]
 }
 
 func (md *MockAerospikeServer) getServiceClearStd(key string) string {
