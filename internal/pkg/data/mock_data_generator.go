@@ -353,6 +353,7 @@ func (md *MockAerospikeServer) getSingleXdrKeys(key string) string {
 			elements = strings.Replace(elements, (key + ";"), "", 1)
 
 			rawMetrics = elements
+			break
 		}
 	}
 
