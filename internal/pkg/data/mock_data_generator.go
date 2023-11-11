@@ -42,7 +42,19 @@ type MockAerospikeServer struct {
 }
 
 // read mock test data from a file
+var Is_Mock_Initialized = 0
+
+var mock_tes_data_map = make(map[string]string)
+
 func (md *MockAerospikeServer) initialize() {
+
+	// avoid multiple initializations
+	if Is_Mock_Initialized == 1 {
+		return
+	}
+
+	// Mark as initialized
+	Is_Mock_Initialized = 1
 
 	filePath := MOCK_TEST_DATA_FILE
 	readFile, err := os.Open(filePath)
@@ -78,10 +90,13 @@ func (md *MockAerospikeServer) initialize() {
 				md.Sindex_stats = append(md.Sindex_stats, line)
 			} else if strings.HasPrefix(line, "build") {
 				md.Build = append(md.Build, line)
+				mock_tes_data_map["service-clear-std"] = strings.TrimSpace(line)
 			} else if strings.HasPrefix(line, "service-clear-std") {
 				md.Service_clear_std = append(md.Service_clear_std, line)
+				mock_tes_data_map["service-clear-std"] = strings.TrimSpace(line)
 			} else if strings.HasPrefix(line, "cluster-name") {
 				md.Cluster_name = append(md.Cluster_name, line)
+				mock_tes_data_map["cluster-name"] = strings.TrimSpace(line)
 			} else if strings.HasPrefix(line, "passone_output") {
 				// passone_output:build:6.4.0.0-rc4 get-config:context=xdr:dcs=backup_dc_asdev20,backup_dc_asdev20_second;src-id=0;trace-sample=0 namespaces:test;bar_device;materials;ns_test_on_flash;test_on_shmem;bar_on_flash;pmkohl_on_device sindex:ns=test:indexname=test_sindex1:set=from_branch_2:bin=occurred:type=numeric:indextype=default:context=null:state=RW
 				str := strings.ReplaceAll(line, "passone_output:", "")
