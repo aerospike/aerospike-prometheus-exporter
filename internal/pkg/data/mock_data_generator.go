@@ -147,16 +147,16 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 
 	for _, k := range infokeys {
 
-		switch k {
-		case MOCK_IK_BUILD:
+		switch true {
+		case strings.HasPrefix(k, MOCK_IK_BUILD):
 			l_mock_data_map[k] = md.getBuild()
-		case MOCK_IK_CLUSTER_NAME:
+		case strings.HasPrefix(k, MOCK_IK_CLUSTER_NAME):
 			l_mock_data_map[k] = md.getClusterName()
-		case MOCK_IK_SERVICE_CLEAR_STD:
+		case strings.HasPrefix(k, MOCK_IK_SERVICE_CLEAR_STD):
 			l_mock_data_map[k] = md.getServiceClearStd()
-		case MOCK_IK_NAMESPACES:
+		case strings.HasPrefix(k, MOCK_IK_NAMESPACES):
 			l_mock_data_map[k] = md.getNamespaces()
-		case MOCK_IK_A_NAMESPACE_SLASH:
+		case strings.HasPrefix(k, MOCK_IK_A_NAMESPACE_SLASH):
 			l_mock_data_map[k] = md.getSingleNamespaceStats(k)
 		}
 	}
