@@ -167,6 +167,8 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 			l_mock_data_map[k] = md.getNodeStatistics(k)
 		case strings.HasPrefix(k, MOCK_IK_SETS):
 			l_mock_data_map[k] = md.getSetsStatistics(k)
+		case strings.HasPrefix(k, MOCK_IK_SINDEX_STATISTICS):
+			l_mock_data_map[k] = md.getSindexStatistics(k)
 		}
 	}
 	// fmt.Println("requested keys : ", infokeys, "\n\t values returned: ", l_mock_data_map)
@@ -258,6 +260,26 @@ func (md *MockAerospikeServer) getSetsStatistics(key string) string {
 	}
 
 	fmt.Println(" ** getSetsStatistics() key: ", key, "\n\t values: ", rawMetrics)
+	return rawMetrics
+
+}
+
+func (md *MockAerospikeServer) getSindexStatistics(key string) string {
+	rawMetrics := ""
+	// node-stats & node-configs
+	for _, entry := range md.Sindex_stats {
+
+		if strings.HasPrefix(key, "sindex") && strings.HasPrefix(entry, "sindex-stats:") {
+			// set-stats:<node-configs>
+			elements := strings.Replace(entry, "sindex-stats:[", "", 1)
+			elements = strings.Replace(elements, "]", "", 1)
+
+			// key := "sets"
+			rawMetrics = elements
+		}
+	}
+
+	fmt.Println(" ** getSindexStatistics() key: ", key, "\n\t values: ", rawMetrics)
 	return rawMetrics
 
 }
