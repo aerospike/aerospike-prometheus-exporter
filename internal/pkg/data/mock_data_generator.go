@@ -353,7 +353,7 @@ func (md *MockAerospikeServer) getSingleXdrKeys(key string) string {
 		}
 	}
 
-	// fmt.Println(" ** getSingleSindexStatistics() key: ", key, "\n\t values: ", rawMetrics)
+	fmt.Println(" ** getSingleXdrKeys() key: ", key, "\n\t values: ", rawMetrics)
 	return rawMetrics
 }
 
