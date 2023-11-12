@@ -68,28 +68,6 @@ const (
 	MOCK_IK_LATENCIES                  string = "latencies"
 )
 
-func printMessage(msg string) string {
-	linelen := 100
-	msg2 := ""
-	if len(msg) == 0 {
-		for i := 1; i < linelen; i++ {
-			msg2 = msg2 + "*"
-		}
-	} else {
-		gaps := linelen - (len(msg) / 2)
-		msg2 = "*"
-		for i := 2; i < gaps; i++ {
-			msg2 = msg2 + " "
-		}
-		msg2 = msg2 + msg
-		for i := (gaps + len(msg)); i < linelen-1; i++ {
-			msg2 = msg2 + " "
-		}
-		msg2 = msg2 + "*"
-	}
-	return msg2
-}
-
 func (md *MockAerospikeServer) Initialize() {
 
 	// avoid multiple initializations
@@ -105,8 +83,6 @@ func (md *MockAerospikeServer) Initialize() {
 	fmt.Println("*                                                                                                          *")
 	fmt.Println("*                                                                                                          *")
 	fmt.Println("************************************************************************************************************")
-
-	fmt.Println(printMessage("Mock Aerospike Server is enabled, going to use mock data "))
 
 	// Mark as initialized
 	Is_Mock_Initialized = 1
