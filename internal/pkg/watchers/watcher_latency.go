@@ -56,6 +56,8 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 	}
 
 	var latencyStats map[string]commons.StatsMap
+	log.Tracef("latencies-stats:%+v", rawMetrics["latencies:"])
+	log.Tracef("latency-stats:%+v", rawMetrics["latency:"])
 
 	if rawMetrics["latencies:"] != "" {
 		latencyStats = parseLatencyInfo(rawMetrics["latencies:"], int(config.Cfg.Aerospike.LatencyBucketsCount))
@@ -63,7 +65,7 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 		latencyStats = parseLatencyInfoLegacy(rawMetrics["latency:"], int(config.Cfg.Aerospike.LatencyBucketsCount))
 	}
 
-	log.Tracef("latency-stats:%+v", latencyStats)
+	// log.Tracef("latency-stats:%+v", latencyStats)
 
 	var metrics_to_send = []WatcherMetric{}
 
