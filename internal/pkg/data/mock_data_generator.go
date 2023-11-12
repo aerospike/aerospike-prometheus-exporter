@@ -65,6 +65,7 @@ const (
 	MOCK_IK_XDR_CONFIG                 string = "get-config:context=xdr"
 	MOCK_IK_XDR_STATS_DC               string = "get-stats:context=xdr;dc"
 	MOCK_IK_XDR_CONFIG_DC              string = "get-config:context=xdr;dc"
+	MOCK_IK_LATENCIES                  string = "latencies"
 )
 
 func (md *MockAerospikeServer) Initialize() {
@@ -111,7 +112,7 @@ func (md *MockAerospikeServer) Initialize() {
 				md.Namespaces_stats = append(md.Namespaces_stats, line)
 			} else if strings.HasPrefix(line, "set-stats") {
 				md.Sets_stats = append(md.Sets_stats, line)
-			} else if strings.HasPrefix(line, "latency-stats") {
+			} else if strings.HasPrefix(line, "latencies-stats") {
 				md.Latencies_stats = append(md.Latencies_stats, line)
 			} else if strings.HasPrefix(line, "node-") {
 				md.Node_stats = append(md.Node_stats, line)
@@ -188,6 +189,8 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 			l_mock_data_map[k] = md.getSingleXdrKeys(k)
 		case strings.HasPrefix(k, MOCK_IK_XDR_STATS_DC):
 			l_mock_data_map[k] = md.getSingleXdrKeys(k)
+		case strings.HasPrefix(k, MOCK_IK_LATENCIES):
+			l_mock_data_map[k] = md.getLatenciesStats(k)
 		}
 	}
 	// fmt.Println("requested keys : ", infokeys, "\n\t values returned: ", l_mock_data_map)
@@ -345,5 +348,21 @@ func (md *MockAerospikeServer) getSingleXdrKeys(key string) string {
 	}
 
 	// fmt.Println(" ** getSingleXdrKeys() key: ", key, "\n\t values: ", rawMetrics)
+	return rawMetrics
+}
+
+func (md *MockAerospikeServer) getLatenciesStats(latenciesKey string) string {
+	rawMetrics := ""
+
+	// Latencies
+	for _, entry := range md.Latencies_stats {
+		// format: latencies-stats:
+		if strings.Contains(entry, ("latencies-stats:")) {
+			// key := "latencies-stats:"
+			elements := strings.Replace(entry, "latencies-stats:", "", 1)
+			rawMetrics = elements
+		}
+	}
+
 	return rawMetrics
 }
