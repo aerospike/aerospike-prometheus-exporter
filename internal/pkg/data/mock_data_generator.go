@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	aero "github.com/aerospike/aerospike-client-go/v6"
 )
 
 /*
@@ -21,6 +23,10 @@ var MOCK_TEST_DATA_FILE = "tests/mock_test_data.txt"
 
 func (mas MockAerospikeServer) RequestInfo(infokeys []string) (map[string]string, error) {
 	return mas.fetchRequestInfoFromFile(infokeys), nil
+}
+
+func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
+	return false, nil, nil
 }
 
 // Mock Data Provider related code, Inherits DataProvider interface
@@ -69,10 +75,12 @@ func (md *MockAerospikeServer) Initialize() {
 		return
 	}
 	fmt.Println("************************************************************************************************************")
-	fmt.Println("*                                                                                                           ")
-	fmt.Println("* Mock Aerospike Server is enabled, going to use mock                                                       ")
-	fmt.Println("* Initializing mock-data-provider-data from file ", MOCK_TEST_DATA_FILE, " ")
-	fmt.Println("*                                                                                                           ")
+	fmt.Println("*                                                                                                          *")
+	fmt.Println("*                                                                                                          *")
+	fmt.Println("    * Mock Aerospike Server is enabled, going to use mock data ")
+	fmt.Println("    * Initializing mock-data-provider-data from file", MOCK_TEST_DATA_FILE, " ")
+	fmt.Println("*                                                                                                          *")
+	fmt.Println("*                                                                                                          *")
 	fmt.Println("************************************************************************************************************")
 
 	// Mark as initialized
@@ -188,21 +196,6 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 
 func (md *MockAerospikeServer) getBuild(key string) string {
 	return strings.Split(md.Build[0], "=")[1]
-
-	// elements := strings.Split(md.Passone_output_str, " ")
-
-	// for _, entry := range elements {
-
-	// 	if strings.HasPrefix(entry, "build") {
-	// 		colonIndex := strings.Index(entry, ":")
-	// 		// parts := strings.Split(entry, ":")
-	// 		value := entry[colonIndex+1:]
-	// 		// fmt.Println("getBuild(): ", value)
-	// 		return value
-	// 	}
-	// }
-
-	// return ""
 }
 
 func (md *MockAerospikeServer) getClusterName(key string) string {

@@ -1,11 +1,13 @@
 package data
 
 import (
+	aero "github.com/aerospike/aerospike-client-go/v6"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 )
 
 type DataProvider interface {
 	RequestInfo(infokeys []string) (map[string]string, error)
+	FetchUsersDetails() (bool, []*aero.UserRoles, error)
 }
 
 // pre-create the instances

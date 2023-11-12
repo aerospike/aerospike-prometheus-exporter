@@ -404,6 +404,10 @@ func GetMetricType(pContext ContextType, pRawMetricName string) metricType {
 	// If stat is storage-engine related then consider the remaining stat name during below check
 	//
 
+	if pContext == CTX_LATENCIES || pContext == CTX_USERS {
+		return MetricTypeGauge
+	}
+
 	tmpRawMetricName := strings.ReplaceAll(pRawMetricName, STORAGE_ENGINE, "")
 
 	if strings.Contains(tmpRawMetricName, "-") ||

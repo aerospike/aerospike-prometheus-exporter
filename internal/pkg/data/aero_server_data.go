@@ -4,11 +4,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 	"time"
 
 	aero "github.com/aerospike/aerospike-client-go/v6"
+	"github.com/aerospike/aerospike-client-go/v6/types"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/sirupsen/logrus"
@@ -20,6 +22,10 @@ type AerospikeServerProvider struct {
 
 func (asm AerospikeServerProvider) RequestInfo(infoKeys []string) (map[string]string, error) {
 	return fetchRequestInfoFromAerospike(infoKeys)
+}
+
+func (asm AerospikeServerProvider) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
+	return fetchUsersRoles()
 }
 
 // Aerospike server interaction related code
@@ -181,4 +187,52 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 	}
 
 	return rawMetrics, err
+}
+
+func fetchUsersRoles() (bool, []*aero.UserRoles, error) {
+
+	shouldFetchUserStatistics := true
+
+	admPlcy := aero.NewAdminPolicy()
+	admPlcy.Timeout = time.Duration(config.Cfg.Aerospike.Timeout) * time.Second
+	admCmd := aero.NewAdminCommand(nil)
+
+	var users []*aero.UserRoles
+	var aeroErr aero.Error
+	var err error
+
+	for i := 0; i < retryCount; i++ {
+		// Validate existing connection
+		if asConnection == nil || !asConnection.IsConnected() {
+			// Create new connection
+			asConnection, err = initializeAndConnectAerospikeServer()
+			if err != nil {
+				logrus.Debug(err)
+				continue
+			}
+		}
+
+		// query users
+		users, aeroErr = admCmd.QueryUsers(asConnection, admPlcy)
+
+		if aeroErr != nil {
+			// Do not retry if there's role violation.
+			// This could be a permanent error leading to unnecessary errors on server end.
+			if aeroErr.Matches(types.ROLE_VIOLATION) {
+				shouldFetchUserStatistics = false
+				logrus.Debugf("Unable to fetch user statistics: %s", aeroErr.Error())
+				break
+			}
+
+			err = fmt.Errorf(aeroErr.Error())
+			if err != nil {
+				logrus.Warnf("Error while querying users: %s", err)
+				continue
+			}
+		}
+
+		break
+	}
+
+	return shouldFetchUserStatistics, users, nil
 }
