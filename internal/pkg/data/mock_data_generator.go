@@ -76,14 +76,16 @@ func printMessage(msg string) string {
 			msg2 = msg2 + "*"
 		}
 	} else {
-		gaps := linelen - len(msg)
-		for i := 1; i < gaps; i++ {
-			msg2 = msg2 + "*"
+		gaps := linelen - (len(msg) / 2)
+		msg2 = "*"
+		for i := 2; i < gaps; i++ {
+			msg2 = msg2 + " "
 		}
 		msg2 = msg2 + msg
-		for i := (gaps + len(msg)); i < linelen; i++ {
-			msg2 = msg2 + "*"
+		for i := (gaps + len(msg)); i < linelen-1; i++ {
+			msg2 = msg2 + " "
 		}
+		msg2 = msg2 + "*"
 	}
 	return msg2
 }
