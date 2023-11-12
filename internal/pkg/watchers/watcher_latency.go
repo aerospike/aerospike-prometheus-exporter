@@ -87,7 +87,7 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 				// aerospike_latencies_<operation>_<timeunit>_bucket metric - Less than or equal to histogram buckets
 
 				labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_LE}
-				labelValues := []string{commons.Infokey_ClusterName, commons.Infokey_Service, namespaceName, labelValue}
+				labelValues := []string{ClusterName, Service, namespaceName, labelValue}
 				pv := opLatencyStats.(commons.StatsMap)["bucketValues"].([]float64)[i]
 
 				// pm := makeMetric("aerospike_latencies", operation+"_"+opLatencyStats.(commons.StatsMap)["timeUnit"].(string)+"_bucket", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_LE)
@@ -98,7 +98,7 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 				// aerospike_latencies_<operation>_<timeunit>_count metric
 				if i == 0 {
 					labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS}
-					labelValues := []string{commons.Infokey_ClusterName, commons.Infokey_Service, namespaceName}
+					labelValues := []string{ClusterName, Service, namespaceName}
 					pv := opLatencyStats.(commons.StatsMap)["bucketValues"].([]float64)[i]
 
 					// pm = makeMetric("aerospike_latencies", operation+"_"+opLatencyStats.(commons.StatsMap)["timeUnit"].(string)+"_count", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS)

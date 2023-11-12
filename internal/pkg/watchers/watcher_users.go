@@ -168,7 +168,7 @@ func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string
 
 func makeAerospikeStat(pStatName string, username string) (commons.AerospikeStat, []string, []string) {
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER}
-	labelValues := []string{commons.Infokey_ClusterName, commons.Infokey_Service, username}
+	labelValues := []string{ClusterName, Service, username}
 	asMetric := commons.NewAerospikeStat(commons.CTX_USERS, "conns_in_use")
 
 	return asMetric, labels, labelValues
