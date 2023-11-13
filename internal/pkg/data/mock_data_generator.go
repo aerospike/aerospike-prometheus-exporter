@@ -34,6 +34,7 @@ func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, err
 
 	user_keys := commons.ParseStats(users, ";")
 
+	fmt.Println("users string: ", users)
 	fmt.Println(user_keys)
 
 	return false, nil, nil
