@@ -169,6 +169,9 @@ func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string
 			// ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.WriteInfo[3]), rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], user.User)
 		}
 	}
+
+	fmt.Println("metrics name & labels ", metrics_to_send[0].Metric.Name, "\t labels: ", metrics_to_send[0].Labels)
+
 	return metrics_to_send, nil
 }
 
