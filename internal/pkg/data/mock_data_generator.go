@@ -322,7 +322,7 @@ func (md *MockAerospikeServer) getSingleSindexStatistics(key string) string {
 
 		if strings.HasPrefix(entry, "sindex-stats") && strings.HasPrefix(elements[1], key) {
 			// key := "sindex"
-			rawMetrics = elements[3]
+			rawMetrics = elements[2]
 		}
 	}
 
