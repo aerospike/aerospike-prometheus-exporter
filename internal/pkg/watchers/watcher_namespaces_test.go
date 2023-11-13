@@ -35,9 +35,10 @@ func TestPassTwoKeys(t *testing.T) {
 	// simulate, as if we are sending requestInfo to AS and get the namespaces, these are coming from mock-data-generator
 	passOneKeys := nsWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(passOneKeys)
+	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
 
-	fmt.Println("TestPassTwoKeys: ", passTwokeyOutputs)
+	fmt.Println("TestPassTwoKeys: passTwokeyOutputs: ", passTwokeyOutputs)
 
 	// expectedOutputs := []string{"namespace/bar", "namespace/test"}
 	udp := &unittests.UnittestDataProvider{}
