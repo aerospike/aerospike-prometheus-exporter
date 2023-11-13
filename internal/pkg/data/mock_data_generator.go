@@ -38,8 +38,10 @@ func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, err
 	fmt.Println(user_keys)
 
 	for _, l_user_key := range user_keys {
-		l_aero_user := mas.constructAeroUserRolesObject(l_user_key)
-		aero_users = append(aero_users, l_aero_user)
+		if len(l_user_key) > 0 {
+			l_aero_user := mas.constructAeroUserRolesObject(l_user_key)
+			aero_users = append(aero_users, l_aero_user)
+		}
 	}
 
 	fmt.Println(aero_users)
