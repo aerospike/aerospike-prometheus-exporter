@@ -1,3 +1,25 @@
+# Watchers - passOneKeys
+
+namespace-passonekeys:[namespaces]           
+node-passonekeys:nil                         
+sets-passonekeys:nil                         
+sindex-passonekeys:[sindex]                  
+xdr-passonekeys:[get-config:context=xdr]     
+latency-passonekeys:nil                      
+users-passonekeys:nil                        
+
+# Watchers - passTwokeys
+
+namespace-passtwokeys:[namespace/test namespace/bar namespace/bar_pmem namespace/employees_flash] 
+node-passtwokeys:[get-config:context=service statistics] 
+sets-passtwokeys:[sets]                      
+xdr-passtwokeys [get-stats:context=xdr;dc=172.17.0.8:8901 get-config:context=xdr;dc=172.17.0.8:8901 get-config:context=xdr;dc=172.17.0.8:8901;namespace=test get-stats:context=xdr;dc=172.17.0.8:8901;namespace=test get-config:context=xdr;dc=172.17.0.8:8901;namespace=bar get-stats:context=xdr;dc=172.17.0.8:8901;namespace=bar get-config:context=xdr;dc=172.17.0.8:8901;namespace=bar_pmem get-stats:context=xdr;dc=172.17.0.8:8901;namespace=bar_pmem get-config:context=xdr;dc=172.17.0.8:8901;namespace=employees_flash get-stats:context=xdr;dc=172.17.0.8:8901;namespace=employees_flash get-stats:context=xdr;dc=64_asia_sng_dr_1 get-config:context=xdr;dc=64_asia_sng_dr_1 get-config:context=xdr;dc=64_asia_sng_dr_1;namespace=test get-stats:context=xdr;dc=64_asia_sng_dr_1;namespace=test get-config:context=xdr;dc=64_asia_sng_dr_1;namespace=bar get-stats:context=xdr;dc=64_asia_sng_dr_1;namespace=bar get-config:context=xdr;dc=64_asia_sng_dr_1;namespace=bar_pmem get-stats:context=xdr;dc=64_asia_sng_dr_1;namespace=bar_pmem get-config:context=xdr;dc=64_asia_sng_dr_1;namespace=employees_flash get-stats:context=xdr;dc=64_asia_sng_dr_1;namespace=employees_flash] 
+latency-passtwokeys:[latencies:]             
+users-passtwokeys:nil                       
+sindex-passtwokeys:[sindex/test/test_sindex1 sindex/test/7x_sindex_1 sindex/bar/7x_sindex_bar_2] 
+
+# Metrics, Labels & Values 
+
 # HELP aerospike_latencies_batch_index_ms_bucket batch index ms bucket
 # TYPE aerospike_latencies_batch_index_ms_bucket gauge
 latencies_expected_output:aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="+Inf",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2

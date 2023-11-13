@@ -49,7 +49,7 @@ func (xw *XdrWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
 		}
 	}
 
-	log.Tracef("xdr-passtwokeys %s", infoKeys)
+	log.Tracef("xdr-passtwokeys:%s", infoKeys)
 
 	return infoKeys
 }

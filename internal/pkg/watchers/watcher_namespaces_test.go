@@ -4,31 +4,38 @@ import (
 	"testing"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/unittests"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPassOneKeys(t *testing.T) {
-	nsWatcher := &NamespaceWatcher{}
 
 	// Check passoneKeys
+	nsWatcher := &NamespaceWatcher{}
 	nsPassOneKeys := nsWatcher.PassOneKeys()
-	assert.Equal(t, nsPassOneKeys, []string{"namespaces"})
+
+	udp := &unittests.UnittestDataProvider{}
+	ndv := udp.GetUnittestValidator("namespace")
+	passOneOutputs := ndv.GetPassOneKeys(*udp)
+
+	assert.Equal(t, nsPassOneKeys, passOneOutputs["namespaces"])
 
 }
 
 func TestPassTwoKeys(t *testing.T) {
-	mas := new(data.MockAerospikeServer)
-	mas.Initialize()
 
 	// rawMetrics := getRawMetrics()
 	nsWatcher := new(NamespaceWatcher)
 
 	// simulate, as if we are sending requestInfo to AS and get the namespaces, these are coming from mock-data-generator
-	passOneKeyOutputs := nsWatcher.PassOneKeys()
-	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneKeyOutputs)
+	passOneKeys := nsWatcher.PassOneKeys()
+	passOneOutput, _ := data.GetProvider().RequestInfo(passOneKeys)
+	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
 
 	// expectedOutputs := []string{"namespace/bar", "namespace/test"}
-	expectedOutputs := mas.createNamespacePassTwoExpectedOutputs()
+	udp := &unittests.UnittestDataProvider{}
+	ndv := udp.GetUnittestValidator("namespace")
+	expectedOutputs := ndv.GetPassTwoKeys(*udp)
 
 	assert := assert.New(t)
 

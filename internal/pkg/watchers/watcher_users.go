@@ -24,7 +24,7 @@ func (uw *UserWatcher) PassOneKeys() []string {
 }
 
 func (uw *UserWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
-	log.Tracef("sindex-passtwokeys:nil")
+	log.Tracef("users-passtwokeys:nil")
 	return nil
 }
 
