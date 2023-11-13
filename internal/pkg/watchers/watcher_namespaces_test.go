@@ -20,8 +20,10 @@ func TestPassOneKeys(t *testing.T) {
 	passOneOutputs := ndv.GetPassOneKeys(*udp)
 
 	fmt.Println("TestPassOneKeys: ", passOneOutputs)
+	var expectedOutputs []string
+	expectedOutputs = append(expectedOutputs, passOneOutputs["namespaces"])
 
-	assert.Equal(t, nsPassOneKeys, passOneOutputs["namespaces"])
+	assert.Equal(t, nsPassOneKeys, expectedOutputs)
 
 }
 
