@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -48,8 +49,8 @@ func (md *UnittestDataProvider) Initialize() {
 	filePath := TEST_DATA_FILE
 	cwd, _ := os.Getwd()
 	fileLocation := cwd + "/../../../" + filePath
-	fmt.Println(" current working directory:", cwd)
-	fmt.Println(" using filepath : ", fileLocation)
+	// fmt.Println(" current working directory:", cwd)
+	// fmt.Println(" using filepath : ", fileLocation)
 	readFile, err := os.Open(fileLocation)
 
 	if err != nil {
@@ -121,7 +122,7 @@ func (unp UnittestNamespaceValidator) GetPassTwoKeys(udp UnittestDataProvider) m
 	out_values = strings.Replace(out_values, "]", "", 1)
 	elements := strings.Split(out_values, " ")
 	for i := 0; i < len(elements); i++ {
-		outputs[elements[i]] = elements[i]
+		outputs["namespace_"+strconv.Itoa(i)] = elements[i]
 	}
 
 	return outputs
