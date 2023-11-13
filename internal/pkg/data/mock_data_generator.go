@@ -34,8 +34,8 @@ func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, err
 
 	user_keys := strings.Split(users, ";")
 
-	fmt.Println("users string: ", users)
-	fmt.Println(user_keys)
+	// fmt.Println("users string: ", users)
+	// fmt.Println(user_keys)
 
 	for _, l_user_key := range user_keys {
 		if len(l_user_key) > 0 {
@@ -44,7 +44,7 @@ func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, err
 		}
 	}
 
-	fmt.Println(aero_users)
+	// fmt.Println(aero_users)
 
 	return true, aero_users, nil
 }
