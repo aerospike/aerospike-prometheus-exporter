@@ -19,6 +19,8 @@ func TestPassOneKeys(t *testing.T) {
 	ndv := udp.GetUnittestValidator("namespace")
 	passOneOutputs := ndv.GetPassOneKeys(*udp)
 
+	fmt.Println("TestPassOneKeys: ", passOneOutputs)
+
 	assert.Equal(t, nsPassOneKeys, passOneOutputs["namespaces"])
 
 }
