@@ -410,10 +410,10 @@ func (md *MockAerospikeServer) constructAeroUserRolesObject(key string) *aero.Us
 	elements := strings.Split(key, ":")
 
 	// user
-	tmp_user_role.User = strings.Split(elements[0], "=")[0]
+	tmp_user_role.User = strings.Split(elements[0], "=")[1]
 
 	// roles assigned
-	tmp_user_role.Roles = strings.Split(elements[1], "=")
+	tmp_user_role.Roles = strings.Split(strings.Split(elements[1], "=")[1], "-")
 
 	// conns-in-use
 	s_conns_in_user := strings.Split(elements[2], "=")[1]
