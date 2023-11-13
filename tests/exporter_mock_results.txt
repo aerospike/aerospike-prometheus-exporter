@@ -1,95 +1,95 @@
 # HELP aerospike_latencies_batch_index_ms_bucket batch index ms bucket
 # TYPE aerospike_latencies_batch_index_ms_bucket gauge
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="+Inf",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1024",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="128",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16384",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2048",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="256",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32768",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4096",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="512",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="64",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="65536",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8",longitude="0",ns="",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8192",longitude="0",ns="",service="172.17.0.6:3000"} 0
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="+Inf",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1",longitude="0",ns="",service="172.17.0.6:3000"} 3999.7488799999996
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1024",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="128",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16384",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2048",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="256",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32768",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4096",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="512",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="64",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="65536",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
+aerospike_latencies_batch_index_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8192",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
 # HELP aerospike_latencies_batch_index_ms_count batch index ms count
 # TYPE aerospike_latencies_batch_index_ms_count gauge
-aerospike_latencies_batch_index_ms_count{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="",service="172.17.0.6:3000"} 0
+aerospike_latencies_batch_index_ms_count{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="",service="172.17.0.6:3000"} 4014.2
 # HELP aerospike_latencies_batch_sub_read_ms_bucket batch sub read ms bucket
 # TYPE aerospike_latencies_batch_sub_read_ms_bucket gauge
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="+Inf",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1024",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="128",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16384",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2048",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="256",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32768",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4096",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="512",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="64",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="65536",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8192",longitude="0",ns="test",service="172.17.0.6:3000"} 0
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="+Inf",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1",longitude="0",ns="test",service="172.17.0.6:3000"} -27321.100349999997
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1024",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="128",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16384",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2048",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="256",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32768",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4096",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="512",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="64",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="65536",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
+aerospike_latencies_batch_sub_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8192",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
 # HELP aerospike_latencies_batch_sub_read_ms_count batch sub read ms count
 # TYPE aerospike_latencies_batch_sub_read_ms_count gauge
-aerospike_latencies_batch_sub_read_ms_count{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
+aerospike_latencies_batch_sub_read_ms_count{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 3095.7
 # HELP aerospike_latencies_read_ms_bucket read ms bucket
 # TYPE aerospike_latencies_read_ms_bucket gauge
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="+Inf",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1024",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="128",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16384",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2048",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="256",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32768",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4096",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="512",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="64",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="65536",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8192",longitude="0",ns="test",service="172.17.0.6:3000"} 0
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="+Inf",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1",longitude="0",ns="test",service="172.17.0.6:3000"} 1008.15281
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1024",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="128",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16384",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2",longitude="0",ns="test",service="172.17.0.6:3000"} 1010.6830600000001
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2048",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="256",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32768",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4096",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="512",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="64",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="65536",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
+aerospike_latencies_read_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8192",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
 # HELP aerospike_latencies_read_ms_count read ms count
 # TYPE aerospike_latencies_read_ms_count gauge
-aerospike_latencies_read_ms_count{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
+aerospike_latencies_read_ms_count{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 1012.1
 # HELP aerospike_latencies_write_ms_bucket write ms bucket
 # TYPE aerospike_latencies_write_ms_bucket gauge
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="+Inf",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1024",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="128",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16384",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2048",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="256",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32768",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4096",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="512",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="64",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="65536",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8192",longitude="0",ns="test",service="172.17.0.6:3000"} 0
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="+Inf",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1",longitude="0",ns="test",service="172.17.0.6:3000"} 116291.86314
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="1024",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="128",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="16384",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2",longitude="0",ns="test",service="172.17.0.6:3000"} 116373.38157
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="2048",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="256",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="32768",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4",longitude="0",ns="test",service="172.17.0.6:3000"} 116419.96353
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="4096",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="512",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="64",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="65536",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8",longitude="0",ns="test",service="172.17.0.6:3000"} 116443.25451
+aerospike_latencies_write_ms_bucket{cluster_name="70_aus_perth_1",latitude="0",le="8192",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
 # HELP aerospike_latencies_write_ms_count write ms count
 # TYPE aerospike_latencies_write_ms_count gauge
-aerospike_latencies_write_ms_count{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
+aerospike_latencies_write_ms_count{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 116454.9
 # HELP aerospike_namespace_allow_ttl_without_nsup allow ttl without nsup
 # TYPE aerospike_namespace_allow_ttl_without_nsup gauge
 aerospike_namespace_allow_ttl_without_nsup{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000",storage_engine="device"} 0
@@ -468,10 +468,10 @@ aerospike_namespace_conflict_resolve_writes{cluster_name="70_aus_perth_1",latitu
 aerospike_namespace_conflict_resolve_writes{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000",storage_engine="memory"} 0
 # HELP aerospike_namespace_current_time current time
 # TYPE aerospike_namespace_current_time counter
-aerospike_namespace_current_time{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000",storage_engine="device"} 4.375661e+08
-aerospike_namespace_current_time{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000",storage_engine="pmem"} 4.375661e+08
-aerospike_namespace_current_time{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000",storage_engine="device"} 4.375661e+08
-aerospike_namespace_current_time{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000",storage_engine="memory"} 4.375661e+08
+aerospike_namespace_current_time{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000",storage_engine="device"} 4.37564269e+08
+aerospike_namespace_current_time{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000",storage_engine="pmem"} 4.37564269e+08
+aerospike_namespace_current_time{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000",storage_engine="device"} 4.37564269e+08
+aerospike_namespace_current_time{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000",storage_engine="memory"} 4.37564269e+08
 # HELP aerospike_namespace_data_avail_pct data avail pct
 # TYPE aerospike_namespace_data_avail_pct gauge
 aerospike_namespace_data_avail_pct{cluster_name="70_aus_perth_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000",storage_engine="device"} 99
@@ -2238,42 +2238,15 @@ aerospike_namespace_xmem_id{cluster_name="70_aus_perth_1",latitude="0",longitude
 # HELP aerospike_node_stats_advertise_ipv6 advertise ipv6
 # TYPE aerospike_node_stats_advertise_ipv6 gauge
 aerospike_node_stats_advertise_ipv6{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_batch_index_complete batch index complete
-# TYPE aerospike_node_stats_batch_index_complete counter
-aerospike_node_stats_batch_index_complete{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 646887
-# HELP aerospike_node_stats_batch_index_created_buffers batch index created buffers
-# TYPE aerospike_node_stats_batch_index_created_buffers counter
-aerospike_node_stats_batch_index_created_buffers{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 50
-# HELP aerospike_node_stats_batch_index_delay batch index delay
-# TYPE aerospike_node_stats_batch_index_delay counter
-aerospike_node_stats_batch_index_delay{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_batch_index_destroyed_buffers batch index destroyed buffers
-# TYPE aerospike_node_stats_batch_index_destroyed_buffers counter
-aerospike_node_stats_batch_index_destroyed_buffers{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_batch_index_error batch index error
-# TYPE aerospike_node_stats_batch_index_error counter
-aerospike_node_stats_batch_index_error{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_batch_index_huge_buffers batch index huge buffers
-# TYPE aerospike_node_stats_batch_index_huge_buffers counter
-aerospike_node_stats_batch_index_huge_buffers{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
 # HELP aerospike_node_stats_batch_index_initiate batch index initiate
 # TYPE aerospike_node_stats_batch_index_initiate counter
 aerospike_node_stats_batch_index_initiate{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 646887
-# HELP aerospike_node_stats_batch_index_proto_compression_ratio batch index proto compression ratio
-# TYPE aerospike_node_stats_batch_index_proto_compression_ratio gauge
-aerospike_node_stats_batch_index_proto_compression_ratio{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1
-# HELP aerospike_node_stats_batch_index_proto_uncompressed_pct batch index proto uncompressed pct
-# TYPE aerospike_node_stats_batch_index_proto_uncompressed_pct gauge
-aerospike_node_stats_batch_index_proto_uncompressed_pct{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
+# HELP aerospike_node_stats_batch_index_queue batch index queue
+# TYPE aerospike_node_stats_batch_index_queue gauge
+aerospike_node_stats_batch_index_queue{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
 # HELP aerospike_node_stats_batch_index_threads batch index threads
 # TYPE aerospike_node_stats_batch_index_threads gauge
 aerospike_node_stats_batch_index_threads{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 10
-# HELP aerospike_node_stats_batch_index_timeout batch index timeout
-# TYPE aerospike_node_stats_batch_index_timeout counter
-aerospike_node_stats_batch_index_timeout{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_batch_index_unused_buffers batch index unused buffers
-# TYPE aerospike_node_stats_batch_index_unused_buffers gauge
-aerospike_node_stats_batch_index_unused_buffers{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 50
 # HELP aerospike_node_stats_batch_max_buffers_per_queue batch max buffers per queue
 # TYPE aerospike_node_stats_batch_max_buffers_per_queue gauge
 aerospike_node_stats_batch_max_buffers_per_queue{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 255
@@ -2285,10 +2258,10 @@ aerospike_node_stats_batch_max_unused_buffers{cluster_name="70_aus_perth_1",lati
 aerospike_node_stats_client_connections{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1
 # HELP aerospike_node_stats_client_connections_closed client connections closed
 # TYPE aerospike_node_stats_client_connections_closed counter
-aerospike_node_stats_client_connections_closed{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 7697
+aerospike_node_stats_client_connections_closed{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 7694
 # HELP aerospike_node_stats_client_connections_opened client connections opened
 # TYPE aerospike_node_stats_client_connections_opened counter
-aerospike_node_stats_client_connections_opened{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 7698
+aerospike_node_stats_client_connections_opened{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 7695
 # HELP aerospike_node_stats_cluster_clock_skew_ms cluster clock skew ms
 # TYPE aerospike_node_stats_cluster_clock_skew_ms gauge
 aerospike_node_stats_cluster_clock_skew_ms{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
@@ -2352,12 +2325,6 @@ aerospike_node_stats_enable_hist_info{cluster_name="70_aus_perth_1",latitude="0"
 # HELP aerospike_node_stats_enforce_best_practices enforce best practices
 # TYPE aerospike_node_stats_enforce_best_practices gauge
 aerospike_node_stats_enforce_best_practices{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_fabric_bulk_recv_rate fabric bulk recv rate
-# TYPE aerospike_node_stats_fabric_bulk_recv_rate gauge
-aerospike_node_stats_fabric_bulk_recv_rate{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_fabric_bulk_send_rate fabric bulk send rate
-# TYPE aerospike_node_stats_fabric_bulk_send_rate gauge
-aerospike_node_stats_fabric_bulk_send_rate{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
 # HELP aerospike_node_stats_fabric_connections fabric connections
 # TYPE aerospike_node_stats_fabric_connections gauge
 aerospike_node_stats_fabric_connections{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
@@ -2367,39 +2334,21 @@ aerospike_node_stats_fabric_connections_closed{cluster_name="70_aus_perth_1",lat
 # HELP aerospike_node_stats_fabric_connections_opened fabric connections opened
 # TYPE aerospike_node_stats_fabric_connections_opened counter
 aerospike_node_stats_fabric_connections_opened{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_fabric_ctrl_recv_rate fabric ctrl recv rate
-# TYPE aerospike_node_stats_fabric_ctrl_recv_rate gauge
-aerospike_node_stats_fabric_ctrl_recv_rate{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_fabric_ctrl_send_rate fabric ctrl send rate
-# TYPE aerospike_node_stats_fabric_ctrl_send_rate gauge
-aerospike_node_stats_fabric_ctrl_send_rate{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_fabric_meta_recv_rate fabric meta recv rate
-# TYPE aerospike_node_stats_fabric_meta_recv_rate gauge
-aerospike_node_stats_fabric_meta_recv_rate{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_fabric_meta_send_rate fabric meta send rate
-# TYPE aerospike_node_stats_fabric_meta_send_rate gauge
-aerospike_node_stats_fabric_meta_send_rate{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_fabric_rw_recv_rate fabric rw recv rate
-# TYPE aerospike_node_stats_fabric_rw_recv_rate gauge
-aerospike_node_stats_fabric_rw_recv_rate{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_fabric_rw_send_rate fabric rw send rate
-# TYPE aerospike_node_stats_fabric_rw_send_rate gauge
-aerospike_node_stats_fabric_rw_send_rate{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
 # HELP aerospike_node_stats_failed_best_practices failed best practices
 # TYPE aerospike_node_stats_failed_best_practices gauge
 aerospike_node_stats_failed_best_practices{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1
 # HELP aerospike_node_stats_heap_active_kbytes heap active kbytes
 # TYPE aerospike_node_stats_heap_active_kbytes gauge
-aerospike_node_stats_heap_active_kbytes{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1.358156e+06
+aerospike_node_stats_heap_active_kbytes{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1.359456e+06
 # HELP aerospike_node_stats_heap_allocated_kbytes heap allocated kbytes
 # TYPE aerospike_node_stats_heap_allocated_kbytes gauge
-aerospike_node_stats_heap_allocated_kbytes{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1.286159e+06
+aerospike_node_stats_heap_allocated_kbytes{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1.288914e+06
 # HELP aerospike_node_stats_heap_efficiency_pct heap efficiency pct
 # TYPE aerospike_node_stats_heap_efficiency_pct gauge
 aerospike_node_stats_heap_efficiency_pct{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 95
 # HELP aerospike_node_stats_heap_mapped_kbytes heap mapped kbytes
 # TYPE aerospike_node_stats_heap_mapped_kbytes gauge
-aerospike_node_stats_heap_mapped_kbytes{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1.475584e+06
+aerospike_node_stats_heap_mapped_kbytes{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1.473536e+06
 # HELP aerospike_node_stats_heap_site_count heap site count
 # TYPE aerospike_node_stats_heap_site_count gauge
 aerospike_node_stats_heap_site_count{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
@@ -2418,126 +2367,51 @@ aerospike_node_stats_heartbeat_received_foreign{cluster_name="70_aus_perth_1",la
 # HELP aerospike_node_stats_heartbeat_received_self heartbeat received self
 # TYPE aerospike_node_stats_heartbeat_received_self counter
 aerospike_node_stats_heartbeat_received_self{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_indent_allocations indent allocations
-# TYPE aerospike_node_stats_indent_allocations gauge
-aerospike_node_stats_indent_allocations{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
 # HELP aerospike_node_stats_info_complete info complete
 # TYPE aerospike_node_stats_info_complete counter
-aerospike_node_stats_info_complete{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1456
-# HELP aerospike_node_stats_info_max_ms info max ms
-# TYPE aerospike_node_stats_info_max_ms gauge
-aerospike_node_stats_info_max_ms{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 10000
+aerospike_node_stats_info_complete{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1198
 # HELP aerospike_node_stats_info_queue info queue
 # TYPE aerospike_node_stats_info_queue gauge
 aerospike_node_stats_info_queue{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_info_threads info threads
-# TYPE aerospike_node_stats_info_threads gauge
-aerospike_node_stats_info_threads{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 16
 # HELP aerospike_node_stats_info_timeout info timeout
 # TYPE aerospike_node_stats_info_timeout counter
 aerospike_node_stats_info_timeout{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_keep_caps_ssd_health keep caps ssd health
-# TYPE aerospike_node_stats_keep_caps_ssd_health gauge
-aerospike_node_stats_keep_caps_ssd_health{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_log_local_time log local time
-# TYPE aerospike_node_stats_log_local_time gauge
-aerospike_node_stats_log_local_time{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_log_millis log millis
-# TYPE aerospike_node_stats_log_millis gauge
-aerospike_node_stats_log_millis{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
 # HELP aerospike_node_stats_long_queries_active long queries active
 # TYPE aerospike_node_stats_long_queries_active counter
 aerospike_node_stats_long_queries_active{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_microsecond_histograms microsecond histograms
-# TYPE aerospike_node_stats_microsecond_histograms gauge
-aerospike_node_stats_microsecond_histograms{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1
-# HELP aerospike_node_stats_migrate_allowed migrate allowed
-# TYPE aerospike_node_stats_migrate_allowed counter
-aerospike_node_stats_migrate_allowed{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1
-# HELP aerospike_node_stats_migrate_fill_delay migrate fill delay
-# TYPE aerospike_node_stats_migrate_fill_delay gauge
-aerospike_node_stats_migrate_fill_delay{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_migrate_max_num_incoming migrate max num incoming
-# TYPE aerospike_node_stats_migrate_max_num_incoming gauge
-aerospike_node_stats_migrate_max_num_incoming{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 4
-# HELP aerospike_node_stats_migrate_partitions_remaining migrate partitions remaining
-# TYPE aerospike_node_stats_migrate_partitions_remaining gauge
-aerospike_node_stats_migrate_partitions_remaining{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_migrate_threads migrate threads
-# TYPE aerospike_node_stats_migrate_threads gauge
-aerospike_node_stats_migrate_threads{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1
-# HELP aerospike_node_stats_min_cluster_size min cluster size
-# TYPE aerospike_node_stats_min_cluster_size gauge
-aerospike_node_stats_min_cluster_size{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1
 # HELP aerospike_node_stats_objects objects
 # TYPE aerospike_node_stats_objects gauge
 aerospike_node_stats_objects{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1.798577e+06
-# HELP aerospike_node_stats_os_group_perms os group perms
-# TYPE aerospike_node_stats_os_group_perms gauge
-aerospike_node_stats_os_group_perms{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_poison_allocations poison allocations
-# TYPE aerospike_node_stats_poison_allocations gauge
-aerospike_node_stats_poison_allocations{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
 # HELP aerospike_node_stats_process_cpu_pct process cpu pct
 # TYPE aerospike_node_stats_process_cpu_pct gauge
-aerospike_node_stats_process_cpu_pct{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 60
-# HELP aerospike_node_stats_proto_fd_idle_ms proto fd idle ms
-# TYPE aerospike_node_stats_proto_fd_idle_ms gauge
-aerospike_node_stats_proto_fd_idle_ms{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_proto_fd_max proto fd max
-# TYPE aerospike_node_stats_proto_fd_max gauge
-aerospike_node_stats_proto_fd_max{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 15000
+aerospike_node_stats_process_cpu_pct{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 322
 # HELP aerospike_node_stats_proxy_in_progress proxy in progress
 # TYPE aerospike_node_stats_proxy_in_progress gauge
 aerospike_node_stats_proxy_in_progress{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_quarantine_allocations quarantine allocations
-# TYPE aerospike_node_stats_quarantine_allocations gauge
-aerospike_node_stats_quarantine_allocations{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_query_max_done query max done
-# TYPE aerospike_node_stats_query_max_done gauge
-aerospike_node_stats_query_max_done{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 100
-# HELP aerospike_node_stats_query_threads_limit query threads limit
-# TYPE aerospike_node_stats_query_threads_limit gauge
-aerospike_node_stats_query_threads_limit{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 128
 # HELP aerospike_node_stats_reaped_fds reaped fds
 # TYPE aerospike_node_stats_reaped_fds counter
 aerospike_node_stats_reaped_fds{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_run_as_daemon run as daemon
-# TYPE aerospike_node_stats_run_as_daemon gauge
-aerospike_node_stats_run_as_daemon{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1
 # HELP aerospike_node_stats_rw_in_progress rw in progress
 # TYPE aerospike_node_stats_rw_in_progress gauge
 aerospike_node_stats_rw_in_progress{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_service_threads service threads
-# TYPE aerospike_node_stats_service_threads gauge
-aerospike_node_stats_service_threads{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 50
-# HELP aerospike_node_stats_sindex_builder_threads sindex builder threads
-# TYPE aerospike_node_stats_sindex_builder_threads gauge
-aerospike_node_stats_sindex_builder_threads{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 4
-# HELP aerospike_node_stats_sindex_gc_period sindex gc period
-# TYPE aerospike_node_stats_sindex_gc_period gauge
-aerospike_node_stats_sindex_gc_period{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 10
-# HELP aerospike_node_stats_stay_quiesced stay quiesced
-# TYPE aerospike_node_stats_stay_quiesced gauge
-aerospike_node_stats_stay_quiesced{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
 # HELP aerospike_node_stats_system_free_mem_kbytes system free mem kbytes
 # TYPE aerospike_node_stats_system_free_mem_kbytes counter
-aerospike_node_stats_system_free_mem_kbytes{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1.022232e+06
+aerospike_node_stats_system_free_mem_kbytes{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1.166076e+06
 # HELP aerospike_node_stats_system_free_mem_pct system free mem pct
 # TYPE aerospike_node_stats_system_free_mem_pct gauge
-aerospike_node_stats_system_free_mem_pct{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 8
+aerospike_node_stats_system_free_mem_pct{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 9
 # HELP aerospike_node_stats_system_kernel_cpu_pct system kernel cpu pct
 # TYPE aerospike_node_stats_system_kernel_cpu_pct gauge
-aerospike_node_stats_system_kernel_cpu_pct{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 20
+aerospike_node_stats_system_kernel_cpu_pct{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 272
 # HELP aerospike_node_stats_system_thp_mem_kbytes system thp mem kbytes
 # TYPE aerospike_node_stats_system_thp_mem_kbytes counter
-aerospike_node_stats_system_thp_mem_kbytes{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 2.22208e+06
+aerospike_node_stats_system_thp_mem_kbytes{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 2.230272e+06
 # HELP aerospike_node_stats_system_total_cpu_pct system total cpu pct
 # TYPE aerospike_node_stats_system_total_cpu_pct gauge
-aerospike_node_stats_system_total_cpu_pct{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 77
+aerospike_node_stats_system_total_cpu_pct{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 739
 # HELP aerospike_node_stats_system_user_cpu_pct system user cpu pct
 # TYPE aerospike_node_stats_system_user_cpu_pct gauge
-aerospike_node_stats_system_user_cpu_pct{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 57
+aerospike_node_stats_system_user_cpu_pct{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 467
 # HELP aerospike_node_stats_threads_detached threads detached
 # TYPE aerospike_node_stats_threads_detached gauge
 aerospike_node_stats_threads_detached{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 105
@@ -2550,30 +2424,18 @@ aerospike_node_stats_threads_pool_active{cluster_name="70_aus_perth_1",latitude=
 # HELP aerospike_node_stats_threads_pool_total threads pool total
 # TYPE aerospike_node_stats_threads_pool_total gauge
 aerospike_node_stats_threads_pool_total{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 79
-# HELP aerospike_node_stats_ticker_interval ticker interval
-# TYPE aerospike_node_stats_ticker_interval gauge
-aerospike_node_stats_ticker_interval{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 10
-# HELP aerospike_node_stats_time_since_rebalance time since rebalance
-# TYPE aerospike_node_stats_time_since_rebalance gauge
-aerospike_node_stats_time_since_rebalance{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 2795
 # HELP aerospike_node_stats_tombstones tombstones
 # TYPE aerospike_node_stats_tombstones gauge
 aerospike_node_stats_tombstones{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_node_stats_transaction_max_ms transaction max ms
-# TYPE aerospike_node_stats_transaction_max_ms gauge
-aerospike_node_stats_transaction_max_ms{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1000
-# HELP aerospike_node_stats_transaction_retry_ms transaction retry ms
-# TYPE aerospike_node_stats_transaction_retry_ms gauge
-aerospike_node_stats_transaction_retry_ms{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1002
 # HELP aerospike_node_stats_tree_gc_queue tree gc queue
 # TYPE aerospike_node_stats_tree_gc_queue gauge
 aerospike_node_stats_tree_gc_queue{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
 # HELP aerospike_node_stats_uptime uptime
 # TYPE aerospike_node_stats_uptime counter
-aerospike_node_stats_uptime{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 2801
+aerospike_node_stats_uptime{cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 971
 # HELP aerospike_node_ticks Counter that detemines how many times the Aerospike node was scraped for metrics.
 # TYPE aerospike_node_ticks counter
-aerospike_node_ticks 127
+aerospike_node_ticks 8
 # HELP aerospike_node_up Aerospike node active status
 # TYPE aerospike_node_up gauge
 aerospike_node_up{build="7.0.0.0-rc4",cluster_name="70_aus_perth_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1
@@ -2723,7 +2585,7 @@ aerospike_xdr_abandoned{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",lati
 # HELP aerospike_xdr_bytes_shipped bytes shipped
 # TYPE aerospike_xdr_bytes_shipped counter
 aerospike_xdr_bytes_shipped{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-aerospike_xdr_bytes_shipped{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 6.860902874e+09
+aerospike_xdr_bytes_shipped{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 3.492030107e+09
 aerospike_xdr_bytes_shipped{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
 aerospike_xdr_bytes_shipped{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
 aerospike_xdr_bytes_shipped{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
@@ -2731,7 +2593,7 @@ aerospike_xdr_bytes_shipped{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",l
 aerospike_xdr_bytes_shipped{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
 aerospike_xdr_bytes_shipped{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
 aerospike_xdr_bytes_shipped{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_bytes_shipped{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 6.860902874e+09
+aerospike_xdr_bytes_shipped{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 3.492030107e+09
 # HELP aerospike_xdr_compression_ratio compression ratio
 # TYPE aerospike_xdr_compression_ratio gauge
 aerospike_xdr_compression_ratio{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 1
@@ -2744,162 +2606,30 @@ aerospike_xdr_compression_ratio{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr
 aerospike_xdr_compression_ratio{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 1
 aerospike_xdr_compression_ratio{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 1
 aerospike_xdr_compression_ratio{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 1
-# HELP aerospike_xdr_dc_connector dc connector
-# TYPE aerospike_xdr_dc_connector counter
-aerospike_xdr_dc_connector{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 1
-aerospike_xdr_dc_connector{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_xdr_dc_max_recoveries_interleaved dc max recoveries interleaved
-# TYPE aerospike_xdr_dc_max_recoveries_interleaved gauge
-aerospike_xdr_dc_max_recoveries_interleaved{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_max_recoveries_interleaved{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-# HELP aerospike_xdr_dc_namespace_compression_level dc namespace compression level
-# TYPE aerospike_xdr_dc_namespace_compression_level gauge
-aerospike_xdr_dc_namespace_compression_level{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 1
-aerospike_xdr_dc_namespace_compression_level{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 1
-aerospike_xdr_dc_namespace_compression_level{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 1
-aerospike_xdr_dc_namespace_compression_level{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 1
-aerospike_xdr_dc_namespace_compression_level{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 1
-aerospike_xdr_dc_namespace_compression_level{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 1
-aerospike_xdr_dc_namespace_compression_level{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 1
-aerospike_xdr_dc_namespace_compression_level{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 1
-# HELP aerospike_xdr_dc_namespace_compression_threshold dc namespace compression threshold
-# TYPE aerospike_xdr_dc_namespace_compression_threshold gauge
-aerospike_xdr_dc_namespace_compression_threshold{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 128
-aerospike_xdr_dc_namespace_compression_threshold{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 128
-aerospike_xdr_dc_namespace_compression_threshold{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 128
-aerospike_xdr_dc_namespace_compression_threshold{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 128
-aerospike_xdr_dc_namespace_compression_threshold{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 128
-aerospike_xdr_dc_namespace_compression_threshold{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 128
-aerospike_xdr_dc_namespace_compression_threshold{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 128
-aerospike_xdr_dc_namespace_compression_threshold{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 128
-# HELP aerospike_xdr_dc_namespace_delay_ms dc namespace delay ms
-# TYPE aerospike_xdr_dc_namespace_delay_ms gauge
-aerospike_xdr_dc_namespace_delay_ms{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_delay_ms{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_delay_ms{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_delay_ms{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_delay_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_delay_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_delay_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_delay_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-# HELP aerospike_xdr_dc_namespace_enable_compression dc namespace enable compression
-# TYPE aerospike_xdr_dc_namespace_enable_compression gauge
-aerospike_xdr_dc_namespace_enable_compression{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_enable_compression{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_enable_compression{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_enable_compression{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_enable_compression{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_enable_compression{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_enable_compression{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_enable_compression{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-# HELP aerospike_xdr_dc_namespace_enabled dc namespace enabled
-# TYPE aerospike_xdr_dc_namespace_enabled counter
-aerospike_xdr_dc_namespace_enabled{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_enabled{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_enabled{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_enabled{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 1
-aerospike_xdr_dc_namespace_enabled{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_enabled{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_enabled{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_enabled{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 1
-# HELP aerospike_xdr_dc_namespace_forward dc namespace forward
-# TYPE aerospike_xdr_dc_namespace_forward counter
-aerospike_xdr_dc_namespace_forward{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_forward{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_forward{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_forward{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_forward{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_forward{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_forward{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_forward{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-# HELP aerospike_xdr_dc_namespace_hot_key_ms dc namespace hot key ms
-# TYPE aerospike_xdr_dc_namespace_hot_key_ms gauge
-aerospike_xdr_dc_namespace_hot_key_ms{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_namespace_hot_key_ms{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_namespace_hot_key_ms{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_namespace_hot_key_ms{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_namespace_hot_key_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_namespace_hot_key_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_namespace_hot_key_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_namespace_hot_key_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 100
-# HELP aerospike_xdr_dc_namespace_ignore_expunges dc namespace ignore expunges
-# TYPE aerospike_xdr_dc_namespace_ignore_expunges gauge
-aerospike_xdr_dc_namespace_ignore_expunges{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ignore_expunges{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ignore_expunges{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ignore_expunges{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ignore_expunges{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ignore_expunges{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ignore_expunges{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ignore_expunges{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-# HELP aerospike_xdr_dc_namespace_max_throughput dc namespace max throughput
-# TYPE aerospike_xdr_dc_namespace_max_throughput gauge
-aerospike_xdr_dc_namespace_max_throughput{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 100000
-aerospike_xdr_dc_namespace_max_throughput{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 100000
-aerospike_xdr_dc_namespace_max_throughput{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 100000
-aerospike_xdr_dc_namespace_max_throughput{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 100000
-aerospike_xdr_dc_namespace_max_throughput{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 100000
-aerospike_xdr_dc_namespace_max_throughput{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 100000
-aerospike_xdr_dc_namespace_max_throughput{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 100000
-aerospike_xdr_dc_namespace_max_throughput{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 100000
-# HELP aerospike_xdr_dc_namespace_sc_replication_wait_ms dc namespace sc replication wait ms
-# TYPE aerospike_xdr_dc_namespace_sc_replication_wait_ms gauge
-aerospike_xdr_dc_namespace_sc_replication_wait_ms{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_namespace_sc_replication_wait_ms{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_namespace_sc_replication_wait_ms{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_namespace_sc_replication_wait_ms{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_namespace_sc_replication_wait_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_namespace_sc_replication_wait_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_namespace_sc_replication_wait_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_namespace_sc_replication_wait_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 100
-# HELP aerospike_xdr_dc_namespace_ship_bin_luts dc namespace ship bin luts
-# TYPE aerospike_xdr_dc_namespace_ship_bin_luts gauge
-aerospike_xdr_dc_namespace_ship_bin_luts{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_bin_luts{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_bin_luts{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_bin_luts{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_bin_luts{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_bin_luts{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_bin_luts{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_bin_luts{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-# HELP aerospike_xdr_dc_namespace_ship_nsup_deletes dc namespace ship nsup deletes
-# TYPE aerospike_xdr_dc_namespace_ship_nsup_deletes gauge
-aerospike_xdr_dc_namespace_ship_nsup_deletes{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_nsup_deletes{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_nsup_deletes{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_nsup_deletes{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_nsup_deletes{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_nsup_deletes{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_nsup_deletes{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_nsup_deletes{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-# HELP aerospike_xdr_dc_namespace_ship_only_specified_sets dc namespace ship only specified sets
-# TYPE aerospike_xdr_dc_namespace_ship_only_specified_sets gauge
-aerospike_xdr_dc_namespace_ship_only_specified_sets{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_only_specified_sets{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_only_specified_sets{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_only_specified_sets{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_only_specified_sets{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_only_specified_sets{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_only_specified_sets{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_namespace_ship_only_specified_sets{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
-# HELP aerospike_xdr_dc_namespace_transaction_queue_limit dc namespace transaction queue limit
-# TYPE aerospike_xdr_dc_namespace_transaction_queue_limit gauge
-aerospike_xdr_dc_namespace_transaction_queue_limit{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 16384
-aerospike_xdr_dc_namespace_transaction_queue_limit{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 16384
-aerospike_xdr_dc_namespace_transaction_queue_limit{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 16384
-aerospike_xdr_dc_namespace_transaction_queue_limit{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 16384
-aerospike_xdr_dc_namespace_transaction_queue_limit{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 16384
-aerospike_xdr_dc_namespace_transaction_queue_limit{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 16384
-aerospike_xdr_dc_namespace_transaction_queue_limit{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 16384
-aerospike_xdr_dc_namespace_transaction_queue_limit{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 16384
-# HELP aerospike_xdr_dc_period_ms dc period ms
-# TYPE aerospike_xdr_dc_period_ms gauge
-aerospike_xdr_dc_period_ms{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 100
-aerospike_xdr_dc_period_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 100
-# HELP aerospike_xdr_dc_use_alternate_access_address dc use alternate access address
-# TYPE aerospike_xdr_dc_use_alternate_access_address gauge
-aerospike_xdr_dc_use_alternate_access_address{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-aerospike_xdr_dc_use_alternate_access_address{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
+# HELP aerospike_xdr_dc_src_id dc src id
+# TYPE aerospike_xdr_dc_src_id gauge
+aerospike_xdr_dc_src_id{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_src_id{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_src_id{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_src_id{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_src_id{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_src_id{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_src_id{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_src_id{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_src_id{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_src_id{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
+# HELP aerospike_xdr_dc_trace_sample dc trace sample
+# TYPE aerospike_xdr_dc_trace_sample gauge
+aerospike_xdr_dc_trace_sample{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_trace_sample{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_trace_sample{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_trace_sample{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_trace_sample{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_trace_sample{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_trace_sample{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_trace_sample{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_trace_sample{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
+aerospike_xdr_dc_trace_sample{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 0
 # HELP aerospike_xdr_filtered_out filtered out
 # TYPE aerospike_xdr_filtered_out counter
 aerospike_xdr_filtered_out{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
@@ -2927,7 +2657,7 @@ aerospike_xdr_hot_keys{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latit
 # HELP aerospike_xdr_in_progress in progress
 # TYPE aerospike_xdr_in_progress gauge
 aerospike_xdr_in_progress{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 35380
-aerospike_xdr_in_progress{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1210
+aerospike_xdr_in_progress{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 38723
 aerospike_xdr_in_progress{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
 aerospike_xdr_in_progress{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
 aerospike_xdr_in_progress{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
@@ -2935,11 +2665,11 @@ aerospike_xdr_in_progress{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",lat
 aerospike_xdr_in_progress{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
 aerospike_xdr_in_progress{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
 aerospike_xdr_in_progress{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_in_progress{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 1210
+aerospike_xdr_in_progress{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 38723
 # HELP aerospike_xdr_in_queue in queue
 # TYPE aerospike_xdr_in_queue gauge
 aerospike_xdr_in_queue{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 1.763197e+06
-aerospike_xdr_in_queue{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 23064
+aerospike_xdr_in_queue{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 206939
 aerospike_xdr_in_queue{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
 aerospike_xdr_in_queue{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
 aerospike_xdr_in_queue{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
@@ -2947,27 +2677,27 @@ aerospike_xdr_in_queue{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitu
 aerospike_xdr_in_queue{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
 aerospike_xdr_in_queue{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
 aerospike_xdr_in_queue{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_in_queue{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 23064
+aerospike_xdr_in_queue{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 206939
 # HELP aerospike_xdr_lag lag
 # TYPE aerospike_xdr_lag gauge
-aerospike_xdr_lag{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 2765
-aerospike_xdr_lag{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 2382
+aerospike_xdr_lag{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 934
+aerospike_xdr_lag{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 552
 aerospike_xdr_lag{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
 aerospike_xdr_lag{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
 aerospike_xdr_lag{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_lag{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 2765
+aerospike_xdr_lag{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 934
 aerospike_xdr_lag{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
 aerospike_xdr_lag{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
 aerospike_xdr_lag{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_lag{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 2382
+aerospike_xdr_lag{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 552
 # HELP aerospike_xdr_lap_us lap us
 # TYPE aerospike_xdr_lap_us gauge
-aerospike_xdr_lap_us{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 2008
-aerospike_xdr_lap_us{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 3242
+aerospike_xdr_lap_us{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 4979
+aerospike_xdr_lap_us{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 9505
 # HELP aerospike_xdr_latency_ms latency ms
 # TYPE aerospike_xdr_latency_ms gauge
 aerospike_xdr_latency_ms{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-aerospike_xdr_latency_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 37
+aerospike_xdr_latency_ms{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 20
 # HELP aerospike_xdr_nodes nodes
 # TYPE aerospike_xdr_nodes gauge
 aerospike_xdr_nodes{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 1
@@ -3023,7 +2753,7 @@ aerospike_xdr_retry_conn_reset{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_
 # HELP aerospike_xdr_retry_dest retry dest
 # TYPE aerospike_xdr_retry_dest counter
 aerospike_xdr_retry_dest{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-aerospike_xdr_retry_dest{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 5.897947e+06
+aerospike_xdr_retry_dest{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 2.363624e+06
 aerospike_xdr_retry_dest{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
 aerospike_xdr_retry_dest{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
 aerospike_xdr_retry_dest{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
@@ -3031,15 +2761,15 @@ aerospike_xdr_retry_dest{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",lati
 aerospike_xdr_retry_dest{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
 aerospike_xdr_retry_dest{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
 aerospike_xdr_retry_dest{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_retry_dest{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 5.897947e+06
+aerospike_xdr_retry_dest{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 2.363624e+06
 # HELP aerospike_xdr_retry_no_node retry no node
 # TYPE aerospike_xdr_retry_no_node counter
-aerospike_xdr_retry_no_node{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 4.5319603e+07
+aerospike_xdr_retry_no_node{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 3.7922227e+07
 aerospike_xdr_retry_no_node{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
 aerospike_xdr_retry_no_node{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
 aerospike_xdr_retry_no_node{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
 aerospike_xdr_retry_no_node{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_retry_no_node{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 4.5319603e+07
+aerospike_xdr_retry_no_node{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 3.7922227e+07
 aerospike_xdr_retry_no_node{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
 aerospike_xdr_retry_no_node{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
 aerospike_xdr_retry_no_node{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
@@ -3047,7 +2777,7 @@ aerospike_xdr_retry_no_node{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",
 # HELP aerospike_xdr_success success
 # TYPE aerospike_xdr_success counter
 aerospike_xdr_success{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
-aerospike_xdr_success{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1.774303e+06
+aerospike_xdr_success{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",service="172.17.0.6:3000"} 1.552915e+06
 aerospike_xdr_success{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
 aerospike_xdr_success{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
 aerospike_xdr_success{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
@@ -3055,7 +2785,7 @@ aerospike_xdr_success{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitud
 aerospike_xdr_success{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar",service="172.17.0.6:3000"} 0
 aerospike_xdr_success{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="bar_pmem",service="172.17.0.6:3000"} 0
 aerospike_xdr_success{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="employees_flash",service="172.17.0.6:3000"} 0
-aerospike_xdr_success{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 1.774303e+06
+aerospike_xdr_success{cluster_name="70_aus_perth_1",dc="64_asia_sng_dr_1",latitude="0",longitude="0",ns="test",service="172.17.0.6:3000"} 1.552915e+06
 # HELP aerospike_xdr_throughput throughput
 # TYPE aerospike_xdr_throughput gauge
 aerospike_xdr_throughput{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",latitude="0",longitude="0",service="172.17.0.6:3000"} 0
