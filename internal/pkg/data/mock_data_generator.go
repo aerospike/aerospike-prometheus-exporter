@@ -414,26 +414,37 @@ func (md *MockAerospikeServer) constructAeroUserRolesObject(key string) *aero.Us
 	tmp_user_role.Roles = strings.Split(elements[1], "=")
 
 	// conns-in-use
-	tmp_user_role.ConnsInUse, err = strconv.Atoi(strings.Split(elements[2], "=")[1])
+	s_conns_in_user := strings.Split(elements[2], "=")[1]
+	tmp_user_role.ConnsInUse = 0
+	if s_conns_in_user != "" {
+		tmp_user_role.ConnsInUse, err = strconv.Atoi(strings.Split(elements[2], "=")[1])
+	}
 
 	// read-info
 	if len(elements) > 2 {
 		// read-info=1-2-3-4
 		l_read_info := strings.Split(strings.Split(elements[3], "=")[1], "-")
-		fmt.Print("read-infos: ", elements[2])
+		fmt.Println("read-infos: ", elements[3])
 		l_int_read_info := []int{0, 0, 0, 0}
 		for i := 0; i < len(l_read_info); i++ {
-			l_int_read_info[i], err = strconv.Atoi(l_read_info[i])
+			l_int_read_info[i] = 0
+			if l_read_info[i] != "" {
+				l_int_read_info[i], err = strconv.Atoi(l_read_info[i])
+			}
 		}
 		tmp_user_role.ReadInfo = l_int_read_info
 
 		// write-info=11-12-13-14
 		l_write_info := strings.Split(strings.Split(elements[4], "=")[1], "-")
 		l_int_write_info := []int{0, 0, 0, 0}
-		for i := 0; i < len(l_read_info); i++ {
-			l_int_write_info[i], err = strconv.Atoi(l_write_info[i])
+		fmt.Println("write-infos: ", elements[4])
+		for i := 0; i < len(l_write_info); i++ {
+			l_int_write_info[i] = 0
+			if l_read_info[i] != "" {
+				l_int_write_info[i], err = strconv.Atoi(l_write_info[i])
+			}
 		}
-		tmp_user_role.ReadInfo = l_int_write_info
+		tmp_user_role.WriteInfo = l_int_write_info
 
 		if err != nil {
 			fmt.Println("error while convering user-stat values: ", err)
