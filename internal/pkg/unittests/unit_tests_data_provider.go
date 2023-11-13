@@ -99,13 +99,20 @@ type UnittestNamespaceValidator struct {
 
 func (unp UnittestNamespaceValidator) GetPassOneKeys(udp UnittestDataProvider) map[string]string {
 	var outputs = make(map[string]string)
-	outputs["namespaces"] = udp.Namespace_PassOne[0]
+	elements := udp.Namespace_PassOne[0]
+	elements = strings.Replace(elements, "namespace-passonekeys:", "", 1)
+	elements = strings.Replace(elements, "]", "", 1)
+	elements = strings.Replace(elements, "[", "", 1)
+
+	outputs["namespaces"] = elements
 
 	return outputs
 }
 
 func (unp UnittestNamespaceValidator) GetPassTwoKeys(udp UnittestDataProvider) map[string]string {
 	var outputs = make(map[string]string)
+
+	fmt.Println("GetPassTwoKeys: ", udp.Namespace_PassTwo)
 
 	out_values := udp.Namespace_PassTwo[0]
 	out_values = strings.Replace(out_values, "[", "", 1)
