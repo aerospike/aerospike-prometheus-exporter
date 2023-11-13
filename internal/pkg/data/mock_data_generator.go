@@ -90,6 +90,17 @@ const (
 )
 
 func (md *MockAerospikeServer) Initialize() {
+	filePath := MOCK_DATA_FILE
+
+	if _, err := os.Stat(filePath); err != nil {
+		fmt.Printf(filePath, " - File does not exist, may be running in Unit-test mode ")
+		filePath = "../../../" + filePath
+	}
+
+	md.internalInitialize(filePath)
+}
+
+func (md *MockAerospikeServer) internalInitialize(filePath string) {
 
 	// avoid multiple initializations
 	if Is_Mock_Initialized == 1 {
@@ -108,12 +119,13 @@ func (md *MockAerospikeServer) Initialize() {
 	// Mark as initialized
 	Is_Mock_Initialized = 1
 
-	filePath := MOCK_DATA_FILE
 	readFile, err := os.Open(filePath)
 
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	fmt.Println("Loading mock-data provider data from file :", filePath)
 
 	fileScanner := bufio.NewScanner(readFile)
 	fileScanner.Split(bufio.ScanLines)
