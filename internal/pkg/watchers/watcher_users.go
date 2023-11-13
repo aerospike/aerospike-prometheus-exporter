@@ -1,6 +1,8 @@
 package watchers
 
 import (
+	"fmt"
+
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
@@ -102,6 +104,8 @@ func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string
 				continue
 			}
 		}
+
+		fmt.Println("watcher-user handling user: ", user.User)
 
 		// check if user is blocked
 		if len(config.Cfg.Aerospike.UserMetricsUsersBlocklist) > 0 {
