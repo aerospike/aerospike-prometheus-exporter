@@ -122,7 +122,7 @@ func (unp UnittestNamespaceValidator) GetPassTwoKeys(udp UnittestDataProvider) m
 	out_values = strings.Replace(out_values, "]", "", 1)
 	elements := strings.Split(out_values, " ")
 	for i := 0; i < len(elements); i++ {
-		fmt.Println(" adding namespace: ", elements[i], " - as key to ", i)
+		// fmt.Println(" adding namespace: ", elements[i], " - as key to ", i)
 		outputs["namespace_"+strconv.Itoa(i)] = elements[i]
 	}
 
