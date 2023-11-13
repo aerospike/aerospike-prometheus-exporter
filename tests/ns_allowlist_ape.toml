@@ -32,7 +32,7 @@ labels = {}
 bind = ":9145"
 
 # is exporter running in mock test mode
-use_mock_datasource = 0
+use_mock_datasource = 1
 
 # metrics server timeout in seconds
 timeout = 10

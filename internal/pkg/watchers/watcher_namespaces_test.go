@@ -31,7 +31,7 @@ func TestPassOneKeys(t *testing.T) {
 func TestPassTwoKeys(t *testing.T) {
 
 	// initialize config and gauge-lists
-	config.InitConfig(unittests.GetConfigfileLocation(unittests.MOCK_CONFIG_FILE))
+	config.InitConfig(unittests.GetConfigfileLocation(unittests.DEFAULT_CONFIG_FILE))
 
 	// rawMetrics := getRawMetrics()
 	nsWatcher := new(NamespaceWatcher)
@@ -61,47 +61,40 @@ func TestPassTwoKeys(t *testing.T) {
 	}
 }
 
-// func TestNamespaceRefreshDefault(t *testing.T) {
+func TestNamespaceRefreshDefault(t *testing.T) {
 
-// 	fmt.Println("initializing config ... TestNamespaceRefreshDefault")
-// 	// Initialize and validate config
-// 	config = new(Config)
-// 	initConfig(DEFAULT_APE_TOML, config)
+	fmt.Println("initializing config ... TestNamespaceRefreshDefault")
+	// Initialize and validate config
 
-// 	config.validateAndUpdate()
+	// initialize config and gauge-lists
+	config.InitConfig(unittests.GetConfigfileLocation(unittests.DEFAULT_CONFIG_FILE))
 
-// 	runTestcase(t)
-// }
+	runTestcase(t)
+}
 
-// /**
-// * complete logic to call watcher, generate-mock data and asset is part of this function
-//  */
-// func runTestcase(t *testing.T) {
+/**
+* complete logic to call watcher, generate-mock data and asset is part of this function
+ */
+func runTestcase(t *testing.T) {
 
-// 	// mock aerospike server
-// 	mas := new(MockAerospikeServer)
-// 	mas.initialize()
+	// initialize gauges list
+	config.InitGaugeStats(unittests.GetConfigfileLocation(unittests.DEFAULT_GAUGE_LIST_FILE))
 
-// 	// mock namespace prom metric generator
-// 	nsdg := new(MockNamespacePromMetricGenerator)
+	// rawMetrics := getRawMetrics()
+	nsWatcher := new(NamespaceWatcher)
 
-// 	// initialize gauges list
-// 	gaugeStatHandler = new(GaugeStats)
-// 	initGaugeStats(METRICS_CONFIG_FILE, gaugeStatHandler)
+	// simulate, as if we are sending requestInfo to AS and get the namespaces, these are coming from mock-data-generator
+	passOneKeys := nsWatcher.PassOneKeys()
+	passOneOutput, _ := data.GetProvider().RequestInfo(passOneKeys)
+	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
+	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
+	arrWatcherMetrics, err := data.GetProvider().RequestInfo(passTwokeyOutputs)
+	assert.Nil(t, err)
 
-// 	// read raw-metrics from mock data gen, create observer and channel prometeus metric ingestion and processing
-// 	// rawMetrics := getRawMetrics()
-// 	rawMetrics := mas.fetchRawMetrics()
+	fmt.Println(arrWatcherMetrics)
+}
 
-// 	// Actual Watcher-Namespace generator code
-// 	nsWatcher := new(NamespaceWatcher)
-// 	lObserver := &Observer{}
-// 	ch := make(chan prometheus.Metric, 10000)
-
-// 	passOneKeyOutputs := mas.requestInfoNamespaces()
-// 	passTwokeyOutputs := nsWatcher.passTwoKeys(passOneKeyOutputs)
-
-// 	err := nsWatcher.refresh(lObserver, passTwokeyOutputs, rawMetrics, ch)
+// 	err := nsWatcher.Refresh(passTwokeyOutputs, rawMetrics)
 
 // 	if err == nil {
 // 		// map of string ==> map["namespace/metric-name"]["<VALUE>"]
