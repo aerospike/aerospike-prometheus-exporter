@@ -19,7 +19,7 @@ func TestPassOneKeys(t *testing.T) {
 	ndv := udp.GetUnittestValidator("namespace")
 	passOneOutputs := ndv.GetPassOneKeys(*udp)
 
-	fmt.Println("TestPassOneKeys: ", passOneOutputs)
+	// fmt.Println("TestPassOneKeys: ", passOneOutputs)
 	var expectedOutputs []string
 	expectedOutputs = append(expectedOutputs, passOneOutputs["namespaces"])
 
@@ -36,6 +36,8 @@ func TestPassTwoKeys(t *testing.T) {
 	passOneKeys := nsWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(passOneKeys)
 	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
+
+	fmt.Println("TestPassTwoKeys: ", passTwokeyOutputs)
 
 	// expectedOutputs := []string{"namespace/bar", "namespace/test"}
 	udp := &unittests.UnittestDataProvider{}
