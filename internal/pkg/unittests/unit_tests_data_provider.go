@@ -45,6 +45,8 @@ func (md *UnittestDataProvider) Initialize() {
 	Is_Unittests_Initialized = 1
 
 	filePath := TEST_DATA_FILE
+	cwd, _ := os.Getwd()
+	fmt.Println(" current working directory: %v", cwd)
 	readFile, err := os.Open(filePath)
 
 	if err != nil {
