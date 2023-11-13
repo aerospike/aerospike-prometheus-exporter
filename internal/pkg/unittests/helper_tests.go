@@ -1,9 +1,7 @@
 package unittests
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 )
 
 /*
@@ -18,9 +16,7 @@ const (
 func GetConfigfileLocation(filename string) string {
 	l_filename, _ := os.Getwd()
 
-	l_filename = l_filename + "/" + filename
-	a, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	fmt.Println("GetConfigfileLocation: ", l_filename, " \n\t os.Args[0]: ", a)
+	l_filename = l_filename + "/../../../" + filename
 
-	return filename
+	return l_filename
 }
