@@ -93,6 +93,9 @@ func runTestcase(t *testing.T) {
 
 	// check the output with NamespaceWatcher
 	nsWatcherMetrics, err := nsWatcher.Refresh(passTwokeyOutputs, arrRawMetrics)
-	assert.Nil(t, err, "Error while NamespaceWatcher.Refresh with passTwokeyOutputs ", passTwokeyOutputs)
+	assert.Nil(t, err, "Error while NamespaceWatcher.Refresh with passTwokeyOutputs ")
 	assert.NotEmpty(t, nsWatcherMetrics, "Error while NamespaceWatcher.Refresh, WatcherMetrics is EMPTY ")
+
+	// check the WatcherMetrics if all stats & configs coming with required labels
+	fmt.Println(nsWatcherMetrics)
 }

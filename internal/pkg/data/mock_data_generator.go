@@ -93,7 +93,7 @@ func (md *MockAerospikeServer) Initialize() {
 	filePath := MOCK_DATA_FILE
 
 	if _, err := os.Stat(filePath); err != nil {
-		fmt.Printf(filePath, " - File does not exist, may be running in Unit-test mode ")
+		fmt.Println(filePath, " - File does not exist, may be running in Unit-test mode ")
 		filePath = "../../../" + filePath
 	}
 
