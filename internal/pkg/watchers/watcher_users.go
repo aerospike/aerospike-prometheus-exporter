@@ -128,23 +128,23 @@ func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string
 		// labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER}
 		// labelValues := []string{commons.Infokey_ClusterName, commons.Infokey_Service, user.User}
 		// asMetric := commons.NewAerospikeStat(commons.CTX_USERS, "conns_in_use")
-		var asMetric commons.AerospikeStat
-		var labels []string
-		var labelValues []string
+		// var asMetric commons.AerospikeStat
+		// var labels []string
+		// var labelValues []string
 
-		asMetric, labels, labelValues = makeAerospikeStat("conns_in_use", user.User)
+		asMetric, labels, labelValues := internalCreateLocalAerospikeStat("conns_in_use", user.User)
 		metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, float64(user.ConnsInUse), labels, labelValues})
 
 		if len(user.ReadInfo) >= 4 && len(user.WriteInfo) >= 4 {
 
 			for Idx_Readinfo := 0; Idx_Readinfo < len(user.ReadInfo); Idx_Readinfo++ {
-				asMetric, labels, labelValues = makeAerospikeStat(readInfoStats[Idx_Readinfo], user.User)
+				asMetric, labels, labelValues := internalCreateLocalAerospikeStat(readInfoStats[Idx_Readinfo], readInfoStats[Idx_Readinfo])
 				metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, float64(user.ReadInfo[Idx_Readinfo]), labels, labelValues})
 
 			}
 			for Idx_Writeinfo := 0; Idx_Writeinfo < len(user.ReadInfo); Idx_Writeinfo++ {
-				asMetric, labels, labelValues = makeAerospikeStat(writeInfoStats[Idx_Writeinfo], user.User)
-				metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, float64(user.ReadInfo[Idx_Writeinfo]), labels, labelValues})
+				asMetric, labels, labelValues := internalCreateLocalAerospikeStat(writeInfoStats[Idx_Writeinfo], writeInfoStats[Idx_Writeinfo])
+				metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, float64(user.WriteInfo[Idx_Writeinfo]), labels, labelValues})
 
 			}
 
@@ -170,14 +170,15 @@ func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string
 		}
 	}
 
+	fmt.Println("\t\t** Count of user-metrics : ", len(metrics_to_send))
 	fmt.Println("metrics name & labels ", metrics_to_send[0].Metric.Name, "\t labels: ", metrics_to_send[0].Labels)
 
 	return metrics_to_send, nil
 }
 
-func makeAerospikeStat(pStatName string, username string) (commons.AerospikeStat, []string, []string) {
+func internalCreateLocalAerospikeStat(pStatName string, stat_name string) (commons.AerospikeStat, []string, []string) {
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER}
-	labelValues := []string{ClusterName, Service, username}
+	labelValues := []string{ClusterName, Service, stat_name}
 	asMetric := commons.NewAerospikeStat(commons.CTX_USERS, "conns_in_use")
 
 	return asMetric, labels, labelValues

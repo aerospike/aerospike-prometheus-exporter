@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -163,7 +162,7 @@ func PushToPrometheus(asMetric commons.AerospikeStat, pv float64, labels []strin
 		// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
 		defer func() {
 			if r := recover(); r != nil {
-				fmt.Println(" panic error : ", string(asMetric.Context), asMetric.Name)
+				// fmt.Println(" panic error : ", string(asMetric.Context), asMetric.Name)
 				log.Tracef("%s recovered from panic while handling stat %s", string(asMetric.Context), asMetric.Name)
 			}
 		}()
