@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -67,7 +68,7 @@ func (o *Observer) Collect(ch chan<- prometheus.Metric) {
 
 	// push the fetched metrics to prometheus
 	for _, wm := range watcher_metrics {
-		// fmt.Println("\n pushing metric: ", wm.Metric.Name, " to prometheus")
+		fmt.Println("\n pushing metric: ", wm.Metric.Name, " to prometheus")
 		PushToPrometheus(wm.Metric, wm.Value, wm.Labels, wm.LabelValues, ch)
 	}
 
