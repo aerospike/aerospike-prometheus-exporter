@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/unittests"
 	"github.com/stretchr/testify/assert"
@@ -28,6 +29,9 @@ func TestPassOneKeys(t *testing.T) {
 }
 
 func TestPassTwoKeys(t *testing.T) {
+
+	// initialize config and gauge-lists
+	config.InitConfig(unittests.GetConfigfileLocation(unittests.MOCK_CONFIG_FILE))
 
 	// rawMetrics := getRawMetrics()
 	nsWatcher := new(NamespaceWatcher)
