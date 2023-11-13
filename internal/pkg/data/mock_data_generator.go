@@ -384,7 +384,7 @@ func (md *MockAerospikeServer) getUsersDetails(key string) string {
 	rawMetrics := ""
 	// users
 	elements := md.Users[0]
-	elements = strings.Replace(elements, "user-stat:", "", 1)
+	elements = strings.Replace(elements, "user-stats:", "", 1)
 	rawMetrics = elements
 
 	return rawMetrics
