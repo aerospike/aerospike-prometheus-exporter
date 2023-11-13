@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	aero "github.com/aerospike/aerospike-client-go/v6"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 )
 
 /*
@@ -32,7 +31,7 @@ func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, err
 
 	users := mas.getUsersDetails("")
 
-	user_keys := commons.ParseStats(users, ";")
+	user_keys := strings.Split(users, ";")
 
 	fmt.Println("users string: ", users)
 	fmt.Println(user_keys)
