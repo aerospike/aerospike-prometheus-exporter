@@ -36,9 +36,10 @@ type UnittestDataProvider struct {
 
 func (md *UnittestDataProvider) Initialize() {
 
+	fmt.Println("Unittest Initializing ....: ")
 	// avoid multiple initializations
 	if Is_Unittests_Initialized == 1 {
-		// fmt.Println("Mock data provider already Initialized: ")
+		fmt.Println("Unittest data provider already Initialized: ")
 		return
 	}
 	// Mark as initialized
