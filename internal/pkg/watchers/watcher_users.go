@@ -105,7 +105,7 @@ func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string
 			}
 		}
 
-		fmt.Println("watcher-user handling user: ", user.User)
+		fmt.Println("watcher-user handling user: ", user.User, "\n\t Roles: ", user.Roles, "\n\t Conns-in-use: ", user.ConnsInUse)
 
 		// check if user is blocked
 		if len(config.Cfg.Aerospike.UserMetricsUsersBlocklist) > 0 {
