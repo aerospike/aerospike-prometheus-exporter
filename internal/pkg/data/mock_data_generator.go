@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	aero "github.com/aerospike/aerospike-client-go/v6"
@@ -27,7 +28,7 @@ func (mas MockAerospikeServer) RequestInfo(infokeys []string) (map[string]string
 
 func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
 
-	// var users []*aero.UserRoles
+	var aero_users []*aero.UserRoles
 
 	users := mas.getUsersDetails("")
 
@@ -36,7 +37,14 @@ func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, err
 	fmt.Println("users string: ", users)
 	fmt.Println(user_keys)
 
-	return false, nil, nil
+	for _, l_user_key := range user_keys {
+		l_aero_user := mas.constructAeroUserRolesObject(l_user_key)
+		aero_users = append(aero_users, l_aero_user)
+	}
+
+	fmt.Println(aero_users)
+
+	return false, aero_users, nil
 }
 
 // Mock Data Provider related code, Inherits DataProvider interface
@@ -389,4 +397,43 @@ func (md *MockAerospikeServer) getUsersDetails(key string) string {
 
 	return rawMetrics
 
+}
+
+func (md *MockAerospikeServer) constructAeroUserRolesObject(key string) *aero.UserRoles {
+
+	tmp_user_role := &aero.UserRoles{}
+
+	elements := strings.Split(key, ":")
+
+	// user
+	tmp_user_role.User = strings.Split(elements[0], "=")[0]
+
+	// roles assigned
+	tmp_user_role.Roles = strings.Split(elements[1], "=")
+
+	// read-info
+	if len(elements) > 2 {
+		l_read_info := strings.Split(elements[2], "-")
+		l_int_read_info := []int{0, 0, 0, 0}
+		var err error
+		for i := 0; i < len(l_read_info); i++ {
+			l_int_read_info[i], err = strconv.Atoi(l_read_info[i])
+		}
+		tmp_user_role.ReadInfo = l_int_read_info
+
+		// read-info
+		l_write_info := strings.Split(elements[3], "-")
+		l_int_write_info := []int{0, 0, 0, 0}
+		for i := 0; i < len(l_read_info); i++ {
+			l_int_write_info[i], err = strconv.Atoi(l_write_info[i])
+		}
+		tmp_user_role.ReadInfo = l_int_write_info
+
+		if err != nil {
+			fmt.Println("error while convering user-stat values: ", err)
+		}
+
+	}
+
+	return tmp_user_role
 }
