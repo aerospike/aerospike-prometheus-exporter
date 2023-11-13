@@ -16,8 +16,10 @@ type SindexWatcher struct {
 func (siw *SindexWatcher) PassOneKeys() []string {
 	if config.Cfg.Aerospike.DisableSindexMetrics {
 		// disabled
+		log.Tracef("sindex-passonekeys:nil")
 		return nil
 	}
+	log.Tracef("sindex-passonekeys:%s", []string{"sindex"})
 
 	return []string{"sindex"}
 }
@@ -32,6 +34,8 @@ func (siw *SindexWatcher) PassTwoKeys(rawMetrics map[string]string) (sindexComma
 
 	sindexesMeta := strings.Split(rawMetrics["sindex"], ";")
 	sindexCommands = siw.getSindexCommands(sindexesMeta)
+
+	log.Tracef("sindex-passtwokeys:%s", sindexCommands)
 
 	return sindexCommands
 }

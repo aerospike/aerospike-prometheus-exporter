@@ -16,11 +16,15 @@ type NodeStatsWatcher struct {
 }
 
 func (sw *NodeStatsWatcher) PassOneKeys() []string {
+	log.Tracef("node-passonekeys:nil")
+
 	return nil
 }
 
 func (sw *NodeStatsWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
 	// we need to fetch both configs and stat
+	log.Tracef("node-passtwokeys:%s", []string{KEY_SERVICE_CONFIG, KEY_SERVICE_STATISTICS})
+
 	return []string{KEY_SERVICE_CONFIG, KEY_SERVICE_STATISTICS}
 }
 

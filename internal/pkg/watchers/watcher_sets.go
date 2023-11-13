@@ -17,10 +17,14 @@ const (
 )
 
 func (sw *SetWatcher) PassOneKeys() []string {
+	log.Tracef("sets-passonekeys:nil")
+
 	return nil
 }
 
 func (sw *SetWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
+	log.Tracef("sets-passtwokeys:%s", []string{KEY_SETS})
+
 	return []string{KEY_SETS}
 }
 

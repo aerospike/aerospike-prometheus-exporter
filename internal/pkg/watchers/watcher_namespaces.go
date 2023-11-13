@@ -44,6 +44,7 @@ type NamespaceWatcher struct {
 
 func (nw *NamespaceWatcher) PassOneKeys() []string {
 	// we are sending key "namespaces", server returns all the configs and stats in single call, unlike node-stats, xdr
+	log.Tracef("namespace-passonekeys:%s", []string{KEY_NS_METADATA})
 	return []string{KEY_NS_METADATA}
 }
 
@@ -63,6 +64,8 @@ func (nw *NamespaceWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
 		infoKeys = append(infoKeys, KEY_NS_INDEX_PRESSURE)
 		idxPressurePreviousFetchTime = time.Now()
 	}
+
+	log.Tracef("namespace-passtwokeys:%s", infoKeys)
 
 	return infoKeys
 }

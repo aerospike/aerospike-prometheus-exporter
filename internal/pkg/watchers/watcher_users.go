@@ -19,10 +19,12 @@ func (uw *UserWatcher) PassOneKeys() []string {
 	// "build" info key should be returned here,
 	// but it is also being sent by LatencyWatcher.passOneKeys(),
 	// hence skipping here.
+	log.Tracef("users-passonekeys:nil")
 	return nil
 }
 
 func (uw *UserWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
+	log.Tracef("sindex-passtwokeys:nil")
 	return nil
 }
 

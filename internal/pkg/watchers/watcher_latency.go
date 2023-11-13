@@ -12,6 +12,8 @@ type LatencyWatcher struct {
 
 func (lw *LatencyWatcher) PassOneKeys() []string {
 	// return []string{"build"}
+	log.Tracef("latency-passonekeys:nil")
+
 	return nil
 }
 
@@ -32,9 +34,11 @@ func (lw *LatencyWatcher) PassTwoKeys(rawMetrics map[string]string) (latencyComm
 	}
 
 	if ok {
+		log.Tracef("latency-passtwokeys:%s", []string{"latencies:"})
 		return []string{"latencies:"}
 	}
 
+	log.Tracef("latency-passtwokeys:%s", []string{"latency:"})
 	return []string{"latency:"}
 }
 

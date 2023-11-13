@@ -20,6 +20,7 @@ type XdrWatcher struct {
 
 func (xw *XdrWatcher) PassOneKeys() []string {
 	// this is used to fetch the dcs metadata, we send same get-config command to fetch the dc-names required in next steps
+	log.Tracef("xdr-passonekeys:%s", []string{KEY_XDR_METADATA})
 	return []string{KEY_XDR_METADATA}
 }
 
@@ -48,7 +49,7 @@ func (xw *XdrWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
 		}
 	}
 
-	log.Tracef("xdr-passTwoKeys %s", infoKeys)
+	log.Tracef("xdr-passtwokeys %s", infoKeys)
 
 	return infoKeys
 }
