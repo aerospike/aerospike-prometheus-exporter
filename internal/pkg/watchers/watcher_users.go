@@ -138,13 +138,13 @@ func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string
 		if len(user.ReadInfo) >= 4 && len(user.WriteInfo) >= 4 {
 
 			for Idx_Readinfo := 0; Idx_Readinfo < len(user.ReadInfo); Idx_Readinfo++ {
-				asMetric, labels, labelValues := internalCreateLocalAerospikeStat(readInfoStats[Idx_Readinfo], readInfoStats[Idx_Readinfo])
-				metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, float64(user.ReadInfo[Idx_Readinfo]), labels, labelValues})
+				ri_asMetric, ri_labels, ri_labelValues := internalCreateLocalAerospikeStat(readInfoStats[Idx_Readinfo], user.User)
+				metrics_to_send = append(metrics_to_send, WatcherMetric{ri_asMetric, float64(user.ReadInfo[Idx_Readinfo]), ri_labels, ri_labelValues})
 
 			}
-			for Idx_Writeinfo := 0; Idx_Writeinfo < len(user.ReadInfo); Idx_Writeinfo++ {
-				asMetric, labels, labelValues := internalCreateLocalAerospikeStat(writeInfoStats[Idx_Writeinfo], writeInfoStats[Idx_Writeinfo])
-				metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, float64(user.WriteInfo[Idx_Writeinfo]), labels, labelValues})
+			for Idx_Writeinfo := 0; Idx_Writeinfo < len(user.WriteInfo); Idx_Writeinfo++ {
+				wi_asMetric, wi_labels, wi_labelValues := internalCreateLocalAerospikeStat(writeInfoStats[Idx_Writeinfo], user.User)
+				metrics_to_send = append(metrics_to_send, WatcherMetric{wi_asMetric, float64(user.WriteInfo[Idx_Writeinfo]), wi_labels, wi_labelValues})
 
 			}
 
@@ -176,10 +176,10 @@ func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string
 	return metrics_to_send, nil
 }
 
-func internalCreateLocalAerospikeStat(pStatName string, stat_name string) (commons.AerospikeStat, []string, []string) {
+func internalCreateLocalAerospikeStat(pStatName string, username string) (commons.AerospikeStat, []string, []string) {
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER}
-	labelValues := []string{ClusterName, Service, stat_name}
-	asMetric := commons.NewAerospikeStat(commons.CTX_USERS, "conns_in_use")
+	labelValues := []string{ClusterName, Service, username}
+	asMetric := commons.NewAerospikeStat(commons.CTX_USERS, pStatName)
 
 	return asMetric, labels, labelValues
 }
