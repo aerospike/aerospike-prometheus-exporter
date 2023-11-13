@@ -62,7 +62,7 @@ func Refresh() ([]WatcherMetric, error) {
 	// info request for first set of info keys, this retrives configs from server
 	//   from namespaces,server/node-stats, xdr
 	//   if for any context (like jobs, latencies etc.,) no configs, they are not sent to server
-	passOneOutput, err := data.GetDataProvider().RequestInfo(infoKeys)
+	passOneOutput, err := data.GetProvider().RequestInfo(infoKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func Refresh() ([]WatcherMetric, error) {
 	}
 
 	// info request for second set of info keys, this retrieves all the stats from server
-	rawMetrics, err := data.GetDataProvider().RequestInfo(infoKeys)
+	rawMetrics, err := data.GetProvider().RequestInfo(infoKeys)
 	if err != nil {
 		return all_metrics_to_send, err
 	}

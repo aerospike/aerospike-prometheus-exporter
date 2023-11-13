@@ -46,7 +46,7 @@ func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, err
 
 	fmt.Println(aero_users)
 
-	return false, aero_users, nil
+	return true, aero_users, nil
 }
 
 // Mock Data Provider related code, Inherits DataProvider interface

@@ -59,7 +59,7 @@ func (uw *UserWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) 
 	// read the data from Aerospike Server
 	var users []*aero.UserRoles
 
-	shouldFetchUserStatistics, users, err = data.GetDataProvider().FetchUsersDetails()
+	shouldFetchUserStatistics, users, err = data.GetProvider().FetchUsersDetails()
 
 	var metrics_to_send = []WatcherMetric{}
 	// Push metrics to Prometheus or Observability tool
