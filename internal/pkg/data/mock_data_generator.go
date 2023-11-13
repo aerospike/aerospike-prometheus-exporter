@@ -401,6 +401,7 @@ func (md *MockAerospikeServer) getUsersDetails(key string) string {
 
 func (md *MockAerospikeServer) constructAeroUserRolesObject(key string) *aero.UserRoles {
 
+	fmt.Println("\nprocessing user-key :", key)
 	tmp_user_role := &aero.UserRoles{}
 
 	elements := strings.Split(key, ":")
@@ -413,7 +414,9 @@ func (md *MockAerospikeServer) constructAeroUserRolesObject(key string) *aero.Us
 
 	// read-info
 	if len(elements) > 2 {
-		l_read_info := strings.Split(elements[2], "-")
+		// read-info=1-2-3-4
+		l_read_info := strings.Split(strings.Split(elements[2], "=")[1], "-")
+		fmt.Print("read-infos: ", elements[2])
 		l_int_read_info := []int{0, 0, 0, 0}
 		var err error
 		for i := 0; i < len(l_read_info); i++ {
@@ -421,8 +424,8 @@ func (md *MockAerospikeServer) constructAeroUserRolesObject(key string) *aero.Us
 		}
 		tmp_user_role.ReadInfo = l_int_read_info
 
-		// read-info
-		l_write_info := strings.Split(elements[3], "-")
+		// write-info=11-12-13-14
+		l_write_info := strings.Split(strings.Split(elements[3], "=")[1], "-")
 		l_int_write_info := []int{0, 0, 0, 0}
 		for i := 0; i < len(l_read_info); i++ {
 			l_int_write_info[i], err = strconv.Atoi(l_write_info[i])
