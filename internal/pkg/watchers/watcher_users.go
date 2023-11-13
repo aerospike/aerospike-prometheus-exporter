@@ -1,8 +1,6 @@
 package watchers
 
 import (
-	"fmt"
-
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
@@ -105,9 +103,9 @@ func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string
 			}
 		}
 
-		fmt.Println("watcher-user handling user: ", user.User, "\n\t Roles: ", user.Roles,
-			"\n\t Conns-in-use: ", user.ConnsInUse,
-			"\n\t ReadInfo: ", user.ReadInfo, "\n\t WriteInfo: ", user.WriteInfo)
+		// fmt.Println("watcher-user handling user: ", user.User, "\n\t Roles: ", user.Roles,
+		// 	"\n\t Conns-in-use: ", user.ConnsInUse,
+		// 	"\n\t ReadInfo: ", user.ReadInfo, "\n\t WriteInfo: ", user.WriteInfo)
 
 		// check if user is blocked
 		if len(config.Cfg.Aerospike.UserMetricsUsersBlocklist) > 0 {
@@ -170,8 +168,8 @@ func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string
 		}
 	}
 
-	fmt.Println("\t\t** Count of user-metrics : ", len(metrics_to_send))
-	fmt.Println("metrics name & labels ", metrics_to_send[0].Metric.Name, "\t labels: ", metrics_to_send[0].Labels)
+	// fmt.Println("\t\t** Count of user-metrics : ", len(metrics_to_send))
+	// fmt.Println("metrics name & labels ", metrics_to_send[0].Metric.Name, "\t labels: ", metrics_to_send[0].Labels)
 
 	return metrics_to_send, nil
 }
