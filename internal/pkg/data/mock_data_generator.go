@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	aero "github.com/aerospike/aerospike-client-go/v6"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 )
 
 /*
@@ -26,6 +27,15 @@ func (mas MockAerospikeServer) RequestInfo(infokeys []string) (map[string]string
 }
 
 func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
+
+	// var users []*aero.UserRoles
+
+	users := mas.getUsersDetails("")
+
+	user_keys := commons.ParseStats(users, ";")
+
+	fmt.Println(user_keys)
+
 	return false, nil, nil
 }
 
@@ -44,6 +54,7 @@ type MockAerospikeServer struct {
 	Namespaces          []string
 	Sindexes            []string
 	XdrContext          []string
+	Users               []string
 	Passone_output_str  string
 	Passone_outputs_map map[string]string
 }
@@ -118,6 +129,8 @@ func (md *MockAerospikeServer) Initialize() {
 				md.Node_stats = append(md.Node_stats, line)
 			} else if strings.HasPrefix(line, "xdr-") {
 				md.Xdr_stats = append(md.Xdr_stats, line)
+			} else if strings.HasPrefix(line, "user-stat") {
+				md.Users = append(md.Users, line)
 			} else if strings.HasPrefix(line, "get-config:context=xdr") { // Xdr configs
 				md.XdrContext = append(md.XdrContext, line)
 			} else if strings.HasPrefix(line, "sindex-stats:") {
@@ -365,4 +378,14 @@ func (md *MockAerospikeServer) getLatenciesStats(latenciesKey string) string {
 	}
 
 	return rawMetrics
+}
+
+func (md *MockAerospikeServer) getUsersDetails(key string) string {
+	rawMetrics := ""
+	// users
+	elements := md.Users[0]
+	elements = strings.Replace(elements, "user-stat:", "", 1)
+
+	return rawMetrics
+
 }

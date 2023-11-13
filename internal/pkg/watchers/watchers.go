@@ -32,7 +32,8 @@ func GetWatchers() []Watcher {
 		// &SetWatcher{},
 		// &SindexWatcher{},
 		// &XdrWatcher{},
-		&LatencyWatcher{},
+		// &LatencyWatcher{},
+		&UserWatcher{},
 	}
 
 	return watchers
