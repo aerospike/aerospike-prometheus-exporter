@@ -99,7 +99,7 @@ func runTestcase(t *testing.T) {
 	// check the WatcherMetrics if all stats & configs coming with required labels
 	// fmt.Println(nsWatcherMetrics)
 	for k := range nsWatcherMetrics {
-		fmt.Println(k)
+		fmt.Println(nsWatcherMetrics[k])
 	}
 
 	// check for defined pattern, namespace metrics
