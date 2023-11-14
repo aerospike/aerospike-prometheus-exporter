@@ -43,8 +43,6 @@ func TestPassTwoKeys(t *testing.T) {
 	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
 
-	fmt.Println("TestPassTwoKeys: passTwokeyOutputs: ", passTwokeyOutputs)
-
 	// expectedOutputs := []string{"namespace/bar", "namespace/test"}
 	udp := &unittests.UnittestDataProvider{}
 	ndv := udp.GetUnittestValidator("namespace")
@@ -103,10 +101,9 @@ func runTestcase(t *testing.T) {
 
 	// check the WatcherMetrics if all stats & configs coming with required labels
 	// fmt.Println(nsWatcherMetrics)
-	// for k := range nsWatcherMetrics {
-	// 	fmt.Println(nsWatcherMetrics[k])
-	// }
-	fmt.Println(nsWatcherMetrics[0])
+	for k := range nsWatcherMetrics {
+		fmt.Println(nsWatcherMetrics[k])
+	}
 
 	// check for defined pattern, namespace metrics
 	// context, name, labels: cluster, service, namespace,

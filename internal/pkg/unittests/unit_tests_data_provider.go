@@ -114,7 +114,7 @@ func (unp UnittestNamespaceValidator) GetPassOneKeys(udp UnittestDataProvider) m
 func (unp UnittestNamespaceValidator) GetPassTwoKeys(udp UnittestDataProvider) map[string]string {
 	var outputs = make(map[string]string)
 
-	fmt.Println("GetPassTwoKeys: ", udp.Namespace_PassTwo)
+	// fmt.Println("GetPassTwoKeys: ", udp.Namespace_PassTwo)
 
 	out_values := udp.Namespace_PassTwo[0]
 	out_values = strings.Replace(out_values, "namespace-passtwokeys:", "", 1)
