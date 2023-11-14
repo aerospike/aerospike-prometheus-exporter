@@ -21,7 +21,7 @@ type AerospikeServerProvider struct {
 }
 
 func (asm AerospikeServerProvider) RequestInfo(infoKeys []string) (map[string]string, error) {
-	fmt.Println("RequestInfo... ", infoKeys)
+	// fmt.Println("RequestInfo... ", infoKeys)
 	return fetchRequestInfoFromAerospike(infoKeys)
 }
 
