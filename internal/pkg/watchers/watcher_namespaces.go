@@ -122,7 +122,7 @@ func (nw *NamespaceWatcher) refreshIndexPressure(singleInfoKey string, infoKeys 
 		nsName := values[0]
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS}
-		labelValues := []string{ClusterName, Service, nsName}
+		labelValues := []string{ClusterName + "aa", Service + "bb", nsName}
 
 		// Server index-pressure output: test:0:0;bar_device:0:0;materials:0:0
 		//  ignore first element - namespace
@@ -178,7 +178,7 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 		// default: aerospike_namespace_<stat-name>
 		constructedStatname = stat
 		labels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS}
-		labelValues = []string{ClusterName, Service, nsName}
+		labelValues = []string{ClusterName + "ppp", Service + "ppp", nsName}
 
 		if isArrayType {
 			constructedStatname, labels, labelValues = nw.handleArrayStats(nsName, stat, pv, stats, deviceType, rawMetrics)
@@ -257,7 +257,7 @@ func (nw *NamespaceWatcher) handleArrayStats(nsName string, statToProcess string
 	compositeStatName := deviceType + "_" + statType + "_" + statName
 	deviceOrFileName := allNamespaceStats[deviceType+"."+statType+"["+statIndex+"]"]
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, statType + "_index", statType}
-	labelValues := []string{ClusterName, Service, nsName, statIndex, deviceOrFileName}
+	labelValues := []string{ClusterName + "kk", Service + "yy", nsName, statIndex, deviceOrFileName}
 
 	return compositeStatName, labels, labelValues
 
