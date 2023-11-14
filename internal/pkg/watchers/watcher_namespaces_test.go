@@ -97,5 +97,11 @@ func runTestcase(t *testing.T) {
 	assert.NotEmpty(t, nsWatcherMetrics, "Error while NamespaceWatcher.Refresh, WatcherMetrics is EMPTY ")
 
 	// check the WatcherMetrics if all stats & configs coming with required labels
-	fmt.Println(nsWatcherMetrics)
+	// fmt.Println(nsWatcherMetrics)
+	for k := range nsWatcherMetrics {
+		fmt.Println(k)
+	}
+
+	// check for defined pattern, namespace metrics
+	// context, name, labels: cluster, service, namespace,
 }
