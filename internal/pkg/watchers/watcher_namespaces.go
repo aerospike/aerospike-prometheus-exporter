@@ -79,7 +79,7 @@ func (nw *NamespaceWatcher) Refresh(infoKeys []string, rawMetrics map[string]str
 	var metrics_to_send = []WatcherMetric{}
 	for _, infoKey := range infoKeys {
 
-		fmt.Println("Namespace, Refresh: infoKey:- ", infoKey)
+		fmt.Println("Namespace, Refresh: cluster-name:- ", rawMetrics["cluster-name"])
 
 		// we get 2 info-key Types - examples: index-pressure or namespace/test, namespace/materials
 		if strings.HasPrefix(infoKey, KEY_NS_NAMESPACE) {
