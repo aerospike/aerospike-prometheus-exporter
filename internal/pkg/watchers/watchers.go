@@ -1,6 +1,8 @@
 package watchers
 
 import (
+	"fmt"
+
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
 	log "github.com/sirupsen/logrus"
@@ -85,6 +87,8 @@ func Refresh() ([]WatcherMetric, error) {
 
 	// set global values
 	ClusterName, Service, Build = rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], rawMetrics[commons.Infokey_Build]
+
+	fmt.Println("\t **** ClusterName: ", ClusterName, "\t Service: ", Service, "\t Build: ", Build)
 
 	// sanitize the utf8 strings before sending them to watchers
 	for k, v := range rawMetrics {
