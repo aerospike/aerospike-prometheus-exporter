@@ -243,6 +243,7 @@ func (md *MockAerospikeServer) getClusterName(key string) string {
 }
 
 func (md *MockAerospikeServer) getServiceClearStd(key string) string {
+	fmt.Println("\n\n****** getServiceClearStd() .... \t", strings.Split(md.Service_clear_std[0], "=")[1]+"\n")
 	return strings.Split(md.Service_clear_std[0], "=")[1]
 }
 
