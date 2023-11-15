@@ -34,7 +34,7 @@ func (lw *LatencyWatcher) PassTwoKeys(rawMetrics map[string]string) (latencyComm
 	}
 
 	if ok {
-		log.Tracef("latency-passtwokeys:%s", []string{"latencies:"})
+		log.Tracef("latency-passtwokeys:%s", []string{"latencies:", "latencies:hist={test}-benchmarks-read"})
 		return []string{"latencies:"}
 	}
 
