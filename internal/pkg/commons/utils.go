@@ -20,29 +20,7 @@ import (
 	goversion "github.com/hashicorp/go-version"
 )
 
-// Default info commands
-var (
-	Infokey_ClusterName = "cluster-name"
-	Infokey_Service     = "service-clear-std"
-	Infokey_Build       = "build"
-)
-
-var (
-	descReplacerFunc = strings.NewReplacer("_", " ", "-", " ", ".", " ")
-	// TODO: re-check why we need below replacer, is it because of the replace char sequences
-	metricReplacerFunc = strings.NewReplacer(".", "_", "-", "_", " ", "_")
-)
-
 // Utility functions
-
-func NormalizeDesc(s string) string {
-	return descReplacerFunc.Replace(s)
-}
-
-func NormalizeMetric(s string) string {
-	return metricReplacerFunc.Replace(s)
-}
-
 func ParseStats(s, sep string) map[string]string {
 	stats := make(map[string]string, strings.Count(s, sep)+1)
 	s2 := strings.Split(s, sep)

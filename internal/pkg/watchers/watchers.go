@@ -22,11 +22,11 @@ func GetWatchers() []Watcher {
 	watchers := []Watcher{
 		&NamespaceWatcher{},
 		&NodeStatsWatcher{},
-		// &SetWatcher{},
-		// &SindexWatcher{},
-		// &XdrWatcher{},
+		&SetWatcher{},
+		&SindexWatcher{},
+		&XdrWatcher{},
 		&LatencyWatcher{},
-		// &UserWatcher{},
+		&UserWatcher{},
 	}
 
 	return watchers
@@ -42,9 +42,12 @@ func Refresh() ([]AerospikeStat, error) {
 	// array to accumulate all metrics, which later will be dispatched by various observers
 	var all_metrics_to_send = []AerospikeStat{}
 
+	// list of all the watchers
+	all_watchers_list := GetWatchers()
+
 	// fetch first set of info keys
 	var infoKeys []string
-	for _, c := range GetWatchers() {
+	for _, c := range all_watchers_list {
 		if keys := c.PassOneKeys(); len(keys) > 0 {
 			infoKeys = append(infoKeys, keys...)
 		}
@@ -61,9 +64,9 @@ func Refresh() ([]AerospikeStat, error) {
 	}
 
 	// fetch second second set of info keys
-	infoKeys = []string{commons.Infokey_ClusterName, commons.Infokey_Service, commons.Infokey_Build}
-	watcherInfoKeys := make([][]string, len(GetWatchers()))
-	for i, c := range GetWatchers() {
+	infoKeys = []string{Infokey_ClusterName, Infokey_Service, Infokey_Build}
+	watcherInfoKeys := make([][]string, len(all_watchers_list))
+	for i, c := range all_watchers_list {
 		if keys := c.PassTwoKeys(passOneOutput); len(keys) > 0 {
 			infoKeys = append(infoKeys, keys...)
 			watcherInfoKeys[i] = keys
@@ -77,7 +80,7 @@ func Refresh() ([]AerospikeStat, error) {
 	}
 
 	// set global values
-	ClusterName, Service, Build = rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], rawMetrics[commons.Infokey_Build]
+	ClusterName, Service, Build = rawMetrics[Infokey_ClusterName], rawMetrics[Infokey_Service], rawMetrics[Infokey_Build]
 
 	// sanitize the utf8 strings before sending them to watchers
 	for k, v := range rawMetrics {

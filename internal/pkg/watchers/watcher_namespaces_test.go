@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/unittests"
@@ -87,7 +86,7 @@ func runTestcase(t *testing.T) {
 	passOneOutput, _ := data.GetProvider().RequestInfo(passOneKeys)
 	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
 	// append common keys
-	infoKeys := []string{commons.Infokey_ClusterName, commons.Infokey_Service, commons.Infokey_Build}
+	infoKeys := []string{Infokey_ClusterName, Infokey_Service, Infokey_Build}
 	passTwokeyOutputs = append(passTwokeyOutputs, infoKeys...)
 
 	arrRawMetrics, err := data.GetProvider().RequestInfo(passTwokeyOutputs)

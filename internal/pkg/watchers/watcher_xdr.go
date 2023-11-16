@@ -61,8 +61,8 @@ func (xw *XdrWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) (
 		xw.xdrMetrics = make(map[string]AerospikeStat)
 	}
 
-	clusterName := rawMetrics[commons.Infokey_ClusterName]
-	service := rawMetrics[commons.Infokey_Service]
+	clusterName := rawMetrics[Infokey_ClusterName]
+	service := rawMetrics[Infokey_Service]
 
 	var metrics_to_send = []AerospikeStat{}
 

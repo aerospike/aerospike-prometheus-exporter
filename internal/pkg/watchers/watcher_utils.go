@@ -9,6 +9,13 @@ import (
 	"github.com/gobwas/glob"
 )
 
+// Default info commands
+var (
+	Infokey_ClusterName = "cluster-name"
+	Infokey_Service     = "service-clear-std"
+	Infokey_Build       = "build"
+)
+
 var (
 	// Regex for indentifying globbing patterns (or standard wildcards) in the metrics allowlist and blocklist.
 	GlobbingPattern = regexp.MustCompile(`\[|\]|\*|\?|\{|\}|\\|!`)
