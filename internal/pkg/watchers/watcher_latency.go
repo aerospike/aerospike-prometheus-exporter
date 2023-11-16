@@ -54,8 +54,6 @@ func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []s
 		fmt.Println("ns_latency_enabled_benchmark: ", ns_latency_enabled_benchmark)
 	}
 
-	log.Tracef("namespaces:%s", s)
-
 	return commands
 }
 
