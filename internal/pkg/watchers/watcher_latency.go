@@ -34,12 +34,17 @@ func (lw *LatencyWatcher) PassTwoKeys(rawMetrics map[string]string) (latencyComm
 	}
 
 	if ok {
-		log.Tracef("latency-passtwokeys:%s", []string{"latencies:", "latencies:hist={test}-benchmarks-read"})
-		return []string{"latencies:"}
+		return lw.getLatenciesCommands()
 	}
 
 	log.Tracef("latency-passtwokeys:%s", []string{"latency:"})
 	return []string{"latency:"}
+}
+
+func (lw *LatencyWatcher) getLatenciesCommands() []string {
+	var commands = []string{"latencies:", "latencies:hist={test}-benchmarks-read"}
+	log.Tracef("latency-passtwokeys:%s", commands)
+	return commands
 }
 
 func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]WatcherMetric, error) {

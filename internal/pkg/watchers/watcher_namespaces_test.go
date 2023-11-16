@@ -17,7 +17,7 @@ func TestPassOneKeys(t *testing.T) {
 	nsWatcher := &NamespaceWatcher{}
 	nsPassOneKeys := nsWatcher.PassOneKeys()
 
-	udp := &unittests.UnittestDataProvider{}
+	udp := &unittests.UnittestDataHandler{}
 	ndv := udp.GetUnittestValidator("namespace")
 	passOneOutputs := ndv.GetPassOneKeys(*udp)
 
@@ -44,7 +44,7 @@ func TestPassTwoKeys(t *testing.T) {
 	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
 
 	// expectedOutputs := []string{"namespace/bar", "namespace/test"}
-	udp := &unittests.UnittestDataProvider{}
+	udp := &unittests.UnittestDataHandler{}
 	ndv := udp.GetUnittestValidator("namespace")
 	expectedOutputs := ndv.GetPassTwoKeys(*udp)
 

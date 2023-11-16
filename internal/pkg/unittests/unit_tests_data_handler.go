@@ -24,18 +24,18 @@ var TEST_DATA_FILE = "tests/exporter_mock_results.txt"
 var Is_Unittests_Initialized = 0
 
 type UnittestDataValidator interface {
-	GetPassOneKeys(udp UnittestDataProvider) map[string]string
-	GetPassTwoKeys(udp UnittestDataProvider) map[string]string
-	CompareMetricLabelsWithValues(udp UnittestDataProvider, metrics map[string]string) bool
+	GetPassOneKeys(udp UnittestDataHandler) map[string]string
+	GetPassTwoKeys(udp UnittestDataHandler) map[string]string
+	CompareMetricLabelsWithValues(udp UnittestDataHandler, metrics map[string]string) bool
 }
 
-type UnittestDataProvider struct {
+type UnittestDataHandler struct {
 	Namespace_PassOne           []string
 	Namespace_PassTwo           []string
 	Namespaces_Label_and_Values []string
 }
 
-func (md *UnittestDataProvider) Initialize() {
+func (md *UnittestDataHandler) Initialize() {
 
 	fmt.Println("Unittest Initializing ....: ")
 	// avoid multiple initializations
@@ -82,7 +82,7 @@ func (md *UnittestDataProvider) Initialize() {
 	}
 }
 
-func (md *UnittestDataProvider) GetUnittestValidator(key string) UnittestDataValidator {
+func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataValidator {
 
 	md.Initialize()
 
@@ -99,7 +99,7 @@ type UnittestNamespaceValidator struct {
 	Metrics        []string
 }
 
-func (unp UnittestNamespaceValidator) GetPassOneKeys(udp UnittestDataProvider) map[string]string {
+func (unp UnittestNamespaceValidator) GetPassOneKeys(udp UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
 	elements := udp.Namespace_PassOne[0]
 	elements = strings.Replace(elements, "namespace-passonekeys:", "", 1)
@@ -111,7 +111,7 @@ func (unp UnittestNamespaceValidator) GetPassOneKeys(udp UnittestDataProvider) m
 	return outputs
 }
 
-func (unp UnittestNamespaceValidator) GetPassTwoKeys(udp UnittestDataProvider) map[string]string {
+func (unp UnittestNamespaceValidator) GetPassTwoKeys(udp UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
 
 	// fmt.Println("GetPassTwoKeys: ", udp.Namespace_PassTwo)
@@ -129,6 +129,6 @@ func (unp UnittestNamespaceValidator) GetPassTwoKeys(udp UnittestDataProvider) m
 	return outputs
 }
 
-func (unp UnittestNamespaceValidator) CompareMetricLabelsWithValues(udp UnittestDataProvider, metrics map[string]string) bool {
+func (unp UnittestNamespaceValidator) CompareMetricLabelsWithValues(udp UnittestDataHandler, metrics map[string]string) bool {
 	return false
 }
