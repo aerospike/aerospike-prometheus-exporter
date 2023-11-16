@@ -51,6 +51,7 @@ func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []s
 	log.Tracef("latency-passtwokeys:%s", commands)
 
 	for ns_latency_enabled_benchmark := range LatencyBenchmarks {
+		// a := "latencies:hist={test}-benchmarks-read"
 		fmt.Println("ns_latency_enabled_benchmark: ", ns_latency_enabled_benchmark)
 	}
 
