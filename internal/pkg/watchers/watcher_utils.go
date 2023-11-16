@@ -9,10 +9,15 @@ import (
 	"github.com/gobwas/glob"
 )
 
+const (
+	INFOKEY_SERVICE_CLEAR_STD = "service-clear-std"
+	INFOKEY_SERVICE_TLS_STD   = "service-tls-std"
+)
+
 // Default info commands
 var (
 	Infokey_ClusterName = "cluster-name"
-	Infokey_Service     = "service-clear-std"
+	Infokey_Service     = INFOKEY_SERVICE_CLEAR_STD
 	Infokey_Build       = "build"
 )
 

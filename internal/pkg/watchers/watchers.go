@@ -64,6 +64,16 @@ func Refresh() ([]AerospikeStat, error) {
 	}
 
 	// fetch second second set of info keys
+	// check and load this only once, to avoid multiple file-reads, so this Infokey assignment will happen only once during restart
+	if Infokey_Service != INFOKEY_SERVICE_TLS_STD {
+		serverPool, clientPool := commons.LoadServerOrClientCertificates()
+		// we need to have atleast one certificate configured and read successfully
+		if serverPool != nil && clientPool != nil {
+			Infokey_Service = INFOKEY_SERVICE_TLS_STD
+			log.Debugf("TLS Mode is enabled, setting infokey-service as  'service-tls-std' for further fetching from server.")
+		}
+	}
+
 	infoKeys = []string{Infokey_ClusterName, Infokey_Service, Infokey_Build}
 	watcherInfoKeys := make([][]string, len(all_watchers_list))
 	for i, c := range all_watchers_list {

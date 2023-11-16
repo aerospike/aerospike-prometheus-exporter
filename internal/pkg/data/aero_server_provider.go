@@ -91,43 +91,29 @@ func initializeAndConnectAerospikeServer() (*aero.Connection, error) {
 
 	clientPolicy.TlsConfig = initAerospikeTLS()
 
-	if clientPolicy.TlsConfig != nil {
-		commons.Infokey_Service = "service-tls-std"
-	}
-
 	return createNewConnection()
 }
 
 func initAerospikeTLS() *tls.Config {
-	if len(config.Cfg.Aerospike.RootCA) == 0 && len(config.Cfg.Aerospike.CertFile) == 0 && len(config.Cfg.Aerospike.KeyFile) == 0 {
-		return nil
-	}
-
 	var clientPool []tls.Certificate
 	var serverPool *x509.CertPool
-	var err error
 
-	serverPool, err = commons.LoadCACert(config.Cfg.Aerospike.RootCA)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// load the server / client certificates
+	serverPool, clientPool = commons.LoadServerOrClientCertificates()
 
-	if len(config.Cfg.Aerospike.CertFile) > 0 || len(config.Cfg.Aerospike.KeyFile) > 0 {
-		clientPool, err = commons.LoadServerCertAndKey(config.Cfg.Aerospike.CertFile, config.Cfg.Aerospike.KeyFile, config.Cfg.Aerospike.KeyFilePassphrase)
-		if err != nil {
-			log.Fatal(err)
+	if serverPool != nil && clientPool != nil {
+		// we either have server pool or client pool of certificates
+		tlsConfig := &tls.Config{
+			Certificates:             clientPool,
+			RootCAs:                  serverPool,
+			InsecureSkipVerify:       false,
+			PreferServerCipherSuites: true,
+			NameToCertificate:        nil,
 		}
+		return tlsConfig
 	}
 
-	tlsConfig := &tls.Config{
-		Certificates:             clientPool,
-		RootCAs:                  serverPool,
-		InsecureSkipVerify:       false,
-		PreferServerCipherSuites: true,
-		NameToCertificate:        nil,
-	}
-
-	return tlsConfig
+	return nil
 }
 
 func createNewConnection() (*aero.Connection, error) {

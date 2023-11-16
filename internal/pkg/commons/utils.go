@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -161,6 +162,29 @@ func GetValueFromBase64(b64Value string) ([]byte, error) {
 	}
 
 	return value, nil
+}
+
+func LoadServerOrClientCertificates() (*x509.CertPool, []tls.Certificate) {
+	if len(config.Cfg.Aerospike.RootCA) == 0 && len(config.Cfg.Aerospike.CertFile) == 0 && len(config.Cfg.Aerospike.KeyFile) == 0 {
+		return nil, nil
+	}
+
+	var clientPool []tls.Certificate
+	var serverPool *x509.CertPool
+	var err error
+
+	serverPool, err = LoadCACert(config.Cfg.Aerospike.RootCA)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if len(config.Cfg.Aerospike.CertFile) > 0 || len(config.Cfg.Aerospike.KeyFile) > 0 {
+		clientPool, err = LoadServerCertAndKey(config.Cfg.Aerospike.CertFile, config.Cfg.Aerospike.KeyFile, config.Cfg.Aerospike.KeyFilePassphrase)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	return serverPool, clientPool
 }
 
 // loadCACert returns CA set of certificates (cert pool)
