@@ -104,6 +104,7 @@ func Refresh() ([]AerospikeStat, error) {
 
 	// sanitize the utf8 strings before sending them to watchers
 	for i, c := range all_watchers_list {
+		fmt.Println("\nSending... ", watcherInfoKeys[i], " keys to each Refresh ...")
 		l_watcher_metrics, err := c.Refresh(watcherInfoKeys[i], rawMetrics)
 		if err != nil {
 			return all_metrics_to_send, err
