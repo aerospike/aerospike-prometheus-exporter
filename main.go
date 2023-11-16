@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	configFile  = flag.String("config", "/etc/aerospike-prometheus-exporter/ape.toml", "Config File")
-	showUsage   = flag.Bool("u", false, "Show usage information")
-	showVersion = flag.Bool("version", false, "Print version")
-	handle_mode = flag.String("handle_mode", "prometheus", "Exporter metrics handling mode")
+	configFile   = flag.String("config", "/etc/aerospike-prometheus-exporter/ape.toml", "Config File")
+	showUsage    = flag.Bool("u", false, "Show usage information")
+	showVersion  = flag.Bool("version", false, "Print version")
+	serving_mode = flag.String("serve_mode", "prometheus", "Exporter metrics serving mode")
 
 	version = "v1.9.0"
 
@@ -35,8 +35,8 @@ func main() {
 
 	handles := handlers.GetMetricHandlers()
 
-	log.Infof("Metrics handling mode is %s", *handle_mode)
-	err := handles[*handle_mode].Initialize()
+	log.Infof("Metrics serving mode is %s", *serving_mode)
+	err := handles[*serving_mode].Initialize()
 	if err != nil {
 		log.Errorln(err)
 	}

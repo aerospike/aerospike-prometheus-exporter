@@ -14,11 +14,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type PrometheusMetrics struct {
+type PrometheusMetricsHandler struct {
 	observer *Observer
 }
 
-func (pm PrometheusMetrics) Initialize() error {
+func (pm PrometheusMetricsHandler) Initialize() error {
 	mux := http.NewServeMux()
 
 	pm.observer = NewObserver()

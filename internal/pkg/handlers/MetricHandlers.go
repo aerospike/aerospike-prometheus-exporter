@@ -6,7 +6,7 @@ type MetricHandlers interface {
 
 func GetMetricHandlers() map[string]MetricHandlers {
 	handles := map[string]MetricHandlers{
-		"prometheus": &PrometheusMetrics{},
+		"prometheus": &PrometheusMetricsHandler{},
 	}
 
 	return handles
