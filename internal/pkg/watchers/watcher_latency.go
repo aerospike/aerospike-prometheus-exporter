@@ -86,16 +86,18 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 
 	// loop all the latency infokeys
 	for ik := range infoKeys {
-		parseSingleLatenciesKey(infoKeys[ik], rawMetrics, allowedLatenciesList, blockedLatenciessList)
+		l_metrics_to_send := parseSingleLatenciesKey(infoKeys[ik], rawMetrics, allowedLatenciesList, blockedLatenciessList)
+		metrics_to_send = append(metrics_to_send, l_metrics_to_send...)
 	}
 
 	return metrics_to_send, nil
 }
 
 func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]string,
-	allowedLatenciesList map[string]struct{}, blockedLatenciessList map[string]struct{}) {
+	allowedLatenciesList map[string]struct{}, blockedLatenciessList map[string]struct{}) []AerospikeStat {
 
 	var latencyStats map[string]LatencyStatsMap
+
 	if rawMetrics["latencies:"] != "" {
 		// in latest aerospike server>5.1 version, latencies: will always come as infokey, so no need to check other conditions
 		latencyStats = parseLatencyInfo(rawMetrics[singleLatencyKey], int(config.Cfg.Aerospike.LatencyBucketsCount))
@@ -156,4 +158,6 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 			}
 		}
 	}
+
+	return metrics_to_send
 }
