@@ -89,6 +89,7 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 	// loop all the latency infokeys
 	for ik := range infoKeys {
 		fmt.Println("infokey : ", infoKeys[ik])
+		parseSingleLatenciesKey(infoKeys[ik], rawMetrics, allowedLatenciesList, blockedLatenciessList)
 	}
 
 	return metrics_to_send, nil
@@ -99,7 +100,8 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 
 	var latencyStats map[string]LatencyStatsMap
 	if rawMetrics["latencies:"] != "" {
-		latencyStats = parseLatencyInfo(rawMetrics["latencies:"], int(config.Cfg.Aerospike.LatencyBucketsCount))
+		// in latest aerospike server>5.1 version, latencies: will always come as infokey, so no need to check other conditions
+		latencyStats = parseLatencyInfo(rawMetrics[singleLatencyKey], int(config.Cfg.Aerospike.LatencyBucketsCount))
 	} else {
 		latencyStats = parseLatencyInfoLegacy(rawMetrics["latency:"], int(config.Cfg.Aerospike.LatencyBucketsCount))
 	}
