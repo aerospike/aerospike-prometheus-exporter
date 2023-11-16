@@ -1,6 +1,7 @@
 package watchers
 
 import (
+	"fmt"
 	"strings"
 
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -111,6 +112,7 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 	var metrics_to_send = []AerospikeStat{}
 
 	for namespaceName, nsLatencyStats := range latencyStats {
+		fmt.Println("watcher-latency: namespaceName: ", namespaceName, "\t singleLatencyKey: ", singleLatencyKey)
 		for operation, opLatencyStats := range nsLatencyStats {
 
 			// operation comes from server as histogram-names
