@@ -1,6 +1,7 @@
 package watchers
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -226,6 +227,11 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 			// commons.PushToPrometheus(asMetric, pv, labels, labelValues, ch)
 			asMetric.updateValues(pv, labels, labelValues)
 			metrics_to_send = append(metrics_to_send, asMetric)
+		}
+
+		// check and if latency benchmarks stat && it is enabled (bool true==1 and false==0 after conversion)
+		if strings.Contains(stat, "enabled-benchmarks") && pv > 0 {
+			fmt.Println("benchmarks enabled ", stat, " for namespace: ", nsName)
 		}
 	}
 

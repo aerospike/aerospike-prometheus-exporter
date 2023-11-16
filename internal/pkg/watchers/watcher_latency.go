@@ -13,6 +13,8 @@ import (
 type LatencyWatcher struct {
 }
 
+var LatencyBenchmarks map[string]bool
+
 func (lw *LatencyWatcher) PassOneKeys() []string {
 	// return []string{"build"}
 	log.Tracef("latency-passonekeys:nil")
