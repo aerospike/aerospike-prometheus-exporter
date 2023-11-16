@@ -53,7 +53,10 @@ func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []s
 	s := rawMetrics[KEY_NS_METADATA]
 	ns_list := strings.Split(s, ";")
 
-	fmt.Println("\n******* list of namespace: ", ns_list)
+	for ns_idx := range ns_list {
+		ns := ns_list[ns_idx]
+		fmt.Println("\n******* list of namespace: ", ns, " \n\t ns_metrics: ", rawMetrics["namespace/"+ns])
+	}
 
 	log.Tracef("namespaces:%s", s)
 
