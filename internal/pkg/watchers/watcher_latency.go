@@ -2,7 +2,6 @@ package watchers
 
 import (
 	"fmt"
-	"strings"
 
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
@@ -13,7 +12,7 @@ import (
 type LatencyWatcher struct {
 }
 
-var LatencyBenchmarks map[string]bool
+var LatencyBenchmarks map[string]float64
 
 func (lw *LatencyWatcher) PassOneKeys() []string {
 	// return []string{"build"}
@@ -51,18 +50,9 @@ func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []s
 	var commands = []string{"latencies:", "latencies:hist={test}-benchmarks-read"}
 	log.Tracef("latency-passtwokeys:%s", commands)
 
-	// list of namespaces
-	s := rawMetrics[KEY_NS_METADATA]
-	ns_list := strings.Split(s, ";")
-	fmt.Println(" \n*** namespaces: ", ns_list)
-
-	for k := range rawMetrics {
-		fmt.Println(" rawmetrics keys are : ", k)
+	for ns_latency_enabled_benchmark := range LatencyBenchmarks {
+		fmt.Println("ns_latency_enabled_benchmark: ", ns_latency_enabled_benchmark)
 	}
-	// for ns_idx := range ns_list {
-	// 	ns := ns_list[ns_idx]
-	// 	fmt.Println("\n******* list of namespace: ", ns, " \n\t ns_metrics: ", rawMetrics[KEY_NS_NAMESPACE+"/"+ns])
-	// }
 
 	log.Tracef("namespaces:%s", s)
 
