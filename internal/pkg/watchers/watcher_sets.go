@@ -9,7 +9,7 @@ import (
 )
 
 type SetWatcher struct {
-	setMetrics map[string]commons.AerospikeStat
+	setMetrics map[string]AerospikeStat
 }
 
 const (
@@ -28,17 +28,17 @@ func (sw *SetWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
 	return []string{KEY_SETS}
 }
 
-func (sw *SetWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]WatcherMetric, error) {
+func (sw *SetWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 
 	setStats := strings.Split(rawMetrics[KEY_SETS], ";")
 
 	log.Tracef("set-stats:%v", rawMetrics[KEY_SETS])
 
 	if sw.setMetrics == nil {
-		sw.setMetrics = make(map[string]commons.AerospikeStat)
+		sw.setMetrics = make(map[string]AerospikeStat)
 	}
 
-	var metrics_to_send = []WatcherMetric{}
+	var metrics_to_send = []AerospikeStat{}
 
 	for i := range setStats {
 		clusterName := rawMetrics[commons.Infokey_ClusterName]
@@ -53,7 +53,7 @@ func (sw *SetWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) (
 			asMetric, exists := sw.setMetrics[stat]
 
 			if !exists {
-				asMetric = commons.NewAerospikeStat(commons.CTX_SETS, stat)
+				asMetric = NewAerospikeStat(commons.CTX_SETS, stat)
 				sw.setMetrics[stat] = asMetric
 			}
 
@@ -61,7 +61,8 @@ func (sw *SetWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) (
 			labelValues := []string{clusterName, service, stats["ns"], stats["set"]}
 
 			// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
-			metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, pv, labels, labelValues})
+			asMetric.updateValues(pv, labels, labelValues)
+			metrics_to_send = append(metrics_to_send, asMetric)
 		}
 
 	}

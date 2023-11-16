@@ -10,6 +10,7 @@ import (
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/watchers"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -137,7 +138,7 @@ func initExporterTLS() *tls.Config {
  * Constructs Prometheus parameters required which are needed to push metrics to Prometheus
  */
 
-func makePromMetric(as commons.AerospikeStat, pLabels ...string) (*prometheus.Desc, prometheus.ValueType) {
+func makePromMetric(as watchers.AerospikeStat, pLabels ...string) (*prometheus.Desc, prometheus.ValueType) {
 
 	qualifiedName := as.QualifyMetricContext() + "_" + commons.NormalizeMetric(as.Name)
 	promDesc := prometheus.NewDesc(
@@ -155,8 +156,7 @@ func makePromMetric(as commons.AerospikeStat, pLabels ...string) (*prometheus.De
 }
 
 // This is a common utility, used by all the watchers to push metric to prometheus
-func PushToPrometheus(asMetric commons.AerospikeStat, pv float64, labels []string, labelValues []string,
-	ch chan<- prometheus.Metric) {
+func PushToPrometheus(asMetric watchers.AerospikeStat, ch chan<- prometheus.Metric) {
 
 	if asMetric.IsAllowed {
 		// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
@@ -167,8 +167,8 @@ func PushToPrometheus(asMetric commons.AerospikeStat, pv float64, labels []strin
 			}
 		}()
 
-		desc, valueType := makePromMetric(asMetric, labels...)
-		ch <- prometheus.MustNewConstMetric(desc, valueType, pv, labelValues...)
+		desc, valueType := makePromMetric(asMetric, asMetric.Labels...)
+		ch <- prometheus.MustNewConstMetric(desc, valueType, asMetric.Value, asMetric.LabelValues...)
 
 	}
 }

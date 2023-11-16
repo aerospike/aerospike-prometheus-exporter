@@ -15,7 +15,7 @@ const (
 )
 
 type XdrWatcher struct {
-	xdrMetrics map[string]commons.AerospikeStat
+	xdrMetrics map[string]AerospikeStat
 }
 
 func (xw *XdrWatcher) PassOneKeys() []string {
@@ -55,16 +55,16 @@ func (xw *XdrWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
 }
 
 // refresh prom metrics - parse the given rawMetrics (both config and stats ) and push to given channel
-func (xw *XdrWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]WatcherMetric, error) {
+func (xw *XdrWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 
 	if xw.xdrMetrics == nil {
-		xw.xdrMetrics = make(map[string]commons.AerospikeStat)
+		xw.xdrMetrics = make(map[string]AerospikeStat)
 	}
 
 	clusterName := rawMetrics[commons.Infokey_ClusterName]
 	service := rawMetrics[commons.Infokey_Service]
 
-	var metrics_to_send = []WatcherMetric{}
+	var metrics_to_send = []AerospikeStat{}
 
 	for _, key := range infoKeys {
 
@@ -109,11 +109,11 @@ func (xw *XdrWatcher) constructMetricNamePrefix(infoKeyToProcess string) (string
 }
 
 func (xw *XdrWatcher) handleRefresh(infoKeyToProcess string, xdrRawMetrics string,
-	clusterName string, service string, dcName string, ns string, metricPrefix string) []WatcherMetric {
+	clusterName string, service string, dcName string, ns string, metricPrefix string) []AerospikeStat {
 	log.Tracef("xdr-%s:%s", infoKeyToProcess, xdrRawMetrics)
 
 	stats := commons.ParseStats(xdrRawMetrics, ";")
-	var metrics_to_send = []WatcherMetric{}
+	var metrics_to_send = []AerospikeStat{}
 	for stat, value := range stats {
 
 		pv, err := commons.TryConvert(value)
@@ -124,7 +124,7 @@ func (xw *XdrWatcher) handleRefresh(infoKeyToProcess string, xdrRawMetrics strin
 		dynamicStatname := metricPrefix + stat
 
 		if !exists {
-			asMetric = commons.NewAerospikeStat(commons.CTX_XDR, dynamicStatname)
+			asMetric = NewAerospikeStat(commons.CTX_XDR, dynamicStatname)
 			xw.xdrMetrics[stat] = asMetric
 		}
 
@@ -138,7 +138,8 @@ func (xw *XdrWatcher) handleRefresh(infoKeyToProcess string, xdrRawMetrics strin
 		}
 
 		// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
-		metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, pv, labels, labelValues})
+		asMetric.updateValues(pv, labels, labelValues)
+		metrics_to_send = append(metrics_to_send, asMetric)
 	}
 
 	return metrics_to_send

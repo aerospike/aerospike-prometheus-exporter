@@ -16,9 +16,9 @@ import (
 // error-no-data-yet-or-back-too-small;
 // or,
 // {test}-write:;
-func parseLatencyInfoLegacy(s string, latencyBucketsCount int) map[string]commons.StatsMap {
+func parseLatencyInfoLegacy(s string, latencyBucketsCount int) map[string]StatsMap {
 	ip := NewInfoParser(s)
-	res := map[string]commons.StatsMap{}
+	res := map[string]StatsMap{}
 
 	for {
 		namespaceName, operation, err := readNamespaceAndOperation(ip)
@@ -102,14 +102,14 @@ func parseLatencyInfoLegacy(s string, latencyBucketsCount int) map[string]common
 			break
 		}
 
-		stats := commons.StatsMap{
+		stats := StatsMap{
 			"bucketLabels": bucketLabels,
 			"bucketValues": bucketValuesFloat,
 			"timeUnit":     "ms",
 		}
 
 		if res[namespaceName] == nil {
-			res[namespaceName] = commons.StatsMap{
+			res[namespaceName] = StatsMap{
 				operation: stats,
 			}
 		} else {
@@ -156,9 +156,9 @@ func readNamespaceAndOperation(ip *InfoParser) (string, string, error) {
 // Format (with and without latency data)
 // {test}-write:msec,4234.9,28.75,7.40,1.63,0.26,0.03,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00;
 // {test}-read:;
-func parseLatencyInfo(s string, latencyBucketsCount int) map[string]commons.StatsMap {
+func parseLatencyInfo(s string, latencyBucketsCount int) map[string]StatsMap {
 	ip := NewInfoParser(s)
-	res := map[string]commons.StatsMap{}
+	res := map[string]StatsMap{}
 
 	for {
 		namespaceName, operation, err := readNamespaceAndOperation(ip)
@@ -232,14 +232,14 @@ func parseLatencyInfo(s string, latencyBucketsCount int) map[string]commons.Stat
 			break
 		}
 
-		stats := commons.StatsMap{
+		stats := StatsMap{
 			"bucketLabels": bucketLabels,
 			"bucketValues": bucketValuesFloat,
 			"timeUnit":     timeUnit,
 		}
 
 		if res[namespaceName] == nil {
-			res[namespaceName] = commons.StatsMap{
+			res[namespaceName] = StatsMap{
 				operation: stats,
 			}
 		} else {

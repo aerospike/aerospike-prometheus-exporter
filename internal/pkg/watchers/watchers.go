@@ -11,18 +11,11 @@ var (
 	Service, ClusterName, Build string
 )
 
-type WatcherMetric struct {
-	Metric      commons.AerospikeStat
-	Value       float64
-	Labels      []string
-	LabelValues []string
-}
-
 type Watcher interface {
 	PassOneKeys() []string
 	PassTwoKeys(rawMetrics map[string]string) []string
 	// refresh( o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error
-	Refresh(infoKeys []string, rawMetrics map[string]string) ([]WatcherMetric, error)
+	Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error)
 }
 
 func GetWatchers() []Watcher {
@@ -41,13 +34,13 @@ func GetWatchers() []Watcher {
 
 // public and utility functions
 
-func Refresh() ([]WatcherMetric, error) {
+func Refresh() ([]AerospikeStat, error) {
 
 	fullHost := commons.GetFullHost()
 	log.Debugf("Refreshing node %s", fullHost)
 
 	// array to accumulate all metrics, which later will be dispatched by various observers
-	var all_metrics_to_send = []WatcherMetric{}
+	var all_metrics_to_send = []AerospikeStat{}
 
 	// fetch first set of info keys
 	var infoKeys []string

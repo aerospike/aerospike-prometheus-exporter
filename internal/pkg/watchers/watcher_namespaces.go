@@ -39,7 +39,7 @@ const (
 )
 
 type NamespaceWatcher struct {
-	namespaceStats map[string]commons.AerospikeStat
+	namespaceStats map[string]AerospikeStat
 }
 
 func (nw *NamespaceWatcher) PassOneKeys() []string {
@@ -70,12 +70,12 @@ func (nw *NamespaceWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
 	return infoKeys
 }
 
-func (nw *NamespaceWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]WatcherMetric, error) {
+func (nw *NamespaceWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 	if nw.namespaceStats == nil {
-		nw.namespaceStats = make(map[string]commons.AerospikeStat)
+		nw.namespaceStats = make(map[string]AerospikeStat)
 	}
 
-	var metrics_to_send = []WatcherMetric{}
+	var metrics_to_send = []AerospikeStat{}
 	for _, infoKey := range infoKeys {
 
 		// we get 2 info-key Types - examples: index-pressure or namespace/test, namespace/materials
@@ -95,7 +95,7 @@ func (nw *NamespaceWatcher) Refresh(infoKeys []string, rawMetrics map[string]str
 }
 
 // handle IndexPressure infoKey
-func (nw *NamespaceWatcher) refreshIndexPressure(singleInfoKey string, infoKeys []string, rawMetrics map[string]string) []WatcherMetric {
+func (nw *NamespaceWatcher) refreshIndexPressure(singleInfoKey string, infoKeys []string, rawMetrics map[string]string) []AerospikeStat {
 
 	indexPresssureStats := rawMetrics[singleInfoKey]
 
@@ -108,7 +108,7 @@ func (nw *NamespaceWatcher) refreshIndexPressure(singleInfoKey string, infoKeys 
 	// metric-names - first element is un-used, as we send namespace as a label, this also keeps the index-numbers same as the server-stats
 	indexPressureMetricNames := []string{"index_pressure_namespace", "index_pressure_total_memory", "index_pressure_dirty_memory"}
 
-	var metrics_to_send = []WatcherMetric{}
+	var metrics_to_send = []AerospikeStat{}
 
 	// loop thru each namespace values,
 	//   Server index-pressure output: "test:0:0", "bar_device:0:0"
@@ -137,13 +137,15 @@ func (nw *NamespaceWatcher) refreshIndexPressure(singleInfoKey string, infoKeys 
 
 			asMetric, exists := nw.namespaceStats[statName]
 			if !exists {
-				asMetric = commons.NewAerospikeStat(commons.CTX_NAMESPACE, statName)
+				asMetric = NewAerospikeStat(commons.CTX_NAMESPACE, statName)
 				nw.namespaceStats[statName] = asMetric
 			}
+			// asMetric.resetValues() // resetting values, labels & label-values to nil to avoid any old values re-used/ re-shared
 
 			// push to prom-channel
 			// commons.PushToPrometheus(asMetric, pv, labels, labelValues, ch)
-			metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, pv, labels, labelValues})
+			asMetric.updateValues(pv, labels, labelValues)
+			metrics_to_send = append(metrics_to_send, asMetric)
 		}
 	}
 
@@ -151,7 +153,7 @@ func (nw *NamespaceWatcher) refreshIndexPressure(singleInfoKey string, infoKeys 
 }
 
 // all namespace stats (except index-pressure)
-func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys []string, rawMetrics map[string]string) []WatcherMetric {
+func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys []string, rawMetrics map[string]string) []AerospikeStat {
 
 	// extract namespace from info-command, construct: namespace/test, namespace/bar
 	nsName := strings.ReplaceAll(singleInfoKey, (KEY_NS_NAMESPACE + "/"), "")
@@ -163,7 +165,7 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 	var labelValues []string
 	constructedStatname := ""
 
-	var metrics_to_send = []WatcherMetric{}
+	var metrics_to_send = []AerospikeStat{}
 
 	for stat, value := range stats {
 
@@ -215,13 +217,15 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 			asMetric, exists := nw.namespaceStats[constructedStatname]
 
 			if !exists {
-				asMetric = commons.NewAerospikeStat(commons.CTX_NAMESPACE, constructedStatname)
+				asMetric = NewAerospikeStat(commons.CTX_NAMESPACE, constructedStatname)
 				nw.namespaceStats[constructedStatname] = asMetric
 			}
+			// asMetric.resetValues() // resetting values, labels & label-values to nil to avoid any old values re-used/ re-shared
 
 			// push to prom-channel
 			// commons.PushToPrometheus(asMetric, pv, labels, labelValues, ch)
-			metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, pv, labels, labelValues})
+			asMetric.updateValues(pv, labels, labelValues)
+			metrics_to_send = append(metrics_to_send, asMetric)
 		}
 	}
 

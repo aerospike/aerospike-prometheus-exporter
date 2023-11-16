@@ -11,66 +11,33 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
-	"github.com/gobwas/glob"
 
 	goversion "github.com/hashicorp/go-version"
 )
 
-// this is used as a prefix to qualify a metric while pushing to Prometheus or something
-var PREFIX_AEROSPIKE = "aerospike_"
-
 // Default info commands
-var Infokey_ClusterName = "cluster-name"
-var Infokey_Service = "service-clear-std"
-var Infokey_Build = "build"
-
-// used to define context of stat types (like namespace, set, xdr etc.,)
-type ContextType string
-
-const (
-	CTX_USERS      ContextType = "users"
-	CTX_NAMESPACE  ContextType = "namespace"
-	CTX_NODE_STATS ContextType = "node_stats"
-	CTX_SETS       ContextType = "sets"
-	CTX_SINDEX     ContextType = "sindex"
-	CTX_XDR        ContextType = "xdr"
-	CTX_LATENCIES  ContextType = "latencies"
+var (
+	Infokey_ClusterName = "cluster-name"
+	Infokey_Service     = "service-clear-std"
+	Infokey_Build       = "build"
 )
 
-// below constant represent the labels we send along with metrics to Prometheus or something
-const (
-	METRIC_LABEL_CLUSTER_NAME   = "cluster_name"
-	METRIC_LABEL_SERVICE        = "service"
-	METRIC_LABEL_NS             = "ns"
-	METRIC_LABEL_SET            = "set"
-	METRIC_LABEL_LE             = "le"
-	METRIC_LABEL_DC_NAME        = "dc"
-	METRIC_LABEL_INDEX          = "index"
-	METRIC_LABEL_SINDEX         = "sindex"
-	METRIC_LABEL_STORAGE_ENGINE = "storage_engine"
-	METRIC_LABEL_USER           = "user"
+var (
+	descReplacerFunc = strings.NewReplacer("_", " ", "-", " ", ".", " ")
+	// TODO: re-check why we need below replacer, is it because of the replace char sequences
+	metricReplacerFunc = strings.NewReplacer(".", "_", "-", "_", " ", "_")
 )
 
-// constants used to identify type of metrics
-const (
-	STORAGE_ENGINE = "storage-engine"
-	INDEX_TYPE     = "index-type"
-	SINDEX_TYPE    = "sindex-type"
-)
-
-var descReplacerFunc = strings.NewReplacer("_", " ", "-", " ", ".", " ")
+// Utility functions
 
 func NormalizeDesc(s string) string {
 	return descReplacerFunc.Replace(s)
 }
-
-var metricReplacerFunc = strings.NewReplacer(".", "_", "-", "_", " ", "_")
 
 func NormalizeMetric(s string) string {
 	return metricReplacerFunc.Replace(s)
@@ -118,66 +85,6 @@ func ValidateBasicAuth(r *http.Request, username string, password string) bool {
 	}
 
 	return true
-}
-
-// Regex for indentifying globbing patterns (or standard wildcards) in the metrics allowlist and blocklist.
-var GlobbingPattern = regexp.MustCompile(`\[|\]|\*|\?|\{|\}|\\|!`)
-
-// Filter metrics
-// Runs the raw metrics through allowlist first and the resulting metrics through blocklist
-func GetFilteredMetrics(rawMetrics map[string]metricType, allowlist []string, allowlistEnabled bool, blocklist []string) map[string]metricType {
-	filteredMetrics := filterAllowedMetrics(rawMetrics, allowlist, allowlistEnabled)
-	filterBlockedMetrics(filteredMetrics, blocklist)
-
-	return filteredMetrics
-}
-
-// Filter metrics based on configured allowlist.
-func filterAllowedMetrics(rawMetrics map[string]metricType, allowlist []string, allowlistEnabled bool) map[string]metricType {
-	if !allowlistEnabled {
-		return rawMetrics
-	}
-
-	filteredMetrics := make(map[string]metricType)
-
-	for _, stat := range allowlist {
-		if GlobbingPattern.MatchString(stat) {
-			ge := glob.MustCompile(stat)
-
-			for k, v := range rawMetrics {
-				if ge.Match(k) {
-					filteredMetrics[k] = v
-				}
-			}
-		} else {
-			if val, ok := rawMetrics[stat]; ok {
-				filteredMetrics[stat] = val
-			}
-		}
-	}
-
-	return filteredMetrics
-}
-
-// Filter metrics based on configured blocklist.
-func filterBlockedMetrics(filteredMetrics map[string]metricType, blocklist []string) {
-	if len(blocklist) == 0 {
-		return
-	}
-
-	for _, stat := range blocklist {
-		if GlobbingPattern.MatchString(stat) {
-			ge := glob.MustCompile(stat)
-
-			for k := range filteredMetrics {
-				if ge.Match(k) {
-					delete(filteredMetrics, k)
-				}
-			}
-		} else {
-			delete(filteredMetrics, stat)
-		}
-	}
 }
 
 // Get secret
@@ -393,148 +300,6 @@ func BuildVersionGreaterThanOrEqual(rawMetrics map[string]string, ref string) (b
 	return false, nil
 }
 
-/*
-Validates if given stat is having - or defined in gauge-stat list, if not, return default metric-type (i.e. Counter)
-*/
-func GetMetricType(pContext ContextType, pRawMetricName string) metricType {
-
-	// condition#1 : Config ( which has a - in the stat) is always a Gauge
-	// condition#2 : or - it is marked as Gauge in the configuration file
-	//
-	// If stat is storage-engine related then consider the remaining stat name during below check
-	//
-
-	if pContext == CTX_LATENCIES || pContext == CTX_USERS {
-		return MetricTypeGauge
-	}
-
-	tmpRawMetricName := strings.ReplaceAll(pRawMetricName, STORAGE_ENGINE, "")
-
-	if strings.Contains(tmpRawMetricName, "-") ||
-		isGauge(pContext, tmpRawMetricName) {
-		return MetricTypeGauge
-	}
-
-	return MetricTypeCounter
-}
-
 func GetFullHost() string {
 	return net.JoinHostPort(config.Cfg.Aerospike.Host, strconv.Itoa(int(config.Cfg.Aerospike.Port)))
-}
-
-/**
- * this function check is a given stat is allowed or blocked against given patterns
- * these patterns are defined within ape.toml
- *
- * NOTE: when a stat falls within intersection of allow-list & block-list, we block that stat
- *
- *             | empty         | no-pattern-match-found | pattern-match-found
- *  allow-list | allowed/true  |   not-allowed/ false   |    allowed/true
- *  block-list | blocked/false |   not-blocked/ false   |    blocked/true
- *
- *  by checking the blocklist first,
- *     we avoid processing the allow-list for some of the metrics
- *
- */
-func IsMetricAllowed(pContextType ContextType, pRawStatName string) bool {
-
-	pAllowlist := []string{}
-	pBlocklist := []string{}
-
-	switch pContextType {
-	case CTX_NAMESPACE:
-		pAllowlist = config.Cfg.Aerospike.NamespaceMetricsAllowlist
-		pBlocklist = config.Cfg.Aerospike.NamespaceMetricsBlocklist
-	case CTX_NODE_STATS:
-		pAllowlist = config.Cfg.Aerospike.NodeMetricsAllowlist
-		pBlocklist = config.Cfg.Aerospike.NodeMetricsBlocklist
-	case CTX_SETS:
-		pAllowlist = config.Cfg.Aerospike.SetMetricsAllowlist
-		pBlocklist = config.Cfg.Aerospike.SetMetricsBlocklist
-	case CTX_SINDEX:
-		pAllowlist = config.Cfg.Aerospike.SindexMetricsAllowlist
-		pBlocklist = config.Cfg.Aerospike.SindexMetricsBlocklist
-	case CTX_XDR:
-		pAllowlist = config.Cfg.Aerospike.XdrMetricsAllowlist
-		pBlocklist = config.Cfg.Aerospike.XdrMetricsBlocklist
-
-	}
-
-	/**
-		* is this stat is in blocked list
-	    *    if is-block-list array not-defined or is-empty, then false (i.e. STAT-IS-NOT-BLOCKED)
-		*    else
-		*       match stat with "all-block-list-patterns",
-		*             if-any-pattern-match-found,
-		*                    return true (i.e. STAT-IS-BLOCKED)
-		* if stat-is-not-blocked
-		*    if is-allow-list array not-defined or is-empty, then true (i.e. STAT-IS-ALLOWED)
-		*    else
-		*      match stat with "all-allow-list-patterns"
-		*             if-any-pattern-match-found,
-		*                    return true (i.e. STAT-IS-ALLOWED)
-	*/
-	if len(pBlocklist) > 0 {
-		isBlocked := loopPatterns(pRawStatName, pBlocklist)
-		if isBlocked {
-			return false
-		}
-	}
-
-	// as it is already blocked, we dont need to check in allow-list,
-	// i.e. when a stat falls within intersection of allow-list & block-list, we block that stat
-	//
-
-	if len(pAllowlist) == 0 {
-		return true
-	}
-
-	return loopPatterns(pRawStatName, pAllowlist)
-}
-
-/**
- *  this function is used to loop thru any given regex-pattern-list, [ master_objects or *master* ]
- *
- *             | empty         | no-pattern-match-found | pattern-match-found
- *  allow-list | allowed/true  |   not-allowed/ false   |    allowed/true
- *  block-list | blocked/false |   not-blocked/ false   |    blocked/true
- *
- *
- */
-
-func loopPatterns(pRawStatName string, pPatternList []string) bool {
-
-	for _, statPattern := range pPatternList {
-		if len(statPattern) > 0 {
-
-			ge := glob.MustCompile(statPattern)
-
-			if ge.Match(pRawStatName) {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-/**
- * Check if given stat is a Gauge in a given context like Node, Namespace etc.,
- */
-func isGauge(pContextType ContextType, pStat string) bool {
-
-	switch pContextType {
-	case CTX_NAMESPACE:
-		return config.GaugeStatHandler.NamespaceStats[pStat]
-	case CTX_NODE_STATS:
-		return config.GaugeStatHandler.NodeStats[pStat]
-	case CTX_SETS:
-		return config.GaugeStatHandler.SetsStats[pStat]
-	case CTX_SINDEX:
-		return config.GaugeStatHandler.SindexStats[pStat]
-	case CTX_XDR:
-		return config.GaugeStatHandler.XdrStats[pStat]
-	}
-
-	return false
 }

@@ -68,7 +68,7 @@ func (o *Observer) Collect(ch chan<- prometheus.Metric) {
 	// push the fetched metrics to prometheus
 	for _, wm := range watcher_metrics {
 		// fmt.Println("\n pushing metric: ", wm.Metric.Name, " to prometheus")
-		PushToPrometheus(wm.Metric, wm.Value, wm.Labels, wm.LabelValues, ch)
+		PushToPrometheus(wm, ch)
 	}
 
 	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, watchers.ClusterName, watchers.Service, watchers.Build)

@@ -12,7 +12,7 @@ const (
 )
 
 type NodeStatsWatcher struct {
-	nodeMetrics map[string]commons.AerospikeStat
+	nodeMetrics map[string]AerospikeStat
 }
 
 func (sw *NodeStatsWatcher) PassOneKeys() []string {
@@ -31,10 +31,10 @@ func (sw *NodeStatsWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
 // All (allowed/blocked) node stats. Based on the config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsBlocklist.
 // var nodeMetrics = make(map[string]AerospikeStat)
 
-func (sw *NodeStatsWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]WatcherMetric, error) {
+func (sw *NodeStatsWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 
 	if sw.nodeMetrics == nil {
-		sw.nodeMetrics = make(map[string]commons.AerospikeStat)
+		sw.nodeMetrics = make(map[string]AerospikeStat)
 	}
 
 	nodeConfigs := rawMetrics[KEY_SERVICE_CONFIG]
@@ -47,7 +47,7 @@ func (sw *NodeStatsWatcher) Refresh(infoKeys []string, rawMetrics map[string]str
 
 	// we are sending configs and stats in same refresh call, as both are being sent to prom, instead of doing prom-push in 2 functions
 	// handle configs
-	var metrics_to_send = []WatcherMetric{}
+	var metrics_to_send = []AerospikeStat{}
 
 	l_cfg_metrics_to_send := sw.handleRefresh(nodeConfigs, clusterName, service)
 
@@ -61,11 +61,11 @@ func (sw *NodeStatsWatcher) Refresh(infoKeys []string, rawMetrics map[string]str
 	return metrics_to_send, nil
 }
 
-func (sw *NodeStatsWatcher) handleRefresh(nodeRawMetrics string, clusterName string, service string) []WatcherMetric {
+func (sw *NodeStatsWatcher) handleRefresh(nodeRawMetrics string, clusterName string, service string) []AerospikeStat {
 
 	stats := commons.ParseStats(nodeRawMetrics, ";")
 
-	var metrics_to_send = []WatcherMetric{}
+	var metrics_to_send = []AerospikeStat{}
 
 	for stat, value := range stats {
 		pv, err := commons.TryConvert(value)
@@ -75,7 +75,7 @@ func (sw *NodeStatsWatcher) handleRefresh(nodeRawMetrics string, clusterName str
 		asMetric, exists := sw.nodeMetrics[stat]
 
 		if !exists {
-			asMetric = commons.NewAerospikeStat(commons.CTX_NODE_STATS, stat)
+			asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, stat)
 			sw.nodeMetrics[stat] = asMetric
 		}
 
@@ -83,7 +83,8 @@ func (sw *NodeStatsWatcher) handleRefresh(nodeRawMetrics string, clusterName str
 		labelValues := []string{clusterName, service}
 
 		// pushToPrometheus(asMetric, pv, labels, labelsValues)
-		metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, pv, labels, labelValues})
+		asMetric.updateValues(pv, labels, labelValues)
+		metrics_to_send = append(metrics_to_send, asMetric)
 
 	}
 

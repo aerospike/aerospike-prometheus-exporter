@@ -1,8 +1,11 @@
 package commons
 
-type metricType byte
+// used to define context of stat types (like namespace, set, xdr etc.,)
+type ContextType string
+
+type MetricType byte
 
 const (
-	MetricTypeGauge   metricType = 'G'
-	MetricTypeCounter metricType = 'C'
+	MetricTypeGauge   MetricType = 'G'
+	MetricTypeCounter MetricType = 'C'
 )

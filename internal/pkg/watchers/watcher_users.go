@@ -28,7 +28,7 @@ func (uw *UserWatcher) PassTwoKeys(rawMetrics map[string]string) []string {
 	return nil
 }
 
-func (uw *UserWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]WatcherMetric, error) {
+func (uw *UserWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 
 	// check if security configurations are enabled
 	if config.Cfg.Aerospike.User == "" && config.Cfg.Aerospike.Password == "" {
@@ -62,8 +62,13 @@ func (uw *UserWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) 
 	var users []*aero.UserRoles
 
 	shouldFetchUserStatistics, users, err = data.GetProvider().FetchUsersDetails()
+	if err != nil {
+		log.Warn("Error while fetching user statistics: ", err)
+		return nil, nil
 
-	var metrics_to_send = []WatcherMetric{}
+	}
+
+	var metrics_to_send = []AerospikeStat{}
 	// Push metrics to Prometheus or Observability tool
 	l_user_metrics_to_send, err := uw.refreshUserStats(infoKeys, rawMetrics, users)
 	if err != nil {
@@ -77,7 +82,7 @@ func (uw *UserWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) 
 	return metrics_to_send, err
 }
 
-func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string]string, users []*aero.UserRoles) ([]WatcherMetric, error) {
+func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string]string, users []*aero.UserRoles) ([]AerospikeStat, error) {
 	allowedUsersList := make(map[string]struct{})
 	blockedUsersList := make(map[string]struct{})
 
@@ -95,7 +100,7 @@ func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string
 		}
 	}
 
-	var metrics_to_send = []WatcherMetric{}
+	var metrics_to_send = []AerospikeStat{}
 
 	for _, user := range users {
 		// check if user is allowed
@@ -133,18 +138,22 @@ func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string
 		// var labelValues []string
 
 		asMetric, labels, labelValues := internalCreateLocalAerospikeStat("conns_in_use", user.User)
-		metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, float64(user.ConnsInUse), labels, labelValues})
+		asMetric.updateValues(float64(user.ConnsInUse), labels, labelValues)
+		metrics_to_send = append(metrics_to_send, asMetric)
 
 		if len(user.ReadInfo) >= 4 && len(user.WriteInfo) >= 4 {
 
 			for Idx_Readinfo := 0; Idx_Readinfo < len(user.ReadInfo); Idx_Readinfo++ {
 				ri_asMetric, ri_labels, ri_labelValues := internalCreateLocalAerospikeStat(readInfoStats[Idx_Readinfo], user.User)
-				metrics_to_send = append(metrics_to_send, WatcherMetric{ri_asMetric, float64(user.ReadInfo[Idx_Readinfo]), ri_labels, ri_labelValues})
+				ri_asMetric.updateValues(float64(user.ReadInfo[Idx_Readinfo]), ri_labels, ri_labelValues)
+
+				metrics_to_send = append(metrics_to_send, ri_asMetric)
 
 			}
 			for Idx_Writeinfo := 0; Idx_Writeinfo < len(user.WriteInfo); Idx_Writeinfo++ {
 				wi_asMetric, wi_labels, wi_labelValues := internalCreateLocalAerospikeStat(writeInfoStats[Idx_Writeinfo], user.User)
-				metrics_to_send = append(metrics_to_send, WatcherMetric{wi_asMetric, float64(user.WriteInfo[Idx_Writeinfo]), wi_labels, wi_labelValues})
+				wi_asMetric.updateValues(float64(user.WriteInfo[Idx_Writeinfo]), wi_labels, wi_labelValues)
+				metrics_to_send = append(metrics_to_send, wi_asMetric)
 
 			}
 
@@ -176,10 +185,10 @@ func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string
 	return metrics_to_send, nil
 }
 
-func internalCreateLocalAerospikeStat(pStatName string, username string) (commons.AerospikeStat, []string, []string) {
+func internalCreateLocalAerospikeStat(pStatName string, username string) (AerospikeStat, []string, []string) {
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER}
 	labelValues := []string{ClusterName, Service, username}
-	asMetric := commons.NewAerospikeStat(commons.CTX_USERS, pStatName)
+	asMetric := NewAerospikeStat(commons.CTX_USERS, pStatName)
 
 	return asMetric, labels, labelValues
 }

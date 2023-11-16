@@ -1,4 +1,4 @@
-package commons
+package watchers
 
 type StatsMap map[string]interface{}
 

@@ -47,7 +47,7 @@ func (lw *LatencyWatcher) getLatenciesCommands() []string {
 	return commands
 }
 
-func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]WatcherMetric, error) {
+func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 
 	allowedLatenciesList := make(map[string]struct{})
 	blockedLatenciessList := make(map[string]struct{})
@@ -64,7 +64,7 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 		}
 	}
 
-	var latencyStats map[string]commons.StatsMap
+	var latencyStats map[string]StatsMap
 	log.Tracef("latencies-stats:%+v", rawMetrics["latencies:"])
 	log.Tracef("latencies-stats:latencies:hist={test}-benchmarks-read -- %+v", rawMetrics["latencies:hist={test}-benchmarks-read"])
 
@@ -78,7 +78,7 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 
 	// log.Tracef("latency-stats:%+v", latencyStats)
 
-	var metrics_to_send = []WatcherMetric{}
+	var metrics_to_send = []AerospikeStat{}
 
 	for namespaceName, nsLatencyStats := range latencyStats {
 		for operation, opLatencyStats := range nsLatencyStats {
@@ -96,28 +96,33 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 				}
 			}
 
-			for i, labelValue := range opLatencyStats.(commons.StatsMap)["bucketLabels"].([]string) {
+			for i, labelValue := range opLatencyStats.(StatsMap)["bucketLabels"].([]string) {
 				// aerospike_latencies_<operation>_<timeunit>_bucket metric - Less than or equal to histogram buckets
 
 				labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_LE}
 				labelValues := []string{ClusterName, Service, namespaceName, labelValue}
-				pv := opLatencyStats.(commons.StatsMap)["bucketValues"].([]float64)[i]
+				pv := opLatencyStats.(StatsMap)["bucketValues"].([]float64)[i]
 
 				// pm := makeMetric("aerospike_latencies", operation+"_"+opLatencyStats.(commons.StatsMap)["timeUnit"].(string)+"_bucket", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_LE)
 				// ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], namespaceName, labelValue)
-				asMetric := commons.NewAerospikeStat(commons.CTX_LATENCIES, operation+"_"+opLatencyStats.(commons.StatsMap)["timeUnit"].(string)+"_bucket")
-				metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, pv, labels, labelValues})
+				asMetric := NewAerospikeStat(commons.CTX_LATENCIES, operation+"_"+opLatencyStats.(StatsMap)["timeUnit"].(string)+"_bucket")
+				// asMetric.updateValues(pv, labels, labelValues)
+				asMetric.updateValues(pv, labels, labelValues)
+				metrics_to_send = append(metrics_to_send, asMetric)
 
 				// aerospike_latencies_<operation>_<timeunit>_count metric
 				if i == 0 {
 					labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS}
 					labelValues := []string{ClusterName, Service, namespaceName}
-					pv := opLatencyStats.(commons.StatsMap)["bucketValues"].([]float64)[i]
+					pv := opLatencyStats.(StatsMap)["bucketValues"].([]float64)[i]
 
 					// pm = makeMetric("aerospike_latencies", operation+"_"+opLatencyStats.(commons.StatsMap)["timeUnit"].(string)+"_count", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS)
 					// ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], namespaceName)
-					asMetric := commons.NewAerospikeStat(commons.CTX_LATENCIES, operation+"_"+opLatencyStats.(commons.StatsMap)["timeUnit"].(string)+"_count")
-					metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, pv, labels, labelValues})
+					asMetric := NewAerospikeStat(commons.CTX_LATENCIES, operation+"_"+opLatencyStats.(StatsMap)["timeUnit"].(string)+"_count")
+					asMetric.updateValues(pv, labels, labelValues)
+					// metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, pv, labels, labelValues})
+					// asMetric.updateValues(pv, labels, labelValues)
+					metrics_to_send = append(metrics_to_send, asMetric)
 
 				}
 			}

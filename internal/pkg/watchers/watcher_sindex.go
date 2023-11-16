@@ -10,7 +10,7 @@ import (
 )
 
 type SindexWatcher struct {
-	sindexMetrics map[string]commons.AerospikeStat
+	sindexMetrics map[string]AerospikeStat
 }
 
 func (siw *SindexWatcher) PassOneKeys() []string {
@@ -50,17 +50,17 @@ func (siw *SindexWatcher) getSindexCommands(sindexesMeta []string) (sindexComman
 	return sindexCommands
 }
 
-func (siw *SindexWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]WatcherMetric, error) {
+func (siw *SindexWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 	if config.Cfg.Aerospike.DisableSindexMetrics {
 		// disabled
 		return nil, nil
 	}
 
 	if siw.sindexMetrics == nil {
-		siw.sindexMetrics = make(map[string]commons.AerospikeStat)
+		siw.sindexMetrics = make(map[string]AerospikeStat)
 	}
 
-	var metrics_to_send = []WatcherMetric{}
+	var metrics_to_send = []AerospikeStat{}
 
 	for _, sindex := range infoKeys {
 		log.Tracef("sindex-stats:%v:%v", sindex, rawMetrics[sindex])
@@ -83,7 +83,7 @@ func (siw *SindexWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 			asMetric, exists := siw.sindexMetrics[stat]
 
 			if !exists {
-				asMetric = commons.NewAerospikeStat(commons.CTX_SINDEX, stat)
+				asMetric = NewAerospikeStat(commons.CTX_SINDEX, stat)
 				siw.sindexMetrics[stat] = asMetric
 			}
 
@@ -91,7 +91,8 @@ func (siw *SindexWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 			labelValues := []string{clusterName, service, nsName, sindexName}
 
 			// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
-			metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, pv, labels, labelValues})
+			asMetric.updateValues(pv, labels, labelValues)
+			metrics_to_send = append(metrics_to_send, asMetric)
 
 		}
 
