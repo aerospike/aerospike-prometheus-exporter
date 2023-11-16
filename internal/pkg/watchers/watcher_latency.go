@@ -52,12 +52,10 @@ func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []s
 
 	for ns_latency_enabled_benchmark := range LatencyBenchmarks {
 		// test-enable-benchmarks-read
-		elements := strings.Split(ns_latency_enabled_benchmark, "-")
-		ns := elements[0]
-		operation := elements[3]
+		ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
 		benchmarks_start_index := strings.LastIndex(ns_latency_enabled_benchmark, "-benchmarks-")
 		l_command := ns_latency_enabled_benchmark[benchmarks_start_index:]
-		cmd := "latencies:hist={" + ns + "}-benchmarks-" + operation
+		cmd := "latencies:hist={" + ns + "}" + l_command
 		fmt.Println("ns_latency_enabled_benchmark: cmd: ", cmd, "\t***: l_command: ", l_command)
 		commands = append(commands, l_command)
 	}
