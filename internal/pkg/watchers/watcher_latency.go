@@ -88,7 +88,7 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 
 	// loop all the latency infokeys
 	for ik := range infoKeys {
-		fmt.Println("infokey : ", ik)
+		fmt.Println("infokey : ", infoKeys[ik])
 	}
 
 	return metrics_to_send, nil
