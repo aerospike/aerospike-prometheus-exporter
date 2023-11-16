@@ -1,8 +1,6 @@
 package watchers
 
 import (
-	"fmt"
-
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
 	log "github.com/sirupsen/logrus"
@@ -81,12 +79,12 @@ func Refresh() ([]AerospikeStat, error) {
 	for i, c := range all_watchers_list {
 		if keys := c.PassTwoKeys(passOneOutput); len(keys) > 0 {
 			infoKeys = append(infoKeys, keys...)
-			fmt.Println("\nkeys: ", keys)
+			// fmt.Println("\nkeys: ", keys)
 			watcherInfoKeys[i] = keys
 		}
 	}
 
-	fmt.Println("\n-----------------\nwatcherInfoKeys: ", watcherInfoKeys)
+	// fmt.Println("\n-----------------\nwatcherInfoKeys: ", watcherInfoKeys)
 
 	// info request for second set of info keys, this retrieves all the stats from server
 	rawMetrics, err := data.GetProvider().RequestInfo(infoKeys)
@@ -104,7 +102,7 @@ func Refresh() ([]AerospikeStat, error) {
 
 	// sanitize the utf8 strings before sending them to watchers
 	for i, c := range all_watchers_list {
-		fmt.Println("\nSending... ", watcherInfoKeys[i], " keys to each Refresh ...")
+		// fmt.Println("\nSending... ", watcherInfoKeys[i], " keys to each Refresh ...")
 		l_watcher_metrics, err := c.Refresh(watcherInfoKeys[i], rawMetrics)
 		if err != nil {
 			return all_metrics_to_send, err
