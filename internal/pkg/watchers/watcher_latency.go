@@ -66,6 +66,8 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 
 	var latencyStats map[string]commons.StatsMap
 	log.Tracef("latencies-stats:%+v", rawMetrics["latencies:"])
+	log.Tracef("latencies-stats:latencies:hist={test}-benchmarks-read -- %+v", rawMetrics["latencies:hist={test}-benchmarks-read"])
+
 	log.Tracef("latency-stats:%+v", rawMetrics["latency:"])
 
 	if rawMetrics["latencies:"] != "" {
