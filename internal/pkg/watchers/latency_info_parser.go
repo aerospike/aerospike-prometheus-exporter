@@ -1,6 +1,8 @@
 package watchers
 
 import (
+	"bufio"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -9,6 +11,66 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// LatencyInfoParser provides a reader for Aerospike cluster's response for any of the metric
+type LatencyInfoParser struct {
+	*bufio.Reader
+}
+
+// NewInfoParser provides an instance of the InfoParser
+func NewInfoParser(s string) *LatencyInfoParser {
+	return &LatencyInfoParser{bufio.NewReader(strings.NewReader(s))}
+}
+
+// PeekAndExpect checks if the expected value is present without advancing the reader
+func (ip *LatencyInfoParser) PeekAndExpect(s string) error {
+	bytes, err := ip.Peek(len(s))
+	if err != nil {
+		return err
+	}
+
+	v := string(bytes)
+	if v != s {
+		return fmt.Errorf("InfoParser: Wrong value. Peek expected %s, but found %s", s, v)
+	}
+
+	return nil
+}
+
+// Expect validates the expected value against the one returned by the InfoParser
+// This advances the reader by length of the input string.
+func (ip *LatencyInfoParser) Expect(s string) error {
+	bytes := make([]byte, len(s))
+
+	v, err := ip.Read(bytes)
+	if err != nil {
+		return err
+	}
+
+	if string(bytes) != s {
+		return fmt.Errorf("InfoParser: Wrong value. Expected %s, found %d", s, v)
+	}
+
+	return nil
+}
+
+// ReadUntil reads bytes from the InfoParser by handeling some edge-cases
+func (ip *LatencyInfoParser) ReadUntil(delim byte) (string, error) {
+	v, err := ip.ReadBytes(delim)
+
+	switch len(v) {
+	case 0:
+		return string(v), err
+	case 1:
+		if v[0] == delim {
+			return "", err
+		}
+		return string(v), err
+	}
+
+	return string(v[:len(v)-1]), err
+}
+
+// Legacy latency stats handlig
 // Parse "latency:" info output.
 //
 // Format (with and without latency data)
@@ -16,9 +78,9 @@ import (
 // error-no-data-yet-or-back-too-small;
 // or,
 // {test}-write:;
-func parseLatencyInfoLegacy(s string, latencyBucketsCount int) map[string]StatsMap {
+func parseLatencyInfoLegacy(s string, latencyBucketsCount int) map[string]LatencyStatsMap {
 	ip := NewInfoParser(s)
-	res := map[string]StatsMap{}
+	res := map[string]LatencyStatsMap{}
 
 	for {
 		namespaceName, operation, err := readNamespaceAndOperation(ip)
@@ -102,14 +164,14 @@ func parseLatencyInfoLegacy(s string, latencyBucketsCount int) map[string]StatsM
 			break
 		}
 
-		stats := StatsMap{
+		stats := LatencyStatsMap{
 			"bucketLabels": bucketLabels,
 			"bucketValues": bucketValuesFloat,
 			"timeUnit":     "ms",
 		}
 
 		if res[namespaceName] == nil {
-			res[namespaceName] = StatsMap{
+			res[namespaceName] = LatencyStatsMap{
 				operation: stats,
 			}
 		} else {
@@ -120,7 +182,7 @@ func parseLatencyInfoLegacy(s string, latencyBucketsCount int) map[string]StatsM
 	return res
 }
 
-func readNamespaceAndOperation(ip *InfoParser) (string, string, error) {
+func readNamespaceAndOperation(ip *LatencyInfoParser) (string, string, error) {
 	if err := ip.PeekAndExpect("batch-index"); err == nil {
 		operation, err := ip.ReadUntil(':')
 		return "", operation, err
@@ -156,9 +218,9 @@ func readNamespaceAndOperation(ip *InfoParser) (string, string, error) {
 // Format (with and without latency data)
 // {test}-write:msec,4234.9,28.75,7.40,1.63,0.26,0.03,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00;
 // {test}-read:;
-func parseLatencyInfo(s string, latencyBucketsCount int) map[string]StatsMap {
+func parseLatencyInfo(s string, latencyBucketsCount int) map[string]LatencyStatsMap {
 	ip := NewInfoParser(s)
-	res := map[string]StatsMap{}
+	res := map[string]LatencyStatsMap{}
 
 	for {
 		namespaceName, operation, err := readNamespaceAndOperation(ip)
@@ -232,14 +294,14 @@ func parseLatencyInfo(s string, latencyBucketsCount int) map[string]StatsMap {
 			break
 		}
 
-		stats := StatsMap{
+		stats := LatencyStatsMap{
 			"bucketLabels": bucketLabels,
 			"bucketValues": bucketValuesFloat,
 			"timeUnit":     timeUnit,
 		}
 
 		if res[namespaceName] == nil {
-			res[namespaceName] = StatsMap{
+			res[namespaceName] = LatencyStatsMap{
 				operation: stats,
 			}
 		} else {

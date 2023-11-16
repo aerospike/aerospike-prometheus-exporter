@@ -37,6 +37,7 @@ func (lw *LatencyWatcher) PassTwoKeys(rawMetrics map[string]string) (latencyComm
 		return lw.getLatenciesCommands()
 	}
 
+	// legacy / old version
 	log.Tracef("latency-passtwokeys:%s", []string{"latency:"})
 	return []string{"latency:"}
 }
@@ -64,7 +65,7 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 		}
 	}
 
-	var latencyStats map[string]StatsMap
+	var latencyStats map[string]LatencyStatsMap
 	log.Tracef("latencies-stats:%+v", rawMetrics["latencies:"])
 	log.Tracef("latencies-stats:latencies:hist={test}-benchmarks-read -- %+v", rawMetrics["latencies:hist={test}-benchmarks-read"])
 
@@ -96,16 +97,16 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 				}
 			}
 
-			for i, labelValue := range opLatencyStats.(StatsMap)["bucketLabels"].([]string) {
+			for i, labelValue := range opLatencyStats.(LatencyStatsMap)["bucketLabels"].([]string) {
 				// aerospike_latencies_<operation>_<timeunit>_bucket metric - Less than or equal to histogram buckets
 
 				labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_LE}
 				labelValues := []string{ClusterName, Service, namespaceName, labelValue}
-				pv := opLatencyStats.(StatsMap)["bucketValues"].([]float64)[i]
+				pv := opLatencyStats.(LatencyStatsMap)["bucketValues"].([]float64)[i]
 
 				// pm := makeMetric("aerospike_latencies", operation+"_"+opLatencyStats.(commons.StatsMap)["timeUnit"].(string)+"_bucket", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS, METRIC_LABEL_LE)
 				// ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], namespaceName, labelValue)
-				asMetric := NewAerospikeStat(commons.CTX_LATENCIES, operation+"_"+opLatencyStats.(StatsMap)["timeUnit"].(string)+"_bucket")
+				asMetric := NewAerospikeStat(commons.CTX_LATENCIES, operation+"_"+opLatencyStats.(LatencyStatsMap)["timeUnit"].(string)+"_bucket")
 				// asMetric.updateValues(pv, labels, labelValues)
 				asMetric.updateValues(pv, labels, labelValues)
 				metrics_to_send = append(metrics_to_send, asMetric)
@@ -114,11 +115,11 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 				if i == 0 {
 					labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS}
 					labelValues := []string{ClusterName, Service, namespaceName}
-					pv := opLatencyStats.(StatsMap)["bucketValues"].([]float64)[i]
+					pv := opLatencyStats.(LatencyStatsMap)["bucketValues"].([]float64)[i]
 
 					// pm = makeMetric("aerospike_latencies", operation+"_"+opLatencyStats.(commons.StatsMap)["timeUnit"].(string)+"_count", mtGauge, config.AeroProm.MetricLabels, METRIC_LABEL_CLUSTER_NAME, METRIC_LABEL_SERVICE, METRIC_LABEL_NS)
 					// ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, pv, rawMetrics[ikClusterName], rawMetrics[ikService], namespaceName)
-					asMetric := NewAerospikeStat(commons.CTX_LATENCIES, operation+"_"+opLatencyStats.(StatsMap)["timeUnit"].(string)+"_count")
+					asMetric := NewAerospikeStat(commons.CTX_LATENCIES, operation+"_"+opLatencyStats.(LatencyStatsMap)["timeUnit"].(string)+"_count")
 					asMetric.updateValues(pv, labels, labelValues)
 					// metrics_to_send = append(metrics_to_send, WatcherMetric{asMetric, pv, labels, labelValues})
 					// asMetric.updateValues(pv, labels, labelValues)
