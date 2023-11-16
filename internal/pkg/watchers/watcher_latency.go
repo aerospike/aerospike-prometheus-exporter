@@ -1,7 +1,6 @@
 package watchers
 
 import (
-	"fmt"
 	"strings"
 
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -81,14 +80,12 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 		}
 	}
 
-	log.Tracef("latencies-stats:%+v", rawMetrics["latencies:"])
 	// log.Tracef("latencies-stats:latencies:hist={test}-benchmarks-read -- %+v", rawMetrics["latencies:hist={test}-benchmarks-read"])
 	log.Tracef("latency-stats:%+v", rawMetrics["latency:"])
 	var metrics_to_send = []AerospikeStat{}
 
 	// loop all the latency infokeys
 	for ik := range infoKeys {
-		fmt.Println("infokey : ", infoKeys[ik])
 		parseSingleLatenciesKey(infoKeys[ik], rawMetrics, allowedLatenciesList, blockedLatenciessList)
 	}
 
@@ -107,6 +104,7 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 	}
 
 	// log.Tracef("latency-stats:%+v", latencyStats)
+	log.Tracef("latencies-stats:%+v:%+v", singleLatencyKey, rawMetrics[singleLatencyKey])
 
 	var metrics_to_send = []AerospikeStat{}
 
