@@ -229,7 +229,7 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 		}
 
 		// check and if latency benchmarks stat && it is enabled (bool true==1 and false==0 after conversion)
-		if strings.Contains(stat, "benchmarks") && pv > 0 {
+		if strings.Contains(constructedStatname, "enable-benchmarks") && pv > 0 {
 			LatencyBenchmarks[nsName+"-"+stat] = pv
 		}
 	}
