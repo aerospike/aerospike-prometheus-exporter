@@ -56,7 +56,7 @@ func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []s
 		ns := elements[0]
 		operation := elements[3]
 		cmd := "latencies:hist={" + ns + "}-benchmarks-" + operation
-		fmt.Println("ns_latency_enabled_benchmark: ", cmd)
+		// fmt.Println("ns_latency_enabled_benchmark: ", cmd)
 		commands = append(commands, cmd)
 	}
 
@@ -81,12 +81,23 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 		}
 	}
 
-	var latencyStats map[string]LatencyStatsMap
 	log.Tracef("latencies-stats:%+v", rawMetrics["latencies:"])
-	log.Tracef("latencies-stats:latencies:hist={test}-benchmarks-read -- %+v", rawMetrics["latencies:hist={test}-benchmarks-read"])
-
+	// log.Tracef("latencies-stats:latencies:hist={test}-benchmarks-read -- %+v", rawMetrics["latencies:hist={test}-benchmarks-read"])
 	log.Tracef("latency-stats:%+v", rawMetrics["latency:"])
+	var metrics_to_send = []AerospikeStat{}
 
+	// loop all the latency infokeys
+	for ik := range infoKeys {
+		fmt.Println("infokey : ", ik)
+	}
+
+	return metrics_to_send, nil
+}
+
+func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]string,
+	allowedLatenciesList map[string]struct{}, blockedLatenciessList map[string]struct{}) {
+
+	var latencyStats map[string]LatencyStatsMap
 	if rawMetrics["latencies:"] != "" {
 		latencyStats = parseLatencyInfo(rawMetrics["latencies:"], int(config.Cfg.Aerospike.LatencyBucketsCount))
 	} else {
@@ -145,6 +156,4 @@ func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 			}
 		}
 	}
-
-	return metrics_to_send, nil
 }
