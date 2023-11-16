@@ -1,6 +1,9 @@
 package watchers
 
 import (
+	"fmt"
+	"strings"
+
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 
@@ -34,7 +37,7 @@ func (lw *LatencyWatcher) PassTwoKeys(rawMetrics map[string]string) (latencyComm
 	}
 
 	if ok {
-		return lw.getLatenciesCommands()
+		return lw.getLatenciesCommands(rawMetrics)
 	}
 
 	// legacy / old version
@@ -42,9 +45,18 @@ func (lw *LatencyWatcher) PassTwoKeys(rawMetrics map[string]string) (latencyComm
 	return []string{"latency:"}
 }
 
-func (lw *LatencyWatcher) getLatenciesCommands() []string {
+func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []string {
 	var commands = []string{"latencies:", "latencies:hist={test}-benchmarks-read"}
 	log.Tracef("latency-passtwokeys:%s", commands)
+
+	// list of namespaces
+	s := rawMetrics[KEY_NS_METADATA]
+	ns_list := strings.Split(s, ";")
+
+	fmt.Println("\n******* list of namespace: ", ns_list)
+
+	log.Tracef("namespaces:%s", s)
+
 	return commands
 }
 
