@@ -12,7 +12,7 @@ import (
 type LatencyWatcher struct {
 }
 
-var LatencyBenchmarks map[string]float64
+var LatencyBenchmarks = make(map[string]float64)
 
 func (lw *LatencyWatcher) PassOneKeys() []string {
 	// return []string{"build"}
