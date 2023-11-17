@@ -9,8 +9,8 @@ Constants, common variables and helper functions
 */
 
 const (
-	DEFAULT_CONFIG_FILE     = "tests_data/default_ape.toml"
-	DEFAULT_GAUGE_LIST_FILE = "gauge_stats_list.toml"
+	TESTS_DEFAULT_CONFIG_FILE = "tests_data/default_ape.toml"
+	DEFAULT_GAUGE_LIST_FILE   = "configs/gauge_stats_list.toml"
 )
 
 func GetConfigfileLocation(filename string) string {

@@ -31,7 +31,7 @@ func TestPassOneKeys(t *testing.T) {
 func TestPassTwoKeys(t *testing.T) {
 
 	// initialize config and gauge-lists
-	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.DEFAULT_CONFIG_FILE))
+	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
 	// rawMetrics := getRawMetrics()
 	nsWatcher := new(NamespaceWatcher)
@@ -65,7 +65,7 @@ func TestNamespaceRefreshDefault(t *testing.T) {
 	// Initialize and validate config
 
 	// initialize config and gauge-lists
-	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.DEFAULT_CONFIG_FILE))
+	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
 	runTestcase(t)
 }
