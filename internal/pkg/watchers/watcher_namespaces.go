@@ -228,8 +228,8 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 			metrics_to_send = append(metrics_to_send, asMetric)
 		}
 
-		// check and if latency benchmarks stat && it is enabled (bool true==1 and false==0 after conversion)
-		if strings.Contains(stat, "enable-benchmarks") && pv > 0 {
+		// check and if latency benchmarks stat - is it enabled (bool true==1 and false==0 after conversion)
+		if strings.Contains(stat, "enable-benchmarks") || strings.Contains(stat, "enable-hist-proxy") {
 			LatencyBenchmarks[nsName+"-"+stat] = pv
 		}
 	}

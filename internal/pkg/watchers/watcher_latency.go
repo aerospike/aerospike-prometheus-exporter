@@ -50,14 +50,27 @@ func (lw *LatencyWatcher) PassTwoKeys(rawMetrics map[string]string) (latencyComm
 func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []string {
 	var commands = []string{"latencies:"}
 
+	// Hashmap content format := namespace-<histogram-key> = <0/1>
 	for ns_latency_enabled_benchmark := range LatencyBenchmarks {
-		// test-enable-benchmarks-read
-		ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
-		benchmarks_start_index := strings.LastIndex(ns_latency_enabled_benchmark, "-benchmarks-")
-		l_command := ns_latency_enabled_benchmark[benchmarks_start_index:]
-		l_command = "latencies:hist={" + ns + "}" + l_command
-		fmt.Println("ns_latency_enabled_benchmark: "+ns_latency_enabled_benchmark+"\t cmd: ", l_command, "\t***: l_command: ", l_command)
-		commands = append(commands, l_command)
+		l_value := LatencyBenchmarks[ns_latency_enabled_benchmark]
+		// only if enabled, fetch the metrics
+		if l_value == 1 {
+			// format:= test-enable-benchmarks-read (or) test-enable-hist-proxy
+			ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
+			benchmarks_start_index := strings.LastIndex(ns_latency_enabled_benchmark, "-benchmarks-")
+			l_command := ns_latency_enabled_benchmark[benchmarks_start_index:]
+			l_command = "latencies:hist={" + ns + "}" + l_command
+			// fmt.Println("ns_latency_enabled_benchmark: "+ns_latency_enabled_benchmark+"\t cmd: ", l_command)
+			commands = append(commands, l_command)
+		}
+	}
+
+	// Exceptions,
+	// 1. re-repl ( is auto-enabled by default, but not returned in namespace configs )
+	// 2. enable-hist-proxy -- this is not having same name pattern as enable-benchmarks-<operation>
+	commands = append(commands, "latencies:hist={test}-re-repl")
+	if LatencyBenchmarks["enable-hist-proxy"] == 1 { // only if enabled
+		commands = append(commands, "latencies:hist={test}-proxy")
 	}
 
 	log.Tracef("latency-passtwokeys:%s", commands)

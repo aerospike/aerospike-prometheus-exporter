@@ -88,7 +88,7 @@ func (sw *NodeStatsWatcher) handleRefresh(nodeRawMetrics string, clusterName str
 		asMetric.updateValues(pv, labels, labelValues)
 		metrics_to_send = append(metrics_to_send, asMetric)
 
-		// check and if latency benchmarks stat && it is enabled (bool true==1 and false==0 after conversion)
+		// check and if latency benchmarks stat, is it enabled (bool true==1 and false==0 after conversion)
 		if strings.Contains(stat, "enable-benchmarks") && pv > 0 {
 			LatencyBenchmarks["service-"+stat] = pv
 		}
