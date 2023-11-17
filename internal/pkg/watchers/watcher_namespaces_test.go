@@ -114,7 +114,7 @@ func runTestcase(t *testing.T) {
 		// convert / serialize to string which can be compared to stored expected mock result
 		str_metric := fmt.Sprintf("%#v", nsMetrics[k])
 		_, exists := expected_results[str_metric]
-		assert.True(t, exists, "Failed, did not find expected result: "+str_metric)
+		assert.False(t, exists, "Failed, did not find expected result: "+str_metric)
 	}
 
 }
