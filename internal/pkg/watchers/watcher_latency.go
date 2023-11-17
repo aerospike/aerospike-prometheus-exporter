@@ -152,8 +152,8 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 	var metrics_to_send = []AerospikeStat{}
 
 	for namespaceName, nsLatencyStats := range latencyStats {
-		fmt.Println("watcher-latency: namespaceName: ", namespaceName, "\t singleLatencyKey: ", singleLatencyKey,
-			"\n\t rawMetrics[singleLatencyKey]: ", rawMetrics[singleLatencyKey], "\n\tnsLatencyStats: ", nsLatencyStats)
+		// fmt.Println("watcher-latency: namespaceName: ", namespaceName, "\t singleLatencyKey: ", singleLatencyKey,
+		// 	"\n\t rawMetrics[singleLatencyKey]: ", rawMetrics[singleLatencyKey], "\n\tnsLatencyStats: ", nsLatencyStats)
 		for operation, opLatencyStats := range nsLatencyStats {
 
 			// operation comes from server as histogram-names
