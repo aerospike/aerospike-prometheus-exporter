@@ -16,7 +16,7 @@ const (
 func GetConfigfileLocation(filename string) string {
 	l_filename, _ := os.Getwd()
 
-	l_filename = l_filename + "/../../../" + filename
+	l_filename = l_filename + "/../../../configs/" + filename
 
 	return l_filename
 }

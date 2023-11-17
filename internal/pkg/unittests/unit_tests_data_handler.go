@@ -48,7 +48,7 @@ func (md *UnittestDataHandler) Initialize() {
 
 	filePath := TEST_DATA_FILE
 	cwd, _ := os.Getwd()
-	fileLocation := cwd + "/../../../" + filePath
+	fileLocation := cwd + "/../../../configs/" + filePath
 	// fmt.Println(" current working directory:", cwd)
 	// fmt.Println(" using filepath : ", fileLocation)
 	readFile, err := os.Open(fileLocation)
