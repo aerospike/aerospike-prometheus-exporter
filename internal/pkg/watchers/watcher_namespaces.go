@@ -228,10 +228,14 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 			metrics_to_send = append(metrics_to_send, asMetric)
 		}
 
+		// below code section is to ensure ns+latencies combination is handled during LatencyWatcher
+		//
 		// check and if latency benchmarks stat - is it enabled (bool true==1 and false==0 after conversion)
-		if strings.Contains(stat, "enable-benchmarks") || strings.Contains(stat, "enable-hist-proxy") {
+		if canConsiderLatencyCommand(stat) {
 			LatencyBenchmarks[nsName+"-"+stat] = pv
 		}
+		// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
+		LatencyBenchmarks[nsName+"-re-repl"] = 1
 	}
 
 	return metrics_to_send

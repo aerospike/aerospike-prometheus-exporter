@@ -55,26 +55,53 @@ func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []s
 		l_value := LatencyBenchmarks[ns_latency_enabled_benchmark]
 		// only if enabled, fetch the metrics
 		if l_value == 1 {
-			// format:= test-enable-benchmarks-read (or) test-enable-hist-proxy
-			ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
-			benchmarks_start_index := strings.LastIndex(ns_latency_enabled_benchmark, "-benchmarks-")
-			l_command := ns_latency_enabled_benchmark[benchmarks_start_index:]
-			l_command = "latencies:hist={" + ns + "}" + l_command
-			// fmt.Println("ns_latency_enabled_benchmark: "+ns_latency_enabled_benchmark+"\t cmd: ", l_command)
-			commands = append(commands, l_command)
-		}
-	}
+			// if enable-hist-proxy
+			//    command = latencies:hist={test}-proxy
+			// else if enable-benchmarks-fabric
+			//    command = latencies:hist=benchmarks-fabric
+			// else if re-repl
+			//    command = latencies:hist={test}-re-repl
 
-	// Exceptions,
-	// 1. re-repl ( is auto-enabled by default, but not returned in namespace configs )
-	// 2. enable-hist-proxy -- this is not having same name pattern as enable-benchmarks-<operation>
-	commands = append(commands, "latencies:hist={test}-re-repl")
-	if LatencyBenchmarks["enable-hist-proxy"] == 1 { // only if enabled
-		commands = append(commands, "latencies:hist={test}-proxy")
+			fmt.Println("ns_latency_enabled_benchmark: ", ns_latency_enabled_benchmark)
+			if strings.Contains(ns_latency_enabled_benchmark, "re-repl") {
+				// Exception case
+				ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
+				l_command := "latencies:hist={" + ns + "}-re-repl"
+				commands = append(commands, l_command)
+
+			} else if strings.Contains(ns_latency_enabled_benchmark, "enable-hist-proxy") {
+				// Exception case
+				ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
+				l_command := "latencies:hist={" + ns + "}-proxy"
+				commands = append(commands, l_command)
+			} else if strings.Contains(ns_latency_enabled_benchmark, "enable-benchmarks-fabric") {
+				// Exception case
+				l_command := "latencies:hist=benchmarks-fabric"
+				commands = append(commands, l_command)
+			} else if strings.Contains(ns_latency_enabled_benchmark, "enable-hist-info") {
+				// Exception case
+				l_command := "latencies:hist=info"
+				commands = append(commands, l_command)
+			} else if strings.Contains(ns_latency_enabled_benchmark, "-benchmarks-") {
+				// format:= test-enable-benchmarks-read (or) test-enable-hist-proxy
+				ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
+				benchmarks_start_index := strings.LastIndex(ns_latency_enabled_benchmark, "-benchmarks-")
+				l_command := ns_latency_enabled_benchmark[benchmarks_start_index:]
+				l_command = "latencies:hist={" + ns + "}" + l_command
+				commands = append(commands, l_command)
+			}
+		}
 	}
 
 	log.Tracef("latency-passtwokeys:%s", commands)
 	return commands
+}
+
+// checks if a stat can be considered for latency stat retrieval
+func canConsiderLatencyCommand(stat string) bool {
+	return (strings.Contains(stat, "enable-benchmarks-") ||
+		strings.Contains(stat, "enable-hist-proxy") ||
+		strings.Contains(stat, "enable-hist-info"))
 }
 
 func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {

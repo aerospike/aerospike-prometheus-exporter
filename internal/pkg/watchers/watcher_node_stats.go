@@ -1,8 +1,6 @@
 package watchers
 
 import (
-	"strings"
-
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 
 	log "github.com/sirupsen/logrus"
@@ -89,7 +87,7 @@ func (sw *NodeStatsWatcher) handleRefresh(nodeRawMetrics string, clusterName str
 		metrics_to_send = append(metrics_to_send, asMetric)
 
 		// check and if latency benchmarks stat, is it enabled (bool true==1 and false==0 after conversion)
-		if strings.Contains(stat, "enable-benchmarks") && pv > 0 {
+		if canConsiderLatencyCommand(stat) {
 			LatencyBenchmarks["service-"+stat] = pv
 		}
 	}
