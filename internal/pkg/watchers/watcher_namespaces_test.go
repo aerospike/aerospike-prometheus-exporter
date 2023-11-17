@@ -99,15 +99,22 @@ func runTestcase(t *testing.T) {
 	assert.NotEmpty(t, nsMetrics, "Error while NamespaceWatcher.Refresh, WatcherMetrics is EMPTY ")
 
 	// check the WatcherMetrics if all stats & configs coming with required labels
-	// fmt.Println(nsWatcherMetrics)
-	for k := range nsMetrics {
-		str := fmt.Sprintf("%#v", nsMetrics[k])
-		fmt.Println(str)
-	}
+	// below block of code is used when we create the baseline mock data, which is stored in exporter_mock_results.txt for test verification/assertion
+	// for k := range nsMetrics {
+	// 	str := fmt.Sprintf("%#v", nsMetrics[k])
+	// 	fmt.Println(str)
+	// }
 
 	// check for defined pattern, namespace metrics
 	// context, name, labels: cluster, service, namespace,
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("namespace")
-	ndv.GetMetricLabelsWithValues(*udh)
+	expected_results := ndv.GetMetricLabelsWithValues(*udh)
+	for k := range nsMetrics {
+		// convert / serialize to string which can be compared to stored expected mock result
+		str_metric := fmt.Sprintf("%#v", nsMetrics[k])
+		_, exists := expected_results[str_metric]
+		assert.True(t, exists, "Failed, did not find expected result: "+str_metric)
+	}
+
 }

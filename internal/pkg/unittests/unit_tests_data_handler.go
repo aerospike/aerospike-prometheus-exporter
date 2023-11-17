@@ -26,7 +26,7 @@ var Is_Unittests_Initialized = 0
 type UnittestDataValidator interface {
 	GetPassOneKeys(udp UnittestDataHandler) map[string]string
 	GetPassTwoKeys(udp UnittestDataHandler) map[string]string
-	GetMetricLabelsWithValues(udh UnittestDataHandler) bool
+	GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string
 }
 
 type UnittestDataHandler struct {
@@ -77,6 +77,8 @@ func (md *UnittestDataHandler) Initialize() {
 				md.Namespace_PassOne = append(md.Namespace_PassOne, line)
 			} else if strings.HasPrefix(line, "namespace-passtwokeys:") {
 				md.Namespace_PassTwo = append(md.Namespace_PassTwo, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"namespace\",") {
+				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
 			}
 		}
 	}
@@ -129,6 +131,12 @@ func (unp UnittestNamespaceValidator) GetPassTwoKeys(udh UnittestDataHandler) ma
 	return outputs
 }
 
-func (unp UnittestNamespaceValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) bool {
-	return false
+func (unp UnittestNamespaceValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
+
+	var outputs = make(map[string]string)
+	for k := range udh.Namespaces_Label_and_Values {
+		outputs[udh.Namespaces_Label_and_Values[k]] = udh.Namespaces_Label_and_Values[k]
+	}
+
+	return outputs
 }
