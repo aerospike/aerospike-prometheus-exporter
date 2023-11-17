@@ -1,4 +1,4 @@
-package handlers
+package processors
 
 import (
 	"crypto/tls"
@@ -15,17 +15,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type PrometheusMetricsHandler struct {
-	observer *Observer
+type AsmetricsHttpProcessor struct {
+	promimpl *AsPromImpl
 }
 
-func (pm PrometheusMetricsHandler) Initialize() error {
+func (pm AsmetricsHttpProcessor) Initialize() error {
 	mux := http.NewServeMux()
 
-	pm.observer = NewObserver()
+	pm.promimpl = NewAsPromImpl()
 
 	promReg := prometheus.NewRegistry()
-	promReg.MustRegister(pm.observer)
+	promReg.MustRegister(pm.promimpl)
 
 	// Get http basic auth username
 	httpBasicAuthUsernameBytes, err := commons.GetSecret(config.Cfg.AeroProm.BasicAuthUsername)

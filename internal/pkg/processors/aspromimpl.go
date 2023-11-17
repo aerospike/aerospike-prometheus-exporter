@@ -1,4 +1,4 @@
-package handlers
+package processors
 
 import (
 	"sync"
@@ -10,8 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Observer communicates with Aerospike and helps collecting metrices
-type Observer struct {
+// AsPromImpl communicates with Aerospike and helps collecting metrices
+type AsPromImpl struct {
 	ticks prometheus.Counter
 }
 
@@ -22,7 +22,7 @@ var (
 	mutex sync.Mutex
 )
 
-func NewObserver() (o *Observer) {
+func NewAsPromImpl() (o *AsPromImpl) {
 	// func NewObserver(server *aero.Host, user, pass string) (o *Observer, err error) {
 	// initialize aerospike_node_up metric descriptor
 	nodeActiveDesc = prometheus.NewDesc(
@@ -32,7 +32,7 @@ func NewObserver() (o *Observer) {
 		config.Cfg.AeroProm.MetricLabels,
 	)
 
-	o = &Observer{
+	o = &AsPromImpl{
 		ticks: prometheus.NewCounter(
 			prometheus.CounterOpts{
 				Namespace: "aerospike",
@@ -46,10 +46,10 @@ func NewObserver() (o *Observer) {
 }
 
 // Describe function of Prometheus' Collector interface
-func (o *Observer) Describe(ch chan<- *prometheus.Desc) {}
+func (o *AsPromImpl) Describe(ch chan<- *prometheus.Desc) {}
 
 // Collect function of Prometheus' Collector interface
-func (o *Observer) Collect(ch chan<- prometheus.Metric) {
+func (o *AsPromImpl) Collect(ch chan<- prometheus.Metric) {
 	// Protect against concurrent scrapes
 	mutex.Lock()
 	defer mutex.Unlock()

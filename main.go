@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/handlers"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/processors"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -33,7 +33,7 @@ func main() {
 	config.InitConfig(*configFile)
 	config.InitGaugeStats(*gaugeStatsFile)
 
-	handles := handlers.GetMetricHandlers()
+	handles := processors.GetMetricProcessors()
 
 	log.Infof("Metrics serving mode is %s", *serving_mode)
 	err := handles[*serving_mode].Initialize()
