@@ -50,6 +50,9 @@ func (lw *LatencyWatcher) PassTwoKeys(rawMetrics map[string]string) (latencyComm
 func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []string {
 	var commands = []string{"latencies:"}
 
+	// below latency-command are added to the auto-enabled list, i.e. latencies: command
+	// re-repl is auto-enabled, but not coming as part of latencies: list, hence we are adding it explicitly
+	//
 	// Hashmap content format := namespace-<histogram-key> = <0/1>
 	for ns_latency_enabled_benchmark := range LatencyBenchmarks {
 		l_value := LatencyBenchmarks[ns_latency_enabled_benchmark]
@@ -83,6 +86,10 @@ func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []s
 				l_command := "latencies:hist=info"
 				commands = append(commands, l_command)
 			} else if strings.Contains(ns_latency_enabled_benchmark, "-benchmarks-") {
+				// rest of enabled benchmark latencies like
+				// enable-benchmarks-fabric, enable-benchmarks-ops-sub, enable-benchmarks-read
+				// enable-benchmarks-write, enable-benchmarks-udf, enable-benchmarks-udf-sub, enable-benchmarks-batch-sub
+
 				// format:= test-enable-benchmarks-read (or) test-enable-hist-proxy
 				ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
 				benchmarks_start_index := strings.LastIndex(ns_latency_enabled_benchmark, "-benchmarks-")
