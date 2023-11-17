@@ -44,7 +44,7 @@ func (uw *UserWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) 
 	// validate aerospike build version
 	// support for user statistics is added in aerospike 5.6
 	var err error
-	ok, err := commons.BuildVersionGreaterThanOrEqual(rawMetrics, "5.6.0.0")
+	ok, err := BuildVersionGreaterThanOrEqual(rawMetrics, "5.6.0.0")
 	if err != nil {
 		// just log warning. don't send an error back
 		log.Warn(err)

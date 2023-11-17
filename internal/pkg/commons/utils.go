@@ -17,8 +17,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
-
-	goversion "github.com/hashicorp/go-version"
 )
 
 // Utility functions
@@ -101,47 +99,6 @@ func GetSecret(secretConfig string) ([]byte, error) {
 	}
 
 	return []byte(secretConfig), nil
-}
-
-// Get certificate
-// certConfig can be one of the following,
-// 1. "<file-path>" (certificate file path directly)
-// 2. "file:<file-path>" (certificate file path)
-// 3. "env-b64:<environment-variable-that-contains-base64-encoded-certificate>" (environment variable containing base64 encoded certificate)
-// 4. "b64:<base64-encoded-certificate>" (base64 encoded certificate)
-func getCertificate(certConfig string) ([]byte, error) {
-	certificateSource := strings.SplitN(certConfig, ":", 2)
-
-	if len(certificateSource) == 2 {
-		switch certificateSource[0] {
-		case "file":
-			return readFromFile(certificateSource[1])
-
-		case "env-b64":
-			return GetValueFromBase64EnvVar(certificateSource[1])
-
-		case "b64":
-			return GetValueFromBase64(certificateSource[1])
-
-		default:
-			return nil, fmt.Errorf("invalid source %s", certificateSource[0])
-		}
-	}
-
-	// Assume certConfig is a file path (backward compatible)
-	return readFromFile(certConfig)
-}
-
-// Read content from file
-func readFromFile(filePath string) ([]byte, error) {
-	dataBytes, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read from file `%s`: `%v`", filePath, err)
-	}
-
-	data := bytes.TrimSuffix(dataBytes, []byte("\n"))
-
-	return data, nil
 }
 
 // Get decoded base64 value from environment variable
@@ -279,29 +236,48 @@ func SanitizeUTF8(lv string) string {
 	return strings.Map(fixUtf, lv)
 }
 
-func BuildVersionGreaterThanOrEqual(rawMetrics map[string]string, ref string) (bool, error) {
-	if len(rawMetrics["build"]) == 0 {
-		return false, fmt.Errorf("couldn't get build version")
-	}
-
-	ver := rawMetrics["build"]
-	version, err := goversion.NewVersion(ver)
-	if err != nil {
-		return false, fmt.Errorf("error parsing build version %s: %v", ver, err)
-	}
-
-	refVersion, err := goversion.NewVersion(ref)
-	if err != nil {
-		return false, fmt.Errorf("error parsing reference version %s: %v", ref, err)
-	}
-
-	if version.GreaterThanOrEqual(refVersion) {
-		return true, nil
-	}
-
-	return false, nil
-}
-
 func GetFullHost() string {
 	return net.JoinHostPort(config.Cfg.Aerospike.Host, strconv.Itoa(int(config.Cfg.Aerospike.Port)))
+}
+
+// Internal helper methods, which are not exposed outside commons package
+// Get certificate
+// certConfig can be one of the following,
+// 1. "<file-path>" (certificate file path directly)
+// 2. "file:<file-path>" (certificate file path)
+// 3. "env-b64:<environment-variable-that-contains-base64-encoded-certificate>" (environment variable containing base64 encoded certificate)
+// 4. "b64:<base64-encoded-certificate>" (base64 encoded certificate)
+func getCertificate(certConfig string) ([]byte, error) {
+	certificateSource := strings.SplitN(certConfig, ":", 2)
+
+	if len(certificateSource) == 2 {
+		switch certificateSource[0] {
+		case "file":
+			return readFromFile(certificateSource[1])
+
+		case "env-b64":
+			return GetValueFromBase64EnvVar(certificateSource[1])
+
+		case "b64":
+			return GetValueFromBase64(certificateSource[1])
+
+		default:
+			return nil, fmt.Errorf("invalid source %s", certificateSource[0])
+		}
+	}
+
+	// Assume certConfig is a file path (backward compatible)
+	return readFromFile(certConfig)
+}
+
+// Read content from file
+func readFromFile(filePath string) ([]byte, error) {
+	dataBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read from file `%s`: `%v`", filePath, err)
+	}
+
+	data := bytes.TrimSuffix(dataBytes, []byte("\n"))
+
+	return data, nil
 }

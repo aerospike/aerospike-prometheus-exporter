@@ -32,7 +32,7 @@ func (lw *LatencyWatcher) PassTwoKeys(rawMetrics map[string]string) (latencyComm
 
 	latencyCommands = []string{"latencies:", "latency:"}
 
-	ok, err := commons.BuildVersionGreaterThanOrEqual(rawMetrics, "5.1.0.0")
+	ok, err := BuildVersionGreaterThanOrEqual(rawMetrics, "5.1.0.0")
 	if err != nil {
 		log.Warn(err)
 		return latencyCommands
@@ -65,13 +65,12 @@ func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []s
 			// else if re-repl
 			//    command = latencies:hist={test}-re-repl
 
-			fmt.Println("ns_latency_enabled_benchmark: ", ns_latency_enabled_benchmark)
+			// fmt.Println("ns_latency_enabled_benchmark: ", ns_latency_enabled_benchmark)
 			if strings.Contains(ns_latency_enabled_benchmark, "re-repl") {
 				// Exception case
 				ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
 				l_command := "latencies:hist={" + ns + "}-re-repl"
 				commands = append(commands, l_command)
-
 			} else if strings.Contains(ns_latency_enabled_benchmark, "enable-hist-proxy") {
 				// Exception case
 				ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
@@ -86,9 +85,9 @@ func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []s
 				l_command := "latencies:hist=info"
 				commands = append(commands, l_command)
 			} else if strings.Contains(ns_latency_enabled_benchmark, "-benchmarks-") {
-				// rest of enabled benchmark latencies like
-				// enable-benchmarks-fabric, enable-benchmarks-ops-sub, enable-benchmarks-read
-				// enable-benchmarks-write, enable-benchmarks-udf, enable-benchmarks-udf-sub, enable-benchmarks-batch-sub
+				// remaining enabled benchmark latencies like
+				//         enable-benchmarks-fabric, enable-benchmarks-ops-sub, enable-benchmarks-read
+				//         enable-benchmarks-write, enable-benchmarks-udf, enable-benchmarks-udf-sub, enable-benchmarks-batch-sub
 
 				// format:= test-enable-benchmarks-read (or) test-enable-hist-proxy
 				ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
@@ -101,14 +100,15 @@ func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []s
 	}
 
 	log.Tracef("latency-passtwokeys:%s", commands)
+	fmt.Println("latency-passtwokeys:", commands)
+
 	return commands
 }
 
 // checks if a stat can be considered for latency stat retrieval
 func canConsiderLatencyCommand(stat string) bool {
 	return (strings.Contains(stat, "enable-benchmarks-") ||
-		strings.Contains(stat, "enable-hist-proxy") ||
-		strings.Contains(stat, "enable-hist-info"))
+		strings.Contains(stat, "enable-hist-")) // hist-proxy & hist-info - both at service level
 }
 
 func (lw *LatencyWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
@@ -147,7 +147,7 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 	var latencyStats map[string]LatencyStatsMap
 
 	if rawMetrics["latencies:"] != "" {
-		// in latest aerospike server>5.1 version, latencies: will always come as infokey, so no need to check other conditions
+		// in latest aerospike server>5.1 version, latencies: will always come as infokey, so no need to check other latency commands
 		latencyStats = parseLatencyInfo(rawMetrics[singleLatencyKey], int(config.Cfg.Aerospike.LatencyBucketsCount))
 	} else {
 		latencyStats = parseLatencyInfoLegacy(rawMetrics["latency:"], int(config.Cfg.Aerospike.LatencyBucketsCount))
@@ -159,8 +159,6 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 	var metrics_to_send = []AerospikeStat{}
 
 	for namespaceName, nsLatencyStats := range latencyStats {
-		// fmt.Println("watcher-latency: namespaceName: ", namespaceName, "\t singleLatencyKey: ", singleLatencyKey,
-		// 	"\n\t rawMetrics[singleLatencyKey]: ", rawMetrics[singleLatencyKey], "\n\tnsLatencyStats: ", nsLatencyStats)
 		for operation, opLatencyStats := range nsLatencyStats {
 
 			// operation comes from server as histogram-names

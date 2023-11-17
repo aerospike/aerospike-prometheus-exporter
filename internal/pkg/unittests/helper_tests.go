@@ -1,4 +1,4 @@
-package unittests
+package tests_utils
 
 import (
 	"os"
@@ -9,7 +9,7 @@ Constants, common variables and helper functions
 */
 
 const (
-	DEFAULT_CONFIG_FILE     = "tests/default_ape.toml"
+	DEFAULT_CONFIG_FILE     = "tests_data/default_ape.toml"
 	DEFAULT_GAUGE_LIST_FILE = "gauge_stats_list.toml"
 )
 

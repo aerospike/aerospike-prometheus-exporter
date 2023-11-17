@@ -6,7 +6,7 @@ import (
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/unittests"
+	tests_utils "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/unittests"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,9 +16,9 @@ func TestPassOneKeys(t *testing.T) {
 	nsWatcher := &NamespaceWatcher{}
 	nsPassOneKeys := nsWatcher.PassOneKeys()
 
-	udp := &unittests.UnittestDataHandler{}
-	ndv := udp.GetUnittestValidator("namespace")
-	passOneOutputs := ndv.GetPassOneKeys(*udp)
+	udh := &tests_utils.UnittestDataHandler{}
+	ndv := udh.GetUnittestValidator("namespace")
+	passOneOutputs := ndv.GetPassOneKeys(*udh)
 
 	// fmt.Println("TestPassOneKeys: ", passOneOutputs)
 	var expectedOutputs []string
@@ -31,7 +31,7 @@ func TestPassOneKeys(t *testing.T) {
 func TestPassTwoKeys(t *testing.T) {
 
 	// initialize config and gauge-lists
-	config.InitConfig(unittests.GetConfigfileLocation(unittests.DEFAULT_CONFIG_FILE))
+	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.DEFAULT_CONFIG_FILE))
 
 	// rawMetrics := getRawMetrics()
 	nsWatcher := new(NamespaceWatcher)
@@ -43,9 +43,9 @@ func TestPassTwoKeys(t *testing.T) {
 	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
 
 	// expectedOutputs := []string{"namespace/bar", "namespace/test"}
-	udp := &unittests.UnittestDataHandler{}
-	ndv := udp.GetUnittestValidator("namespace")
-	expectedOutputs := ndv.GetPassTwoKeys(*udp)
+	udh := &tests_utils.UnittestDataHandler{}
+	ndv := udh.GetUnittestValidator("namespace")
+	expectedOutputs := ndv.GetPassTwoKeys(*udh)
 
 	assert := assert.New(t)
 
@@ -65,7 +65,7 @@ func TestNamespaceRefreshDefault(t *testing.T) {
 	// Initialize and validate config
 
 	// initialize config and gauge-lists
-	config.InitConfig(unittests.GetConfigfileLocation(unittests.DEFAULT_CONFIG_FILE))
+	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.DEFAULT_CONFIG_FILE))
 
 	runTestcase(t)
 }
@@ -76,7 +76,7 @@ func TestNamespaceRefreshDefault(t *testing.T) {
 func runTestcase(t *testing.T) {
 
 	// initialize gauges list
-	config.InitGaugeStats(unittests.GetConfigfileLocation(unittests.DEFAULT_GAUGE_LIST_FILE))
+	config.InitGaugeStats(tests_utils.GetConfigfileLocation(tests_utils.DEFAULT_GAUGE_LIST_FILE))
 
 	// rawMetrics := getRawMetrics()
 	nsWatcher := &NamespaceWatcher{}
@@ -94,16 +94,20 @@ func runTestcase(t *testing.T) {
 	assert.NotEmpty(t, arrRawMetrics, "Error while NamespaceWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
 	// check the output with NamespaceWatcher
-	nsWatcherMetrics, err := nsWatcher.Refresh(passTwokeyOutputs, arrRawMetrics)
+	nsMetrics, err := nsWatcher.Refresh(passTwokeyOutputs, arrRawMetrics)
 	assert.Nil(t, err, "Error while NamespaceWatcher.Refresh with passTwokeyOutputs ")
-	assert.NotEmpty(t, nsWatcherMetrics, "Error while NamespaceWatcher.Refresh, WatcherMetrics is EMPTY ")
+	assert.NotEmpty(t, nsMetrics, "Error while NamespaceWatcher.Refresh, WatcherMetrics is EMPTY ")
 
 	// check the WatcherMetrics if all stats & configs coming with required labels
 	// fmt.Println(nsWatcherMetrics)
-	for k := range nsWatcherMetrics {
-		fmt.Println(nsWatcherMetrics[k])
+	for k := range nsMetrics {
+		str := fmt.Sprintf("%#v", nsMetrics[k])
+		fmt.Println(str)
 	}
 
 	// check for defined pattern, namespace metrics
 	// context, name, labels: cluster, service, namespace,
+	udh := &tests_utils.UnittestDataHandler{}
+	ndv := udh.GetUnittestValidator("namespace")
+	ndv.GetMetricLabelsWithValues(*udh)
 }

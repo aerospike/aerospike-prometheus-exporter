@@ -1,12 +1,15 @@
 package watchers
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/gobwas/glob"
+
+	goversion "github.com/hashicorp/go-version"
 )
 
 const (
@@ -224,4 +227,27 @@ func filterBlockedMetrics(filteredMetrics map[string]commons.MetricType, blockli
 			delete(filteredMetrics, stat)
 		}
 	}
+}
+
+func BuildVersionGreaterThanOrEqual(rawMetrics map[string]string, ref string) (bool, error) {
+	if len(rawMetrics["build"]) == 0 {
+		return false, fmt.Errorf("couldn't get build version")
+	}
+
+	ver := rawMetrics["build"]
+	version, err := goversion.NewVersion(ver)
+	if err != nil {
+		return false, fmt.Errorf("error parsing build version %s: %v", ver, err)
+	}
+
+	refVersion, err := goversion.NewVersion(ref)
+	if err != nil {
+		return false, fmt.Errorf("error parsing reference version %s: %v", ref, err)
+	}
+
+	if version.GreaterThanOrEqual(refVersion) {
+		return true, nil
+	}
+
+	return false, nil
 }
