@@ -144,6 +144,8 @@ func (md *UnittestDataHandler) loadWatchersData() {
 				md.Node_PassOne = append(md.Node_PassOne, line)
 			} else if strings.HasPrefix(line, "node-passtwokeys:") {
 				md.Node_PassTwo = append(md.Node_PassTwo, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"node_stats\",") {
+				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
 			}
 		}
 	}
@@ -234,5 +236,10 @@ func (unp NodeUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[str
 }
 
 func (unp NodeUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
-	return nil
+	var outputs = make(map[string]string)
+	for k := range udh.Node_Label_and_Values {
+		outputs[udh.Node_Label_and_Values[k]] = udh.Node_Label_and_Values[k]
+	}
+
+	return outputs
 }
