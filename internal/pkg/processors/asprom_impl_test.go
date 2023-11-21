@@ -2,6 +2,7 @@ package processors
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -9,8 +10,6 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
 	tests_utils "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/tests_utils"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/watchers"
-	"github.com/prometheus/client_golang/prometheus"
-	dto "github.com/prometheus/client_model/go"
 )
 
 func Test_RefreshDefault(t *testing.T) {
@@ -20,13 +19,8 @@ func Test_RefreshDefault(t *testing.T) {
 	// initialize config and gauge-lists
 	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
-	asMetrics := get_Namespace_Metrics()
-	asMetrics = append(asMetrics, get_Node_Metrics()...)
-	asMetrics = append(asMetrics, get_Sets_Metrics()...)
-	asMetrics = append(asMetrics, get_Sindex_Metrics()...)
-	asMetrics = append(asMetrics, get_Users_Metrics()...)
-	asMetrics = append(asMetrics, get_Latency_Metrics()...)
-	asMetrics = append(asMetrics, get_Xdr_Metrics()...)
+	asMetrics := get_aerospike_stats()
+	initialize_prom()
 
 	// generate and validate labels
 	all_runTestcase(t, asMetrics)
@@ -36,45 +30,35 @@ func Test_RefreshDefault(t *testing.T) {
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
 func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
-	ch := make(chan prometheus.Metric, 50000)
-	for idx_stats := range asMetrics {
-		as := asMetrics[idx_stats]
-		PushToPrometheus(as, ch)
+	// prometheus http server is initialized
+	httpClient := http.Client{Timeout: time.Duration(1) * time.Second}
+	resp, err := httpClient.Get("http://localhost:9145/metrics")
+
+	if err == nil {
+		fmt.Println("Error while reading Http Response: ", err)
 	}
-
-	// read from channel and check each metric created
-	domore := 1
-	for domore == 1 {
-		select {
-
-		case nsMetric := <-ch:
-			description := nsMetric.Desc().String()
-			var protobuffer dto.Metric
-			err := nsMetric.Write(&protobuffer)
-			if err != nil {
-				fmt.Println(" unable to get metric ", description, " data into protobuf ", err)
-			}
-
-			metricValue := ""
-			metricLabel := fmt.Sprintf("%s", protobuffer.Label)
-			if protobuffer.Gauge != nil {
-				metricValue = fmt.Sprintf("%.0f", *protobuffer.Gauge.Value)
-			} else if protobuffer.Counter != nil {
-				metricValue = fmt.Sprintf("%.0f", *protobuffer.Counter.Value)
-			}
-
-			fmt.Println("** description: %#v", description)
-			// , "\n\t metricValue: ", metricValue, "\t metricLabel: ", metricLabel)
-
-		case <-time.After(1 * time.Second):
-			domore = 0
-
-		} // end select
-	}
-
+	fmt.Println(resp)
 }
 
 // Data fetch helpers functions
+func get_aerospike_stats() []watchers.AerospikeStat {
+	asMetrics := get_Namespace_Metrics()
+	asMetrics = append(asMetrics, get_Node_Metrics()...)
+	asMetrics = append(asMetrics, get_Sets_Metrics()...)
+	asMetrics = append(asMetrics, get_Sindex_Metrics()...)
+	asMetrics = append(asMetrics, get_Users_Metrics()...)
+	asMetrics = append(asMetrics, get_Latency_Metrics()...)
+	asMetrics = append(asMetrics, get_Xdr_Metrics()...)
+
+	return asMetrics
+}
+
+func initialize_prom() {
+	metric_processors := GetMetricProcessors()
+	processor := metric_processors[PROM]
+	processor.Initialize()
+}
+
 func get_Node_Metrics() []watchers.AerospikeStat {
 
 	// Node

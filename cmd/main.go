@@ -15,7 +15,7 @@ var (
 	configFile   = flag.String("config", "/etc/aerospike-prometheus-exporter/ape.toml", "Config File")
 	showUsage    = flag.Bool("u", false, "Show usage information")
 	showVersion  = flag.Bool("version", false, "Print version")
-	serving_mode = flag.String("serve_mode", "prometheus", "Exporter metrics serving mode")
+	serving_mode = flag.String("serve_mode", processors.PROM, "Exporter metrics serving mode")
 
 	version = "v1.9.0"
 
@@ -33,12 +33,17 @@ func main() {
 	config.InitConfig(*configFile)
 	config.InitGaugeStats(*gaugeStatsFile)
 
-	handles := processors.GetMetricProcessors()
+	metric_processors := processors.GetMetricProcessors()
+	processor := metric_processors[*serving_mode]
 
-	log.Infof("Metrics serving mode is %s", *serving_mode)
-	err := handles[*serving_mode].Initialize()
-	if err != nil {
-		log.Errorln(err)
+	if processor != nil {
+		log.Infof("Metrics serving mode is %s", *serving_mode)
+		err := processor.Initialize()
+		if err != nil {
+			log.Errorln(err)
+		}
+	} else {
+		fmt.Println("Supported 'serve_mode' options [ prometheus ] ")
 	}
 
 }
