@@ -63,37 +63,39 @@ func (siw *SindexWatcher) Refresh(infoKeys []string, rawMetrics map[string]strin
 	var metrics_to_send = []AerospikeStat{}
 
 	for _, sindex := range infoKeys {
-		log.Tracef("sindex-stats:%v:%v", sindex, rawMetrics[sindex])
+		if strings.HasPrefix(sindex, "sindex/") {
+			log.Tracef("sindex-stats:%v:%v", sindex, rawMetrics[sindex])
 
-		sindexInfoKey := strings.ReplaceAll(sindex, "sindex/", "")
-		sindexInfoKeySplit := strings.Split(sindexInfoKey, "/")
-		nsName := sindexInfoKeySplit[0]
-		sindexName := sindexInfoKeySplit[1]
-		log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
+			sindexInfoKey := strings.ReplaceAll(sindex, "sindex/", "")
+			sindexInfoKeySplit := strings.Split(sindexInfoKey, "/")
+			nsName := sindexInfoKeySplit[0]
+			sindexName := sindexInfoKeySplit[1]
+			log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
 
-		clusterName := rawMetrics[Infokey_ClusterName]
-		service := rawMetrics[Infokey_Service]
+			clusterName := rawMetrics[Infokey_ClusterName]
+			service := rawMetrics[Infokey_Service]
 
-		stats := commons.ParseStats(rawMetrics[sindex], ";")
-		for stat, value := range stats {
-			pv, err := commons.TryConvert(value)
-			if err != nil {
-				continue
+			stats := commons.ParseStats(rawMetrics[sindex], ";")
+			for stat, value := range stats {
+				pv, err := commons.TryConvert(value)
+				if err != nil {
+					continue
+				}
+				asMetric, exists := siw.sindexMetrics[stat]
+
+				if !exists {
+					asMetric = NewAerospikeStat(commons.CTX_SINDEX, stat)
+					siw.sindexMetrics[stat] = asMetric
+				}
+
+				labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_SINDEX}
+				labelValues := []string{clusterName, service, nsName, sindexName}
+
+				// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
+				asMetric.updateValues(pv, labels, labelValues)
+				metrics_to_send = append(metrics_to_send, asMetric)
+
 			}
-			asMetric, exists := siw.sindexMetrics[stat]
-
-			if !exists {
-				asMetric = NewAerospikeStat(commons.CTX_SINDEX, stat)
-				siw.sindexMetrics[stat] = asMetric
-			}
-
-			labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_SINDEX}
-			labelValues := []string{clusterName, service, nsName, sindexName}
-
-			// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
-			asMetric.updateValues(pv, labels, labelValues)
-			metrics_to_send = append(metrics_to_send, asMetric)
-
 		}
 
 	}
