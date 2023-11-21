@@ -221,7 +221,7 @@ func (md *UnittestDataHandler) loadWatchersData() {
 			} else if strings.HasPrefix(line, "users-passtwokeys:") {
 				md.Users_PassTwo = append(md.Latency_PassTwo, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"users\",") {
-				prom_validator.Metrics = append(prom_validator.Metrics, line)
+				md.Users_Label_and_Values = append(md.Users_Label_and_Values, line)
 			}
 		}
 	}
