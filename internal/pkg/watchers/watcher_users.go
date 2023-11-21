@@ -131,68 +131,34 @@ func (uw *UserWatcher) refreshUserStats(infoKeys []string, rawMetrics map[string
 		readInfoStats := []string{"read_quota", "read_single_record_tps", "read_scan_query_rps", "limitless_read_scan_query"}
 		writeInfoStats := []string{"write_quota", "write_single_record_tps", "write_scan_query_rps", "limitless_write_scan_query"}
 
-		// Connections in use
-		// pm := makeMetric("aerospike_users", "conns_in_use", mtGauge, config.Cfg.AeroProm.MetricLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER)
-		// ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.ConnsInUse), rawMetrics[ikClusterName], rawMetrics[ikService], user.User)
-
-		// labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER}
-		// labelValues := []string{commons.Infokey_ClusterName, commons.Infokey_Service, user.User}
-		// asMetric := commons.NewAerospikeStat(commons.CTX_USERS, "conns_in_use")
-		// var asMetric commons.AerospikeStat
-		// var labels []string
-		// var labelValues []string
-
-		asMetric, labels, labelValues := internalCreateLocalAerospikeStat("conns_in_use", user.User)
+		asMetric, labels, labelValues := internalCreateLocalAerospikeStat(rawMetrics, "conns_in_use", user.User)
 		asMetric.updateValues(float64(user.ConnsInUse), labels, labelValues)
 		metrics_to_send = append(metrics_to_send, asMetric)
 
 		if len(user.ReadInfo) >= 4 && len(user.WriteInfo) >= 4 {
 
 			for Idx_Readinfo := 0; Idx_Readinfo < len(user.ReadInfo); Idx_Readinfo++ {
-				ri_asMetric, ri_labels, ri_labelValues := internalCreateLocalAerospikeStat(readInfoStats[Idx_Readinfo], user.User)
+				ri_asMetric, ri_labels, ri_labelValues := internalCreateLocalAerospikeStat(rawMetrics, readInfoStats[Idx_Readinfo], user.User)
 				ri_asMetric.updateValues(float64(user.ReadInfo[Idx_Readinfo]), ri_labels, ri_labelValues)
 
 				metrics_to_send = append(metrics_to_send, ri_asMetric)
 
 			}
 			for Idx_Writeinfo := 0; Idx_Writeinfo < len(user.WriteInfo); Idx_Writeinfo++ {
-				wi_asMetric, wi_labels, wi_labelValues := internalCreateLocalAerospikeStat(writeInfoStats[Idx_Writeinfo], user.User)
+				wi_asMetric, wi_labels, wi_labelValues := internalCreateLocalAerospikeStat(rawMetrics, writeInfoStats[Idx_Writeinfo], user.User)
 				wi_asMetric.updateValues(float64(user.WriteInfo[Idx_Writeinfo]), wi_labels, wi_labelValues)
 				metrics_to_send = append(metrics_to_send, wi_asMetric)
 
 			}
-
-			// User read info statistics
-			// pm = makeMetric("aerospike_users", readInfoStats[0], mtGauge, config.Cfg.AeroProm.MetricLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER)
-			// ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.ReadInfo[0]), rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], user.User)
-			// pm = makeMetric("aerospike_users", readInfoStats[1], mtGauge, config.Cfg.AeroProm.MetricLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER)
-			// ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.ReadInfo[1]), rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], user.User)
-			// pm = makeMetric("aerospike_users", readInfoStats[2], mtGauge, config.Cfg.AeroProm.MetricLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER)
-			// ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.ReadInfo[2]), rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], user.User)
-			// pm = makeMetric("aerospike_users", readInfoStats[3], mtGauge, config.Cfg.AeroProm.MetricLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER)
-			// ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.ReadInfo[3]), rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], user.User)
-
-			// User write info statistics
-			// pm = makeMetric("aerospike_users", writeInfoStats[0], mtGauge, config.Cfg.AeroProm.MetricLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER)
-			// ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.WriteInfo[0]), rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], user.User)
-			// pm = makeMetric("aerospike_users", writeInfoStats[1], mtGauge, config.Cfg.AeroProm.MetricLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER)
-			// ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.WriteInfo[1]), rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], user.User)
-			// pm = makeMetric("aerospike_users", writeInfoStats[2], mtGauge, config.Cfg.AeroProm.MetricLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER)
-			// ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.WriteInfo[2]), rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], user.User)
-			// pm = makeMetric("aerospike_users", writeInfoStats[3], mtGauge, config.Cfg.AeroProm.MetricLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER)
-			// ch <- prometheus.MustNewConstMetric(pm.desc, pm.valueType, float64(user.WriteInfo[3]), rawMetrics[commons.Infokey_ClusterName], rawMetrics[commons.Infokey_Service], user.User)
 		}
 	}
-
-	// fmt.Println("\t\t** Count of user-metrics : ", len(metrics_to_send))
-	// fmt.Println("metrics name & labels ", metrics_to_send[0].Metric.Name, "\t labels: ", metrics_to_send[0].Labels)
 
 	return metrics_to_send, nil
 }
 
-func internalCreateLocalAerospikeStat(pStatName string, username string) (AerospikeStat, []string, []string) {
+func internalCreateLocalAerospikeStat(rawMetrics map[string]string, pStatName string, username string) (AerospikeStat, []string, []string) {
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER}
-	labelValues := []string{ClusterName, Service, username}
+	labelValues := []string{rawMetrics[Infokey_ClusterName], rawMetrics[Infokey_Service], username}
 	asMetric := NewAerospikeStat(commons.CTX_USERS, pStatName)
 
 	return asMetric, labels, labelValues
