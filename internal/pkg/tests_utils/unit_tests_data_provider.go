@@ -375,7 +375,7 @@ type SindexUnittestValidator struct {
 
 func (unp SindexUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
-	elements := udh.Xdr_PassOne[0]
+	elements := udh.Sindex_PassOne[0]
 	elements = strings.Replace(elements, "sindex-passonekeys:", "", 1)
 	elements = strings.Replace(elements, "]", "", 1)
 	elements = strings.Replace(elements, "[", "", 1)
