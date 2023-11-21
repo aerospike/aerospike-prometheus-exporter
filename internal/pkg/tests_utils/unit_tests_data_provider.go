@@ -100,6 +100,8 @@ func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataVali
 		return &SindexUnittestValidator{}
 	case "latency":
 		return &LatencyUnittestValidator{}
+	case "users":
+		return &UsersUnittestValidator{}
 	}
 	return nil
 }
