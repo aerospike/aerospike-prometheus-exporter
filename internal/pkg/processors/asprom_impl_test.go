@@ -57,6 +57,7 @@ func initialize_prom() {
 	metric_processors := GetMetricProcessors()
 	processor := metric_processors[PROM]
 	processor.Initialize()
+	fmt.Println("*******************\nPrometheus initialized and running on localhost:9145")
 }
 
 func get_Node_Metrics() []watchers.AerospikeStat {
