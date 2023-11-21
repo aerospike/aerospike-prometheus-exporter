@@ -65,9 +65,6 @@ type UnittestDataHandler struct {
 	Users_PassOne          []string
 	Users_PassTwo          []string
 	Users_Label_and_Values []string
-
-	// Prometheus
-	// Prometheus_Label_and_Values []string
 }
 
 func (md *UnittestDataHandler) Initialize() {
@@ -181,11 +178,11 @@ func (md *UnittestDataHandler) loadWatchersData() {
 			// ignore, comments
 		} else if len(line) > 0 {
 			if strings.HasPrefix(line, "namespace-passonekeys:") {
-				md.Namespace_PassOne = append(md.Namespace_PassOne, line)
+				namespace_validator.PassOneOutputs = append(namespace_validator.PassOneOutputs, line)
 			} else if strings.HasPrefix(line, "namespace-passtwokeys:") {
-				md.Namespace_PassTwo = append(md.Namespace_PassTwo, line)
+				namespace_validator.PassTwoOutputs = append(namespace_validator.PassTwoOutputs, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"namespace\",") {
-				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
+				namespace_validator.Metrics = append(namespace_validator.Metrics, line)
 			} else if strings.HasPrefix(line, "node-passonekeys:") {
 				md.Node_PassOne = append(md.Node_PassOne, line)
 			} else if strings.HasPrefix(line, "node-passtwokeys:") {
@@ -240,7 +237,7 @@ type NamespaceUnittestValidator struct {
 
 func (unp NamespaceUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
-	elements := udh.Namespace_PassOne[0]
+	elements := unp.PassOneOutputs[0]
 	elements = strings.Replace(elements, "namespace-passonekeys:", "", 1)
 	elements = strings.Replace(elements, "]", "", 1)
 	elements = strings.Replace(elements, "[", "", 1)
@@ -255,7 +252,7 @@ func (unp NamespaceUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) ma
 
 	// fmt.Println("GetPassTwoKeys: ", udp.Namespace_PassTwo)
 
-	out_values := udh.Namespace_PassTwo[0]
+	out_values := unp.PassTwoOutputs[0]
 	out_values = strings.Replace(out_values, "namespace-passtwokeys:", "", 1)
 	out_values = strings.Replace(out_values, "[", "", 1)
 	out_values = strings.Replace(out_values, "]", "", 1)
@@ -271,8 +268,8 @@ func (unp NamespaceUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) ma
 func (unp NamespaceUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
 
 	var outputs = make(map[string]string)
-	for k := range udh.Namespaces_Label_and_Values {
-		outputs[udh.Namespaces_Label_and_Values[k]] = udh.Namespaces_Label_and_Values[k]
+	for k := range unp.Metrics {
+		outputs[unp.Metrics[k]] = unp.Metrics[k]
 	}
 
 	return outputs
