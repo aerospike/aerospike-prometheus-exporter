@@ -2440,7 +2440,7 @@ aerospike_node_stats_tree_gc_queue{cluster_name="70_aus_perth_1",service="172.17
 aerospike_node_stats_uptime{cluster_name="70_aus_perth_1",service="172.17.0.6:3000"} 971
 # HELP aerospike_node_ticks Counter that detemines how many times the Aerospike node was scraped for metrics.
 # TYPE aerospike_node_ticks counter
-aerospike_node_ticks 8
+aerospike_node_ticks 1
 # HELP aerospike_node_up Aerospike node active status
 # TYPE aerospike_node_up gauge
 aerospike_node_up{build="7.0.0.0-rc4",cluster_name="70_aus_perth_1",service="172.17.0.6:3000"} 1

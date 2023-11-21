@@ -45,7 +45,7 @@ func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		text := scanner.Text()
-		if strings.HasPrefix(text, "aerospike_") {
+		if len(text) > 0 && strings.HasPrefix(text, "aerospike_") {
 			metrics_from_prom = append(metrics_from_prom, strings.TrimSpace(text))
 		}
 	}
