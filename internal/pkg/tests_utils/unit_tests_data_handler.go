@@ -45,6 +45,11 @@ type UnittestDataHandler struct {
 	Xdr_PassOne          []string
 	Xdr_PassTwo          []string
 	Xdr_Label_and_Values []string
+
+	// Watchers - Sets
+	Sets_PassOne          []string
+	Sets_PassTwo          []string
+	Sets_Label_and_Values []string
 }
 
 func (md *UnittestDataHandler) Initialize() {
@@ -73,6 +78,8 @@ func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataVali
 	case "node":
 		return &NodeUnittestValidator{}
 	case "xdr":
+		return &XdrUnittestValidator{}
+	case "sets":
 		return &XdrUnittestValidator{}
 	}
 	return nil
@@ -159,6 +166,12 @@ func (md *UnittestDataHandler) loadWatchersData() {
 				md.Xdr_PassTwo = append(md.Xdr_PassTwo, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"xdr\",") {
 				md.Xdr_Label_and_Values = append(md.Xdr_Label_and_Values, line)
+			} else if strings.HasPrefix(line, "sets-passonekeys:") {
+				md.Sets_PassOne = append(md.Sets_PassOne, line)
+			} else if strings.HasPrefix(line, "sets-passtwokeys:") {
+				md.Sets_PassTwo = append(md.Sets_PassTwo, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"xdr\",") {
+				md.Sets_Label_and_Values = append(md.Sets_Label_and_Values, line)
 			}
 		}
 	}
@@ -258,7 +271,7 @@ func (unp NodeUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandl
 
 // End Node
 
-// Start Node
+// Start Xdr
 type XdrUnittestValidator struct {
 	PassOneOutputs []string
 	PassTwoOutputs []string
@@ -301,4 +314,49 @@ func (unp XdrUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandle
 	return outputs
 }
 
-// End Node
+// End Xdr
+
+// Start Sets
+type SetsUnittestValidator struct {
+	PassOneOutputs []string
+	PassTwoOutputs []string
+	Metrics        []string
+}
+
+func (unp SetsUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
+	var outputs = make(map[string]string)
+	elements := udh.Xdr_PassOne[0]
+	elements = strings.Replace(elements, "sets-passonekeys:", "", 1)
+	elements = strings.Replace(elements, "]", "", 1)
+	elements = strings.Replace(elements, "[", "", 1)
+
+	outputs["xdr"] = elements
+
+	return outputs
+}
+
+func (unp SetsUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
+	var outputs = make(map[string]string)
+
+	out_values := udh.Xdr_PassTwo[0]
+	out_values = strings.Replace(out_values, "sets-passtwokeys:", "", 1)
+	out_values = strings.Replace(out_values, "[", "", 1)
+	out_values = strings.Replace(out_values, "]", "", 1)
+	elements := strings.Split(out_values, " ")
+	for i := 0; i < len(elements); i++ {
+		outputs["xdr_"+strconv.Itoa(i)] = elements[i]
+	}
+
+	return outputs
+}
+
+func (unp SetsUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
+	var outputs = make(map[string]string)
+	for k := range udh.Xdr_Label_and_Values {
+		outputs[udh.Xdr_Label_and_Values[k]] = udh.Xdr_Label_and_Values[k]
+	}
+
+	return outputs
+}
+
+// End Sets

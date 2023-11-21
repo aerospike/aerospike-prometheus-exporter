@@ -23,7 +23,7 @@ once we have output from watcher-implementations ( like watcher_namespaces.go, w
 var MOCK_DATA_FILE = "tests_data/mock_test_data.txt"
 
 func (mas MockAerospikeServer) RequestInfo(infokeys []string) (map[string]string, error) {
-	fmt.Println("RequestInfo... ", infokeys)
+	// fmt.Println("RequestInfo... ", infokeys)
 
 	return mas.fetchRequestInfoFromFile(infokeys), nil
 }
