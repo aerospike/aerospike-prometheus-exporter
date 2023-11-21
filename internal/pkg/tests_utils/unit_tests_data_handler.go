@@ -134,9 +134,7 @@ func (md *UnittestDataHandler) loadWatchersData() {
 		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
 			// ignore, comments
 		} else if len(line) > 0 {
-			if strings.HasPrefix(line, "namespace_expected_output:") {
-				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
-			} else if strings.HasPrefix(line, "namespace-passonekeys:") {
+			if strings.HasPrefix(line, "namespace-passonekeys:") {
 				md.Namespace_PassOne = append(md.Namespace_PassOne, line)
 			} else if strings.HasPrefix(line, "namespace-passtwokeys:") {
 				md.Namespace_PassTwo = append(md.Namespace_PassTwo, line)
