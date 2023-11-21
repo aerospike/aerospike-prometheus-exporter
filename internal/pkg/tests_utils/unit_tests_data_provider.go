@@ -32,25 +32,15 @@ type UnittestDataValidator interface {
 
 type UnittestDataHandler struct {
 
-	// Watchers - Sets
-	// Sets_PassOne          []string
-	// Sets_PassTwo          []string
-	// Sets_Label_and_Values []string
-
-	// Watchers - Sindex
-	// Sindex_PassOne          []string
-	// Sindex_PassTwo          []string
-	// Sindex_Label_and_Values []string
-
 	// Watchers - Latency
-	Latency_PassOne          []string
-	Latency_PassTwo          []string
-	Latency_Label_and_Values []string
+	// Latency_PassOne          []string
+	// Latency_PassTwo          []string
+	// Latency_Label_and_Values []string
 
 	// Watchers - Users
-	Users_PassOne          []string
-	Users_PassTwo          []string
-	Users_Label_and_Values []string
+	// Users_PassOne          []string
+	// Users_PassTwo          []string
+	// Users_Label_and_Values []string
 }
 
 func (md *UnittestDataHandler) Initialize() {
@@ -194,17 +184,17 @@ func (md *UnittestDataHandler) loadWatchersData() {
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sindex\",") {
 				sindex_validator.Metrics = append(sindex_validator.Metrics, line)
 			} else if strings.HasPrefix(line, "latency-passonekeys:") {
-				md.Latency_PassOne = append(md.Latency_PassOne, line)
+				latency_validator.PassOneOutputs = append(latency_validator.PassOneOutputs, line)
 			} else if strings.HasPrefix(line, "latency-passtwokeys:") {
-				md.Latency_PassTwo = append(md.Latency_PassTwo, line)
+				latency_validator.PassTwoOutputs = append(latency_validator.PassTwoOutputs, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"latencies\",") {
-				md.Latency_Label_and_Values = append(md.Latency_Label_and_Values, line)
+				latency_validator.Metrics = append(latency_validator.Metrics, line)
 			} else if strings.HasPrefix(line, "users-passonekeys:") {
-				md.Users_PassOne = append(md.Latency_PassOne, line)
+				users_validator.PassOneOutputs = append(users_validator.PassOneOutputs, line)
 			} else if strings.HasPrefix(line, "users-passtwokeys:") {
-				md.Users_PassTwo = append(md.Latency_PassTwo, line)
+				users_validator.PassTwoOutputs = append(users_validator.PassTwoOutputs, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"users\",") {
-				md.Users_Label_and_Values = append(md.Users_Label_and_Values, line)
+				users_validator.Metrics = append(users_validator.Metrics, line)
 			}
 		}
 	}
@@ -445,7 +435,7 @@ func (unp LatencyUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[
 func (unp LatencyUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
 
-	out_values := udh.Latency_PassTwo[0]
+	out_values := unp.PassTwoOutputs[0]
 	out_values = strings.Replace(out_values, "latency-passtwokeys:", "", 1)
 	out_values = strings.Replace(out_values, "[", "", 1)
 	out_values = strings.Replace(out_values, "]", "", 1)
@@ -459,8 +449,8 @@ func (unp LatencyUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[
 
 func (unp LatencyUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
-	for k := range udh.Latency_Label_and_Values {
-		outputs[udh.Latency_Label_and_Values[k]] = udh.Latency_Label_and_Values[k]
+	for k := range unp.Metrics {
+		outputs[unp.Metrics[k]] = unp.Metrics[k]
 	}
 
 	return outputs
@@ -486,8 +476,8 @@ func (unp UsersUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[st
 
 func (unp UsersUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
-	for k := range udh.Users_Label_and_Values {
-		outputs[udh.Users_Label_and_Values[k]] = udh.Users_Label_and_Values[k]
+	for k := range unp.Metrics {
+		outputs[unp.Metrics[k]] = unp.Metrics[k]
 	}
 
 	return outputs
