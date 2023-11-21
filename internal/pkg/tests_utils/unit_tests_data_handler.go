@@ -281,7 +281,7 @@ func (unp XdrUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[stri
 	var outputs = make(map[string]string)
 
 	out_values := udh.Xdr_PassTwo[0]
-	out_values = strings.Replace(out_values, "xdr-passtwokeys", "", 1)
+	out_values = strings.Replace(out_values, "xdr-passtwokeys:", "", 1)
 	out_values = strings.Replace(out_values, "[", "", 1)
 	out_values = strings.Replace(out_values, "]", "", 1)
 	elements := strings.Split(out_values, " ")

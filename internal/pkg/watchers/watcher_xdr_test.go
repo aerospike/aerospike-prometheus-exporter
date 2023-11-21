@@ -40,8 +40,13 @@ func Test_Xdr_PassTwoKeys(t *testing.T) {
 	// Check passoneKeys
 	xdrWatcher := &XdrWatcher{}
 	xdrPassOneKeys := xdrWatcher.PassOneKeys()
+	// append common keys
+	infoKeys := []string{Infokey_ClusterName, Infokey_Service, Infokey_Build, "namespaces"}
+	xdrPassOneKeys = append(xdrPassOneKeys, infoKeys...)
+
 	passOneOutput, _ := data.GetProvider().RequestInfo(xdrPassOneKeys)
 	fmt.Println("Test_Xdr_PassTwoKeys: passOneOutput: ", passOneOutput)
+
 	passTwoOutputs := xdrWatcher.PassTwoKeys(passOneOutput)
 
 	udh := &tests_utils.UnittestDataHandler{}
