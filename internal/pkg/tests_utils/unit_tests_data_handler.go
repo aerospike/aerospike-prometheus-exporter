@@ -58,9 +58,9 @@ func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataVali
 
 	switch key {
 	case "namespace":
-		return &UnittestNamespaceValidator{}
+		return &NamespaceUnittestValidator{}
 	case "node":
-		return &UnittestNamespaceValidator{}
+		return &NodeUnittestValidator{}
 	}
 	return nil
 }
@@ -150,13 +150,13 @@ func (md *UnittestDataHandler) loadWatchersData() {
 // ===========================
 //
 // Start Namespace
-type UnittestNamespaceValidator struct {
+type NamespaceUnittestValidator struct {
 	PassOneOutputs []string
 	PassTwoOutputs []string
 	Metrics        []string
 }
 
-func (unp UnittestNamespaceValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
+func (unp NamespaceUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
 	elements := udh.Namespace_PassOne[0]
 	elements = strings.Replace(elements, "namespace-passonekeys:", "", 1)
@@ -168,7 +168,7 @@ func (unp UnittestNamespaceValidator) GetPassOneKeys(udh UnittestDataHandler) ma
 	return outputs
 }
 
-func (unp UnittestNamespaceValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
+func (unp NamespaceUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
 
 	// fmt.Println("GetPassTwoKeys: ", udp.Namespace_PassTwo)
@@ -186,7 +186,7 @@ func (unp UnittestNamespaceValidator) GetPassTwoKeys(udh UnittestDataHandler) ma
 	return outputs
 }
 
-func (unp UnittestNamespaceValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
+func (unp NamespaceUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
 
 	var outputs = make(map[string]string)
 	for k := range udh.Namespaces_Label_and_Values {
@@ -200,13 +200,21 @@ func (unp UnittestNamespaceValidator) GetMetricLabelsWithValues(udh UnittestData
 
 // Start Node
 // Start Namespace
-type UnittestNodeValidator struct {
+type NodeUnittestValidator struct {
 	PassOneOutputs []string
 	PassTwoOutputs []string
 	Metrics        []string
 }
 
-func (unp UnittestNodeValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
+func (unp NodeUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
 
+	return nil
+}
+
+func (unp NodeUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
+	return nil
+}
+
+func (unp NodeUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
 	return nil
 }
