@@ -19,7 +19,7 @@ func Test_RefreshDefault(t *testing.T) {
 	// initialize config and gauge-lists
 	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
-	initialize_prom()
+	// initialize_prom()
 	// asMetrics := get_aerospike_stats()
 
 	// generate and validate labels
@@ -32,7 +32,7 @@ func Test_RefreshDefault(t *testing.T) {
 func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 	// prometheus http server is initialized
 	httpClient := http.Client{Timeout: time.Duration(1) * time.Second}
-	resp, err := httpClient.Get("http://localhost:9145/metric")
+	resp, err := httpClient.Get("http://localhost:9145/metrics")
 
 	if err == nil {
 		fmt.Println("Error while reading Http Response: ", err)
