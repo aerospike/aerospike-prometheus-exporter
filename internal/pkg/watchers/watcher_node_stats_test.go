@@ -37,7 +37,7 @@ func Test_Node_PassTwoKeys(t *testing.T) {
 	nodeWatcher := &NodeStatsWatcher{}
 	nwPassOneKeys := nodeWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
+	fmt.Println("Test_Node_PassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := nodeWatcher.PassTwoKeys(passOneOutput)
 
 	udh := &tests_utils.UnittestDataHandler{}
