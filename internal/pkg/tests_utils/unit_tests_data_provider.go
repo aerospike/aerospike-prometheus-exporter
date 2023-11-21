@@ -50,6 +50,11 @@ type UnittestDataHandler struct {
 	Sets_PassOne          []string
 	Sets_PassTwo          []string
 	Sets_Label_and_Values []string
+
+	// Watchers - Sindex
+	Sindex_PassOne          []string
+	Sindex_PassTwo          []string
+	Sindex_Label_and_Values []string
 }
 
 func (md *UnittestDataHandler) Initialize() {
@@ -81,6 +86,8 @@ func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataVali
 		return &XdrUnittestValidator{}
 	case "sets":
 		return &SetsUnittestValidator{}
+	case "sindex":
+		return &SindexUnittestValidator{}
 	}
 	return nil
 }
@@ -172,6 +179,12 @@ func (md *UnittestDataHandler) loadWatchersData() {
 				md.Sets_PassTwo = append(md.Sets_PassTwo, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sets\",") {
 				md.Sets_Label_and_Values = append(md.Sets_Label_and_Values, line)
+			} else if strings.HasPrefix(line, "sindex-passonekeys:") {
+				md.Sindex_PassOne = append(md.Sindex_PassOne, line)
+			} else if strings.HasPrefix(line, "sindex-passonekeys:") {
+				md.Sindex_PassTwo = append(md.Sindex_PassTwo, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sets\",") {
+				md.Sindex_Label_and_Values = append(md.Sets_Label_and_Values, line)
 			}
 		}
 	}
@@ -336,7 +349,7 @@ func (unp SetsUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[str
 	out_values = strings.Replace(out_values, "]", "", 1)
 	elements := strings.Split(out_values, " ")
 	for i := 0; i < len(elements); i++ {
-		outputs["xdr_"+strconv.Itoa(i)] = elements[i]
+		outputs["sets_"+strconv.Itoa(i)] = elements[i]
 	}
 
 	return outputs
@@ -352,3 +365,40 @@ func (unp SetsUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandl
 }
 
 // End Sets
+
+// Start Sindex
+type SindexUnittestValidator struct {
+	PassOneOutputs []string
+	PassTwoOutputs []string
+	Metrics        []string
+}
+
+func (unp SindexUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
+	return nil
+}
+
+func (unp SindexUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
+	var outputs = make(map[string]string)
+
+	out_values := udh.Sindex_PassTwo[0]
+	out_values = strings.Replace(out_values, "sets-passtwokeys:", "", 1)
+	out_values = strings.Replace(out_values, "[", "", 1)
+	out_values = strings.Replace(out_values, "]", "", 1)
+	elements := strings.Split(out_values, " ")
+	for i := 0; i < len(elements); i++ {
+		outputs["sindex_"+strconv.Itoa(i)] = elements[i]
+	}
+
+	return outputs
+}
+
+func (unp SindexUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
+	var outputs = make(map[string]string)
+	for k := range udh.Sindex_Label_and_Values {
+		outputs[udh.Sindex_Label_and_Values[k]] = udh.Sindex_Label_and_Values[k]
+	}
+
+	return outputs
+}
+
+// End Sindex
