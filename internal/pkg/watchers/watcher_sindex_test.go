@@ -86,6 +86,7 @@ func sindex_runTestcase(t *testing.T) {
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
 
 	arrRawMetrics, err := data.GetProvider().RequestInfo(passTwoOutputs)
+	fmt.Println("\n*** arrRawMetrics: ", arrRawMetrics, "\n***")
 	assert.Nil(t, err, "Error while sindexMetrics.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while sindexMetrics.PassTwokeys, RawMetrics is EMPTY ")
 
