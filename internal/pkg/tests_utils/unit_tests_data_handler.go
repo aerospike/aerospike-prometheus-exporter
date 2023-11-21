@@ -40,6 +40,11 @@ type UnittestDataHandler struct {
 	Node_PassOne          []string
 	Node_PassTwo          []string
 	Node_Label_and_Values []string
+
+	// Watchers - Xdr
+	Xdr_PassOne          []string
+	Xdr_PassTwo          []string
+	Xdr_Label_and_Values []string
 }
 
 func (md *UnittestDataHandler) Initialize() {
@@ -67,6 +72,8 @@ func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataVali
 		return &NamespaceUnittestValidator{}
 	case "node":
 		return &NodeUnittestValidator{}
+	case "xdr":
+		return &XdrUnittestValidator{}
 	}
 	return nil
 }
@@ -146,6 +153,12 @@ func (md *UnittestDataHandler) loadWatchersData() {
 				md.Node_PassTwo = append(md.Node_PassTwo, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"node_stats\",") {
 				md.Node_Label_and_Values = append(md.Node_Label_and_Values, line)
+			} else if strings.HasPrefix(line, "xdr-passonekeys:") {
+				md.Xdr_PassOne = append(md.Xdr_PassOne, line)
+			} else if strings.HasPrefix(line, "xdr-passtwokeys:") {
+				md.Xdr_PassTwo = append(md.Xdr_PassTwo, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"xdr_stats\",") {
+				md.Node_Label_and_Values = append(md.Node_Label_and_Values, line)
 			}
 		}
 	}
@@ -205,7 +218,6 @@ func (unp NamespaceUnittestValidator) GetMetricLabelsWithValues(udh UnittestData
 // End Namespace
 
 // Start Node
-// Start Namespace
 type NodeUnittestValidator struct {
 	PassOneOutputs []string
 	PassTwoOutputs []string
@@ -229,7 +241,7 @@ func (unp NodeUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[str
 	elements := strings.Split(out_values, " ")
 	for i := 0; i < len(elements); i++ {
 		// fmt.Println(" adding namespace: ", elements[i], " - as key to ", i)
-		outputs["namespace_"+strconv.Itoa(i)] = elements[i]
+		outputs["node_stat_"+strconv.Itoa(i)] = elements[i]
 	}
 
 	return outputs
@@ -243,3 +255,50 @@ func (unp NodeUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandl
 
 	return outputs
 }
+
+// End Node
+
+// Start Node
+type XdrUnittestValidator struct {
+	PassOneOutputs []string
+	PassTwoOutputs []string
+	Metrics        []string
+}
+
+func (unp XdrUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
+	var outputs = make(map[string]string)
+	elements := udh.Xdr_PassOne[0]
+	elements = strings.Replace(elements, "xdr-passonekeys:", "", 1)
+	elements = strings.Replace(elements, "]", "", 1)
+	elements = strings.Replace(elements, "[", "", 1)
+
+	outputs["xdr"] = elements
+
+	return outputs
+}
+
+func (unp XdrUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
+	var outputs = make(map[string]string)
+
+	out_values := udh.Xdr_PassTwo[0]
+	out_values = strings.Replace(out_values, "xdr-passtwokeys", "", 1)
+	out_values = strings.Replace(out_values, "[", "", 1)
+	out_values = strings.Replace(out_values, "]", "", 1)
+	elements := strings.Split(out_values, " ")
+	for i := 0; i < len(elements); i++ {
+		outputs["xdr_"+strconv.Itoa(i)] = elements[i]
+	}
+
+	return outputs
+}
+
+func (unp XdrUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
+	var outputs = make(map[string]string)
+	for k := range udh.Xdr_Label_and_Values {
+		outputs[udh.Xdr_Label_and_Values[k]] = udh.Xdr_Label_and_Values[k]
+	}
+
+	return outputs
+}
+
+// End Node
