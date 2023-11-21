@@ -73,7 +73,7 @@ func Test_Sindex_RefreshDefault(t *testing.T) {
 func sindex_runTestcase(t *testing.T) {
 
 	// common keys
-	infoKeys := []string{Infokey_ClusterName, Infokey_Service, Infokey_Build, "namespaces"}
+	// infoKeys := []string{Infokey_ClusterName, Infokey_Service, Infokey_Build, "namespaces"}
 
 	// Check passoneKeys
 	sindexWatcher := &SindexWatcher{}
@@ -83,7 +83,7 @@ func sindex_runTestcase(t *testing.T) {
 	passTwoOutputs := sindexWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
-	passTwoOutputs = append(passTwoOutputs, infoKeys...)
+	// passTwoOutputs = append(passTwoOutputs, infoKeys...)
 
 	arrRawMetrics, err := data.GetProvider().RequestInfo(passTwoOutputs)
 	fmt.Println("\n*** arrRawMetrics: ", arrRawMetrics, "\n***")
