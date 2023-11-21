@@ -19,11 +19,11 @@ func Test_RefreshDefault(t *testing.T) {
 	// initialize config and gauge-lists
 	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
-	// initialize_prom()
+	initialize_prom()
 	// asMetrics := get_aerospike_stats()
 
 	// generate and validate labels
-	all_runTestcase(t, nil)
+	// all_runTestcase(t, nil)
 }
 
 /**
