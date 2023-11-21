@@ -1,7 +1,6 @@
 package watchers
 
 import (
-	"fmt"
 	"strings"
 
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -100,7 +99,7 @@ func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []s
 	}
 
 	log.Tracef("latency-passtwokeys:%s", commands)
-	fmt.Println("latency-passtwokeys:", commands)
+	// fmt.Println("latency-passtwokeys:", commands)
 
 	return commands
 }
