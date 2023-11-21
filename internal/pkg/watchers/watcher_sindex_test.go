@@ -22,7 +22,10 @@ func Test_Sindex_PassOneKeys(t *testing.T) {
 	ndv := udh.GetUnittestValidator("sindex")
 	passOneOutputs := ndv.GetPassOneKeys(*udh)
 
-	assert.Nil(t, nwPassOneKeys, passOneOutputs)
+	var expectedOutputs []string
+	expectedOutputs = append(expectedOutputs, passOneOutputs["sindex"])
+
+	assert.Equal(t, nwPassOneKeys, expectedOutputs)
 
 }
 
