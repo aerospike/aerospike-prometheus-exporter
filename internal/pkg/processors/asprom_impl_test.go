@@ -63,7 +63,8 @@ func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 				metricValue = fmt.Sprintf("%.0f", *protobuffer.Counter.Value)
 			}
 
-			fmt.Println("** description: ", description, "\n\t metricValue: ", metricValue, "\t metricLabel: ", metricLabel)
+			fmt.Println("** description: %#v", description)
+			// , "\n\t metricValue: ", metricValue, "\t metricLabel: ", metricLabel)
 
 		case <-time.After(1 * time.Second):
 			domore = 0
