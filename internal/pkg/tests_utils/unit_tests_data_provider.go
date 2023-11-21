@@ -65,6 +65,9 @@ type UnittestDataHandler struct {
 	Users_PassOne          []string
 	Users_PassTwo          []string
 	Users_Label_and_Values []string
+
+	// Prometheus
+	Prometheus_Label_and_Values []string
 }
 
 func (md *UnittestDataHandler) Initialize() {
@@ -102,6 +105,8 @@ func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataVali
 		return &LatencyUnittestValidator{}
 	case "users":
 		return &UsersUnittestValidator{}
+	case "prometheus":
+		return &PrometheusUnittestValidator{}
 	}
 	return nil
 }
@@ -110,9 +115,7 @@ func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataVali
 func (md *UnittestDataHandler) loadPrometheusData() {
 	filePath := TEST_PROM_DATA_FILE
 	cwd, _ := os.Getwd()
-	fileLocation := cwd + "/../../../" + filePath
-	// fmt.Println(" current working directory:", cwd)
-	// fmt.Println(" using filepath : ", fileLocation)
+	fileLocation := cwd + "/" + filePath
 	readFile, err := os.Open(fileLocation)
 
 	if err != nil {
@@ -133,8 +136,8 @@ func (md *UnittestDataHandler) loadPrometheusData() {
 		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
 			// ignore, comments
 		} else if len(line) > 0 {
-			if strings.HasPrefix(line, "namespace_expected_output:") {
-				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
+			if strings.HasPrefix(line, "aerospike_") {
+				md.Prometheus_Label_and_Values = append(md.Prometheus_Label_and_Values, line)
 			}
 		}
 	}
@@ -500,3 +503,30 @@ func (unp UsersUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHand
 }
 
 // End Latency
+
+// Start Prometheus
+type PrometheusUnittestValidator struct {
+	PassOneOutputs []string
+	PassTwoOutputs []string
+	Metrics        []string
+}
+
+func (unp PrometheusUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
+	return nil
+}
+
+func (unp PrometheusUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
+
+	return nil
+}
+
+func (unp PrometheusUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
+	var outputs = make(map[string]string)
+	for k := range udh.Prometheus_Label_and_Values {
+		outputs[udh.Prometheus_Label_and_Values[k]] = udh.Prometheus_Label_and_Values[k]
+	}
+
+	return outputs
+}
+
+// End Prometheus

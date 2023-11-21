@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -43,14 +44,28 @@ func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
-		metrics_from_prom = append(metrics_from_prom, scanner.Text())
+		text := scanner.Text()
+		if strings.HasPrefix(text, "aerospike_") {
+			metrics_from_prom = append(metrics_from_prom, text)
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Error while reading Http Response: ", err)
 	}
 
-	assert.NotEmpty(t, metrics_from_prom)
+	assert.NotEmpty(t, metrics_from_prom, " received metrics from prom running locally")
+
+	udh := &tests_utils.UnittestDataHandler{}
+	pdv := udh.GetUnittestValidator("prometheus")
+	expectedOutputs := pdv.GetMetricLabelsWithValues(*udh)
+
+	// assert values from httpclient with expectedOutputs
+	for idx_metrics := range metrics_from_prom {
+		entry := metrics_from_prom[idx_metrics]
+		assert.Contains(t, expectedOutputs, entry)
+	}
+
 }
 
 // Data fetch helpers functions
