@@ -145,7 +145,7 @@ func (md *UnittestDataHandler) loadWatchersData() {
 			} else if strings.HasPrefix(line, "node-passtwokeys:") {
 				md.Node_PassTwo = append(md.Node_PassTwo, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"node_stats\",") {
-				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
+				md.Node_Label_and_Values = append(md.Node_Label_and_Values, line)
 			}
 		}
 	}
