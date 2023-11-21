@@ -181,9 +181,9 @@ func (md *UnittestDataHandler) loadWatchersData() {
 			// ignore, comments
 		} else if len(line) > 0 {
 			if strings.HasPrefix(line, "namespace-passonekeys:") {
-				namespace_validator.PassOneOutputs = append(namespace_validator.PassOneOutputs, line)
+				md.Namespace_PassOne = append(md.Namespace_PassOne, line)
 			} else if strings.HasPrefix(line, "namespace-passtwokeys:") {
-				namespace_validator.PassTwoOutputs = append(namespace_validator.PassTwoOutputs, line)
+				md.Namespace_PassTwo = append(md.Namespace_PassTwo, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"namespace\",") {
 				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
 			} else if strings.HasPrefix(line, "node-passonekeys:") {
@@ -240,7 +240,7 @@ type NamespaceUnittestValidator struct {
 
 func (unp NamespaceUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
-	elements := unp.PassOneOutputs[0]
+	elements := udh.Namespace_PassOne[0]
 	elements = strings.Replace(elements, "namespace-passonekeys:", "", 1)
 	elements = strings.Replace(elements, "]", "", 1)
 	elements = strings.Replace(elements, "[", "", 1)
@@ -255,7 +255,7 @@ func (unp NamespaceUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) ma
 
 	// fmt.Println("GetPassTwoKeys: ", udp.Namespace_PassTwo)
 
-	out_values := unp.PassOneOutputs[0]
+	out_values := udh.Namespace_PassTwo[0]
 	out_values = strings.Replace(out_values, "namespace-passtwokeys:", "", 1)
 	out_values = strings.Replace(out_values, "[", "", 1)
 	out_values = strings.Replace(out_values, "]", "", 1)
@@ -271,8 +271,8 @@ func (unp NamespaceUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) ma
 func (unp NamespaceUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
 
 	var outputs = make(map[string]string)
-	for k := range unp.Metrics {
-		outputs[unp.Metrics[k]] = unp.Metrics[k]
+	for k := range udh.Namespaces_Label_and_Values {
+		outputs[udh.Namespaces_Label_and_Values[k]] = udh.Namespaces_Label_and_Values[k]
 	}
 
 	return outputs
