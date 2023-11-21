@@ -170,7 +170,7 @@ func (md *UnittestDataHandler) loadWatchersData() {
 				md.Sets_PassOne = append(md.Sets_PassOne, line)
 			} else if strings.HasPrefix(line, "sets-passtwokeys:") {
 				md.Sets_PassTwo = append(md.Sets_PassTwo, line)
-			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"xdr\",") {
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sets\",") {
 				md.Sets_Label_and_Values = append(md.Sets_Label_and_Values, line)
 			}
 		}
