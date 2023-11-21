@@ -31,16 +31,6 @@ type UnittestDataValidator interface {
 }
 
 type UnittestDataHandler struct {
-
-	// Watchers - Latency
-	// Latency_PassOne          []string
-	// Latency_PassTwo          []string
-	// Latency_Label_and_Values []string
-
-	// Watchers - Users
-	// Users_PassOne          []string
-	// Users_PassTwo          []string
-	// Users_Label_and_Values []string
 }
 
 func (md *UnittestDataHandler) Initialize() {
