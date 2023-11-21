@@ -41,7 +41,11 @@ func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
-	fmt.Println("\n***************\n\nResponse Body:\n\t", body)
+	if err != nil {
+		fmt.Println("Error while reading Http Response: ", err)
+	}
+
+	fmt.Printf("\n***************\n\nResponse Body: %s\n\t", body)
 }
 
 // Data fetch helpers functions
