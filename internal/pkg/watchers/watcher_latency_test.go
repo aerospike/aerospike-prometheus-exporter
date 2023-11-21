@@ -89,23 +89,23 @@ func latency_runTestcase(t *testing.T) {
 	assert.Nil(t, err, "Error while latencyWatcher.Refresh with passTwoOutputs ")
 	assert.NotEmpty(t, latencyMetrics, "Error while latencyWatcher.Refresh, latencyWatcher is EMPTY ")
 
-	// check the WatcherMetrics if all stats & configs coming with required labels
-	// below block of code is used when we create the baseline mock data, which is stored in exporter_mock_results.txt for test verification/assertion
-	// do-not-remove below code, use when to dump the output
-	for k := range latencyMetrics {
-		str := fmt.Sprintf("%#v", latencyMetrics[k])
-		fmt.Println(str)
-	}
-
-	// udh := &tests_utils.UnittestDataHandler{}
-	// ndv := udh.GetUnittestValidator("latency")
-	// expected_results := ndv.GetMetricLabelsWithValues(*udh)
-
-	// for k := range setsMetrics {
-	// 	// convert / serialize to string which can be compared to stored expected mock result
-	// 	str_metric := fmt.Sprintf("%#v", setsMetrics[k])
-	// 	_, exists := expected_results[str_metric]
-	// 	assert.True(t, exists, "Failed, did not find expected result: "+str_metric)
+	// // check the WatcherMetrics if all stats & configs coming with required labels
+	// // below block of code is used when we create the baseline mock data, which is stored in exporter_mock_results.txt for test verification/assertion
+	// // do-not-remove below code, use when to dump the output
+	// for k := range latencyMetrics {
+	// 	str := fmt.Sprintf("%#v", latencyMetrics[k])
+	// 	fmt.Println(str)
 	// }
+
+	udh := &tests_utils.UnittestDataHandler{}
+	ndv := udh.GetUnittestValidator("latency")
+	expected_results := ndv.GetMetricLabelsWithValues(*udh)
+
+	for k := range latencyMetrics {
+		// convert / serialize to string which can be compared to stored expected mock result
+		str_metric := fmt.Sprintf("%#v", latencyMetrics[k])
+		_, exists := expected_results[str_metric]
+		assert.True(t, exists, "Failed, did not find expected result: "+str_metric)
+	}
 
 }

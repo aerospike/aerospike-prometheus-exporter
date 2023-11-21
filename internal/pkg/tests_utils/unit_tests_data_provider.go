@@ -196,7 +196,7 @@ func (md *UnittestDataHandler) loadWatchersData() {
 				md.Latency_PassOne = append(md.Latency_PassOne, line)
 			} else if strings.HasPrefix(line, "latency-passtwokeys:") {
 				md.Latency_PassTwo = append(md.Latency_PassTwo, line)
-			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"latency\",") {
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"latencies\",") {
 				md.Latency_Label_and_Values = append(md.Latency_Label_and_Values, line)
 			}
 		}
