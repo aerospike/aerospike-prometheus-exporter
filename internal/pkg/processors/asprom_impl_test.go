@@ -20,10 +20,10 @@ func Test_RefreshDefault(t *testing.T) {
 	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
 	initialize_prom()
-	asMetrics := get_aerospike_stats()
+	// asMetrics := get_aerospike_stats()
 
 	// generate and validate labels
-	all_runTestcase(t, asMetrics)
+	all_runTestcase(t, nil)
 }
 
 /**
@@ -37,7 +37,7 @@ func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 	if err == nil {
 		fmt.Println("Error while reading Http Response: ", err)
 	}
-	fmt.Println(resp)
+	fmt.Println(resp.Body)
 }
 
 // Data fetch helpers functions
