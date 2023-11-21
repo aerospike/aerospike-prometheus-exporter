@@ -6,11 +6,13 @@ import (
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
-	tests_utils "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/unittests"
+	tests_utils "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/tests_utils"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPassOneKeys(t *testing.T) {
+func Test_Namespace_PassOneKeys(t *testing.T) {
+
+	fmt.Println("initializing config ... Test_Namespace_PassOneKeys")
 
 	// Check passoneKeys
 	nsWatcher := &NamespaceWatcher{}
@@ -28,7 +30,9 @@ func TestPassOneKeys(t *testing.T) {
 
 }
 
-func TestPassTwoKeys(t *testing.T) {
+func Test_Namespace_PassTwoKeys(t *testing.T) {
+
+	fmt.Println("initializing config ... Test_Namespace_PassTwoKeys")
 
 	// initialize config and gauge-lists
 	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
@@ -59,21 +63,21 @@ func TestPassTwoKeys(t *testing.T) {
 	}
 }
 
-func TestNamespaceRefreshDefault(t *testing.T) {
+func Test_Namespace_RefreshDefault(t *testing.T) {
 
-	fmt.Println("initializing config ... TestNamespaceRefreshDefault")
+	fmt.Println("initializing config ... Test_Namespace_RefreshDefault")
 	// Initialize and validate config
 
 	// initialize config and gauge-lists
 	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
-	runTestcase(t)
+	namespace_runTestcase(t)
 }
 
 /**
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
-func runTestcase(t *testing.T) {
+func namespace_runTestcase(t *testing.T) {
 
 	// initialize gauges list
 	config.InitGaugeStats(tests_utils.GetConfigfileLocation(tests_utils.DEFAULT_GAUGE_LIST_FILE))
@@ -100,6 +104,7 @@ func runTestcase(t *testing.T) {
 
 	// check the WatcherMetrics if all stats & configs coming with required labels
 	// below block of code is used when we create the baseline mock data, which is stored in exporter_mock_results.txt for test verification/assertion
+	// do-not-remove below code, use when to dump the output
 	// for k := range nsMetrics {
 	// 	str := fmt.Sprintf("%#v", nsMetrics[k])
 	// 	fmt.Println(str)

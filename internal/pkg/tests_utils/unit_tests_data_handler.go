@@ -59,54 +59,10 @@ func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataVali
 	switch key {
 	case "namespace":
 		return &UnittestNamespaceValidator{}
+	case "node":
+		return &UnittestNamespaceValidator{}
 	}
 	return nil
-}
-
-type UnittestNamespaceValidator struct {
-	PassOneOutputs []string
-	PassTwoOutputs []string
-	Metrics        []string
-}
-
-func (unp UnittestNamespaceValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
-	var outputs = make(map[string]string)
-	elements := udh.Namespace_PassOne[0]
-	elements = strings.Replace(elements, "namespace-passonekeys:", "", 1)
-	elements = strings.Replace(elements, "]", "", 1)
-	elements = strings.Replace(elements, "[", "", 1)
-
-	outputs["namespaces"] = elements
-
-	return outputs
-}
-
-func (unp UnittestNamespaceValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
-	var outputs = make(map[string]string)
-
-	// fmt.Println("GetPassTwoKeys: ", udp.Namespace_PassTwo)
-
-	out_values := udh.Namespace_PassTwo[0]
-	out_values = strings.Replace(out_values, "namespace-passtwokeys:", "", 1)
-	out_values = strings.Replace(out_values, "[", "", 1)
-	out_values = strings.Replace(out_values, "]", "", 1)
-	elements := strings.Split(out_values, " ")
-	for i := 0; i < len(elements); i++ {
-		// fmt.Println(" adding namespace: ", elements[i], " - as key to ", i)
-		outputs["namespace_"+strconv.Itoa(i)] = elements[i]
-	}
-
-	return outputs
-}
-
-func (unp UnittestNamespaceValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
-
-	var outputs = make(map[string]string)
-	for k := range udh.Namespaces_Label_and_Values {
-		outputs[udh.Namespaces_Label_and_Values[k]] = udh.Namespaces_Label_and_Values[k]
-	}
-
-	return outputs
 }
 
 // Internal helper functions
@@ -189,4 +145,68 @@ func (md *UnittestDataHandler) loadWatchersData() {
 		}
 	}
 
+}
+
+// ===========================
+//
+// Start Namespace
+type UnittestNamespaceValidator struct {
+	PassOneOutputs []string
+	PassTwoOutputs []string
+	Metrics        []string
+}
+
+func (unp UnittestNamespaceValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
+	var outputs = make(map[string]string)
+	elements := udh.Namespace_PassOne[0]
+	elements = strings.Replace(elements, "namespace-passonekeys:", "", 1)
+	elements = strings.Replace(elements, "]", "", 1)
+	elements = strings.Replace(elements, "[", "", 1)
+
+	outputs["namespaces"] = elements
+
+	return outputs
+}
+
+func (unp UnittestNamespaceValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
+	var outputs = make(map[string]string)
+
+	// fmt.Println("GetPassTwoKeys: ", udp.Namespace_PassTwo)
+
+	out_values := udh.Namespace_PassTwo[0]
+	out_values = strings.Replace(out_values, "namespace-passtwokeys:", "", 1)
+	out_values = strings.Replace(out_values, "[", "", 1)
+	out_values = strings.Replace(out_values, "]", "", 1)
+	elements := strings.Split(out_values, " ")
+	for i := 0; i < len(elements); i++ {
+		// fmt.Println(" adding namespace: ", elements[i], " - as key to ", i)
+		outputs["namespace_"+strconv.Itoa(i)] = elements[i]
+	}
+
+	return outputs
+}
+
+func (unp UnittestNamespaceValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
+
+	var outputs = make(map[string]string)
+	for k := range udh.Namespaces_Label_and_Values {
+		outputs[udh.Namespaces_Label_and_Values[k]] = udh.Namespaces_Label_and_Values[k]
+	}
+
+	return outputs
+}
+
+// End Namespace
+
+// Start Node
+// Start Namespace
+type UnittestNodeValidator struct {
+	PassOneOutputs []string
+	PassTwoOutputs []string
+	Metrics        []string
+}
+
+func (unp UnittestNodeValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
+
+	return nil
 }
