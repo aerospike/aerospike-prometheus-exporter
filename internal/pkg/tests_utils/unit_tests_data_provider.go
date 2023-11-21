@@ -133,7 +133,7 @@ func (md *UnittestDataHandler) loadPrometheusData() {
 	readFile.Close()
 
 	for _, line := range fileLines {
-		fmt.Println("Prometheus_Label_and_Values: ", line)
+		// fmt.Println("Prometheus_Label_and_Values: ", line)
 		if len(line) > 0 && strings.HasPrefix(line, "aerospike_") {
 			md.Prometheus_Label_and_Values = append(md.Prometheus_Label_and_Values, strings.TrimSpace(line))
 		}
