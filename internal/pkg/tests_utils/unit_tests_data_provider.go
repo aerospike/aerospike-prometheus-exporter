@@ -67,7 +67,7 @@ type UnittestDataHandler struct {
 	Users_Label_and_Values []string
 
 	// Prometheus
-	Prometheus_Label_and_Values []string
+	// Prometheus_Label_and_Values []string
 }
 
 func (md *UnittestDataHandler) Initialize() {
@@ -86,27 +86,38 @@ func (md *UnittestDataHandler) Initialize() {
 	md.loadWatchersData()
 }
 
+var (
+	namespace_validator  = &NamespaceUnittestValidator{}
+	node_stats_validator = &NodeUnittestValidator{}
+	xdr_validator        = &XdrUnittestValidator{}
+	sets_validator       = &SetsUnittestValidator{}
+	sindex_validator     = &SindexUnittestValidator{}
+	latency_validator    = &LatencyUnittestValidator{}
+	users_validator      = &UsersUnittestValidator{}
+	prom_validator       = &PrometheusUnittestValidator{}
+)
+
 func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataValidator {
 
 	md.Initialize()
 
 	switch key {
 	case "namespace":
-		return &NamespaceUnittestValidator{}
+		return namespace_validator
 	case "node":
-		return &NodeUnittestValidator{}
+		return node_stats_validator
 	case "xdr":
-		return &XdrUnittestValidator{}
+		return xdr_validator
 	case "sets":
-		return &SetsUnittestValidator{}
+		return sets_validator
 	case "sindex":
-		return &SindexUnittestValidator{}
+		return sindex_validator
 	case "latency":
-		return &LatencyUnittestValidator{}
+		return latency_validator
 	case "users":
-		return &UsersUnittestValidator{}
+		return users_validator
 	case "prometheus":
-		return &PrometheusUnittestValidator{}
+		return prom_validator
 	}
 	return nil
 }
@@ -135,7 +146,7 @@ func (md *UnittestDataHandler) loadPrometheusData() {
 	for _, line := range fileLines {
 		// fmt.Println("Prometheus_Label_and_Values: ", line)
 		if len(line) > 0 && strings.HasPrefix(line, "aerospike_") {
-			md.Prometheus_Label_and_Values = append(md.Prometheus_Label_and_Values, strings.TrimSpace(line))
+			prom_validator.Metrics = append(prom_validator.Metrics, strings.TrimSpace(line))
 		}
 	}
 	fmt.Println("loadPrometheusData(): Completed loading test Prometheus Expected Data ")
@@ -210,7 +221,7 @@ func (md *UnittestDataHandler) loadWatchersData() {
 			} else if strings.HasPrefix(line, "users-passtwokeys:") {
 				md.Users_PassTwo = append(md.Latency_PassTwo, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"users\",") {
-				md.Users_Label_and_Values = append(md.Users_Label_and_Values, line)
+				prom_validator.Metrics = append(prom_validator.Metrics, line)
 			}
 		}
 	}
@@ -519,8 +530,8 @@ func (unp PrometheusUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) m
 
 func (unp PrometheusUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
-	for k := range udh.Prometheus_Label_and_Values {
-		outputs[udh.Prometheus_Label_and_Values[k]] = udh.Prometheus_Label_and_Values[k]
+	for k := range unp.Metrics {
+		outputs[unp.Metrics[k]] = unp.Metrics[k]
 	}
 
 	return outputs

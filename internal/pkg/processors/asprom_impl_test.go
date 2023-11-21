@@ -21,8 +21,8 @@ func Test_RefreshDefault(t *testing.T) {
 	// initialize config and gauge-lists
 	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
+	// initialize prom
 	initialize_prom()
-
 	// generate and validate labels
 	all_runTestcase(t, nil)
 }
@@ -65,13 +65,8 @@ func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 	// assert values from httpclient with expectedOutputs
 	for idx_metrics := range metrics_from_prom {
 		entry := metrics_from_prom[idx_metrics]
-		// expected_entry := expectedOutputs[entry]
-		// assert.Equal(t, expected_entry, entry)
 		assert.Contains(t, expectedOutputs, entry)
 	}
-
-	// fmt.Println("\n\n************")
-	// fmt.Println(expectedOutputs)
 }
 
 // Data fetch helpers functions
