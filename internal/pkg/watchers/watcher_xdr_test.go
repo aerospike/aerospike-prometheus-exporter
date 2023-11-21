@@ -106,7 +106,7 @@ func xdr_runTestcase(t *testing.T) {
 	// // below block of code is used when we create the baseline mock data, which is stored in exporter_mock_results.txt for test verification/assertion
 	// // do-not-remove below code, use when to dump the output
 	// for k := range nodeMetrics {
-	// 	str := fmt.Sprintf("%#v", nodeMetrics[k])
+	// 	str := fmt.Sprintf("%#v", xdrMetrics[k])
 	// 	fmt.Println(str)
 	// }
 
