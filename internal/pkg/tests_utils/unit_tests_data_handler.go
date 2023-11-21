@@ -31,9 +31,15 @@ type UnittestDataValidator interface {
 }
 
 type UnittestDataHandler struct {
+	// Watchers - Namespace
 	Namespace_PassOne           []string
 	Namespace_PassTwo           []string
 	Namespaces_Label_and_Values []string
+
+	// Watchers - Node
+	Node_PassOne          []string
+	Node_PassTwo          []string
+	Node_Label_and_Values []string
 }
 
 func (md *UnittestDataHandler) Initialize() {
@@ -141,6 +147,10 @@ func (md *UnittestDataHandler) loadWatchersData() {
 				md.Namespace_PassTwo = append(md.Namespace_PassTwo, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"namespace\",") {
 				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
+			} else if strings.HasPrefix(line, "node-passonekeys:") {
+				md.Node_PassOne = append(md.Node_PassOne, line)
+			} else if strings.HasPrefix(line, "node-passtwokeys:") {
+				md.Node_PassTwo = append(md.Node_PassTwo, line)
 			}
 		}
 	}
@@ -212,7 +222,21 @@ func (unp NodeUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[str
 }
 
 func (unp NodeUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
-	return nil
+	var outputs = make(map[string]string)
+
+	// fmt.Println("GetPassTwoKeys: ", udp.Namespace_PassTwo)
+
+	out_values := udh.Namespace_PassTwo[0]
+	out_values = strings.Replace(out_values, "node-passtwokeys:", "", 1)
+	out_values = strings.Replace(out_values, "[", "", 1)
+	out_values = strings.Replace(out_values, "]", "", 1)
+	elements := strings.Split(out_values, " ")
+	for i := 0; i < len(elements); i++ {
+		// fmt.Println(" adding namespace: ", elements[i], " - as key to ", i)
+		outputs["namespace_"+strconv.Itoa(i)] = elements[i]
+	}
+
+	return outputs
 }
 
 func (unp NodeUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
