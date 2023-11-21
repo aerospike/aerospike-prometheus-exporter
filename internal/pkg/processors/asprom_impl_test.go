@@ -65,8 +65,9 @@ func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 	// assert values from httpclient with expectedOutputs
 	for idx_metrics := range metrics_from_prom {
 		entry := metrics_from_prom[idx_metrics]
-		expected_entry := expectedOutputs[entry]
-		assert.Equal(t, expected_entry, entry)
+		// expected_entry := expectedOutputs[entry]
+		// assert.Equal(t, expected_entry, entry)
+		assert.Contains(t, expectedOutputs, entry)
 	}
 
 	// fmt.Println("\n\n************")
