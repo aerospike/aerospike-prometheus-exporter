@@ -21,10 +21,10 @@ func Test_RefreshDefault(t *testing.T) {
 	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
 	initialize_prom()
-	asMetrics := get_aerospike_stats()
+	// asMetrics := get_aerospike_stats()
 
 	// generate and validate labels
-	all_runTestcase(t, asMetrics)
+	all_runTestcase(t, nil)
 }
 
 /**
@@ -184,7 +184,7 @@ func get_Users_Metrics() []watchers.AerospikeStat {
 	usersWatcher := &watchers.UserWatcher{}
 	nwPassOneKeys := usersWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("users_runTestcase: passOneOutput: ", passOneOutput)
+	fmt.Println("get_Users_Metrics() .. passOneOutput: ", passOneOutput)
 	passTwoOutputs := usersWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
