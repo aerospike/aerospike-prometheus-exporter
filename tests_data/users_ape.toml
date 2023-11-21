@@ -94,10 +94,10 @@ node_tls_name = ""
 # Applicable to 'user' and 'password' configurations.
 
 # database user
-user = ""
+user = "test_phani"
 
 # database password
-password = ""
+password = "test_phani"
 
 # authentication mode: internal (server authentication) [default], external (e.g., LDAP), pki. 
 auth_mode = ""
