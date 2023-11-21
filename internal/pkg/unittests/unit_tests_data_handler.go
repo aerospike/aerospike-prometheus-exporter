@@ -46,42 +46,9 @@ func (md *UnittestDataHandler) Initialize() {
 	// Mark as initialized
 	Is_Unittests_Initialized = 1
 
-	filePath := TEST_DATA_FILE
-	cwd, _ := os.Getwd()
-	fileLocation := cwd + "/../../../" + filePath
-	// fmt.Println(" current working directory:", cwd)
-	// fmt.Println(" using filepath : ", fileLocation)
-	readFile, err := os.Open(fileLocation)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	fileScanner := bufio.NewScanner(readFile)
-	fileScanner.Split(bufio.ScanLines)
-	var fileLines []string
-
-	for fileScanner.Scan() {
-		fileLines = append(fileLines, strings.TrimSpace(fileScanner.Text()))
-	}
-
-	readFile.Close()
-
-	for _, line := range fileLines {
-		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
-			// ignore, comments
-		} else if len(line) > 0 {
-			if strings.HasPrefix(line, "namespace_expected_output:") {
-				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
-			} else if strings.HasPrefix(line, "namespace-passonekeys:") {
-				md.Namespace_PassOne = append(md.Namespace_PassOne, line)
-			} else if strings.HasPrefix(line, "namespace-passtwokeys:") {
-				md.Namespace_PassTwo = append(md.Namespace_PassTwo, line)
-			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"namespace\",") {
-				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
-			}
-		}
-	}
+	// load expected test data from mock files
+	md.loadPrometheusData()
+	md.loadWatchersData()
 }
 
 func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataValidator {
@@ -139,4 +106,85 @@ func (unp UnittestNamespaceValidator) GetMetricLabelsWithValues(udh UnittestData
 	}
 
 	return outputs
+}
+
+// Internal helper functions
+func (md *UnittestDataHandler) loadPrometheusData() {
+	filePath := TEST_DATA_FILE
+	cwd, _ := os.Getwd()
+	fileLocation := cwd + "/../../../" + filePath
+	// fmt.Println(" current working directory:", cwd)
+	// fmt.Println(" using filepath : ", fileLocation)
+	readFile, err := os.Open(fileLocation)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fileScanner := bufio.NewScanner(readFile)
+	fileScanner.Split(bufio.ScanLines)
+	var fileLines []string
+
+	for fileScanner.Scan() {
+		fileLines = append(fileLines, strings.TrimSpace(fileScanner.Text()))
+	}
+
+	readFile.Close()
+
+	for _, line := range fileLines {
+		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
+			// ignore, comments
+		} else if len(line) > 0 {
+			if strings.HasPrefix(line, "namespace_expected_output:") {
+				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
+			} else if strings.HasPrefix(line, "namespace-passonekeys:") {
+				md.Namespace_PassOne = append(md.Namespace_PassOne, line)
+			} else if strings.HasPrefix(line, "namespace-passtwokeys:") {
+				md.Namespace_PassTwo = append(md.Namespace_PassTwo, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"namespace\",") {
+				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
+			}
+		}
+	}
+
+}
+
+func (md *UnittestDataHandler) loadWatchersData() {
+	filePath := TEST_DATA_FILE
+	cwd, _ := os.Getwd()
+	fileLocation := cwd + "/" + filePath
+	// fmt.Println(" current working directory:", cwd)
+	// fmt.Println(" using filepath : ", fileLocation)
+	readFile, err := os.Open(fileLocation)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fileScanner := bufio.NewScanner(readFile)
+	fileScanner.Split(bufio.ScanLines)
+	var fileLines []string
+
+	for fileScanner.Scan() {
+		fileLines = append(fileLines, strings.TrimSpace(fileScanner.Text()))
+	}
+
+	readFile.Close()
+
+	for _, line := range fileLines {
+		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
+			// ignore, comments
+		} else if len(line) > 0 {
+			if strings.HasPrefix(line, "namespace_expected_output:") {
+				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
+			} else if strings.HasPrefix(line, "namespace-passonekeys:") {
+				md.Namespace_PassOne = append(md.Namespace_PassOne, line)
+			} else if strings.HasPrefix(line, "namespace-passtwokeys:") {
+				md.Namespace_PassTwo = append(md.Namespace_PassTwo, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"namespace\",") {
+				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
+			}
+		}
+	}
+
 }
