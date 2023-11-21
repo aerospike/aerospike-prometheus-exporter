@@ -100,15 +100,10 @@ func (md *UnittestDataHandler) loadPrometheusData() {
 		} else if len(line) > 0 {
 			if strings.HasPrefix(line, "namespace_expected_output:") {
 				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
-			} else if strings.HasPrefix(line, "namespace-passonekeys:") {
-				md.Namespace_PassOne = append(md.Namespace_PassOne, line)
-			} else if strings.HasPrefix(line, "namespace-passtwokeys:") {
-				md.Namespace_PassTwo = append(md.Namespace_PassTwo, line)
-			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"namespace\",") {
-				md.Namespaces_Label_and_Values = append(md.Namespaces_Label_and_Values, line)
 			}
 		}
 	}
+	fmt.Println("loadPrometheusData(): Completed loading test Prometheus Expected Data ")
 
 }
 
@@ -154,7 +149,8 @@ func (md *UnittestDataHandler) loadWatchersData() {
 			}
 		}
 	}
-
+	fmt.Println("\n\n****\nmd.Node_PassTwo: ", md.Node_PassTwo, "\n\n***")
+	fmt.Println("loadWatchersData(): Completed loading test WATCHER Expected Data ")
 }
 
 // ===========================
