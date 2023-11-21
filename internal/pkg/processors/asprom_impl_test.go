@@ -76,6 +76,12 @@ func initialize_prom() {
 	processor := metric_processors[PROM]
 
 	// run Prom as a separate process
-	go processor.Initialize()
+	go func() {
+		err := processor.Initialize()
+		if err != nil {
+			fmt.Println("Error while Initializing Processor ", err)
+		}
+	}()
+
 	fmt.Println("*******************\nPrometheus initialized and running on localhost:9145")
 }
