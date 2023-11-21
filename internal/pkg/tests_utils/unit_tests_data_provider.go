@@ -32,20 +32,10 @@ type UnittestDataValidator interface {
 
 type UnittestDataHandler struct {
 
-	// Watchers - Node
-	// Node_PassOne          []string
-	// Node_PassTwo          []string
-	// Node_Label_and_Values []string
-
-	// Watchers - Xdr
-	// Xdr_PassOne          []string
-	// Xdr_PassTwo          []string
-	// Xdr_Label_and_Values []string
-
 	// Watchers - Sets
-	Sets_PassOne          []string
-	Sets_PassTwo          []string
-	Sets_Label_and_Values []string
+	// Sets_PassOne          []string
+	// Sets_PassTwo          []string
+	// Sets_Label_and_Values []string
 
 	// Watchers - Sindex
 	Sindex_PassOne          []string
@@ -192,11 +182,11 @@ func (md *UnittestDataHandler) loadWatchersData() {
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"xdr\",") {
 				xdr_validator.Metrics = append(xdr_validator.Metrics, line)
 			} else if strings.HasPrefix(line, "sets-passonekeys:") {
-				md.Sets_PassOne = append(md.Sets_PassOne, line)
+				sets_validator.PassOneOutputs = append(sets_validator.PassOneOutputs, line)
 			} else if strings.HasPrefix(line, "sets-passtwokeys:") {
-				md.Sets_PassTwo = append(md.Sets_PassTwo, line)
+				sets_validator.PassTwoOutputs = append(sets_validator.PassTwoOutputs, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sets\",") {
-				md.Sets_Label_and_Values = append(md.Sets_Label_and_Values, line)
+				sets_validator.Metrics = append(sets_validator.Metrics, line)
 			} else if strings.HasPrefix(line, "sindex-passonekeys:") {
 				md.Sindex_PassOne = append(md.Sindex_PassOne, line)
 			} else if strings.HasPrefix(line, "sindex-passtwokeys:") {
@@ -373,7 +363,7 @@ func (unp SetsUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[str
 func (unp SetsUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
 
-	out_values := udh.Sets_PassTwo[0]
+	out_values := unp.PassTwoOutputs[0]
 	out_values = strings.Replace(out_values, "sets-passtwokeys:", "", 1)
 	out_values = strings.Replace(out_values, "[", "", 1)
 	out_values = strings.Replace(out_values, "]", "", 1)
@@ -387,8 +377,8 @@ func (unp SetsUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[str
 
 func (unp SetsUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
-	for k := range udh.Sets_Label_and_Values {
-		outputs[udh.Sets_Label_and_Values[k]] = udh.Sets_Label_and_Values[k]
+	for k := range unp.Metrics {
+		outputs[unp.Metrics[k]] = unp.Metrics[k]
 	}
 
 	return outputs
