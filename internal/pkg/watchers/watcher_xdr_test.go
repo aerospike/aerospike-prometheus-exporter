@@ -82,24 +82,25 @@ func Test_Xdr_RefreshDefault(t *testing.T) {
 func xdr_runTestcase(t *testing.T) {
 
 	// Check passoneKeys
-	nodeWatcher := &NodeStatsWatcher{}
-	nwPassOneKeys := nodeWatcher.PassOneKeys()
-	passOneOutput, _ := data.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
-	passTwoOutputs := nodeWatcher.PassTwoKeys(passOneOutput)
-
+	xdrWatcher := &XdrWatcher{}
+	xdrPassOneKeys := xdrWatcher.PassOneKeys()
 	// append common keys
-	infoKeys := []string{Infokey_ClusterName, Infokey_Service, Infokey_Build}
-	passTwoOutputs = append(passTwoOutputs, infoKeys...)
+	infoKeys := []string{Infokey_ClusterName, Infokey_Service, Infokey_Build, "namespaces"}
+	xdrPassOneKeys = append(xdrPassOneKeys, infoKeys...)
 
+	passOneOutput, _ := data.GetProvider().RequestInfo(xdrPassOneKeys)
+	passTwoOutputs := xdrWatcher.PassTwoKeys(passOneOutput)
+
+	passTwoOutputs = append(passTwoOutputs, infoKeys...)
 	arrRawMetrics, err := data.GetProvider().RequestInfo(passTwoOutputs)
-	assert.Nil(t, err, "Error while NodeStatsWatcher.PassTwokeys ")
-	assert.NotEmpty(t, arrRawMetrics, "Error while NamespaceWatcher.PassTwokeys, RawMetrics is EMPTY ")
+
+	assert.Nil(t, err, "Error while XdrWatcher.PassTwokeys ")
+	assert.NotEmpty(t, arrRawMetrics, "Error while XdrWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
 	// check the output with NodeStatsWatcher
-	nodeMetrics, err := nodeWatcher.Refresh(passTwoOutputs, arrRawMetrics)
-	assert.Nil(t, err, "Error while NodeStatsWatcher.Refresh with passTwoOutputs ")
-	assert.NotEmpty(t, nodeMetrics, "Error while NodeStatsWatcher.Refresh, NodeStatsWatcher is EMPTY ")
+	nodeMetrics, err := xdrWatcher.Refresh(passTwoOutputs, arrRawMetrics)
+	assert.Nil(t, err, "Error while XdrWatcher.Refresh with passTwoOutputs ")
+	assert.NotEmpty(t, nodeMetrics, "Error while XdrWatcher.Refresh, XdrWatcher is EMPTY ")
 
 	// // check the WatcherMetrics if all stats & configs coming with required labels
 	// // below block of code is used when we create the baseline mock data, which is stored in exporter_mock_results.txt for test verification/assertion
