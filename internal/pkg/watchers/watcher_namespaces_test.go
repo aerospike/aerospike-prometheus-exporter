@@ -89,6 +89,7 @@ func namespace_runTestcase(t *testing.T) {
 	passOneKeys := nsWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(passOneKeys)
 	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
+
 	// append common keys
 	infoKeys := []string{Infokey_ClusterName, Infokey_Service, Infokey_Build}
 	passTwokeyOutputs = append(passTwokeyOutputs, infoKeys...)
@@ -105,10 +106,10 @@ func namespace_runTestcase(t *testing.T) {
 	// check the WatcherMetrics if all stats & configs coming with required labels
 	// below block of code is used when we create the baseline mock data, which is stored in exporter_mock_results.txt for test verification/assertion
 	// do-not-remove below code, use when to dump the output
-	// for k := range nsMetrics {
-	// 	str := fmt.Sprintf("%#v", nsMetrics[k])
-	// 	fmt.Println(str)
-	// }
+	// // for k := range nsMetrics {
+	//// 	str := fmt.Sprintf("%#v", nsMetrics[k])
+	//// 	fmt.Println(str)
+	//// }
 
 	// check for defined pattern, namespace metrics
 	// context, name, labels: cluster, service, namespace,
