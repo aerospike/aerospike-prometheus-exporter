@@ -41,8 +41,7 @@ func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 	metrics_from_prom := []string{}
 
 	scanner := bufio.NewScanner(resp.Body)
-	for i := 0; scanner.Scan() && i < 5; i++ {
-		// fmt.Println(scanner.Text())
+	for scanner.Scan() {
 		metrics_from_prom = append(metrics_from_prom, scanner.Text())
 	}
 
