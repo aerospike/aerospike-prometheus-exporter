@@ -484,18 +484,8 @@ func (unp UsersUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[st
 }
 
 func (unp UsersUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
-	var outputs = make(map[string]string)
 
-	out_values := udh.Users_PassTwo[0]
-	out_values = strings.Replace(out_values, "users-passtwokeys:", "", 1)
-	out_values = strings.Replace(out_values, "[", "", 1)
-	out_values = strings.Replace(out_values, "]", "", 1)
-	elements := strings.Split(out_values, " ")
-	for i := 0; i < len(elements); i++ {
-		outputs["latency_"+strconv.Itoa(i)] = elements[i]
-	}
-
-	return outputs
+	return nil
 }
 
 func (unp UsersUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {

@@ -44,7 +44,8 @@ func Test_Users_PassTwoKeys(t *testing.T) {
 	ndv := udh.GetUnittestValidator("sets")
 	expectedPassTwoOutputs := ndv.GetPassTwoKeys(*udh)
 
-	assert.Nil(t, passTwoOutputs, expectedPassTwoOutputs)
+	assert.Nil(t, passTwoOutputs)
+	assert.Nil(t, expectedPassTwoOutputs)
 
 }
 
