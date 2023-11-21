@@ -68,7 +68,7 @@ func users_runTestcase(t *testing.T) {
 	usersWatcher := &UserWatcher{}
 	nwPassOneKeys := usersWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
+	fmt.Println("users_runTestcase: passOneOutput: ", passOneOutput)
 	passTwoOutputs := usersWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys

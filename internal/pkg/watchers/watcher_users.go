@@ -1,6 +1,8 @@
 package watchers
 
 import (
+	"fmt"
+
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
@@ -61,12 +63,15 @@ func (uw *UserWatcher) Refresh(infoKeys []string, rawMetrics map[string]string) 
 	// read the data from Aerospike Server
 	var users []*aero.UserRoles
 
+	fmt.Println("... watcher_user: ste...1")
+
 	shouldFetchUserStatistics, users, err = data.GetProvider().FetchUsersDetails()
 	if err != nil {
 		log.Warn("Error while fetching user statistics: ", err)
 		return nil, nil
 
 	}
+	fmt.Println("... shouldFetchUserStatistics: ", shouldFetchUserStatistics)
 
 	var metrics_to_send = []AerospikeStat{}
 	// Push metrics to Prometheus or Observability tool
