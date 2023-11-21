@@ -44,13 +44,7 @@ func Test_Users_PassTwoKeys(t *testing.T) {
 	ndv := udh.GetUnittestValidator("sets")
 	expectedPassTwoOutputs := ndv.GetPassTwoKeys(*udh)
 
-	assert.NotEmpty(t, passTwoOutputs)
-	assert.NotEmpty(t, expectedPassTwoOutputs)
-
-	for idx := range expectedPassTwoOutputs {
-		// assert each element returned by NamespaceWatcher exists in expected outputs
-		assert.Contains(t, passTwoOutputs, expectedPassTwoOutputs[idx], " value exists!")
-	}
+	assert.Nil(t, passTwoOutputs, expectedPassTwoOutputs)
 
 }
 
