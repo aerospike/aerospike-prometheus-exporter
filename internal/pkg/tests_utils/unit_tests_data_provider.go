@@ -38,9 +38,9 @@ type UnittestDataHandler struct {
 	// Sets_Label_and_Values []string
 
 	// Watchers - Sindex
-	Sindex_PassOne          []string
-	Sindex_PassTwo          []string
-	Sindex_Label_and_Values []string
+	// Sindex_PassOne          []string
+	// Sindex_PassTwo          []string
+	// Sindex_Label_and_Values []string
 
 	// Watchers - Latency
 	Latency_PassOne          []string
@@ -188,11 +188,11 @@ func (md *UnittestDataHandler) loadWatchersData() {
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sets\",") {
 				sets_validator.Metrics = append(sets_validator.Metrics, line)
 			} else if strings.HasPrefix(line, "sindex-passonekeys:") {
-				md.Sindex_PassOne = append(md.Sindex_PassOne, line)
+				sindex_validator.PassOneOutputs = append(sindex_validator.PassOneOutputs, line)
 			} else if strings.HasPrefix(line, "sindex-passtwokeys:") {
-				md.Sindex_PassTwo = append(md.Sindex_PassTwo, line)
+				sindex_validator.PassTwoOutputs = append(sindex_validator.PassTwoOutputs, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sindex\",") {
-				md.Sindex_Label_and_Values = append(md.Sindex_Label_and_Values, line)
+				sindex_validator.Metrics = append(sindex_validator.Metrics, line)
 			} else if strings.HasPrefix(line, "latency-passonekeys:") {
 				md.Latency_PassOne = append(md.Latency_PassOne, line)
 			} else if strings.HasPrefix(line, "latency-passtwokeys:") {
@@ -395,7 +395,7 @@ type SindexUnittestValidator struct {
 
 func (unp SindexUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
-	elements := udh.Sindex_PassOne[0]
+	elements := unp.PassOneOutputs[0]
 	elements = strings.Replace(elements, "sindex-passonekeys:", "", 1)
 	elements = strings.Replace(elements, "]", "", 1)
 	elements = strings.Replace(elements, "[", "", 1)
@@ -408,7 +408,7 @@ func (unp SindexUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[s
 func (unp SindexUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
 
-	out_values := udh.Sindex_PassTwo[0]
+	out_values := unp.PassTwoOutputs[0]
 	out_values = strings.Replace(out_values, "sindex-passtwokeys:", "", 1)
 	out_values = strings.Replace(out_values, "[", "", 1)
 	out_values = strings.Replace(out_values, "]", "", 1)
@@ -422,8 +422,8 @@ func (unp SindexUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[s
 
 func (unp SindexUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
-	for k := range udh.Sindex_Label_and_Values {
-		outputs[udh.Sindex_Label_and_Values[k]] = udh.Sindex_Label_and_Values[k]
+	for k := range unp.Metrics {
+		outputs[unp.Metrics[k]] = unp.Metrics[k]
 	}
 
 	return outputs
