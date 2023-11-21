@@ -89,13 +89,13 @@ func sets_runTestcase(t *testing.T) {
 	assert.Nil(t, err, "Error while setsWatcher.Refresh with passTwoOutputs ")
 	assert.NotEmpty(t, setsMetrics, "Error while setsWatcher.Refresh, setsWatcher is EMPTY ")
 
-	// // check the WatcherMetrics if all stats & configs coming with required labels
-	// // below block of code is used when we create the baseline mock data, which is stored in exporter_mock_results.txt for test verification/assertion
-	// // do-not-remove below code, use when to dump the output
-	// for k := range setsMetrics {
-	// 	str := fmt.Sprintf("%#v", setsMetrics[k])
-	// 	fmt.Println(str)
-	// }
+	// check the WatcherMetrics if all stats & configs coming with required labels
+	// below block of code is used when we create the baseline mock data, which is stored in exporter_mock_results.txt for test verification/assertion
+	// do-not-remove below code, use when to dump the output
+	for k := range setsMetrics {
+		str := fmt.Sprintf("%#v", setsMetrics[k])
+		fmt.Println(str)
+	}
 
 	// udh := &tests_utils.UnittestDataHandler{}
 	// ndv := udh.GetUnittestValidator("sets")
