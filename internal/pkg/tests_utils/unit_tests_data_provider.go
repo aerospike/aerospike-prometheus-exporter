@@ -38,9 +38,9 @@ type UnittestDataHandler struct {
 	// Node_Label_and_Values []string
 
 	// Watchers - Xdr
-	Xdr_PassOne          []string
-	Xdr_PassTwo          []string
-	Xdr_Label_and_Values []string
+	// Xdr_PassOne          []string
+	// Xdr_PassTwo          []string
+	// Xdr_Label_and_Values []string
 
 	// Watchers - Sets
 	Sets_PassOne          []string
@@ -186,11 +186,11 @@ func (md *UnittestDataHandler) loadWatchersData() {
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"node_stats\",") {
 				node_stats_validator.Metrics = append(node_stats_validator.Metrics, line)
 			} else if strings.HasPrefix(line, "xdr-passonekeys:") {
-				md.Xdr_PassOne = append(md.Xdr_PassOne, line)
+				xdr_validator.PassOneOutputs = append(xdr_validator.PassOneOutputs, line)
 			} else if strings.HasPrefix(line, "xdr-passtwokeys:") {
-				md.Xdr_PassTwo = append(md.Xdr_PassTwo, line)
+				xdr_validator.PassTwoOutputs = append(xdr_validator.PassTwoOutputs, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"xdr\",") {
-				md.Xdr_Label_and_Values = append(md.Xdr_Label_and_Values, line)
+				xdr_validator.Metrics = append(xdr_validator.Metrics, line)
 			} else if strings.HasPrefix(line, "sets-passonekeys:") {
 				md.Sets_PassOne = append(md.Sets_PassOne, line)
 			} else if strings.HasPrefix(line, "sets-passtwokeys:") {
@@ -323,7 +323,7 @@ type XdrUnittestValidator struct {
 
 func (unp XdrUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
-	elements := udh.Xdr_PassOne[0]
+	elements := unp.PassOneOutputs[0]
 	elements = strings.Replace(elements, "xdr-passonekeys:", "", 1)
 	elements = strings.Replace(elements, "]", "", 1)
 	elements = strings.Replace(elements, "[", "", 1)
@@ -336,7 +336,7 @@ func (unp XdrUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[stri
 func (unp XdrUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
 
-	out_values := udh.Xdr_PassTwo[0]
+	out_values := unp.PassTwoOutputs[0]
 	out_values = strings.Replace(out_values, "xdr-passtwokeys:", "", 1)
 	out_values = strings.Replace(out_values, "[", "", 1)
 	out_values = strings.Replace(out_values, "]", "", 1)
@@ -350,8 +350,8 @@ func (unp XdrUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[stri
 
 func (unp XdrUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
-	for k := range udh.Xdr_Label_and_Values {
-		outputs[udh.Xdr_Label_and_Values[k]] = udh.Xdr_Label_and_Values[k]
+	for k := range unp.Metrics {
+		outputs[unp.Metrics[k]] = unp.Metrics[k]
 	}
 
 	return outputs
