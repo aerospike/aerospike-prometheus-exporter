@@ -226,7 +226,7 @@ func (unp NodeUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[str
 
 	// fmt.Println("GetPassTwoKeys: ", udp.Namespace_PassTwo)
 
-	out_values := udh.Namespace_PassTwo[0]
+	out_values := udh.Node_PassTwo[0]
 	out_values = strings.Replace(out_values, "node-passtwokeys:", "", 1)
 	out_values = strings.Replace(out_values, "[", "", 1)
 	out_values = strings.Replace(out_values, "]", "", 1)

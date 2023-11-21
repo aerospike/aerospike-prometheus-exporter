@@ -45,7 +45,7 @@ func Test_Node_PassTwoKeys(t *testing.T) {
 	passTwoOutputs := ndv.GetPassTwoKeys(*udh)
 
 	fmt.Println("Node Watcher - passTwokeyOutputs: ", passTwokeyOutputs)
-	fmt.Println("Node Watcher - passOneOutputs: ", passTwoOutputs)
+	fmt.Println("Node Watcher - passTwoOutputs: ", passTwoOutputs)
 
 }
 
