@@ -31,10 +31,6 @@ type UnittestDataValidator interface {
 }
 
 type UnittestDataHandler struct {
-	// Watchers - Namespace
-	Namespace_PassOne           []string
-	Namespace_PassTwo           []string
-	Namespaces_Label_and_Values []string
 
 	// Watchers - Node
 	Node_PassOne          []string
