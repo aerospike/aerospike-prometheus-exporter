@@ -76,7 +76,7 @@ func get_Node_Metrics() []watchers.AerospikeStat {
 	nodeWatcher := &watchers.NodeStatsWatcher{}
 	nwPassOneKeys := nodeWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
+	fmt.Println("get_Node_Metrics() .. TestPassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := nodeWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
@@ -129,7 +129,7 @@ func get_Sets_Metrics() []watchers.AerospikeStat {
 	setsWatcher := &watchers.SetWatcher{}
 	nwPassOneKeys := setsWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
+	fmt.Println("get_Sets_Metrics() .. TestPassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := setsWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
@@ -212,7 +212,7 @@ func get_Latency_Metrics() []watchers.AerospikeStat {
 	latencyWatcher := &watchers.LatencyWatcher{}
 	nwPassOneKeys := latencyWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
+	fmt.Println("get_Latency_Metrics() TestPassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := latencyWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
