@@ -33,9 +33,9 @@ type UnittestDataValidator interface {
 type UnittestDataHandler struct {
 
 	// Watchers - Node
-	Node_PassOne          []string
-	Node_PassTwo          []string
-	Node_Label_and_Values []string
+	// Node_PassOne          []string
+	// Node_PassTwo          []string
+	// Node_Label_and_Values []string
 
 	// Watchers - Xdr
 	Xdr_PassOne          []string
@@ -180,11 +180,11 @@ func (md *UnittestDataHandler) loadWatchersData() {
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"namespace\",") {
 				namespace_validator.Metrics = append(namespace_validator.Metrics, line)
 			} else if strings.HasPrefix(line, "node-passonekeys:") {
-				md.Node_PassOne = append(md.Node_PassOne, line)
+				node_stats_validator.PassOneOutputs = append(node_stats_validator.PassOneOutputs, line)
 			} else if strings.HasPrefix(line, "node-passtwokeys:") {
-				md.Node_PassTwo = append(md.Node_PassTwo, line)
+				node_stats_validator.PassTwoOutputs = append(node_stats_validator.PassTwoOutputs, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"node_stats\",") {
-				md.Node_Label_and_Values = append(md.Node_Label_and_Values, line)
+				node_stats_validator.Metrics = append(node_stats_validator.Metrics, line)
 			} else if strings.HasPrefix(line, "xdr-passonekeys:") {
 				md.Xdr_PassOne = append(md.Xdr_PassOne, line)
 			} else if strings.HasPrefix(line, "xdr-passtwokeys:") {
@@ -290,7 +290,7 @@ func (unp NodeUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[str
 
 	// fmt.Println("GetPassTwoKeys: ", udp.Namespace_PassTwo)
 
-	out_values := udh.Node_PassTwo[0]
+	out_values := unp.PassTwoOutputs[0]
 	out_values = strings.Replace(out_values, "node-passtwokeys:", "", 1)
 	out_values = strings.Replace(out_values, "[", "", 1)
 	out_values = strings.Replace(out_values, "]", "", 1)
@@ -305,8 +305,8 @@ func (unp NodeUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[str
 
 func (unp NodeUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
-	for k := range udh.Node_Label_and_Values {
-		outputs[udh.Node_Label_and_Values[k]] = udh.Node_Label_and_Values[k]
+	for k := range unp.Metrics {
+		outputs[unp.Metrics[k]] = unp.Metrics[k]
 	}
 
 	return outputs
