@@ -147,7 +147,7 @@ func (md *UnittestDataHandler) loadWatchersData() {
 			}
 		}
 	}
-	fmt.Println("\n\n****\nmd.Node_PassTwo: ", md.Node_PassTwo, "\n\n***")
+	// fmt.Println("\n\n****\nmd.Node_PassTwo: ", md.Node_PassTwo, "\n\n***")
 	fmt.Println("loadWatchersData(): Completed loading test WATCHER Expected Data ")
 }
 

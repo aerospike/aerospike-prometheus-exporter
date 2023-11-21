@@ -38,21 +38,29 @@ func Test_Node_PassTwoKeys(t *testing.T) {
 	nwPassOneKeys := nodeWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(nwPassOneKeys)
 	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
-	passTwokeyOutputs := nodeWatcher.PassTwoKeys(passOneOutput)
+	passTwoOutputs := nodeWatcher.PassTwoKeys(passOneOutput)
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("node")
-	passTwoOutputs := ndv.GetPassTwoKeys(*udh)
+	expectedPassTwoOutputs := ndv.GetPassTwoKeys(*udh)
 
-	fmt.Println("Node Watcher - passTwokeyOutputs: ", passTwokeyOutputs)
 	fmt.Println("Node Watcher - passTwoOutputs: ", passTwoOutputs)
+	fmt.Println("Node Watcher - expectedPassTwoOutputs: ", expectedPassTwoOutputs)
+
+	assert.NotEmpty(t, passTwoOutputs)
+	assert.NotEmpty(t, expectedPassTwoOutputs)
+
+	for idx := range expectedPassTwoOutputs {
+		// assert each element returned by NamespaceWatcher exists in expected outputs
+		// fmt.Println("expected outputs: key & value", idx, expectedOutputs[idx])
+		assert.Contains(t, passTwoOutputs, expectedPassTwoOutputs[idx], " value exists!")
+	}
 
 }
 
 func Test_Node_RefreshDefault(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Node_RefreshDefault")
-	// Initialize and validate config
 
 	// initialize config and gauge-lists
 	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))

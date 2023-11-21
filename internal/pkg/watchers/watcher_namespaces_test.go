@@ -53,13 +53,13 @@ func Test_Namespace_PassTwoKeys(t *testing.T) {
 
 	assert := assert.New(t)
 
-	assert.NotEmpty(passTwokeyOutputs)
-	assert.NotEmpty(expectedOutputs)
+	assert.NotEmpty(t, passTwokeyOutputs)
+	assert.NotEmpty(t, expectedOutputs)
 
 	for idx := range expectedOutputs {
 		// assert each element returned by NamespaceWatcher exists in expected outputs
 		// fmt.Println("expected outputs: key & value", idx, expectedOutputs[idx])
-		assert.Contains(passTwokeyOutputs, expectedOutputs[idx], " value exists!")
+		assert.Contains(t, passTwokeyOutputs, expectedOutputs[idx], " value exists!")
 	}
 }
 
