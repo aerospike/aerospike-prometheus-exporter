@@ -345,7 +345,7 @@ func (unp SetsUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[str
 func (unp SetsUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
 	var outputs = make(map[string]string)
 	for k := range udh.Sets_Label_and_Values {
-		outputs[udh.Xdr_Label_and_Values[k]] = udh.Xdr_Label_and_Values[k]
+		outputs[udh.Sets_Label_and_Values[k]] = udh.Sets_Label_and_Values[k]
 	}
 
 	return outputs
