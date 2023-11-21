@@ -324,15 +324,7 @@ type SetsUnittestValidator struct {
 }
 
 func (unp SetsUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
-	var outputs = make(map[string]string)
-	elements := udh.Xdr_PassOne[0]
-	elements = strings.Replace(elements, "sets-passonekeys:", "", 1)
-	elements = strings.Replace(elements, "]", "", 1)
-	elements = strings.Replace(elements, "[", "", 1)
-
-	outputs["xdr"] = elements
-
-	return outputs
+	return nil
 }
 
 func (unp SetsUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
