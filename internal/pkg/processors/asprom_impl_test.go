@@ -56,7 +56,9 @@ func get_aerospike_stats() []watchers.AerospikeStat {
 func initialize_prom() {
 	metric_processors := GetMetricProcessors()
 	processor := metric_processors[PROM]
-	processor.Initialize()
+
+	// run Prom as a separate process
+	go processor.Initialize()
 	fmt.Println("*******************\nPrometheus initialized and running on localhost:9145")
 }
 
