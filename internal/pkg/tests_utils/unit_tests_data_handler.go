@@ -157,7 +157,7 @@ func (md *UnittestDataHandler) loadWatchersData() {
 				md.Xdr_PassOne = append(md.Xdr_PassOne, line)
 			} else if strings.HasPrefix(line, "xdr-passtwokeys:") {
 				md.Xdr_PassTwo = append(md.Xdr_PassTwo, line)
-			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"xdr_stats\",") {
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"xdr\",") {
 				md.Node_Label_and_Values = append(md.Node_Label_and_Values, line)
 			}
 		}
