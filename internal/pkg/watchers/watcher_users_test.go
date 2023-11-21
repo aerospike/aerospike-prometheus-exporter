@@ -19,7 +19,7 @@ func Test_Users_PassOneKeys(t *testing.T) {
 	nwPassOneKeys := usersWatcher.PassOneKeys()
 
 	udh := &tests_utils.UnittestDataHandler{}
-	ndv := udh.GetUnittestValidator("sets")
+	ndv := udh.GetUnittestValidator("users")
 	passOneOutputs := ndv.GetPassOneKeys(*udh)
 
 	assert.Nil(t, nwPassOneKeys, passOneOutputs)
@@ -41,7 +41,7 @@ func Test_Users_PassTwoKeys(t *testing.T) {
 	passTwoOutputs := usersWatcher.PassTwoKeys(passOneOutput)
 
 	udh := &tests_utils.UnittestDataHandler{}
-	ndv := udh.GetUnittestValidator("sets")
+	ndv := udh.GetUnittestValidator("users")
 	expectedPassTwoOutputs := ndv.GetPassTwoKeys(*udh)
 
 	assert.Nil(t, passTwoOutputs)
@@ -93,7 +93,7 @@ func users_runTestcase(t *testing.T) {
 	}
 
 	// udh := &tests_utils.UnittestDataHandler{}
-	// ndv := udh.GetUnittestValidator("sets")
+	// ndv := udh.GetUnittestValidator("users")
 	// expected_results := ndv.GetMetricLabelsWithValues(*udh)
 
 	// for k := range usersMetrics {
