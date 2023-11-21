@@ -10,6 +10,7 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	tests_utils "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/tests_utils"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/watchers"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_RefreshDefault(t *testing.T) {
@@ -49,11 +50,7 @@ func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 		fmt.Println("Error while reading Http Response: ", err)
 	}
 
-	if len(metrics_from_prom) > 0 {
-		for idx_metrics := range metrics_from_prom {
-			fmt.Println(metrics_from_prom[idx_metrics])
-		}
-	}
+	assert.NotEmpty(t, metrics_from_prom)
 }
 
 // Data fetch helpers functions
