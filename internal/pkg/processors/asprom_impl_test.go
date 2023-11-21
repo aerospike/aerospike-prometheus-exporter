@@ -69,6 +69,8 @@ func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 		// assert.Contains(t, expectedOutputs, entry)
 	}
 
+	fmt.Println("\n\n************")
+	fmt.Println(expectedOutputs)
 }
 
 // Data fetch helpers functions
