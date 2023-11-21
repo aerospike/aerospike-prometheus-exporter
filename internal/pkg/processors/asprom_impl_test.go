@@ -32,7 +32,7 @@ func Test_RefreshDefault(t *testing.T) {
 func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 	// prometheus http server is initialized
 	httpClient := http.Client{Timeout: time.Duration(1) * time.Second}
-	resp, err := httpClient.Get("http://localhost:9145/metrics")
+	resp, err := httpClient.Get("http://localhost:9145/metric")
 
 	if err == nil {
 		fmt.Println("Error while reading Http Response: ", err)
