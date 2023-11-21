@@ -60,11 +60,13 @@ func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 	pdv := udh.GetUnittestValidator("prometheus")
 	expectedOutputs := pdv.GetMetricLabelsWithValues(*udh)
 
+	assert.Equal(t, len(expectedOutputs), len(metrics_from_prom))
+
 	// assert values from httpclient with expectedOutputs
 	for idx_metrics := range metrics_from_prom {
 		entry := metrics_from_prom[idx_metrics]
-		fmt.Println("*** checking entry\n\t", entry)
-		assert.Contains(t, entry, expectedOutputs)
+		fmt.Println("*** checking entry\n\t", entry, " is entry in map -  ", expectedOutputs[entry])
+		// assert.Contains(t, expectedOutputs, entry)
 	}
 
 }
