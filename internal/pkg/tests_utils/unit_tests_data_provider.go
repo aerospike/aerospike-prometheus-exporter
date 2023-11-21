@@ -55,6 +55,11 @@ type UnittestDataHandler struct {
 	Sindex_PassOne          []string
 	Sindex_PassTwo          []string
 	Sindex_Label_and_Values []string
+
+	// Watchers - Latency
+	Latency_PassOne          []string
+	Latency_PassTwo          []string
+	Latency_Label_and_Values []string
 }
 
 func (md *UnittestDataHandler) Initialize() {
@@ -185,6 +190,12 @@ func (md *UnittestDataHandler) loadWatchersData() {
 				md.Sindex_PassTwo = append(md.Sindex_PassTwo, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sindex\",") {
 				md.Sindex_Label_and_Values = append(md.Sindex_Label_and_Values, line)
+			} else if strings.HasPrefix(line, "latency-passonekeys:") {
+				md.Latency_PassOne = append(md.Latency_PassOne, line)
+			} else if strings.HasPrefix(line, "latency-passtwokeys:") {
+				md.Latency_PassTwo = append(md.Latency_PassTwo, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"latency\",") {
+				md.Latency_Label_and_Values = append(md.Latency_Label_and_Values, line)
 			}
 		}
 	}
@@ -404,6 +415,43 @@ func (unp SindexUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHan
 	var outputs = make(map[string]string)
 	for k := range udh.Sindex_Label_and_Values {
 		outputs[udh.Sindex_Label_and_Values[k]] = udh.Sindex_Label_and_Values[k]
+	}
+
+	return outputs
+}
+
+// End Sindex
+
+// Start Sindex
+type LatencyUnittestValidator struct {
+	PassOneOutputs []string
+	PassTwoOutputs []string
+	Metrics        []string
+}
+
+func (unp LatencyUnittestValidator) GetPassOneKeys(udh UnittestDataHandler) map[string]string {
+	return nil
+}
+
+func (unp LatencyUnittestValidator) GetPassTwoKeys(udh UnittestDataHandler) map[string]string {
+	var outputs = make(map[string]string)
+
+	out_values := udh.Latency_PassTwo[0]
+	out_values = strings.Replace(out_values, "latency-passtwokeys:", "", 1)
+	out_values = strings.Replace(out_values, "[", "", 1)
+	out_values = strings.Replace(out_values, "]", "", 1)
+	elements := strings.Split(out_values, " ")
+	for i := 0; i < len(elements); i++ {
+		outputs["latency_"+strconv.Itoa(i)] = elements[i]
+	}
+
+	return outputs
+}
+
+func (unp LatencyUnittestValidator) GetMetricLabelsWithValues(udh UnittestDataHandler) map[string]string {
+	var outputs = make(map[string]string)
+	for k := range udh.Latency_Label_and_Values {
+		outputs[udh.Latency_Label_and_Values[k]] = udh.Latency_Label_and_Values[k]
 	}
 
 	return outputs
