@@ -184,7 +184,7 @@ func (md *UnittestDataHandler) loadWatchersData() {
 			} else if strings.HasPrefix(line, "sindex-passtwokeys:") {
 				md.Sindex_PassTwo = append(md.Sindex_PassTwo, line)
 			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sets\",") {
-				md.Sindex_Label_and_Values = append(md.Sets_Label_and_Values, line)
+				md.Sindex_Label_and_Values = append(md.Sindex_Label_and_Values, line)
 			}
 		}
 	}
