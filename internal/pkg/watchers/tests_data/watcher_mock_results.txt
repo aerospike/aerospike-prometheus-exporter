@@ -1894,7 +1894,7 @@ watchers.AerospikeStat{Context:"latencies", Name:"batch-index_ms_bucket", MType:
 watchers.AerospikeStat{Context:"latencies", Name:"batch-index_ms_bucket", MType:0x47, IsAllowed:true, Value:4014.2, Labels:[]string{"cluster_name", "service", "ns", "le"}, LabelValues:[]string{"", "", "", "65536"}}
 
 ===============================================================================================================================================
-## Users
+## Sets
 ===============================================================================================================================================
 watchers.AerospikeStat{Context:"sets", Name:"data_used_bytes", MType:0x47, IsAllowed:true, Value:1.5564076e+09, Labels:[]string{"cluster_name", "service", "ns", "set"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "test", "from_branch_2"}}
 watchers.AerospikeStat{Context:"sets", Name:"truncating", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "ns", "set"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "test", "from_branch_2"}}
@@ -1968,3 +1968,52 @@ watchers.AerospikeStat{Context:"sets", Name:"default-ttl", MType:0x47, IsAllowed
 watchers.AerospikeStat{Context:"sets", Name:"disable-eviction", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "ns", "set"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "test", "from_branch_1"}}
 watchers.AerospikeStat{Context:"sets", Name:"enable-index", MType:0x47, IsAllowed:true, Value:1, Labels:[]string{"cluster_name", "service", "ns", "set"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "test", "from_branch_1"}}
 watchers.AerospikeStat{Context:"sets", Name:"objects", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "ns", "set"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "test", "from_branch_1"}}
+
+===============================================================================================================================================
+## Users
+===============================================================================================================================================
+watchers.AerospikeStat{Context:"users", Name:"conns_in_use", MType:0x47, IsAllowed:true, Value:1, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "admin"}}
+watchers.AerospikeStat{Context:"users", Name:"read_quota", MType:0x47, IsAllowed:true, Value:1, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "admin"}}
+watchers.AerospikeStat{Context:"users", Name:"read_single_record_tps", MType:0x47, IsAllowed:true, Value:2, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "admin"}}
+watchers.AerospikeStat{Context:"users", Name:"read_scan_query_rps", MType:0x47, IsAllowed:true, Value:3, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "admin"}}
+watchers.AerospikeStat{Context:"users", Name:"limitless_read_scan_query", MType:0x47, IsAllowed:true, Value:4, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "admin"}}
+watchers.AerospikeStat{Context:"users", Name:"write_quota", MType:0x47, IsAllowed:true, Value:11, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "admin"}}
+watchers.AerospikeStat{Context:"users", Name:"write_single_record_tps", MType:0x47, IsAllowed:true, Value:12, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "admin"}}
+watchers.AerospikeStat{Context:"users", Name:"write_scan_query_rps", MType:0x47, IsAllowed:true, Value:13, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "admin"}}
+watchers.AerospikeStat{Context:"users", Name:"limitless_write_scan_query", MType:0x47, IsAllowed:true, Value:14, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "admin"}}
+watchers.AerospikeStat{Context:"users", Name:"conns_in_use", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "phani"}}
+watchers.AerospikeStat{Context:"users", Name:"read_quota", MType:0x47, IsAllowed:true, Value:6, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "phani"}}
+watchers.AerospikeStat{Context:"users", Name:"read_single_record_tps", MType:0x47, IsAllowed:true, Value:7, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "phani"}}
+watchers.AerospikeStat{Context:"users", Name:"read_scan_query_rps", MType:0x47, IsAllowed:true, Value:8, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "phani"}}
+watchers.AerospikeStat{Context:"users", Name:"limitless_read_scan_query", MType:0x47, IsAllowed:true, Value:9, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "phani"}}
+watchers.AerospikeStat{Context:"users", Name:"write_quota", MType:0x47, IsAllowed:true, Value:16, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "phani"}}
+watchers.AerospikeStat{Context:"users", Name:"write_single_record_tps", MType:0x47, IsAllowed:true, Value:17, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "phani"}}
+watchers.AerospikeStat{Context:"users", Name:"write_scan_query_rps", MType:0x47, IsAllowed:true, Value:18, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "phani"}}
+watchers.AerospikeStat{Context:"users", Name:"limitless_write_scan_query", MType:0x47, IsAllowed:true, Value:19, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "phani"}}
+watchers.AerospikeStat{Context:"users", Name:"conns_in_use", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "test"}}
+watchers.AerospikeStat{Context:"users", Name:"read_quota", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "test"}}
+watchers.AerospikeStat{Context:"users", Name:"read_single_record_tps", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "test"}}
+watchers.AerospikeStat{Context:"users", Name:"read_scan_query_rps", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "test"}}
+watchers.AerospikeStat{Context:"users", Name:"limitless_read_scan_query", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "test"}}
+watchers.AerospikeStat{Context:"users", Name:"write_quota", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "test"}}
+watchers.AerospikeStat{Context:"users", Name:"write_single_record_tps", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "test"}}
+watchers.AerospikeStat{Context:"users", Name:"write_scan_query_rps", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "test"}}
+watchers.AerospikeStat{Context:"users", Name:"limitless_write_scan_query", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "test"}}
+watchers.AerospikeStat{Context:"users", Name:"conns_in_use", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u1phani"}}
+watchers.AerospikeStat{Context:"users", Name:"read_quota", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u1phani"}}
+watchers.AerospikeStat{Context:"users", Name:"read_single_record_tps", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u1phani"}}
+watchers.AerospikeStat{Context:"users", Name:"read_scan_query_rps", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u1phani"}}
+watchers.AerospikeStat{Context:"users", Name:"limitless_read_scan_query", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u1phani"}}
+watchers.AerospikeStat{Context:"users", Name:"write_quota", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u1phani"}}
+watchers.AerospikeStat{Context:"users", Name:"write_single_record_tps", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u1phani"}}
+watchers.AerospikeStat{Context:"users", Name:"write_scan_query_rps", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u1phani"}}
+watchers.AerospikeStat{Context:"users", Name:"limitless_write_scan_query", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u1phani"}}
+watchers.AerospikeStat{Context:"users", Name:"conns_in_use", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u2phani"}}
+watchers.AerospikeStat{Context:"users", Name:"read_quota", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u2phani"}}
+watchers.AerospikeStat{Context:"users", Name:"read_single_record_tps", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u2phani"}}
+watchers.AerospikeStat{Context:"users", Name:"read_scan_query_rps", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u2phani"}}
+watchers.AerospikeStat{Context:"users", Name:"limitless_read_scan_query", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u2phani"}}
+watchers.AerospikeStat{Context:"users", Name:"write_quota", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u2phani"}}
+watchers.AerospikeStat{Context:"users", Name:"write_single_record_tps", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u2phani"}}
+watchers.AerospikeStat{Context:"users", Name:"write_scan_query_rps", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u2phani"}}
+watchers.AerospikeStat{Context:"users", Name:"limitless_write_scan_query", MType:0x47, IsAllowed:true, Value:0, Labels:[]string{"cluster_name", "service", "user"}, LabelValues:[]string{"", "", "u2phani"}}
