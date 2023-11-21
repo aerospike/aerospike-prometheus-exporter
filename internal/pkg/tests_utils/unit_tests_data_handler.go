@@ -80,7 +80,7 @@ func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataVali
 	case "xdr":
 		return &XdrUnittestValidator{}
 	case "sets":
-		return &XdrUnittestValidator{}
+		return &SetsUnittestValidator{}
 	}
 	return nil
 }
