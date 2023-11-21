@@ -84,23 +84,23 @@ func users_runTestcase(t *testing.T) {
 	assert.Nil(t, err, "Error while usersWatcher.Refresh with passTwoOutputs ")
 	assert.NotEmpty(t, usersMetrics, "Error while usersWatcher.Refresh, usersWatcher is EMPTY ")
 
-	// check the WatcherMetrics if all stats & configs coming with required labels
-	// below block of code is used when we create the baseline mock data, which is stored in exporter_mock_results.txt for test verification/assertion
-	// do-not-remove below code, use when to dump the output
-	for k := range usersMetrics {
-		str := fmt.Sprintf("%#v", usersMetrics[k])
-		fmt.Println(str)
-	}
-
-	// udh := &tests_utils.UnittestDataHandler{}
-	// ndv := udh.GetUnittestValidator("users")
-	// expected_results := ndv.GetMetricLabelsWithValues(*udh)
-
+	// // check the WatcherMetrics if all stats & configs coming with required labels
+	// // below block of code is used when we create the baseline mock data, which is stored in exporter_mock_results.txt for test verification/assertion
+	// // do-not-remove below code, use when to dump the output
 	// for k := range usersMetrics {
-	// 	// convert / serialize to string which can be compared to stored expected mock result
-	// 	str_metric := fmt.Sprintf("%#v", usersMetrics[k])
-	// 	_, exists := expected_results[str_metric]
-	// 	assert.True(t, exists, "Failed, did not find expected result: "+str_metric)
+	// 	str := fmt.Sprintf("%#v", usersMetrics[k])
+	// 	fmt.Println(str)
 	// }
+
+	udh := &tests_utils.UnittestDataHandler{}
+	ndv := udh.GetUnittestValidator("users")
+	expected_results := ndv.GetMetricLabelsWithValues(*udh)
+
+	for k := range usersMetrics {
+		// convert / serialize to string which can be compared to stored expected mock result
+		str_metric := fmt.Sprintf("%#v", usersMetrics[k])
+		_, exists := expected_results[str_metric]
+		assert.True(t, exists, "Failed, did not find expected result: "+str_metric)
+	}
 
 }
