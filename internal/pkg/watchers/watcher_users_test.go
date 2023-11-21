@@ -15,7 +15,7 @@ func Test_Users_PassOneKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Users_PassOneKeys")
 
 	// Check passoneKeys
-	usersWatcher := &SetWatcher{}
+	usersWatcher := &UserWatcher{}
 	nwPassOneKeys := usersWatcher.PassOneKeys()
 
 	udh := &tests_utils.UnittestDataHandler{}
@@ -34,7 +34,7 @@ func Test_Users_PassTwoKeys(t *testing.T) {
 	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
-	usersWatcher := &SetWatcher{}
+	usersWatcher := &UserWatcher{}
 	nwPassOneKeys := usersWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(nwPassOneKeys)
 	fmt.Println("Test_Users_PassTwoKeys: passOneOutput: ", passOneOutput)
@@ -70,7 +70,7 @@ func Test_Users_RefreshDefault(t *testing.T) {
 func users_runTestcase(t *testing.T) {
 
 	// Check passoneKeys
-	usersWatcher := &SetWatcher{}
+	usersWatcher := &UserWatcher{}
 	nwPassOneKeys := usersWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(nwPassOneKeys)
 	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
