@@ -11,7 +11,7 @@ func TestGetGaugesNotEmpty(t *testing.T) {
 	fmt.Println("initializing GaugeMetrics ... TestGetGaugesNotEmpty")
 
 	// Initialize and validate Gauge config
-	InitGaugeStats("../configs/gauge_stats_list.toml")
+	InitGaugeStats("/../../../configs/gauge_stats_list.toml")
 	gaugeList := GaugeStatHandler
 
 	nslist := gaugeList.NamespaceStats
