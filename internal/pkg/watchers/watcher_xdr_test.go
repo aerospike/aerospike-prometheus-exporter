@@ -72,6 +72,7 @@ func Test_Xdr_RefreshDefault(t *testing.T) {
 
 	// initialize config and gauge-lists
 	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+	config.InitGaugeStats(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_GAUGE_LIST_FILE))
 
 	xdr_runTestcase(t)
 }
@@ -120,6 +121,4 @@ func xdr_runTestcase(t *testing.T) {
 		_, exists := expected_results[str_metric]
 		assert.True(t, exists, "Failed, did not find expected result: "+str_metric)
 	}
-
-	fmt.Println("xdr - expected_results: \n", expected_results)
 }
