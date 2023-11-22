@@ -20,7 +20,7 @@ func Test_Namespace_PassOneKeys(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("namespace")
-	passOneOutputs := ndv.GetPassOneKeys(*udh)
+	passOneOutputs := ndv.GetPassOneKeys()
 
 	// fmt.Println("TestPassOneKeys: ", passOneOutputs)
 	var expectedOutputs []string
@@ -49,7 +49,7 @@ func Test_Namespace_PassTwoKeys(t *testing.T) {
 	// expectedOutputs := []string{"namespace/bar", "namespace/test"}
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("namespace")
-	expectedOutputs := ndv.GetPassTwoKeys(*udh)
+	expectedOutputs := ndv.GetPassTwoKeys()
 
 	assert := assert.New(t)
 
@@ -77,9 +77,6 @@ func Test_Namespace_RefreshDefault(t *testing.T) {
 * complete logic to call watcher, generate-mock data and asset is part of this function
  */
 func namespace_runTestcase(t *testing.T) {
-
-	// initialize gauges list
-	config.InitGaugeStats(tests_utils.GetConfigfileLocation(tests_utils.DEFAULT_GAUGE_LIST_FILE))
 
 	// rawMetrics := getRawMetrics()
 	nsWatcher := &NamespaceWatcher{}
@@ -114,7 +111,7 @@ func namespace_runTestcase(t *testing.T) {
 	// context, name, labels: cluster, service, namespace,
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("namespace")
-	expected_results := ndv.GetMetricLabelsWithValues(*udh)
+	expected_results := ndv.GetMetricLabelsWithValues()
 	for k := range nsMetrics {
 		// convert / serialize to string which can be compared to stored expected mock result
 		str_metric := fmt.Sprintf("%#v", nsMetrics[k])

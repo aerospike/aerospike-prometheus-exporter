@@ -20,7 +20,7 @@ func Test_Node_PassOneKeys(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("node")
-	passOneOutputs := ndv.GetPassOneKeys(*udh)
+	passOneOutputs := ndv.GetPassOneKeys()
 
 	assert.Nil(t, nwPassOneKeys, passOneOutputs)
 
@@ -42,7 +42,7 @@ func Test_Node_PassTwoKeys(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("node")
-	expectedPassTwoOutputs := ndv.GetPassTwoKeys(*udh)
+	expectedPassTwoOutputs := ndv.GetPassTwoKeys()
 
 	assert.NotEmpty(t, passTwoOutputs)
 	assert.NotEmpty(t, expectedPassTwoOutputs)
@@ -99,7 +99,7 @@ func node_runTestcase(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("node")
-	expected_results := ndv.GetMetricLabelsWithValues(*udh)
+	expected_results := ndv.GetMetricLabelsWithValues()
 
 	for k := range nodeMetrics {
 		// convert / serialize to string which can be compared to stored expected mock result

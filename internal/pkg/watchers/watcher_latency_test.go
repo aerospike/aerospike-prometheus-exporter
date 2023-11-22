@@ -20,7 +20,7 @@ func Test_Latency_PassOneKeys(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("latency")
-	passOneOutputs := ndv.GetPassOneKeys(*udh)
+	passOneOutputs := ndv.GetPassOneKeys()
 
 	assert.Nil(t, nwPassOneKeys, passOneOutputs)
 
@@ -42,7 +42,7 @@ func Test_Latency_PassTwoKeys(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("latency")
-	expectedPassTwoOutputs := ndv.GetPassTwoKeys(*udh)
+	expectedPassTwoOutputs := ndv.GetPassTwoKeys()
 
 	assert.NotEmpty(t, passTwoOutputs)
 	assert.NotEmpty(t, expectedPassTwoOutputs)
@@ -99,7 +99,7 @@ func latency_runTestcase(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("latency")
-	expected_results := ndv.GetMetricLabelsWithValues(*udh)
+	expected_results := ndv.GetMetricLabelsWithValues()
 
 	for k := range latencyMetrics {
 		// convert / serialize to string which can be compared to stored expected mock result

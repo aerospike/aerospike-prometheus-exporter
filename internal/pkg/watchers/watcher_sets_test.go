@@ -20,7 +20,7 @@ func Test_Sets_PassOneKeys(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sets")
-	passOneOutputs := ndv.GetPassOneKeys(*udh)
+	passOneOutputs := ndv.GetPassOneKeys()
 
 	assert.Nil(t, nwPassOneKeys, passOneOutputs)
 
@@ -42,7 +42,7 @@ func Test_Sets_PassTwoKeys(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sets")
-	expectedPassTwoOutputs := ndv.GetPassTwoKeys(*udh)
+	expectedPassTwoOutputs := ndv.GetPassTwoKeys()
 
 	assert.NotEmpty(t, passTwoOutputs)
 	assert.NotEmpty(t, expectedPassTwoOutputs)
@@ -99,7 +99,7 @@ func sets_runTestcase(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sets")
-	expected_results := ndv.GetMetricLabelsWithValues(*udh)
+	expected_results := ndv.GetMetricLabelsWithValues()
 
 	for k := range setsMetrics {
 		// convert / serialize to string which can be compared to stored expected mock result

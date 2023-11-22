@@ -20,7 +20,7 @@ func Test_Sindex_PassOneKeys(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sindex")
-	passOneOutputs := ndv.GetPassOneKeys(*udh)
+	passOneOutputs := ndv.GetPassOneKeys()
 
 	var expectedOutputs []string
 	expectedOutputs = append(expectedOutputs, passOneOutputs["sindex"])
@@ -45,7 +45,7 @@ func Test_Sindex_PassTwoKeys(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sindex")
-	expectedPassTwoOutputs := ndv.GetPassTwoKeys(*udh)
+	expectedPassTwoOutputs := ndv.GetPassTwoKeys()
 
 	assert.NotEmpty(t, passTwoOutputs)
 	assert.NotEmpty(t, expectedPassTwoOutputs)
@@ -104,7 +104,7 @@ func sindex_runTestcase(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sindex")
-	expected_results := ndv.GetMetricLabelsWithValues(*udh)
+	expected_results := ndv.GetMetricLabelsWithValues()
 
 	for k := range sindexMetrics {
 		// convert / serialize to string which can be compared to stored expected mock result

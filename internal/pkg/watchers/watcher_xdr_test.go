@@ -20,7 +20,7 @@ func Test_Xdr_PassOneKeys(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("xdr")
-	passOneOutputs := ndv.GetPassOneKeys(*udh)
+	passOneOutputs := ndv.GetPassOneKeys()
 
 	// fmt.Println("TestPassOneKeys: ", passOneOutputs)
 	var expectedOutputs []string
@@ -51,7 +51,7 @@ func Test_Xdr_PassTwoKeys(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("xdr")
-	expectedPassTwoOutputs := ndv.GetPassTwoKeys(*udh)
+	expectedPassTwoOutputs := ndv.GetPassTwoKeys()
 
 	assert.NotEmpty(t, passTwoOutputs)
 	assert.NotEmpty(t, expectedPassTwoOutputs)
@@ -112,7 +112,7 @@ func xdr_runTestcase(t *testing.T) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("xdr")
-	expected_results := ndv.GetMetricLabelsWithValues(*udh)
+	expected_results := ndv.GetMetricLabelsWithValues()
 
 	for k := range xdrMetrics {
 		// convert / serialize to string which can be compared to stored expected mock result

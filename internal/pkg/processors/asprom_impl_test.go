@@ -58,7 +58,7 @@ func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 
 	udh := &tests_utils.UnittestDataHandler{}
 	pdv := udh.GetUnittestValidator("prometheus")
-	expectedOutputs := pdv.GetMetricLabelsWithValues(*udh)
+	expectedOutputs := pdv.GetMetricLabelsWithValues()
 
 	assert.Equal(t, len(expectedOutputs), len(metrics_from_prom))
 
