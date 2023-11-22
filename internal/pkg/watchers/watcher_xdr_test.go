@@ -121,4 +121,5 @@ func xdr_runTestcase(t *testing.T) {
 		assert.True(t, exists, "Failed, did not find expected result: "+str_metric)
 	}
 
+	fmt.Println("xdr - expected_results: \n", expected_results)
 }
