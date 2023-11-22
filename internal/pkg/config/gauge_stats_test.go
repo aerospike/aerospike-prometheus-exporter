@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,7 +12,9 @@ func TestGetGaugesNotEmpty(t *testing.T) {
 	fmt.Println("initializing GaugeMetrics ... TestGetGaugesNotEmpty")
 
 	// Initialize and validate Gauge config
-	InitGaugeStats("/../../../configs/gauge_stats_list.toml")
+	l_cwd, _ := os.Getwd()
+	InitGaugeStats(l_cwd + "/../../../configs/gauge_stats_list.toml")
+
 	gaugeList := GaugeStatHandler
 
 	nslist := gaugeList.NamespaceStats
