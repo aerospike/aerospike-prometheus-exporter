@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
 	tests_utils "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/tests_utils"
 	"github.com/stretchr/testify/assert"
@@ -35,7 +34,7 @@ func Test_Namespace_PassTwoKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Namespace_PassTwoKeys")
 
 	// initialize config and gauge-lists
-	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+	tests_utils.InitConfigurations(tests_utils.TESTS_DEFAULT_CONFIG_FILE)
 
 	// rawMetrics := getRawMetrics()
 	nsWatcher := new(NamespaceWatcher)
@@ -68,7 +67,7 @@ func Test_Namespace_RefreshDefault(t *testing.T) {
 	// Initialize and validate config
 
 	// initialize config and gauge-lists
-	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+	tests_utils.InitConfigurations(tests_utils.TESTS_DEFAULT_CONFIG_FILE)
 
 	namespace_runTestcase(t)
 }

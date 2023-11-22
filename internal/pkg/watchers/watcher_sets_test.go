@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
 	tests_utils "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/tests_utils"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +30,7 @@ func Test_Sets_PassTwoKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sets_PassTwoKeys")
 
 	// initialize config and gauge-lists
-	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+	tests_utils.InitConfigurations(tests_utils.TESTS_DEFAULT_CONFIG_FILE)
 
 	// Check passoneKeys
 	setsWatcher := &SetWatcher{}
@@ -59,7 +58,7 @@ func Test_Sets_RefreshDefault(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sets_RefreshDefault")
 
 	// initialize config and gauge-lists
-	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+	tests_utils.InitConfigurations(tests_utils.TESTS_DEFAULT_CONFIG_FILE)
 
 	sets_runTestcase(t)
 }
