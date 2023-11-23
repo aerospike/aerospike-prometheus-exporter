@@ -70,9 +70,10 @@ func Test_A_Unique_Metrics_Count(t *testing.T) {
 	// find unique metric-names (excluding Label and values)
 	for idx_metric := range metrics_from_prom {
 		metric := metrics_from_prom[idx_metric]
-		metric_name := metric[0:strings.Index(metric, "{")]
+		fmt.Println("* metric: ", metric, "\t", strings.Index(metric, "{"))
+		// metric_name := metric[0:strings.Index(metric, "{")]
 
-		unique_metric_names[metric_name] = metric_name
+		// unique_metric_names[metric_name] = metric_name
 	}
 
 	fmt.Println(" Unique Metric names: ", unique_metric_names, "\n Count is : ", len(unique_metric_names))
