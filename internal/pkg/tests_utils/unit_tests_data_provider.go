@@ -108,10 +108,10 @@ func (md *UnittestDataHandler) loadPrometheusData() {
 
 func (md *UnittestDataHandler) loadWatchersData() {
 
-	filePath := TEST_WATCHER_DATA_FILE
-	cwd, _ := os.Getwd()
-	fileLocation := cwd + "/" + filePath
-	readFile, err := os.Open(fileLocation)
+	filePath := GetWatchersMockResultsFile(TEST_WATCHER_DATA_FILE)
+	// cwd, _ := os.Getwd()
+	// fileLocation := cwd + "/" + filePath
+	readFile, err := os.Open(filePath)
 
 	if err != nil {
 		fmt.Println(err)
