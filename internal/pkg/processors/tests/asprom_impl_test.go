@@ -32,8 +32,24 @@ func Test_RefreshDefault(t *testing.T) {
 	// initialize config and gauge-lists
 	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
+	// initialize prom
+	initialize_prom_processor()
+
 	// generate and validate labels
-	all_runTestcase(t, nil)
+	metrics_from_prom := make_http_call_to_prom_processor(t, nil)
+
+	udh := &tests_utils.UnittestDataHandler{}
+	pdv := udh.GetUnittestValidator("prometheus")
+	expectedOutputs := pdv.GetMetricLabelsWithValues()
+
+	assert.Equal(t, len(expectedOutputs), len(metrics_from_prom))
+
+	// assert values from httpclient with expectedOutputs
+	for idx_metrics := range metrics_from_prom {
+		entry := metrics_from_prom[idx_metrics]
+		assert.Contains(t, expectedOutputs, entry)
+	}
+
 }
 
 func Test_Unique_Metrics_Count(t *testing.T) {
@@ -43,8 +59,11 @@ func Test_Unique_Metrics_Count(t *testing.T) {
 	// initialize config and gauge-lists
 	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
+	// initialize prom
+	initialize_prom_processor()
+
 	// generate and validate labels
-	metrics_from_prom := all_runTestcase(t, nil)
+	metrics_from_prom := make_http_call_to_prom_processor(t, nil)
 
 	var unique_metric_names = make(map[string]string)
 
@@ -60,9 +79,9 @@ func Test_Unique_Metrics_Count(t *testing.T) {
 }
 
 /**
-* complete logic to call watcher, generate-mock data and asset is part of this function
+* makes a http call to the running prom and returns the output
  */
-func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) []string {
+func make_http_call_to_prom_processor(t *testing.T, asMetrics []watchers.AerospikeStat) []string {
 	// prometheus http server is initialized
 	httpClient := http.Client{Timeout: time.Duration(1) * time.Second}
 	resp, err := httpClient.Get(DEFAULT_PROM_URL)
@@ -87,18 +106,6 @@ func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) []string 
 	}
 
 	assert.NotEmpty(t, metrics_from_prom, " received metrics from prom running locally")
-
-	udh := &tests_utils.UnittestDataHandler{}
-	pdv := udh.GetUnittestValidator("prometheus")
-	expectedOutputs := pdv.GetMetricLabelsWithValues()
-
-	assert.Equal(t, len(expectedOutputs), len(metrics_from_prom))
-
-	// assert values from httpclient with expectedOutputs
-	for idx_metrics := range metrics_from_prom {
-		entry := metrics_from_prom[idx_metrics]
-		assert.Contains(t, expectedOutputs, entry)
-	}
 
 	return metrics_from_prom
 }
