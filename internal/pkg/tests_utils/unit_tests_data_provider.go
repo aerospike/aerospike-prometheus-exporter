@@ -25,6 +25,7 @@ var TEST_WATCHER_DATA_FILE = "tests_data/watcher_mock_results.txt"
 var Is_Unittests_Initialized = 0
 
 type UnittestDataValidator interface {
+	Initialize(data []string)
 	GetPassOneKeys() map[string]string
 	GetPassTwoKeys() map[string]string
 	GetMetricLabelsWithValues() map[string]string
@@ -71,27 +72,8 @@ var validators = map[string]UnittestDataValidator{
 }
 
 func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataValidator {
-
 	md.Initialize()
 
-	// switch key {
-	// case "namespace":
-	// 	return namespace_validator
-	// case "node":
-	// 	return node_stats_validator
-	// case "xdr":
-	// 	return xdr_validator
-	// case "sets":
-	// 	return sets_validator
-	// case "sindex":
-	// 	return sindex_validator
-	// case "latency":
-	// 	return latency_validator
-	// case "users":
-	// 	return users_validator
-	// case "prometheus":
-	// 	return prom_validator
-	// }
 	return validators[key]
 }
 
@@ -149,7 +131,76 @@ func (md *UnittestDataHandler) loadWatchersData() {
 
 	readFile.Close()
 
-	for _, line := range fileLines {
+	// loop all validators and initialize
+	for _, validator := range validators {
+		fmt.Println("Loading validator: ", validator)
+		validator.Initialize(fileLines)
+	}
+
+	// for _, line := range fileLines {
+	// 	if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
+	// 		// ignore, comments
+	// 	} else if len(line) > 0 {
+	// 		if strings.HasPrefix(line, "namespace-passonekeys:") {
+	// 			namespace_validator.PassOneOutputs = append(namespace_validator.PassOneOutputs, line)
+	// 		} else if strings.HasPrefix(line, "namespace-passtwokeys:") {
+	// 			namespace_validator.PassTwoOutputs = append(namespace_validator.PassTwoOutputs, line)
+	// 		} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"namespace\",") {
+	// 			namespace_validator.Metrics = append(namespace_validator.Metrics, line)
+	// 		} else if strings.HasPrefix(line, "node-passonekeys:") {
+	// 			node_stats_validator.PassOneOutputs = append(node_stats_validator.PassOneOutputs, line)
+	// 		} else if strings.HasPrefix(line, "node-passtwokeys:") {
+	// 			node_stats_validator.PassTwoOutputs = append(node_stats_validator.PassTwoOutputs, line)
+	// 		} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"node_stats\",") {
+	// 			node_stats_validator.Metrics = append(node_stats_validator.Metrics, line)
+	// 		} else if strings.HasPrefix(line, "xdr-passonekeys:") {
+	// 			xdr_validator.PassOneOutputs = append(xdr_validator.PassOneOutputs, line)
+	// 		} else if strings.HasPrefix(line, "xdr-passtwokeys:") {
+	// 			xdr_validator.PassTwoOutputs = append(xdr_validator.PassTwoOutputs, line)
+	// 		} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"xdr\",") {
+	// 			xdr_validator.Metrics = append(xdr_validator.Metrics, line)
+	// 		} else if strings.HasPrefix(line, "sets-passonekeys:") {
+	// 			sets_validator.PassOneOutputs = append(sets_validator.PassOneOutputs, line)
+	// 		} else if strings.HasPrefix(line, "sets-passtwokeys:") {
+	// 			sets_validator.PassTwoOutputs = append(sets_validator.PassTwoOutputs, line)
+	// 		} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sets\",") {
+	// 			sets_validator.Metrics = append(sets_validator.Metrics, line)
+	// 		} else if strings.HasPrefix(line, "sindex-passonekeys:") {
+	// 			sindex_validator.PassOneOutputs = append(sindex_validator.PassOneOutputs, line)
+	// 		} else if strings.HasPrefix(line, "sindex-passtwokeys:") {
+	// 			sindex_validator.PassTwoOutputs = append(sindex_validator.PassTwoOutputs, line)
+	// 		} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sindex\",") {
+	// 			sindex_validator.Metrics = append(sindex_validator.Metrics, line)
+	// 		} else if strings.HasPrefix(line, "latency-passonekeys:") {
+	// 			latency_validator.PassOneOutputs = append(latency_validator.PassOneOutputs, line)
+	// 		} else if strings.HasPrefix(line, "latency-passtwokeys:") {
+	// 			latency_validator.PassTwoOutputs = append(latency_validator.PassTwoOutputs, line)
+	// 		} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"latencies\",") {
+	// 			latency_validator.Metrics = append(latency_validator.Metrics, line)
+	// 		} else if strings.HasPrefix(line, "users-passonekeys:") {
+	// 			users_validator.PassOneOutputs = append(users_validator.PassOneOutputs, line)
+	// 		} else if strings.HasPrefix(line, "users-passtwokeys:") {
+	// 			users_validator.PassTwoOutputs = append(users_validator.PassTwoOutputs, line)
+	// 		} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"users\",") {
+	// 			users_validator.Metrics = append(users_validator.Metrics, line)
+	// 		}
+	// 	}
+	// }
+	// fmt.Println("\n\n****\nmd.Node_PassTwo: ", md.Node_PassTwo, "\n\n***")
+	fmt.Println("loadWatchersData(): Completed loading test WATCHER Expected Data ")
+}
+
+// ===========================
+//
+// Start Namespace
+type NamespaceUnittestValidator struct {
+	PassOneOutputs []string
+	PassTwoOutputs []string
+	Metrics        []string
+}
+
+func (unp NamespaceUnittestValidator) Initialize(data []string) {
+	for _, line := range data {
 		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
 			// ignore, comments
 		} else if len(line) > 0 {
@@ -198,17 +249,6 @@ func (md *UnittestDataHandler) loadWatchersData() {
 			}
 		}
 	}
-	// fmt.Println("\n\n****\nmd.Node_PassTwo: ", md.Node_PassTwo, "\n\n***")
-	fmt.Println("loadWatchersData(): Completed loading test WATCHER Expected Data ")
-}
-
-// ===========================
-//
-// Start Namespace
-type NamespaceUnittestValidator struct {
-	PassOneOutputs []string
-	PassTwoOutputs []string
-	Metrics        []string
 }
 
 func (unp NamespaceUnittestValidator) GetPassOneKeys() map[string]string {
@@ -260,6 +300,58 @@ type NodeUnittestValidator struct {
 	Metrics        []string
 }
 
+func (unp NodeUnittestValidator) Initialize(data []string) {
+	for _, line := range data {
+		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
+			// ignore, comments
+		} else if len(line) > 0 {
+			if strings.HasPrefix(line, "namespace-passonekeys:") {
+				namespace_validator.PassOneOutputs = append(namespace_validator.PassOneOutputs, line)
+			} else if strings.HasPrefix(line, "namespace-passtwokeys:") {
+				namespace_validator.PassTwoOutputs = append(namespace_validator.PassTwoOutputs, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"namespace\",") {
+				namespace_validator.Metrics = append(namespace_validator.Metrics, line)
+			} else if strings.HasPrefix(line, "node-passonekeys:") {
+				node_stats_validator.PassOneOutputs = append(node_stats_validator.PassOneOutputs, line)
+			} else if strings.HasPrefix(line, "node-passtwokeys:") {
+				node_stats_validator.PassTwoOutputs = append(node_stats_validator.PassTwoOutputs, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"node_stats\",") {
+				node_stats_validator.Metrics = append(node_stats_validator.Metrics, line)
+			} else if strings.HasPrefix(line, "xdr-passonekeys:") {
+				xdr_validator.PassOneOutputs = append(xdr_validator.PassOneOutputs, line)
+			} else if strings.HasPrefix(line, "xdr-passtwokeys:") {
+				xdr_validator.PassTwoOutputs = append(xdr_validator.PassTwoOutputs, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"xdr\",") {
+				xdr_validator.Metrics = append(xdr_validator.Metrics, line)
+			} else if strings.HasPrefix(line, "sets-passonekeys:") {
+				sets_validator.PassOneOutputs = append(sets_validator.PassOneOutputs, line)
+			} else if strings.HasPrefix(line, "sets-passtwokeys:") {
+				sets_validator.PassTwoOutputs = append(sets_validator.PassTwoOutputs, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sets\",") {
+				sets_validator.Metrics = append(sets_validator.Metrics, line)
+			} else if strings.HasPrefix(line, "sindex-passonekeys:") {
+				sindex_validator.PassOneOutputs = append(sindex_validator.PassOneOutputs, line)
+			} else if strings.HasPrefix(line, "sindex-passtwokeys:") {
+				sindex_validator.PassTwoOutputs = append(sindex_validator.PassTwoOutputs, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sindex\",") {
+				sindex_validator.Metrics = append(sindex_validator.Metrics, line)
+			} else if strings.HasPrefix(line, "latency-passonekeys:") {
+				latency_validator.PassOneOutputs = append(latency_validator.PassOneOutputs, line)
+			} else if strings.HasPrefix(line, "latency-passtwokeys:") {
+				latency_validator.PassTwoOutputs = append(latency_validator.PassTwoOutputs, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"latencies\",") {
+				latency_validator.Metrics = append(latency_validator.Metrics, line)
+			} else if strings.HasPrefix(line, "users-passonekeys:") {
+				users_validator.PassOneOutputs = append(users_validator.PassOneOutputs, line)
+			} else if strings.HasPrefix(line, "users-passtwokeys:") {
+				users_validator.PassTwoOutputs = append(users_validator.PassTwoOutputs, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"users\",") {
+				users_validator.Metrics = append(users_validator.Metrics, line)
+			}
+		}
+	}
+}
+
 func (unp NodeUnittestValidator) GetPassOneKeys() map[string]string {
 
 	return nil
@@ -299,6 +391,22 @@ type XdrUnittestValidator struct {
 	PassOneOutputs []string
 	PassTwoOutputs []string
 	Metrics        []string
+}
+
+func (unp XdrUnittestValidator) Initialize(data []string) {
+	for _, line := range data {
+		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
+			// ignore, comments
+		} else if len(line) > 0 {
+			if strings.HasPrefix(line, "xdr-passonekeys:") {
+				xdr_validator.PassOneOutputs = append(xdr_validator.PassOneOutputs, line)
+			} else if strings.HasPrefix(line, "xdr-passtwokeys:") {
+				xdr_validator.PassTwoOutputs = append(xdr_validator.PassTwoOutputs, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"xdr\",") {
+				xdr_validator.Metrics = append(xdr_validator.Metrics, line)
+			}
+		}
+	}
 }
 
 func (unp XdrUnittestValidator) GetPassOneKeys() map[string]string {
@@ -346,6 +454,22 @@ type SetsUnittestValidator struct {
 	Metrics        []string
 }
 
+func (unp SetsUnittestValidator) Initialize(data []string) {
+	for _, line := range data {
+		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
+			// ignore, comments
+		} else if len(line) > 0 {
+			if strings.HasPrefix(line, "sets-passonekeys:") {
+				sets_validator.PassOneOutputs = append(sets_validator.PassOneOutputs, line)
+			} else if strings.HasPrefix(line, "sets-passtwokeys:") {
+				sets_validator.PassTwoOutputs = append(sets_validator.PassTwoOutputs, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sets\",") {
+				sets_validator.Metrics = append(sets_validator.Metrics, line)
+			}
+		}
+	}
+}
+
 func (unp SetsUnittestValidator) GetPassOneKeys() map[string]string {
 	return nil
 }
@@ -381,6 +505,22 @@ type SindexUnittestValidator struct {
 	PassOneOutputs []string
 	PassTwoOutputs []string
 	Metrics        []string
+}
+
+func (unp SindexUnittestValidator) Initialize(data []string) {
+	for _, line := range data {
+		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
+			// ignore, comments
+		} else if len(line) > 0 {
+			if strings.HasPrefix(line, "sindex-passonekeys:") {
+				sindex_validator.PassOneOutputs = append(sindex_validator.PassOneOutputs, line)
+			} else if strings.HasPrefix(line, "sindex-passtwokeys:") {
+				sindex_validator.PassTwoOutputs = append(sindex_validator.PassTwoOutputs, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sindex\",") {
+				sindex_validator.Metrics = append(sindex_validator.Metrics, line)
+			}
+		}
+	}
 }
 
 func (unp SindexUnittestValidator) GetPassOneKeys() map[string]string {
@@ -428,6 +568,22 @@ type LatencyUnittestValidator struct {
 	Metrics        []string
 }
 
+func (unp LatencyUnittestValidator) Initialize(data []string) {
+	for _, line := range data {
+		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
+			// ignore, comments
+		} else if len(line) > 0 {
+			if strings.HasPrefix(line, "latency-passonekeys:") {
+				latency_validator.PassOneOutputs = append(latency_validator.PassOneOutputs, line)
+			} else if strings.HasPrefix(line, "latency-passtwokeys:") {
+				latency_validator.PassTwoOutputs = append(latency_validator.PassTwoOutputs, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"latencies\",") {
+				latency_validator.Metrics = append(latency_validator.Metrics, line)
+			}
+		}
+	}
+}
+
 func (unp LatencyUnittestValidator) GetPassOneKeys() map[string]string {
 	return nil
 }
@@ -465,6 +621,22 @@ type UsersUnittestValidator struct {
 	Metrics        []string
 }
 
+func (unp UsersUnittestValidator) Initialize(data []string) {
+	for _, line := range data {
+		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
+			// ignore, comments
+		} else if len(line) > 0 {
+			if strings.HasPrefix(line, "users-passonekeys:") {
+				users_validator.PassOneOutputs = append(users_validator.PassOneOutputs, line)
+			} else if strings.HasPrefix(line, "users-passtwokeys:") {
+				users_validator.PassTwoOutputs = append(users_validator.PassTwoOutputs, line)
+			} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"users\",") {
+				users_validator.Metrics = append(users_validator.Metrics, line)
+			}
+		}
+	}
+}
+
 func (unp UsersUnittestValidator) GetPassOneKeys() map[string]string {
 	return nil
 }
@@ -490,6 +662,9 @@ type PrometheusUnittestValidator struct {
 	PassOneOutputs []string
 	PassTwoOutputs []string
 	Metrics        []string
+}
+
+func (unp PrometheusUnittestValidator) Initialize(data []string) {
 }
 
 func (unp PrometheusUnittestValidator) GetPassOneKeys() map[string]string {
