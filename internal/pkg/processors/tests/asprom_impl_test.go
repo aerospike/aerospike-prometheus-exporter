@@ -18,6 +18,8 @@ import (
 
 var DEFAULT_PROM_URL = "http://localhost:9145/metrics"
 
+var metrics_from_prom = []string{}
+
 func Test_Initialize_Prom_Exporter(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Initialize_Prom_Exporter")
@@ -26,17 +28,17 @@ func Test_Initialize_Prom_Exporter(t *testing.T) {
 
 	// initialize prom
 	initialize_prom_processor()
+
+	// generate and validate labels
+	metrics_from_prom = make_http_call_to_prom_processor(t, nil)
 }
 
 func Test_RefreshDefault(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_RefreshDefault")
 
-	// initialize config and gauge-lists
-	initConfigsAndGauges()
-
-	// generate and validate labels
-	metrics_from_prom := make_http_call_to_prom_processor(t, nil)
+	// // initialize config and gauge-lists
+	// initConfigsAndGauges()
 
 	udh := &tests_utils.UnittestDataHandler{}
 	pdv := udh.GetUnittestValidator("prometheus")
@@ -50,26 +52,18 @@ func Test_RefreshDefault(t *testing.T) {
 		assert.Contains(t, expectedOutputs, entry)
 	}
 
-	// for idx_exp_outputs := range expectedOutputs {
-	// 	entry := expectedOutputs[idx_exp_outputs]
-	// 	fmt.Println(entry)
-	// }
-
 }
 
 func Test_A_Unique_Metrics_Count(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Unique_Metrics_Count")
 
-	// Sleep for 15 seconds
-	fmt.Println("Test_Unique_Metrics_Count ... sleeping for 15 seconds to simulate the prom scrape behaviour")
-	time.Sleep(10 * time.Second)
+	// // Sleep for 15 seconds
+	// fmt.Println("Test_Unique_Metrics_Count ... sleeping for 15 seconds to simulate the prom scrape behaviour")
+	// time.Sleep(10 * time.Second)
 
 	// initialize config and gauge-lists
-	initConfigsAndGauges()
-
-	// generate and validate labels
-	metrics_from_prom := make_http_call_to_prom_processor(t, nil)
+	// initConfigsAndGauges()
 
 	var unique_metric_names = make(map[string]string)
 
@@ -97,7 +91,8 @@ func make_http_call_to_prom_processor(t *testing.T, asMetrics []watchers.Aerospi
 	}
 	defer resp.Body.Close()
 
-	metrics_from_prom := []string{}
+	// reinitialize global array
+	metrics_from_prom = []string{}
 
 	scanner := bufio.NewScanner(resp.Body)
 	// fmt.Println("*** START ")
@@ -114,7 +109,7 @@ func make_http_call_to_prom_processor(t *testing.T, asMetrics []watchers.Aerospi
 		fmt.Println("Error while reading Http Response: ", err)
 	}
 
-	assert.NotEmpty(t, metrics_from_prom, " received metrics from prom running locally")
+	assert.NotEmpty(t, metrics_from_prom, " NO metrics received from prom running locally")
 
 	return metrics_from_prom
 }
