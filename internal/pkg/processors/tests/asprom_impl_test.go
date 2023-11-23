@@ -21,6 +21,8 @@ var DEFAULT_PROM_URL = "http://localhost:9145/metrics"
 func Test_Initialize_Prom_Exporter(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Initialize_Prom_Exporter")
+	// initialize config and gauge-lists
+	initConfigsAndGauges()
 
 	// initialize prom
 	initialize_prom_processor()
