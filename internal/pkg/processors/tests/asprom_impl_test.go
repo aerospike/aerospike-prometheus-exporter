@@ -37,6 +37,7 @@ func Test_RefreshDefault(t *testing.T) {
 
 	// generate and validate labels
 	metrics_from_prom := make_http_call_to_prom_processor(t, nil)
+	metrics_from_prom = make_http_call_to_prom_processor(t, nil)
 
 	udh := &tests_utils.UnittestDataHandler{}
 	pdv := udh.GetUnittestValidator("prometheus")
