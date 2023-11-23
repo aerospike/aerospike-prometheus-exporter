@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func initConfigs() {
+func initConfigsAndGauges() {
 	// Initialize and validate Gauge config
 	l_cwd, _ := os.Getwd()
 	InitGaugeStats(l_cwd + "/../../../configs/gauge_stats_list.toml")
@@ -19,7 +19,7 @@ func TestGetGaugesNotEmpty(t *testing.T) {
 	fmt.Println("initializing GaugeMetrics ... TestGetGaugesNotEmpty")
 
 	// Initialize configs and gauges
-	initConfigs()
+	initConfigsAndGauges()
 	gaugeList := GaugeStatHandler
 
 	nslist := gaugeList.NamespaceStats
@@ -32,7 +32,7 @@ func TestGetGaugesCounts(t *testing.T) {
 	fmt.Println("initializing GaugeMetrics ... TestGetGaugesCounts")
 
 	// Initialize and validate Gauge config
-	initConfigs()
+	initConfigsAndGauges()
 	gaugeList := GaugeStatHandler
 
 	glist := gaugeList.NamespaceStats
@@ -56,34 +56,25 @@ func TestIsAGaugeTrue(t *testing.T) {
 	fmt.Println("initializing GaugeMetrics ... TestIsAGaugeTrue")
 
 	// Initialize and validate Gauge config
-	initConfigs()
+	initConfigsAndGauges()
 	gaugeList := GaugeStatHandler
 
 	assert.Equal(t, gaugeList.NamespaceStats["cache_read_pct"], true)
+	assert.Equal(t, gaugeList.NodeStats["cluster_clock_skew_stop_writes_sec"], true)
 
-	// exists = gaugeList.isGauge(CTX_NODE_STATS, "cluster_clock_skew_stop_writes_sec")
-	// assert.Equal(t, exists, true)
-
-	// exists = gaugeList.isGauge(CTX_SINDEX, "entries_per_rec")
-	// assert.Equal(t, exists, true)
-
-	// exists = gaugeList.isGauge(CTX_XDR, "recoveries_pending")
-	// assert.Equal(t, exists, true)
-
-	// exists = gaugeList.isGauge(CTX_SETS, "truncate_lut")
-	// assert.Equal(t, exists, true)
+	assert.Equal(t, gaugeList.SindexStats["entries_per_rec"], true)
+	assert.Equal(t, gaugeList.XdrStats["recoveries_pending"], true)
+	assert.Equal(t, gaugeList.SetsStats["truncate_lut"], true)
 
 }
 
-// func TestNoGaugeExists(t *testing.T) {
+func TestNoGaugeExists(t *testing.T) {
 
-// 	fmt.Println("initializing GaugeMetrics ... TestNoGaugeExists")
+	fmt.Println("initializing GaugeMetrics ... TestNoGaugeExists")
 
-// 	// Initialize and validate Gauge config
-// 	gaugeList := new(GaugeStats)
+	// Initialize and validate Gauge config
+	initConfigsAndGauges()
+	gaugeList := GaugeStatHandler
 
-// 	initGaugeStats(METRICS_CONFIG_FILE, gaugeList)
-
-// 	exists := gaugeList.isGauge(CTX_NAMESPACE, "non-existing-key")
-// 	assert.Equal(t, exists, false)
-// }
+	assert.Equal(t, gaugeList.NamespaceStats["non-existing-key"], false)
+}
