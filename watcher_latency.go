@@ -62,7 +62,10 @@ func (lw *LatencyWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 
 	// loop all the latency infokeys
 	for ik := range infoKeys {
-		parseSingleLatenciesKey(infoKeys[ik], rawMetrics, allowedLatenciesList, blockedLatenciessList, ch)
+		err := parseSingleLatenciesKey(infoKeys[ik], rawMetrics, allowedLatenciesList, blockedLatenciessList, ch)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
