@@ -210,6 +210,16 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 			// push to prom-channel
 			pushToPrometheus(asMetric, pv, labels, labelValues, ch)
 		}
+
+		// below code section is to ensure ns+latencies combination is handled during LatencyWatcher
+		//
+		// check and if latency benchmarks stat - is it enabled (bool true==1 and false==0 after conversion)
+		if canConsiderLatencyCommand(stat) {
+			LatencyBenchmarks[nsName+"-"+stat] = pv
+		}
+		// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
+		LatencyBenchmarks[nsName+"-re-repl"] = 1
+
 	}
 
 }

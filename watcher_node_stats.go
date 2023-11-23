@@ -75,5 +75,10 @@ func (sw *StatsWatcher) handleRefresh(o *Observer, nodeRawMetrics string, cluste
 
 		pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
 
+		// check and if latency benchmarks stat, is it enabled (bool true==1 and false==0 after conversion)
+		if canConsiderLatencyCommand(stat) {
+			LatencyBenchmarks["service-"+stat] = pv
+		}
+
 	}
 }
