@@ -47,9 +47,9 @@ func GetDefaultGaugeListFilename() string {
 }
 
 func GetWatchersConfigFile(filename string) string {
-	return commons.GetExporterBaseFolder() + "/internal/pkg/watchers/tests/" + filename
+	return commons.GetExporterBaseFolder() + "/internal/pkg/statprocessors/tests/" + filename
 }
 
-func GetProcessConfigFile(filename string) string {
-	return commons.GetExporterBaseFolder() + "/internal/pkg/processors/tests/" + filename
+func GetMetricHandlerConfigFile(filename string) string {
+	return commons.GetExporterBaseFolder() + "/internal/pkg/metrichandlers/tests/" + filename
 }

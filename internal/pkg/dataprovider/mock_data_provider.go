@@ -95,7 +95,7 @@ const (
 func (md *MockAerospikeServer) Initialize() {
 
 	base_folder := commons.GetExporterBaseFolder()
-	filePath := base_folder + "/internal/pkg/data/mockdata/" + MOCK_DATA_FILE
+	filePath := base_folder + "/internal/pkg/dataprovider/mockdata/" + MOCK_DATA_FILE
 	// fmt.Println("\n*** MockDataProvider ... filePath: ", filePath, "\n********")
 
 	md.internalInitialize(filePath)

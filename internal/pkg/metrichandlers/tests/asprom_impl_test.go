@@ -134,7 +134,7 @@ var TESTS_DEFAULT_GAUGE_LIST_FILE = "configs/gauge_stats_list.toml"
 func initConfigsAndGauges() {
 	// Initialize and validate Gauge config
 	// config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_MOCK_CONFIG_FILE))
-	config.InitConfig(tests_utils.GetProcessConfigFile(tests_utils.TESTS_MOCK_CONFIG_FILE))
+	config.InitConfig(tests_utils.GetMetricHandlerConfigFile(tests_utils.TESTS_MOCK_CONFIG_FILE))
 
 	config.InitGaugeStats(tests_utils.GetDefaultGaugeListFilename())
 
