@@ -35,7 +35,7 @@ func Test_Xdr_PassTwoKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Xdr_PassTwoKeys")
 
 	// initialize config and gauge-lists
-	tests_utils.InitConfigurations(tests_utils.TESTS_DEFAULT_CONFIG_FILE)
+	tests_utils.InitConfigurations(tests_utils.GetWatchersConfigFile(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
 	xdrWatcher := &watchers.XdrWatcher{}
@@ -71,7 +71,7 @@ func Test_Xdr_RefreshDefault(t *testing.T) {
 	fmt.Println("initializing config ... Test_Xdr_RefreshDefault")
 
 	// initialize config and gauge-lists
-	tests_utils.InitConfigurations(tests_utils.TESTS_DEFAULT_CONFIG_FILE)
+	tests_utils.InitConfigurations(tests_utils.GetWatchersConfigFile(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
 	xdr_runTestcase(t)
 }

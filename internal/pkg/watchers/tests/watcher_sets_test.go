@@ -31,7 +31,7 @@ func Test_Sets_PassTwoKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sets_PassTwoKeys")
 
 	// initialize config and gauge-lists
-	tests_utils.InitConfigurations(tests_utils.TESTS_DEFAULT_CONFIG_FILE)
+	tests_utils.InitConfigurations(tests_utils.GetWatchersConfigFile(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
 	setsWatcher := &watchers.SetWatcher{}
@@ -59,7 +59,7 @@ func Test_Sets_RefreshDefault(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sets_RefreshDefault")
 
 	// initialize config and gauge-lists
-	tests_utils.InitConfigurations(tests_utils.TESTS_DEFAULT_CONFIG_FILE)
+	tests_utils.InitConfigurations(tests_utils.GetWatchersConfigFile(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
 	sets_runTestcase(t)
 }

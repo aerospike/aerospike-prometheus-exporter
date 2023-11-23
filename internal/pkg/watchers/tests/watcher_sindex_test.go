@@ -34,7 +34,7 @@ func Test_Sindex_PassTwoKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sindex_PassTwoKeys")
 
 	// initialize config and gauge-lists
-	tests_utils.InitConfigurations(tests_utils.TESTS_DEFAULT_CONFIG_FILE)
+	tests_utils.InitConfigurations(tests_utils.GetWatchersConfigFile(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
 	sindexWatcher := &watchers.SindexWatcher{}
@@ -62,7 +62,7 @@ func Test_Sindex_RefreshDefault(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sindex_RefreshDefault")
 
 	// initialize config and gauge-lists
-	tests_utils.InitConfigurations(tests_utils.TESTS_DEFAULT_CONFIG_FILE)
+	tests_utils.InitConfigurations(tests_utils.GetWatchersConfigFile(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
 	sindex_runTestcase(t)
 }

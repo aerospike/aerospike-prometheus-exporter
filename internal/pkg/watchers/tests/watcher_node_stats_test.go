@@ -31,7 +31,7 @@ func Test_Node_PassTwoKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Node_PassTwoKeys")
 
 	// initialize config and gauge-lists
-	tests_utils.InitConfigurations(tests_utils.TESTS_DEFAULT_CONFIG_FILE)
+	tests_utils.InitConfigurations(tests_utils.GetWatchersConfigFile(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
 	nodeWatcher := &watchers.NodeStatsWatcher{}
@@ -59,7 +59,7 @@ func Test_Node_RefreshDefault(t *testing.T) {
 	fmt.Println("initializing config ... Test_Node_RefreshDefault")
 
 	// initialize config and gauge-lists
-	tests_utils.InitConfigurations(tests_utils.TESTS_DEFAULT_CONFIG_FILE)
+	tests_utils.InitConfigurations(tests_utils.GetWatchersConfigFile(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
 	node_runTestcase(t)
 }
