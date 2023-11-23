@@ -8,6 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	GAUGES_NAMESPACES_COUNT = 99
+	GAUGES_NODE_STATS_COUNT = 69
+	GAUGES_SETS_COUNT       = 9
+	GAUGES_SINDEX_COUNT     = 13
+	GAUGES_XDR_COUNT        = 10
+)
+
 func initConfigsAndGauges() {
 	// Initialize and validate Gauge config
 	l_cwd, _ := os.Getwd()
@@ -36,19 +44,19 @@ func TestGetGaugesCounts(t *testing.T) {
 	gaugeList := GaugeStatHandler
 
 	glist := gaugeList.NamespaceStats
-	assert.Equal(t, len(glist), 99)
+	assert.Equal(t, len(glist), GAUGES_NAMESPACES_COUNT)
 
 	glist = gaugeList.NodeStats
-	assert.Equal(t, len(glist), 69)
+	assert.Equal(t, len(glist), GAUGES_NODE_STATS_COUNT)
 
 	glist = gaugeList.SetsStats
-	assert.Equal(t, len(glist), 9)
+	assert.Equal(t, len(glist), GAUGES_SETS_COUNT)
 
 	glist = gaugeList.SindexStats
-	assert.Equal(t, len(glist), 13)
+	assert.Equal(t, len(glist), GAUGES_SINDEX_COUNT)
 
 	glist = gaugeList.XdrStats
-	assert.Equal(t, len(glist), 10)
+	assert.Equal(t, len(glist), GAUGES_XDR_COUNT)
 
 }
 

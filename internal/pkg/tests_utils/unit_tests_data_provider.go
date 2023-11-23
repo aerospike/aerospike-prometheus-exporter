@@ -59,30 +59,40 @@ var (
 	users_validator      = &UsersUnittestValidator{}
 	prom_validator       = &PrometheusUnittestValidator{}
 )
+var validators = map[string]UnittestDataValidator{
+	"namespace":  namespace_validator,
+	"node":       node_stats_validator,
+	"xdr":        xdr_validator,
+	"sets":       sets_validator,
+	"sindex":     sindex_validator,
+	"latency":    latency_validator,
+	"users":      users_validator,
+	"prometheus": prom_validator,
+}
 
 func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataValidator {
 
 	md.Initialize()
 
-	switch key {
-	case "namespace":
-		return namespace_validator
-	case "node":
-		return node_stats_validator
-	case "xdr":
-		return xdr_validator
-	case "sets":
-		return sets_validator
-	case "sindex":
-		return sindex_validator
-	case "latency":
-		return latency_validator
-	case "users":
-		return users_validator
-	case "prometheus":
-		return prom_validator
-	}
-	return nil
+	// switch key {
+	// case "namespace":
+	// 	return namespace_validator
+	// case "node":
+	// 	return node_stats_validator
+	// case "xdr":
+	// 	return xdr_validator
+	// case "sets":
+	// 	return sets_validator
+	// case "sindex":
+	// 	return sindex_validator
+	// case "latency":
+	// 	return latency_validator
+	// case "users":
+	// 	return users_validator
+	// case "prometheus":
+	// 	return prom_validator
+	// }
+	return validators[key]
 }
 
 // Internal helper functions
