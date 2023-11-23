@@ -35,9 +35,6 @@ func Test_RefreshDefault(t *testing.T) {
 	// initialize config and gauge-lists
 	initConfigsAndGauges()
 
-	// // initialize prom
-	// initialize_prom_processor()
-
 	// generate and validate labels
 	metrics_from_prom := make_http_call_to_prom_processor(t, nil)
 
@@ -55,15 +52,12 @@ func Test_RefreshDefault(t *testing.T) {
 
 }
 
-func Test_Unique_Metrics_Count(t *testing.T) {
+func Test_A_Unique_Metrics_Count(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Unique_Metrics_Count")
 
 	// initialize config and gauge-lists
 	initConfigsAndGauges()
-
-	// // initialize prom
-	// initialize_prom_processor()
 
 	// generate and validate labels
 	metrics_from_prom := make_http_call_to_prom_processor(t, nil)
