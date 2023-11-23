@@ -20,16 +20,20 @@ const (
 )
 
 func GetConfigfileLocation(filename string) string {
-	l_filename, _ := os.Getwd()
+	if _, err := os.Stat(filename); err != nil {
+		l_filename, _ := os.Getwd()
 
-	filePath := l_filename + "/" + filename
+		filePath := l_filename + "/" + filename
 
-	if _, err := os.Stat(filePath); err != nil {
-		filePath = l_filename + "/../../../../" + filename
-		fmt.Println("==> Given filename not found: ", filename, " \n\tHence using ", filePath)
+		if _, err := os.Stat(filePath); err != nil {
+			filePath = l_filename + "/../../../../" + filename
+			fmt.Println("==> Given filename not found: ", filename, " \n\tHence using ", filePath)
+		}
+
+		return filePath
 	}
 
-	return filePath
+	return filename
 }
 
 func InitConfigurations(config_filename string) {
