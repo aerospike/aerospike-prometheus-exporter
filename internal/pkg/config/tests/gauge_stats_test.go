@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,10 +17,12 @@ const (
 	GAUGES_XDR_COUNT        = 10
 )
 
+var TESTS_DEFAULT_GAUGE_LIST_FILE = "configs/gauge_stats_list.toml"
+
 func initConfigsAndGauges() {
 	// Initialize and validate Gauge config
 	l_cwd, _ := os.Getwd()
-	InitGaugeStats(l_cwd + "/../../../configs/gauge_stats_list.toml")
+	config.InitGaugeStats(l_cwd + "/../../../../" + TESTS_DEFAULT_GAUGE_LIST_FILE)
 
 }
 
@@ -28,7 +31,7 @@ func TestGetGaugesNotEmpty(t *testing.T) {
 
 	// Initialize configs and gauges
 	initConfigsAndGauges()
-	gaugeList := GaugeStatHandler
+	gaugeList := config.GaugeStatHandler
 
 	nslist := gaugeList.NamespaceStats
 	nodelist := gaugeList.NodeStats
@@ -41,7 +44,7 @@ func TestGetGaugesCounts(t *testing.T) {
 
 	// Initialize and validate Gauge config
 	initConfigsAndGauges()
-	gaugeList := GaugeStatHandler
+	gaugeList := config.GaugeStatHandler
 
 	glist := gaugeList.NamespaceStats
 	assert.Equal(t, len(glist), GAUGES_NAMESPACES_COUNT)
@@ -65,7 +68,7 @@ func TestIsAGaugeTrue(t *testing.T) {
 
 	// Initialize and validate Gauge config
 	initConfigsAndGauges()
-	gaugeList := GaugeStatHandler
+	gaugeList := config.GaugeStatHandler
 
 	assert.Equal(t, gaugeList.NamespaceStats["cache_read_pct"], true)
 	assert.Equal(t, gaugeList.NodeStats["cluster_clock_skew_stop_writes_sec"], true)
@@ -82,7 +85,7 @@ func TestNoGaugeExists(t *testing.T) {
 
 	// Initialize and validate Gauge config
 	initConfigsAndGauges()
-	gaugeList := GaugeStatHandler
+	gaugeList := config.GaugeStatHandler
 
 	assert.Equal(t, gaugeList.NamespaceStats["non-existing-key"], false)
 }
