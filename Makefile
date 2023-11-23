@@ -31,7 +31,7 @@ lint:
 
 .PHONY: test
 test: ## Run all the test-cases defined in this folder.
-	go test -v ./...	
+	go test ./...	
 
 # Builds RPM, DEB and TAR packages
 # Requires FPM package manager
