@@ -133,7 +133,6 @@ func (md *UnittestDataHandler) loadWatchersData() {
 
 	// loop all validators and initialize
 	for _, validator := range validators {
-		fmt.Println("Loading validator: ", validator)
 		validator.Initialize(fileLines)
 	}
 
