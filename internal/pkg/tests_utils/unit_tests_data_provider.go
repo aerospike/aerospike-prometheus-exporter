@@ -79,10 +79,11 @@ func (md *UnittestDataHandler) GetUnittestValidator(key string) UnittestDataVali
 
 // Internal helper functions
 func (md *UnittestDataHandler) loadPrometheusData() {
-	filePath := TEST_PROM_DATA_FILE
-	cwd, _ := os.Getwd()
-	fileLocation := cwd + "/" + filePath
-	readFile, err := os.Open(fileLocation)
+	filePath := GetPromMockResultsFile(TEST_PROM_DATA_FILE)
+
+	// cwd, _ := os.Getwd()
+	// fileLocation := cwd + "/" + filePath
+	readFile, err := os.Open(filePath)
 
 	if err != nil {
 		fmt.Println(err)

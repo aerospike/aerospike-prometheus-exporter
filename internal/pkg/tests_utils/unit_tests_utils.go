@@ -53,3 +53,7 @@ func GetWatchersConfigFile(filename string) string {
 func GetMetricHandlerConfigFile(filename string) string {
 	return commons.GetExporterBaseFolder() + "/internal/pkg/metrichandlers/tests/" + filename
 }
+
+func GetPromMockResultsFile(filename string) string {
+	return commons.GetExporterBaseFolder() + "/internal/pkg/metrichandlers/tests/" + filename
+}
