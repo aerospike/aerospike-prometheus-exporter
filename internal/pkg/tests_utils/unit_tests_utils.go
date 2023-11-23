@@ -21,7 +21,6 @@ const (
 func GetConfigfileLocation(filename string) string {
 	l_filename, _ := os.Getwd()
 
-	// l_filename = l_filename + "/../../../../" + filename
 	filePath := l_filename + "/" + filename
 
 	if _, err := os.Stat(filePath); err != nil {
