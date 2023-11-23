@@ -37,7 +37,6 @@ func Test_RefreshDefault(t *testing.T) {
 
 	// generate and validate labels
 	metrics_from_prom := make_http_call_to_prom_processor(t, nil)
-	metrics_from_prom = make_http_call_to_prom_processor(t, nil)
 
 	udh := &tests_utils.UnittestDataHandler{}
 	pdv := udh.GetUnittestValidator("prometheus")
@@ -131,7 +130,7 @@ var TESTS_DEFAULT_GAUGE_LIST_FILE = "configs/gauge_stats_list.toml"
 func initConfigsAndGauges() {
 	// Initialize and validate Gauge config
 	// initialize config and gauge-lists
-	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_MOCK_CONFIG_FILE))
 
 	l_cwd, _ := os.Getwd()
 	config.InitGaugeStats(l_cwd + "/../../../../" + TESTS_DEFAULT_GAUGE_LIST_FILE)
