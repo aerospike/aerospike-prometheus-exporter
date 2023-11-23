@@ -6,6 +6,7 @@ import (
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
 	tests_utils "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/tests_utils"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/watchers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +15,7 @@ func Test_Latency_PassOneKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Latency_PassOneKeys")
 
 	// Check passoneKeys
-	latencyWatcher := &LatencyWatcher{}
+	latencyWatcher := &watchers.LatencyWatcher{}
 	nwPassOneKeys := latencyWatcher.PassOneKeys()
 
 	udh := &tests_utils.UnittestDataHandler{}
@@ -33,7 +34,7 @@ func Test_Latency_PassTwoKeys(t *testing.T) {
 	tests_utils.InitConfigurations(tests_utils.TESTS_DEFAULT_CONFIG_FILE)
 
 	// Check passoneKeys
-	latencyWatcher := &LatencyWatcher{}
+	latencyWatcher := &watchers.LatencyWatcher{}
 	nwPassOneKeys := latencyWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(nwPassOneKeys)
 	fmt.Println("Test_Latency_PassTwoKeys: passOneOutput: ", passOneOutput)
@@ -69,14 +70,14 @@ func Test_Latency_RefreshDefault(t *testing.T) {
 func latency_runTestcase(t *testing.T) {
 
 	// Check passoneKeys
-	latencyWatcher := &LatencyWatcher{}
+	latencyWatcher := &watchers.LatencyWatcher{}
 	nwPassOneKeys := latencyWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(nwPassOneKeys)
 	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := latencyWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
-	infoKeys := []string{Infokey_ClusterName, Infokey_Service, Infokey_Build}
+	infoKeys := []string{watchers.Infokey_ClusterName, watchers.Infokey_Service, watchers.Infokey_Build}
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
 
 	arrRawMetrics, err := data.GetProvider().RequestInfo(passTwoOutputs)

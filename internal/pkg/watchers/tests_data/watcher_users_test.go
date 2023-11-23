@@ -6,6 +6,7 @@ import (
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
 	tests_utils "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/tests_utils"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/watchers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +15,7 @@ func Test_Users_PassOneKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Users_PassOneKeys")
 
 	// Check passoneKeys
-	usersWatcher := &UserWatcher{}
+	usersWatcher := &watchers.UserWatcher{}
 	nwPassOneKeys := usersWatcher.PassOneKeys()
 
 	udh := &tests_utils.UnittestDataHandler{}
@@ -33,7 +34,7 @@ func Test_Users_PassTwoKeys(t *testing.T) {
 	tests_utils.InitConfigurations(tests_utils.TESTS_USERS_CONFIG_FILE)
 
 	// Check passoneKeys
-	usersWatcher := &UserWatcher{}
+	usersWatcher := &watchers.UserWatcher{}
 	nwPassOneKeys := usersWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(nwPassOneKeys)
 	fmt.Println("Test_Users_PassTwoKeys: passOneOutput: ", passOneOutput)
@@ -64,14 +65,14 @@ func Test_Users_RefreshDefault(t *testing.T) {
 func users_runTestcase(t *testing.T) {
 
 	// Check passoneKeys
-	usersWatcher := &UserWatcher{}
+	usersWatcher := &watchers.UserWatcher{}
 	nwPassOneKeys := usersWatcher.PassOneKeys()
 	passOneOutput, _ := data.GetProvider().RequestInfo(nwPassOneKeys)
 	fmt.Println("users_runTestcase: passOneOutput: ", passOneOutput)
 	passTwoOutputs := usersWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
-	infoKeys := []string{Infokey_ClusterName, Infokey_Service, Infokey_Build}
+	infoKeys := []string{watchers.Infokey_ClusterName, watchers.Infokey_Service, watchers.Infokey_Build}
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
 
 	arrRawMetrics, err := data.GetProvider().RequestInfo(passTwoOutputs)

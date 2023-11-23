@@ -6,6 +6,7 @@ import (
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/data"
 	tests_utils "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/tests_utils"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/watchers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +15,7 @@ func Test_Xdr_PassOneKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Xdr_PassOneKeys")
 
 	// Check passoneKeys
-	xdrWatcher := &XdrWatcher{}
+	xdrWatcher := &watchers.XdrWatcher{}
 	xdrPassOneKeys := xdrWatcher.PassOneKeys()
 
 	udh := &tests_utils.UnittestDataHandler{}
@@ -37,10 +38,10 @@ func Test_Xdr_PassTwoKeys(t *testing.T) {
 	tests_utils.InitConfigurations(tests_utils.TESTS_DEFAULT_CONFIG_FILE)
 
 	// Check passoneKeys
-	xdrWatcher := &XdrWatcher{}
+	xdrWatcher := &watchers.XdrWatcher{}
 	xdrPassOneKeys := xdrWatcher.PassOneKeys()
 	// append common keys
-	infoKeys := []string{Infokey_ClusterName, Infokey_Service, Infokey_Build, "namespaces"}
+	infoKeys := []string{watchers.Infokey_ClusterName, watchers.Infokey_Service, watchers.Infokey_Build, "namespaces"}
 	xdrPassOneKeys = append(xdrPassOneKeys, infoKeys...)
 
 	passOneOutput, _ := data.GetProvider().RequestInfo(xdrPassOneKeys)
@@ -81,10 +82,10 @@ func Test_Xdr_RefreshDefault(t *testing.T) {
 func xdr_runTestcase(t *testing.T) {
 
 	// Check passoneKeys
-	xdrWatcher := &XdrWatcher{}
+	xdrWatcher := &watchers.XdrWatcher{}
 	xdrPassOneKeys := xdrWatcher.PassOneKeys()
 	// append common keys
-	infoKeys := []string{Infokey_ClusterName, Infokey_Service, Infokey_Build, "namespaces"}
+	infoKeys := []string{watchers.Infokey_ClusterName, watchers.Infokey_Service, watchers.Infokey_Build, "namespaces"}
 	xdrPassOneKeys = append(xdrPassOneKeys, infoKeys...)
 
 	passOneOutput, _ := data.GetProvider().RequestInfo(xdrPassOneKeys)
