@@ -32,8 +32,8 @@ func Test_RefreshDefault(t *testing.T) {
 	// initialize config and gauge-lists
 	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
-	// // initialize prom
-	// initialize_prom_processor()
+	// initialize prom
+	initialize_prom_processor()
 
 	// generate and validate labels
 	metrics_from_prom := make_http_call_to_prom_processor(t, nil)
