@@ -79,7 +79,7 @@ func Test_A_Unique_Metrics_Count(t *testing.T) {
 		unique_metric_names[metric_name] = metric_name
 	}
 
-	fmt.Println(" Unique Metric names: ", unique_metric_names, "\n Count is : ", len(unique_metric_names))
+	fmt.Println(" Unique Metric names: ", unique_metric_names, "\t Count is : ", len(unique_metric_names))
 }
 
 /**
