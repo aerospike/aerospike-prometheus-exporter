@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/processors"
 	tests_utils "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/tests_utils"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/watchers"
 	"github.com/stretchr/testify/assert"
@@ -72,8 +73,8 @@ func all_runTestcase(t *testing.T, asMetrics []watchers.AerospikeStat) {
 // Data fetch helpers functions
 
 func initialize_prom() {
-	metric_processors := GetMetricProcessors()
-	processor := metric_processors[PROM]
+	metric_processors := processors.GetMetricProcessors()
+	processor := metric_processors[processors.PROM]
 
 	// run Prom as a separate process
 	go func() {
