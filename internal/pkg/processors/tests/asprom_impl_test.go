@@ -16,6 +16,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	UNIQUE_METRICS_COUNT = 489
+)
+
 var DEFAULT_PROM_URL = "http://localhost:9145/metrics"
 
 var metrics_from_prom = []string{}
@@ -29,16 +33,13 @@ func Test_Initialize_Prom_Exporter(t *testing.T) {
 	// initialize prom
 	initialize_prom_processor()
 
-	// generate and validate labels
+	// generate and validate labels, global call, only once else Prom will not serve metrics as there is no change
 	metrics_from_prom = make_http_call_to_prom_processor(t, nil)
 }
 
 func Test_RefreshDefault(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_RefreshDefault")
-
-	// // initialize config and gauge-lists
-	// initConfigsAndGauges()
 
 	udh := &tests_utils.UnittestDataHandler{}
 	pdv := udh.GetUnittestValidator("prometheus")
@@ -58,13 +59,6 @@ func Test_A_Unique_Metrics_Count(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Unique_Metrics_Count")
 
-	// // Sleep for 15 seconds
-	// fmt.Println("Test_Unique_Metrics_Count ... sleeping for 15 seconds to simulate the prom scrape behaviour")
-	// time.Sleep(10 * time.Second)
-
-	// initialize config and gauge-lists
-	// initConfigsAndGauges()
-
 	var unique_metric_names = make(map[string]string)
 
 	// find unique metric-names (excluding Label and values)
@@ -79,7 +73,7 @@ func Test_A_Unique_Metrics_Count(t *testing.T) {
 		unique_metric_names[metric_name] = metric_name
 	}
 
-	fmt.Println(" Unique Metric names: ", unique_metric_names, "\t Count is : ", len(unique_metric_names))
+	assert.Equal(t, len(unique_metric_names), UNIQUE_METRICS_COUNT, "No of Metrics dispatched to Prom CHANGED")
 }
 
 /**
