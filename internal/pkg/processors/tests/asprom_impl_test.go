@@ -61,6 +61,10 @@ func Test_A_Unique_Metrics_Count(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Unique_Metrics_Count")
 
+	// Sleep for 15 seconds
+	fmt.Println("Test_Unique_Metrics_Count ... sleeping for 15 seconds to simulate the prom scrape behaviour")
+	time.Sleep(10 * time.Second)
+
 	// initialize config and gauge-lists
 	initConfigsAndGauges()
 
