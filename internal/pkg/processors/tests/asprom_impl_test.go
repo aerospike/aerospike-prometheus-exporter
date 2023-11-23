@@ -47,8 +47,7 @@ func Test_RefreshDefault(t *testing.T) {
 	// assert values from httpclient with expectedOutputs
 	for idx_metrics := range metrics_from_prom {
 		entry := metrics_from_prom[idx_metrics]
-		// assert.Contains(t, expectedOutputs, entry)
-		fmt.Println(entry)
+		assert.Contains(t, expectedOutputs, entry)
 	}
 
 	// for idx_exp_outputs := range expectedOutputs {
@@ -97,12 +96,15 @@ func make_http_call_to_prom_processor(t *testing.T, asMetrics []watchers.Aerospi
 	metrics_from_prom := []string{}
 
 	scanner := bufio.NewScanner(resp.Body)
+	fmt.Println("*** START ")
 	for scanner.Scan() {
 		text := scanner.Text()
+		fmt.Println(text)
 		if len(text) > 0 && strings.HasPrefix(text, "aerospike_") {
 			metrics_from_prom = append(metrics_from_prom, strings.TrimSpace(text))
 		}
 	}
+	fmt.Println("*** END ")
 
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Error while reading Http Response: ", err)
