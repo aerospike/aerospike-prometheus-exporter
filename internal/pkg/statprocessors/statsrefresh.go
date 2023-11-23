@@ -6,33 +6,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	// Node service endpoint, cluster name and build version
-	Service, ClusterName, Build string
-)
-
-type StatProcessor interface {
-	PassOneKeys() []string
-	PassTwoKeys(rawMetrics map[string]string) []string
-	// refresh( o *Observer, infoKeys []string, rawMetrics map[string]string, ch chan<- prometheus.Metric) error
-	Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error)
-}
-
-// stat-processors are created only once per process
-var statprocessors = []StatProcessor{
-	&NamespaceStatsProcessor{},
-	&NodeStatsProcessor{},
-	&SetsStatsProcessor{},
-	&SindexStatsProcessor{},
-	&XdrStatsProcessor{},
-	&LatencyStatsProcessor{},
-	&UserStatsProcessor{},
-}
-
-func GetStatsProcessor() []StatProcessor {
-	return statprocessors
-}
-
 // public and utility functions
 
 func Refresh() ([]AerospikeStat, error) {
@@ -44,7 +17,7 @@ func Refresh() ([]AerospikeStat, error) {
 	var all_metrics_to_send = []AerospikeStat{}
 
 	// list of all the StatsProcessor
-	all_statsprocessor_list := GetStatsProcessor()
+	all_statsprocessor_list := GetStatsProcessors()
 
 	// fetch first set of info keys
 	var infoKeys []string
