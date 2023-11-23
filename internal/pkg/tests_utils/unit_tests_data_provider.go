@@ -110,8 +110,6 @@ func (md *UnittestDataHandler) loadWatchersData() {
 	filePath := TEST_WATCHER_DATA_FILE
 	cwd, _ := os.Getwd()
 	fileLocation := cwd + "/" + filePath
-	// fmt.Println(" current working directory:", cwd)
-	// fmt.Println(" using filepath : ", fileLocation)
 	readFile, err := os.Open(fileLocation)
 
 	if err != nil {

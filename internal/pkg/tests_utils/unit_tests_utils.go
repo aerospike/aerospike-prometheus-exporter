@@ -1,6 +1,7 @@
 package tests_utils
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
@@ -20,9 +21,15 @@ const (
 func GetConfigfileLocation(filename string) string {
 	l_filename, _ := os.Getwd()
 
-	l_filename = l_filename + "/../../../../" + filename
+	// l_filename = l_filename + "/../../../../" + filename
+	filePath := l_filename + "/" + filename
 
-	return l_filename
+	if _, err := os.Stat(filePath); err != nil {
+		filePath = "/../../../../" + filePath
+		fmt.Println(filePath, " - Given path not found: ", filename, " \n\tHence using ", filePath)
+	}
+
+	return filePath
 }
 
 func InitConfigurations(config_filename string) {
