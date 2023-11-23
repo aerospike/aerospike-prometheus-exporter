@@ -96,6 +96,7 @@ func (md *MockAerospikeServer) Initialize() {
 
 	l_cwd, _ := os.Getwd()
 
+	fmt.Println("\n***\nChecking mock-data-file exist? ", filePath, "\n\n*****")
 	if _, err := os.Stat(filePath); err != nil {
 		fmt.Println(filePath, " - Running in Unit-test mode ")
 		filePath = l_cwd + "/../../../../" + filePath
