@@ -47,5 +47,5 @@ func GetDefaultGaugeListFilename() string {
 }
 
 func GetWatchersConfigFile(filename string) string {
-	return commons.GetExporterBaseFolder() + "/internal/pkg/watchers/tests/test_data/" + filename
+	return commons.GetExporterBaseFolder() + "/internal/pkg/watchers/tests/" + filename
 }
