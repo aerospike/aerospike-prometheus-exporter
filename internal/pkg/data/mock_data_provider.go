@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	aero "github.com/aerospike/aerospike-client-go/v6"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 )
 
 /*
@@ -92,15 +93,19 @@ const (
 )
 
 func (md *MockAerospikeServer) Initialize() {
-	filePath := MOCK_DATA_FILE
+	// filePath := MOCK_DATA_FILE
 
-	l_cwd, _ := os.Getwd()
+	// l_cwd, _ := os.Getwd()
 
-	fmt.Println("\n***\nChecking mock-data-file exist? ", filePath, "\n\n*****")
-	if _, err := os.Stat(filePath); err != nil {
-		fmt.Println(filePath, " - Running in Unit-test mode ")
-		filePath = l_cwd + "/../../../../" + filePath
-	}
+	// fmt.Println("\n***\nChecking mock-data-file exist? ", filePath, "\n\n*****")
+	// if _, err := os.Stat(filePath); err != nil {
+	// 	fmt.Println(filePath, " - Running in Unit-test mode ")
+	// 	// filePath = l_cwd + "/../../../../" + filePath
+	// }
+
+	base_folder := commons.GetExporterBaseFolder()
+	filePath := base_folder + "/internal/pkg/data/" + MOCK_DATA_FILE
+	fmt.Println("\n*** MockDataProvider ... filePath: ", filePath, "\n********")
 
 	md.internalInitialize(filePath)
 }

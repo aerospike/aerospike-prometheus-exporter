@@ -281,3 +281,11 @@ func readFromFile(filePath string) ([]byte, error) {
 
 	return data, nil
 }
+
+func GetExporterBaseFolder() string {
+	l_cwd, _ := os.Getwd()
+	EXPORTER_NAME := "aerospike-prometheus-exporter"
+	base_dir_idx := strings.Index(l_cwd, EXPORTER_NAME)
+
+	return l_cwd[0:(base_dir_idx + len(EXPORTER_NAME))]
+}
