@@ -25,7 +25,7 @@ func GetConfigfileLocation(filename string) string {
 	filePath := l_filename + "/" + filename
 
 	if _, err := os.Stat(filePath); err != nil {
-		filePath = l_filename + "/../../../../" + filePath
+		filePath = l_filename + "/../../../../" + filename
 		fmt.Println("==> Given filename not found: ", filename, " \n\tHence using ", filePath)
 	}
 
