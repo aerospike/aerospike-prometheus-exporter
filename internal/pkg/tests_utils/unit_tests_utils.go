@@ -38,7 +38,7 @@ func GetConfigfileLocation(filename string) string {
 
 func InitConfigurations(config_filename string) {
 	config.InitConfig(GetConfigfileLocation(config_filename))
-	config.InitGaugeStats(GetConfigfileLocation(TESTS_DEFAULT_GAUGE_LIST_FILE))
+	config.InitGaugeStats(GetDefaultGaugeListFilename())
 
 }
 
