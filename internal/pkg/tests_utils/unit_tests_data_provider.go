@@ -101,12 +101,6 @@ func (md *UnittestDataHandler) loadPrometheusData() {
 	// Initialize prom_validator data
 	prom_validator.Initialize(fileLines)
 
-	// for _, line := range fileLines {
-	// 	// fmt.Println("Prometheus_Label_and_Values: ", line)
-	// 	if len(line) > 0 && strings.HasPrefix(line, "aerospike_") {
-	// 		prom_validator.Metrics = append(prom_validator.Metrics, strings.TrimSpace(line))
-	// 	}
-	// }
 	fmt.Println("loadPrometheusData(): Completed loading test Prometheus Expected Data ")
 
 }
