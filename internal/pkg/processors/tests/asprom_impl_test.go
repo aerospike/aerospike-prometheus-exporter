@@ -71,9 +71,12 @@ func Test_A_Unique_Metrics_Count(t *testing.T) {
 	for idx_metric := range metrics_from_prom {
 		metric := metrics_from_prom[idx_metric]
 		fmt.Println("* metric: ", metric, "\t", strings.Index(metric, "{"))
-		// metric_name := metric[0:strings.Index(metric, "{")]
+		metric_name := metric
+		if strings.Index(metric, "{") > 0 {
+			metric_name = metric[0:strings.Index(metric, "{")]
+		}
 
-		// unique_metric_names[metric_name] = metric_name
+		unique_metric_names[metric_name] = metric_name
 	}
 
 	fmt.Println(" Unique Metric names: ", unique_metric_names, "\n Count is : ", len(unique_metric_names))
