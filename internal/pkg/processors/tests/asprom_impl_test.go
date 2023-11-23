@@ -96,15 +96,15 @@ func make_http_call_to_prom_processor(t *testing.T, asMetrics []watchers.Aerospi
 	metrics_from_prom := []string{}
 
 	scanner := bufio.NewScanner(resp.Body)
-	fmt.Println("*** START ")
+	// fmt.Println("*** START ")
 	for scanner.Scan() {
 		text := scanner.Text()
-		fmt.Println(text)
+		// fmt.Println(text)
 		if len(text) > 0 && strings.HasPrefix(text, "aerospike_") {
 			metrics_from_prom = append(metrics_from_prom, strings.TrimSpace(text))
 		}
 	}
-	fmt.Println("*** END ")
+	// fmt.Println("*** END ")
 
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Error while reading Http Response: ", err)

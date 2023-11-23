@@ -2575,6 +2575,69 @@ aerospike_sindex_stat_gc_recs{cluster_name="70_aus_perth_1",ns="test",service="1
 aerospike_sindex_used_bytes{cluster_name="70_aus_perth_1",ns="bar",service="172.17.0.6:3000",sindex="7x_sindex_bar_2"} 1.6777216e+07
 aerospike_sindex_used_bytes{cluster_name="70_aus_perth_1",ns="test",service="172.17.0.6:3000",sindex="7x_sindex_1"} 1.6777216e+07
 aerospike_sindex_used_bytes{cluster_name="70_aus_perth_1",ns="test",service="172.17.0.6:3000",sindex="test_sindex1"} 1.6777216e+07
+# HELP aerospike_users_conns_in_use conns in use
+# TYPE aerospike_users_conns_in_use gauge
+aerospike_users_conns_in_use{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="admin"} 1
+aerospike_users_conns_in_use{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="phani"} 0
+aerospike_users_conns_in_use{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="test"} 0
+aerospike_users_conns_in_use{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u1phani"} 0
+aerospike_users_conns_in_use{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u2phani"} 0
+# HELP aerospike_users_limitless_read_scan_query limitless read scan query
+# TYPE aerospike_users_limitless_read_scan_query gauge
+aerospike_users_limitless_read_scan_query{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="admin"} 4
+aerospike_users_limitless_read_scan_query{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="phani"} 9
+aerospike_users_limitless_read_scan_query{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="test"} 0
+aerospike_users_limitless_read_scan_query{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u1phani"} 0
+aerospike_users_limitless_read_scan_query{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u2phani"} 0
+# HELP aerospike_users_limitless_write_scan_query limitless write scan query
+# TYPE aerospike_users_limitless_write_scan_query gauge
+aerospike_users_limitless_write_scan_query{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="admin"} 14
+aerospike_users_limitless_write_scan_query{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="phani"} 19
+aerospike_users_limitless_write_scan_query{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="test"} 0
+aerospike_users_limitless_write_scan_query{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u1phani"} 0
+aerospike_users_limitless_write_scan_query{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u2phani"} 0
+# HELP aerospike_users_read_quota read quota
+# TYPE aerospike_users_read_quota gauge
+aerospike_users_read_quota{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="admin"} 1
+aerospike_users_read_quota{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="phani"} 6
+aerospike_users_read_quota{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="test"} 0
+aerospike_users_read_quota{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u1phani"} 0
+aerospike_users_read_quota{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u2phani"} 0
+# HELP aerospike_users_read_scan_query_rps read scan query rps
+# TYPE aerospike_users_read_scan_query_rps gauge
+aerospike_users_read_scan_query_rps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="admin"} 3
+aerospike_users_read_scan_query_rps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="phani"} 8
+aerospike_users_read_scan_query_rps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="test"} 0
+aerospike_users_read_scan_query_rps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u1phani"} 0
+aerospike_users_read_scan_query_rps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u2phani"} 0
+# HELP aerospike_users_read_single_record_tps read single record tps
+# TYPE aerospike_users_read_single_record_tps gauge
+aerospike_users_read_single_record_tps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="admin"} 2
+aerospike_users_read_single_record_tps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="phani"} 7
+aerospike_users_read_single_record_tps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="test"} 0
+aerospike_users_read_single_record_tps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u1phani"} 0
+aerospike_users_read_single_record_tps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u2phani"} 0
+# HELP aerospike_users_write_quota write quota
+# TYPE aerospike_users_write_quota gauge
+aerospike_users_write_quota{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="admin"} 11
+aerospike_users_write_quota{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="phani"} 16
+aerospike_users_write_quota{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="test"} 0
+aerospike_users_write_quota{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u1phani"} 0
+aerospike_users_write_quota{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u2phani"} 0
+# HELP aerospike_users_write_scan_query_rps write scan query rps
+# TYPE aerospike_users_write_scan_query_rps gauge
+aerospike_users_write_scan_query_rps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="admin"} 13
+aerospike_users_write_scan_query_rps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="phani"} 18
+aerospike_users_write_scan_query_rps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="test"} 0
+aerospike_users_write_scan_query_rps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u1phani"} 0
+aerospike_users_write_scan_query_rps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u2phani"} 0
+# HELP aerospike_users_write_single_record_tps write single record tps
+# TYPE aerospike_users_write_single_record_tps gauge
+aerospike_users_write_single_record_tps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="admin"} 12
+aerospike_users_write_single_record_tps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="phani"} 17
+aerospike_users_write_single_record_tps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="test"} 0
+aerospike_users_write_single_record_tps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u1phani"} 0
+aerospike_users_write_single_record_tps{cluster_name="70_aus_perth_1",service="172.17.0.6:3000",user="u2phani"} 0
 # HELP aerospike_xdr_abandoned abandoned
 # TYPE aerospike_xdr_abandoned counter
 aerospike_xdr_abandoned{cluster_name="70_aus_perth_1",dc="172.17.0.8:8901",service="172.17.0.6:3000"} 0
