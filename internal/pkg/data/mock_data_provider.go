@@ -96,7 +96,7 @@ func (md *MockAerospikeServer) Initialize() {
 
 	if _, err := os.Stat(filePath); err != nil {
 		fmt.Println(filePath, " - Running in Unit-test mode ")
-		filePath = "../../../" + filePath
+		filePath = "../../../../" + filePath
 	}
 
 	md.internalInitialize(filePath)
