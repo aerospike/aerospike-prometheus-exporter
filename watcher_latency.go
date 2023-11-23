@@ -75,7 +75,7 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 	var latencyStats map[string]StatsMap
 
 	if rawMetrics["latencies:"] != "" {
-		latencyStats = parseLatencyInfo(rawMetrics["latencies:"], int(config.Aerospike.LatencyBucketsCount))
+		latencyStats = parseLatencyInfo(rawMetrics[singleLatencyKey], int(config.Aerospike.LatencyBucketsCount))
 	} else {
 		latencyStats = parseLatencyInfoLegacy(rawMetrics["latency:"], int(config.Aerospike.LatencyBucketsCount))
 	}
