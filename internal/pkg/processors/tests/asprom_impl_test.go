@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -20,8 +21,6 @@ var DEFAULT_PROM_URL = "http://localhost:9145/metrics"
 func Test_Initialize_Prom_Exporter(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Initialize_Prom_Exporter")
-	// initialize config and gauge-lists
-	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
 
 	// initialize prom
 	initialize_prom_processor()
@@ -32,7 +31,7 @@ func Test_RefreshDefault(t *testing.T) {
 	fmt.Println("initializing config ... Test_RefreshDefault")
 
 	// initialize config and gauge-lists
-	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+	initConfigsAndGauges()
 
 	// // initialize prom
 	// initialize_prom_processor()
@@ -59,7 +58,7 @@ func Test_Unique_Metrics_Count(t *testing.T) {
 	fmt.Println("initializing config ... Test_Unique_Metrics_Count")
 
 	// initialize config and gauge-lists
-	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+	initConfigsAndGauges()
 
 	// // initialize prom
 	// initialize_prom_processor()
@@ -127,4 +126,17 @@ func initialize_prom_processor() {
 	}()
 
 	fmt.Println("*******************\nPrometheus initialized and running on localhost:9145")
+}
+
+// config initialization
+var TESTS_DEFAULT_GAUGE_LIST_FILE = "configs/gauge_stats_list.toml"
+
+func initConfigsAndGauges() {
+	// Initialize and validate Gauge config
+	// initialize config and gauge-lists
+	config.InitConfig(tests_utils.GetConfigfileLocation(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+
+	l_cwd, _ := os.Getwd()
+	config.InitGaugeStats(l_cwd + "/../../../../" + TESTS_DEFAULT_GAUGE_LIST_FILE)
+
 }
