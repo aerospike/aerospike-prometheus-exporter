@@ -6,7 +6,7 @@ import (
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	tests_utils "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/tests_utils"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +18,7 @@ func Test_Sets_PassOneKeys(t *testing.T) {
 	setsWatcher := &statprocessors.SetsStatsProcessor{}
 	nwPassOneKeys := setsWatcher.PassOneKeys()
 
-	udh := &tests_utils.UnittestDataHandler{}
+	udh := &testutils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sets")
 	passOneOutputs := ndv.GetPassOneKeys()
 
@@ -31,7 +31,7 @@ func Test_Sets_PassTwoKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sets_PassTwoKeys")
 
 	// initialize config and gauge-lists
-	tests_utils.InitConfigurations(tests_utils.GetWatchersConfigFile(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+	testutils.InitConfigurations(testutils.GetWatchersConfigFile(testutils.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
 	setsWatcher := &statprocessors.SetsStatsProcessor{}
@@ -40,7 +40,7 @@ func Test_Sets_PassTwoKeys(t *testing.T) {
 	fmt.Println("Test_Sets_PassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := setsWatcher.PassTwoKeys(passOneOutput)
 
-	udh := &tests_utils.UnittestDataHandler{}
+	udh := &testutils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sets")
 	expectedPassTwoOutputs := ndv.GetPassTwoKeys()
 
@@ -59,7 +59,7 @@ func Test_Sets_RefreshDefault(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sets_RefreshDefault")
 
 	// initialize config and gauge-lists
-	tests_utils.InitConfigurations(tests_utils.GetWatchersConfigFile(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+	testutils.InitConfigurations(testutils.GetWatchersConfigFile(testutils.TESTS_DEFAULT_CONFIG_FILE))
 
 	sets_runTestcase(t)
 }
@@ -97,7 +97,7 @@ func sets_runTestcase(t *testing.T) {
 	// 	fmt.Println(str)
 	// }
 
-	udh := &tests_utils.UnittestDataHandler{}
+	udh := &testutils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sets")
 	expected_results := ndv.GetMetricLabelsWithValues()
 

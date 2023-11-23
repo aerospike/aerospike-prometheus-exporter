@@ -6,7 +6,7 @@ import (
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	tests_utils "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/tests_utils"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +18,7 @@ func Test_Xdr_PassOneKeys(t *testing.T) {
 	xdrWatcher := &statprocessors.XdrStatsProcessor{}
 	xdrPassOneKeys := xdrWatcher.PassOneKeys()
 
-	udh := &tests_utils.UnittestDataHandler{}
+	udh := &testutils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("xdr")
 	passOneOutputs := ndv.GetPassOneKeys()
 
@@ -35,7 +35,7 @@ func Test_Xdr_PassTwoKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Xdr_PassTwoKeys")
 
 	// initialize config and gauge-lists
-	tests_utils.InitConfigurations(tests_utils.GetWatchersConfigFile(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+	testutils.InitConfigurations(testutils.GetWatchersConfigFile(testutils.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
 	xdrWatcher := &statprocessors.XdrStatsProcessor{}
@@ -49,7 +49,7 @@ func Test_Xdr_PassTwoKeys(t *testing.T) {
 
 	passTwoOutputs := xdrWatcher.PassTwoKeys(passOneOutput)
 
-	udh := &tests_utils.UnittestDataHandler{}
+	udh := &testutils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("xdr")
 	expectedPassTwoOutputs := ndv.GetPassTwoKeys()
 
@@ -71,7 +71,7 @@ func Test_Xdr_RefreshDefault(t *testing.T) {
 	fmt.Println("initializing config ... Test_Xdr_RefreshDefault")
 
 	// initialize config and gauge-lists
-	tests_utils.InitConfigurations(tests_utils.GetWatchersConfigFile(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+	testutils.InitConfigurations(testutils.GetWatchersConfigFile(testutils.TESTS_DEFAULT_CONFIG_FILE))
 
 	xdr_runTestcase(t)
 }
@@ -110,7 +110,7 @@ func xdr_runTestcase(t *testing.T) {
 	// 	fmt.Println(str)
 	// }
 
-	udh := &tests_utils.UnittestDataHandler{}
+	udh := &testutils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("xdr")
 	expected_results := ndv.GetMetricLabelsWithValues()
 

@@ -6,7 +6,7 @@ import (
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	tests_utils "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/tests_utils"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +18,7 @@ func Test_Sindex_PassOneKeys(t *testing.T) {
 	sindexWatcher := &statprocessors.SindexStatsProcessor{}
 	nwPassOneKeys := sindexWatcher.PassOneKeys()
 
-	udh := &tests_utils.UnittestDataHandler{}
+	udh := &testutils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sindex")
 	passOneOutputs := ndv.GetPassOneKeys()
 
@@ -34,7 +34,7 @@ func Test_Sindex_PassTwoKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sindex_PassTwoKeys")
 
 	// initialize config and gauge-lists
-	tests_utils.InitConfigurations(tests_utils.GetWatchersConfigFile(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+	testutils.InitConfigurations(testutils.GetWatchersConfigFile(testutils.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
 	sindexWatcher := &statprocessors.SindexStatsProcessor{}
@@ -43,7 +43,7 @@ func Test_Sindex_PassTwoKeys(t *testing.T) {
 	fmt.Println("Test_Sindex_PassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := sindexWatcher.PassTwoKeys(passOneOutput)
 
-	udh := &tests_utils.UnittestDataHandler{}
+	udh := &testutils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sindex")
 	expectedPassTwoOutputs := ndv.GetPassTwoKeys()
 
@@ -62,7 +62,7 @@ func Test_Sindex_RefreshDefault(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sindex_RefreshDefault")
 
 	// initialize config and gauge-lists
-	tests_utils.InitConfigurations(tests_utils.GetWatchersConfigFile(tests_utils.TESTS_DEFAULT_CONFIG_FILE))
+	testutils.InitConfigurations(testutils.GetWatchersConfigFile(testutils.TESTS_DEFAULT_CONFIG_FILE))
 
 	sindex_runTestcase(t)
 }
@@ -102,7 +102,7 @@ func sindex_runTestcase(t *testing.T) {
 	// 	fmt.Println(str)
 	// }
 
-	udh := &tests_utils.UnittestDataHandler{}
+	udh := &testutils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sindex")
 	expected_results := ndv.GetMetricLabelsWithValues()
 
