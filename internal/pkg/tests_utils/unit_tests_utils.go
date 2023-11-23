@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 )
 
@@ -35,4 +36,12 @@ func InitConfigurations(config_filename string) {
 	config.InitConfig(GetConfigfileLocation(config_filename))
 	config.InitGaugeStats(GetConfigfileLocation(TESTS_DEFAULT_GAUGE_LIST_FILE))
 
+}
+
+func GetDefaultGaugeListFilename() string {
+	return commons.GetExporterBaseFolder() + "/" + TESTS_DEFAULT_GAUGE_LIST_FILE
+}
+
+func GetWatchersConfigFile(filename string) string {
+	return commons.GetExporterBaseFolder() + "/internal/pkg/watchers/tests/test_data/" + filename
 }
