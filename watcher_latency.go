@@ -60,6 +60,18 @@ func (lw *LatencyWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 		}
 	}
 
+	// loop all the latency infokeys
+	for ik := range infoKeys {
+		parseSingleLatenciesKey(infoKeys[ik], rawMetrics, allowedLatenciesList, blockedLatenciessList, ch)
+	}
+
+	return nil
+}
+
+func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]string,
+	allowedLatenciesList map[string]struct{},
+	blockedLatenciessList map[string]struct{}, ch chan<- prometheus.Metric) error {
+
 	var latencyStats map[string]StatsMap
 
 	if rawMetrics["latencies:"] != "" {
