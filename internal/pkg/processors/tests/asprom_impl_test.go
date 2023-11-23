@@ -45,9 +45,14 @@ func Test_RefreshDefault(t *testing.T) {
 	assert.Equal(t, len(expectedOutputs), len(metrics_from_prom))
 
 	// assert values from httpclient with expectedOutputs
-	for idx_metrics := range metrics_from_prom {
-		entry := metrics_from_prom[idx_metrics]
-		// assert.Contains(t, expectedOutputs, entry)
+	// for idx_metrics := range metrics_from_prom {
+	// 	entry := metrics_from_prom[idx_metrics]
+	// 	// assert.Contains(t, expectedOutputs, entry)
+	// 	fmt.Println(entry)
+	// }
+
+	for idx_exp_outputs := range expectedOutputs {
+		entry := expectedOutputs[idx_exp_outputs]
 		fmt.Println(entry)
 	}
 
