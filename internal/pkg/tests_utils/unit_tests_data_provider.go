@@ -98,12 +98,15 @@ func (md *UnittestDataHandler) loadPrometheusData() {
 
 	readFile.Close()
 
-	for _, line := range fileLines {
-		// fmt.Println("Prometheus_Label_and_Values: ", line)
-		if len(line) > 0 && strings.HasPrefix(line, "aerospike_") {
-			prom_validator.Metrics = append(prom_validator.Metrics, strings.TrimSpace(line))
-		}
-	}
+	// Initialize prom_validator data
+	prom_validator.Initialize(fileLines)
+
+	// for _, line := range fileLines {
+	// 	// fmt.Println("Prometheus_Label_and_Values: ", line)
+	// 	if len(line) > 0 && strings.HasPrefix(line, "aerospike_") {
+	// 		prom_validator.Metrics = append(prom_validator.Metrics, strings.TrimSpace(line))
+	// 	}
+	// }
 	fmt.Println("loadPrometheusData(): Completed loading test Prometheus Expected Data ")
 
 }
@@ -136,56 +139,6 @@ func (md *UnittestDataHandler) loadWatchersData() {
 		validator.Initialize(fileLines)
 	}
 
-	// for _, line := range fileLines {
-	// 	if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {
-	// 		// ignore, comments
-	// 	} else if len(line) > 0 {
-	// 		if strings.HasPrefix(line, "namespace-passonekeys:") {
-	// 			namespace_validator.PassOneOutputs = append(namespace_validator.PassOneOutputs, line)
-	// 		} else if strings.HasPrefix(line, "namespace-passtwokeys:") {
-	// 			namespace_validator.PassTwoOutputs = append(namespace_validator.PassTwoOutputs, line)
-	// 		} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"namespace\",") {
-	// 			namespace_validator.Metrics = append(namespace_validator.Metrics, line)
-	// 		} else if strings.HasPrefix(line, "node-passonekeys:") {
-	// 			node_stats_validator.PassOneOutputs = append(node_stats_validator.PassOneOutputs, line)
-	// 		} else if strings.HasPrefix(line, "node-passtwokeys:") {
-	// 			node_stats_validator.PassTwoOutputs = append(node_stats_validator.PassTwoOutputs, line)
-	// 		} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"node_stats\",") {
-	// 			node_stats_validator.Metrics = append(node_stats_validator.Metrics, line)
-	// 		} else if strings.HasPrefix(line, "xdr-passonekeys:") {
-	// 			xdr_validator.PassOneOutputs = append(xdr_validator.PassOneOutputs, line)
-	// 		} else if strings.HasPrefix(line, "xdr-passtwokeys:") {
-	// 			xdr_validator.PassTwoOutputs = append(xdr_validator.PassTwoOutputs, line)
-	// 		} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"xdr\",") {
-	// 			xdr_validator.Metrics = append(xdr_validator.Metrics, line)
-	// 		} else if strings.HasPrefix(line, "sets-passonekeys:") {
-	// 			sets_validator.PassOneOutputs = append(sets_validator.PassOneOutputs, line)
-	// 		} else if strings.HasPrefix(line, "sets-passtwokeys:") {
-	// 			sets_validator.PassTwoOutputs = append(sets_validator.PassTwoOutputs, line)
-	// 		} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sets\",") {
-	// 			sets_validator.Metrics = append(sets_validator.Metrics, line)
-	// 		} else if strings.HasPrefix(line, "sindex-passonekeys:") {
-	// 			sindex_validator.PassOneOutputs = append(sindex_validator.PassOneOutputs, line)
-	// 		} else if strings.HasPrefix(line, "sindex-passtwokeys:") {
-	// 			sindex_validator.PassTwoOutputs = append(sindex_validator.PassTwoOutputs, line)
-	// 		} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"sindex\",") {
-	// 			sindex_validator.Metrics = append(sindex_validator.Metrics, line)
-	// 		} else if strings.HasPrefix(line, "latency-passonekeys:") {
-	// 			latency_validator.PassOneOutputs = append(latency_validator.PassOneOutputs, line)
-	// 		} else if strings.HasPrefix(line, "latency-passtwokeys:") {
-	// 			latency_validator.PassTwoOutputs = append(latency_validator.PassTwoOutputs, line)
-	// 		} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"latencies\",") {
-	// 			latency_validator.Metrics = append(latency_validator.Metrics, line)
-	// 		} else if strings.HasPrefix(line, "users-passonekeys:") {
-	// 			users_validator.PassOneOutputs = append(users_validator.PassOneOutputs, line)
-	// 		} else if strings.HasPrefix(line, "users-passtwokeys:") {
-	// 			users_validator.PassTwoOutputs = append(users_validator.PassTwoOutputs, line)
-	// 		} else if strings.HasPrefix(line, "watchers.AerospikeStat{Context:\"users\",") {
-	// 			users_validator.Metrics = append(users_validator.Metrics, line)
-	// 		}
-	// 	}
-	// }
-	// fmt.Println("\n\n****\nmd.Node_PassTwo: ", md.Node_PassTwo, "\n\n***")
 	fmt.Println("loadWatchersData(): Completed loading test WATCHER Expected Data ")
 }
 
@@ -664,6 +617,13 @@ type PrometheusUnittestValidator struct {
 }
 
 func (unp PrometheusUnittestValidator) Initialize(data []string) {
+	for _, line := range data {
+		// fmt.Println("Prometheus_Label_and_Values: ", line)
+		if len(line) > 0 && strings.HasPrefix(line, "aerospike_") {
+			prom_validator.Metrics = append(prom_validator.Metrics, strings.TrimSpace(line))
+		}
+	}
+
 }
 
 func (unp PrometheusUnittestValidator) GetPassOneKeys() map[string]string {
