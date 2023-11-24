@@ -5,7 +5,9 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+// //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+//
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . DataProvider
 type DataProvider interface {
 	RequestInfo(infokeys []string) (map[string]string, error)
 	FetchUsersDetails() (bool, []*aero.UserRoles, error)
@@ -21,6 +23,8 @@ func GetProvider() DataProvider {
 		// fmt.Println(" Mock is enabled, going to use mock ")
 		// initialize, internally it will check if already initialized
 		dp_mock_server.Initialize()
+
+		// a := &FakeDataProvider{}
 
 		return dp_mock_server
 	}
