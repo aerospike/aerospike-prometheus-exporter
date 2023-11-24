@@ -33,8 +33,8 @@ func main() {
 	config.InitConfig(*configFile)
 	config.InitGaugeStats(*gaugeStatsFile)
 
-	metric_processors := metrichandlers.GetMetricHandlers()
-	processor := metric_processors[*serving_mode]
+	metric_handlers := metrichandlers.GetMetricHandlers()
+	processor := metric_handlers[*serving_mode]
 
 	if processor != nil {
 		log.Infof("Metrics serving mode is %s", *serving_mode)
