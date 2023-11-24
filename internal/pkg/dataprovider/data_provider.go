@@ -5,6 +5,7 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 type DataProvider interface {
 	RequestInfo(infokeys []string) (map[string]string, error)
 	FetchUsersDetails() (bool, []*aero.UserRoles, error)
