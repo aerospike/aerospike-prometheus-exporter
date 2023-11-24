@@ -5,6 +5,8 @@ var (
 	Service, ClusterName, Build string
 )
 
+var LatencyBenchmarks map[string]float64
+
 type StatProcessor interface {
 	PassOneKeys() []string
 	PassTwoKeys(rawMetrics map[string]string) []string

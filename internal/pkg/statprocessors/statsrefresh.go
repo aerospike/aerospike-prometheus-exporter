@@ -10,6 +10,9 @@ import (
 
 func Refresh() ([]AerospikeStat, error) {
 
+	// Reset global variables
+	LatencyBenchmarks = make(map[string]float64)
+
 	fullHost := commons.GetFullHost()
 	log.Debugf("Refreshing node %s", fullHost)
 

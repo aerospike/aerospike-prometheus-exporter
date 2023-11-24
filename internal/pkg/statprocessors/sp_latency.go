@@ -12,8 +12,6 @@ import (
 type LatencyStatsProcessor struct {
 }
 
-var LatencyBenchmarks = make(map[string]float64)
-
 func (lw *LatencyStatsProcessor) PassOneKeys() []string {
 	// return []string{"build"}
 	log.Tracef("latency-passonekeys:nil")
