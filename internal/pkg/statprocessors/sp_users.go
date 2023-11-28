@@ -68,18 +68,18 @@ func (uw *UserStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 
 	}
 
-	var metrics_to_send = []AerospikeStat{}
+	var allMetricsToSend = []AerospikeStat{}
 	// Push metrics to Prometheus or Observability tool
-	l_user_metrics_to_send, err := uw.refreshUserStats(infoKeys, rawMetrics, users)
+	lUserMetricsToSend, err := uw.refreshUserStats(infoKeys, rawMetrics, users)
 	if err != nil {
 		log.Warn("Error while preparing and pushing metrics: ", err)
 		return nil, nil
 
 	}
 
-	metrics_to_send = append(metrics_to_send, l_user_metrics_to_send...)
+	allMetricsToSend = append(allMetricsToSend, lUserMetricsToSend...)
 
-	return metrics_to_send, err
+	return allMetricsToSend, err
 }
 
 func (uw *UserStatsProcessor) refreshUserStats(infoKeys []string, rawMetrics map[string]string, users []*aero.UserRoles) ([]AerospikeStat, error) {
@@ -100,7 +100,7 @@ func (uw *UserStatsProcessor) refreshUserStats(infoKeys []string, rawMetrics map
 		}
 	}
 
-	var metrics_to_send = []AerospikeStat{}
+	var allMetricsToSend = []AerospikeStat{}
 
 	for _, user := range users {
 		// check if user is allowed
@@ -128,27 +128,27 @@ func (uw *UserStatsProcessor) refreshUserStats(infoKeys []string, rawMetrics map
 
 		asMetric, labels, labelValues := internalCreateLocalAerospikeStat(rawMetrics, "conns_in_use", user.User)
 		asMetric.updateValues(float64(user.ConnsInUse), labels, labelValues)
-		metrics_to_send = append(metrics_to_send, asMetric)
+		allMetricsToSend = append(allMetricsToSend, asMetric)
 
 		if len(user.ReadInfo) >= 4 && len(user.WriteInfo) >= 4 {
 
-			for Idx_Readinfo := 0; Idx_Readinfo < len(user.ReadInfo); Idx_Readinfo++ {
-				ri_asMetric, ri_labels, ri_labelValues := internalCreateLocalAerospikeStat(rawMetrics, readInfoStats[Idx_Readinfo], user.User)
-				ri_asMetric.updateValues(float64(user.ReadInfo[Idx_Readinfo]), ri_labels, ri_labelValues)
+			for idxReadinfo := 0; idxReadinfo < len(user.ReadInfo); idxReadinfo++ {
+				riAeroMetric, riLabels, riLabelValues := internalCreateLocalAerospikeStat(rawMetrics, readInfoStats[idxReadinfo], user.User)
+				riAeroMetric.updateValues(float64(user.ReadInfo[idxReadinfo]), riLabels, riLabelValues)
 
-				metrics_to_send = append(metrics_to_send, ri_asMetric)
+				allMetricsToSend = append(allMetricsToSend, riAeroMetric)
 
 			}
-			for Idx_Writeinfo := 0; Idx_Writeinfo < len(user.WriteInfo); Idx_Writeinfo++ {
-				wi_asMetric, wi_labels, wi_labelValues := internalCreateLocalAerospikeStat(rawMetrics, writeInfoStats[Idx_Writeinfo], user.User)
-				wi_asMetric.updateValues(float64(user.WriteInfo[Idx_Writeinfo]), wi_labels, wi_labelValues)
-				metrics_to_send = append(metrics_to_send, wi_asMetric)
+			for idxWriteinfo := 0; idxWriteinfo < len(user.WriteInfo); idxWriteinfo++ {
+				wiAeroMetric, wiLabels, wiLabelValues := internalCreateLocalAerospikeStat(rawMetrics, writeInfoStats[idxWriteinfo], user.User)
+				wiAeroMetric.updateValues(float64(user.WriteInfo[idxWriteinfo]), wiLabels, wiLabelValues)
+				allMetricsToSend = append(allMetricsToSend, wiAeroMetric)
 
 			}
 		}
 	}
 
-	return metrics_to_send, nil
+	return allMetricsToSend, nil
 }
 
 func internalCreateLocalAerospikeStat(rawMetrics map[string]string, pStatName string, username string) (AerospikeStat, []string, []string) {

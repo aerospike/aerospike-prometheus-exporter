@@ -60,7 +60,7 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 		siw.sindexMetrics = make(map[string]AerospikeStat)
 	}
 
-	var metrics_to_send = []AerospikeStat{}
+	var allMetricsToSend = []AerospikeStat{}
 
 	for _, sindex := range infoKeys {
 		if strings.HasPrefix(sindex, "sindex/") {
@@ -91,14 +91,13 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 				labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_SINDEX}
 				labelValues := []string{clusterName, service, nsName, sindexName}
 
-				// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
 				asMetric.updateValues(pv, labels, labelValues)
-				metrics_to_send = append(metrics_to_send, asMetric)
+				allMetricsToSend = append(allMetricsToSend, asMetric)
 
 			}
 		}
 
 	}
 
-	return metrics_to_send, nil
+	return allMetricsToSend, nil
 }

@@ -75,23 +75,23 @@ func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[str
 		nw.namespaceStats = make(map[string]AerospikeStat)
 	}
 
-	var metrics_to_send = []AerospikeStat{}
+	var allMetricsToSend = []AerospikeStat{}
 	for _, infoKey := range infoKeys {
 
 		// we get 2 info-key Types - examples: index-pressure or namespace/test, namespace/materials
 		if strings.HasPrefix(infoKey, KEY_NS_NAMESPACE) {
-			l_w_metrics := nw.refreshNamespaceStats(infoKey, infoKeys, rawMetrics)
-			metrics_to_send = append(metrics_to_send, l_w_metrics...)
+			tempNsMetricsToSend := nw.refreshNamespaceStats(infoKey, infoKeys, rawMetrics)
+			allMetricsToSend = append(allMetricsToSend, tempNsMetricsToSend...)
 
 		} else if strings.HasPrefix(infoKey, KEY_NS_INDEX_PRESSURE) {
 			// namespace/<ns> will be multiple times according to the # of namespaces configured in the server
-			l_w_metrics := nw.refreshIndexPressure(infoKey, infoKeys, rawMetrics)
-			metrics_to_send = append(metrics_to_send, l_w_metrics...)
+			tempNsMetricsToSend := nw.refreshIndexPressure(infoKey, infoKeys, rawMetrics)
+			allMetricsToSend = append(allMetricsToSend, tempNsMetricsToSend...)
 		}
 
 	}
 
-	return metrics_to_send, nil
+	return allMetricsToSend, nil
 }
 
 // handle IndexPressure infoKey
@@ -108,7 +108,7 @@ func (nw *NamespaceStatsProcessor) refreshIndexPressure(singleInfoKey string, in
 	// metric-names - first element is un-used, as we send namespace as a label, this also keeps the index-numbers same as the server-stats
 	indexPressureMetricNames := []string{"index_pressure_namespace", "index_pressure_total_memory", "index_pressure_dirty_memory"}
 
-	var metrics_to_send = []AerospikeStat{}
+	var allMetricsToSend = []AerospikeStat{}
 
 	// loop thru each namespace values,
 	//   Server index-pressure output: "test:0:0", "bar_device:0:0"
@@ -145,11 +145,11 @@ func (nw *NamespaceStatsProcessor) refreshIndexPressure(singleInfoKey string, in
 			// push to prom-channel
 			// commons.PushToPrometheus(asMetric, pv, labels, labelValues, ch)
 			asMetric.updateValues(pv, labels, labelValues)
-			metrics_to_send = append(metrics_to_send, asMetric)
+			allMetricsToSend = append(allMetricsToSend, asMetric)
 		}
 	}
 
-	return metrics_to_send
+	return allMetricsToSend
 }
 
 // all namespace stats (except index-pressure)
@@ -165,7 +165,7 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 	var labelValues []string
 	constructedStatname := ""
 
-	var metrics_to_send = []AerospikeStat{}
+	var nsMetricsToSend = []AerospikeStat{}
 
 	for stat, value := range stats {
 
@@ -225,7 +225,7 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 			// push to prom-channel
 			// commons.PushToPrometheus(asMetric, pv, labels, labelValues, ch)
 			asMetric.updateValues(pv, labels, labelValues)
-			metrics_to_send = append(metrics_to_send, asMetric)
+			nsMetricsToSend = append(nsMetricsToSend, asMetric)
 		}
 
 		// below code section is to ensure ns+latencies combination is handled during LatencyWatcher
@@ -238,7 +238,7 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 		LatencyBenchmarks[nsName+"-re-repl"] = 1
 	}
 
-	return metrics_to_send
+	return nsMetricsToSend
 }
 
 // Utility to handle array style stats like storage-engine or index-type etc.,

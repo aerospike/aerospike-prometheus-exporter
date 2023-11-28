@@ -17,14 +17,14 @@ func Refresh() ([]AerospikeStat, error) {
 	log.Debugf("Refreshing node %s", fullHost)
 
 	// array to accumulate all metrics, which later will be dispatched by various observers
-	var all_metrics_to_send = []AerospikeStat{}
+	var allMetricsToSend = []AerospikeStat{}
 
 	// list of all the StatsProcessor
-	all_statsprocessor_list := GetStatsProcessors()
+	allStatsprocessorList := GetStatsProcessors()
 
 	// fetch first set of info keys
 	var infoKeys []string
-	for _, c := range all_statsprocessor_list {
+	for _, c := range allStatsprocessorList {
 		if keys := c.PassOneKeys(); len(keys) > 0 {
 			infoKeys = append(infoKeys, keys...)
 		}
@@ -52,8 +52,8 @@ func Refresh() ([]AerospikeStat, error) {
 	}
 
 	infoKeys = []string{Infokey_ClusterName, Infokey_Service, Infokey_Build}
-	statprocessorInfoKeys := make([][]string, len(all_statsprocessor_list))
-	for i, c := range all_statsprocessor_list {
+	statprocessorInfoKeys := make([][]string, len(allStatsprocessorList))
+	for i, c := range allStatsprocessorList {
 		if keys := c.PassTwoKeys(passOneOutput); len(keys) > 0 {
 			infoKeys = append(infoKeys, keys...)
 			// fmt.Println("\nkeys: ", keys)
@@ -66,7 +66,7 @@ func Refresh() ([]AerospikeStat, error) {
 	// info request for second set of info keys, this retrieves all the stats from server
 	rawMetrics, err := dataprovider.GetProvider().RequestInfo(infoKeys)
 	if err != nil {
-		return all_metrics_to_send, err
+		return allMetricsToSend, err
 	}
 
 	// set global values
@@ -78,16 +78,16 @@ func Refresh() ([]AerospikeStat, error) {
 	}
 
 	// sanitize the utf8 strings before sending them to watchers
-	for i, c := range all_statsprocessor_list {
+	for i, c := range allStatsprocessorList {
 		// fmt.Println("\nSending... ", watcherInfoKeys[i], " keys to each Refresh ...")
-		l_refreshed_metrics, err := c.Refresh(statprocessorInfoKeys[i], rawMetrics)
+		tmpRefreshedMetrics, err := c.Refresh(statprocessorInfoKeys[i], rawMetrics)
 		if err != nil {
-			return all_metrics_to_send, err
+			return allMetricsToSend, err
 		}
-		all_metrics_to_send = append(all_metrics_to_send, l_refreshed_metrics...)
+		allMetricsToSend = append(allMetricsToSend, tmpRefreshedMetrics...)
 	}
 
 	log.Debugf("Refreshing node was successful")
 
-	return all_metrics_to_send, nil
+	return allMetricsToSend, nil
 }

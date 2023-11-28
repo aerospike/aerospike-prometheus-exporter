@@ -64,7 +64,7 @@ func (xw *XdrStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]st
 	clusterName := rawMetrics[Infokey_ClusterName]
 	service := rawMetrics[Infokey_Service]
 
-	var metrics_to_send = []AerospikeStat{}
+	var allMetricsToSend = []AerospikeStat{}
 
 	for _, key := range infoKeys {
 
@@ -72,12 +72,12 @@ func (xw *XdrStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]st
 		// fmt.Println("\n\nwatcher_xdr: xdrRawMetrics: ", xdrRawMetrics+"\n===========================")
 		// find and construct metric name
 		dcName, ns, metricPrefix := xw.constructMetricNamePrefix(key)
-		l_metrics_to_send := xw.handleRefresh(key, xdrRawMetrics, clusterName, service, dcName, ns, metricPrefix)
-		metrics_to_send = append(metrics_to_send, l_metrics_to_send...)
-	}
-	// fmt.Println("\n******************************  watcher_xdr: len(l_metrics_to_send) : ", len(metrics_to_send))
+		tmpXdrMetricsToSend := xw.handleRefresh(key, xdrRawMetrics, clusterName, service, dcName, ns, metricPrefix)
 
-	return metrics_to_send, nil
+		allMetricsToSend = append(allMetricsToSend, tmpXdrMetricsToSend...)
+	}
+
+	return allMetricsToSend, nil
 }
 
 // utility constructs the name of the metric according to the level of the stat
@@ -113,7 +113,7 @@ func (xw *XdrStatsProcessor) handleRefresh(infoKeyToProcess string, xdrRawMetric
 	log.Tracef("xdr-%s:%s", infoKeyToProcess, xdrRawMetrics)
 
 	stats := commons.ParseStats(xdrRawMetrics, ";")
-	var metrics_to_send = []AerospikeStat{}
+	var xdrMetricsToSend = []AerospikeStat{}
 	for stat, value := range stats {
 
 		pv, err := commons.TryConvert(value)
@@ -139,8 +139,8 @@ func (xw *XdrStatsProcessor) handleRefresh(infoKeyToProcess string, xdrRawMetric
 
 		// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
 		asMetric.updateValues(pv, labels, labelValues)
-		metrics_to_send = append(metrics_to_send, asMetric)
+		xdrMetricsToSend = append(xdrMetricsToSend, asMetric)
 	}
 
-	return metrics_to_send
+	return xdrMetricsToSend
 }

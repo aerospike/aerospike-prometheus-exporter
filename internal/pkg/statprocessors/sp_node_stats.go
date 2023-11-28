@@ -47,25 +47,25 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 
 	// we are sending configs and stats in same refresh call, as both are being sent to prom, instead of doing prom-push in 2 functions
 	// handle configs
-	var metrics_to_send = []AerospikeStat{}
+	var allMetricsToSend = []AerospikeStat{}
 
-	l_cfg_metrics_to_send := sw.handleRefresh(nodeConfigs, clusterName, service)
+	lCfgMetricsToSend := sw.handleRefresh(nodeConfigs, clusterName, service)
 
 	// handle stats
-	l_stat_metrics_to_send := sw.handleRefresh(nodeStats, clusterName, service)
+	lStatMetricsToSend := sw.handleRefresh(nodeStats, clusterName, service)
 
 	// merge both array into single
-	metrics_to_send = append(metrics_to_send, l_cfg_metrics_to_send...)
-	metrics_to_send = append(metrics_to_send, l_stat_metrics_to_send...)
+	allMetricsToSend = append(allMetricsToSend, lCfgMetricsToSend...)
+	allMetricsToSend = append(allMetricsToSend, lStatMetricsToSend...)
 
-	return metrics_to_send, nil
+	return allMetricsToSend, nil
 }
 
 func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string, clusterName string, service string) []AerospikeStat {
 
 	stats := commons.ParseStats(nodeRawMetrics, ";")
 
-	var metrics_to_send = []AerospikeStat{}
+	var refreshMetricsToSend = []AerospikeStat{}
 
 	for stat, value := range stats {
 		pv, err := commons.TryConvert(value)
@@ -84,7 +84,7 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string, clusterName s
 
 		// pushToPrometheus(asMetric, pv, labels, labelsValues)
 		asMetric.updateValues(pv, labels, labelValues)
-		metrics_to_send = append(metrics_to_send, asMetric)
+		refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
 
 		// check and if latency benchmarks stat, is it enabled (bool true==1 and false==0 after conversion)
 		if canConsiderLatencyCommand(stat) {
@@ -92,5 +92,5 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string, clusterName s
 		}
 	}
 
-	return metrics_to_send
+	return refreshMetricsToSend
 }

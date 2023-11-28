@@ -38,7 +38,7 @@ func (sw *SetsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 		sw.setMetrics = make(map[string]AerospikeStat)
 	}
 
-	var metrics_to_send = []AerospikeStat{}
+	var allMetricsToSend = []AerospikeStat{}
 
 	for i := range setStats {
 		clusterName := rawMetrics[Infokey_ClusterName]
@@ -62,10 +62,10 @@ func (sw *SetsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 
 			// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
 			asMetric.updateValues(pv, labels, labelValues)
-			metrics_to_send = append(metrics_to_send, asMetric)
+			allMetricsToSend = append(allMetricsToSend, asMetric)
 		}
 
 	}
 
-	return metrics_to_send, nil
+	return allMetricsToSend, nil
 }

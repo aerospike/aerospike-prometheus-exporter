@@ -45,16 +45,16 @@ func (lw *LatencyStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (late
 }
 
 func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]string) []string {
-	var commands = []string{"latencies:"}
+	var allInfoCommands = []string{"latencies:"}
 
 	// below latency-command are added to the auto-enabled list, i.e. latencies: command
 	// re-repl is auto-enabled, but not coming as part of latencies: list, hence we are adding it explicitly
 	//
 	// Hashmap content format := namespace-<histogram-key> = <0/1>
-	for ns_latency_enabled_benchmark := range LatencyBenchmarks {
-		l_value := LatencyBenchmarks[ns_latency_enabled_benchmark]
+	for lLatencyBenchmark := range LatencyBenchmarks {
+		isBenchmarkEnabled := LatencyBenchmarks[lLatencyBenchmark]
 		// only if enabled, fetch the metrics
-		if l_value == 1 {
+		if isBenchmarkEnabled == 1 {
 			// if enable-hist-proxy
 			//    command = latencies:hist={test}-proxy
 			// else if enable-benchmarks-fabric
@@ -63,43 +63,43 @@ func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]stri
 			//    command = latencies:hist={test}-re-repl
 
 			// fmt.Println("ns_latency_enabled_benchmark: ", ns_latency_enabled_benchmark)
-			if strings.Contains(ns_latency_enabled_benchmark, "re-repl") {
+			if strings.Contains(lLatencyBenchmark, "re-repl") {
 				// Exception case
-				ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
-				l_command := "latencies:hist={" + ns + "}-re-repl"
-				commands = append(commands, l_command)
-			} else if strings.Contains(ns_latency_enabled_benchmark, "enable-hist-proxy") {
+				ns := strings.Split(lLatencyBenchmark, "-")[0]
+				infoCommand := "latencies:hist={" + ns + "}-re-repl"
+				allInfoCommands = append(allInfoCommands, infoCommand)
+			} else if strings.Contains(lLatencyBenchmark, "enable-hist-proxy") {
 				// Exception case
-				ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
-				l_command := "latencies:hist={" + ns + "}-proxy"
-				commands = append(commands, l_command)
-			} else if strings.Contains(ns_latency_enabled_benchmark, "enable-benchmarks-fabric") {
+				ns := strings.Split(lLatencyBenchmark, "-")[0]
+				infoCommand := "latencies:hist={" + ns + "}-proxy"
+				allInfoCommands = append(allInfoCommands, infoCommand)
+			} else if strings.Contains(lLatencyBenchmark, "enable-benchmarks-fabric") {
 				// Exception case
-				l_command := "latencies:hist=benchmarks-fabric"
-				commands = append(commands, l_command)
-			} else if strings.Contains(ns_latency_enabled_benchmark, "enable-hist-info") {
+				infoCommand := "latencies:hist=benchmarks-fabric"
+				allInfoCommands = append(allInfoCommands, infoCommand)
+			} else if strings.Contains(lLatencyBenchmark, "enable-hist-info") {
 				// Exception case
-				l_command := "latencies:hist=info"
-				commands = append(commands, l_command)
-			} else if strings.Contains(ns_latency_enabled_benchmark, "-benchmarks-") {
+				infoCommand := "latencies:hist=info"
+				allInfoCommands = append(allInfoCommands, infoCommand)
+			} else if strings.Contains(lLatencyBenchmark, "-benchmarks-") {
 				// remaining enabled benchmark latencies like
 				//         enable-benchmarks-fabric, enable-benchmarks-ops-sub, enable-benchmarks-read
 				//         enable-benchmarks-write, enable-benchmarks-udf, enable-benchmarks-udf-sub, enable-benchmarks-batch-sub
 
 				// format:= test-enable-benchmarks-read (or) test-enable-hist-proxy
-				ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
-				benchmarks_start_index := strings.LastIndex(ns_latency_enabled_benchmark, "-benchmarks-")
-				l_command := ns_latency_enabled_benchmark[benchmarks_start_index:]
-				l_command = "latencies:hist={" + ns + "}" + l_command
-				commands = append(commands, l_command)
+				ns := strings.Split(lLatencyBenchmark, "-")[0]
+				benchmarksStartIndex := strings.LastIndex(lLatencyBenchmark, "-benchmarks-")
+				infoCommand := lLatencyBenchmark[benchmarksStartIndex:]
+				infoCommand = "latencies:hist={" + ns + "}" + infoCommand
+				allInfoCommands = append(allInfoCommands, infoCommand)
 			}
 		}
 	}
 
-	log.Tracef("latency-passtwokeys:%s", commands)
+	log.Tracef("latency-passtwokeys:%s", allInfoCommands)
 	// fmt.Println("latency-passtwokeys:", commands)
 
-	return commands
+	return allInfoCommands
 }
 
 // checks if a stat can be considered for latency stat retrieval
@@ -127,15 +127,15 @@ func (lw *LatencyStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 
 	// log.Tracef("latencies-stats:latencies:hist={test}-benchmarks-read -- %+v", rawMetrics["latencies:hist={test}-benchmarks-read"])
 	log.Tracef("latency-stats:%+v", rawMetrics["latency:"])
-	var metrics_to_send = []AerospikeStat{}
+	var allMetricsToSend = []AerospikeStat{}
 
 	// loop all the latency infokeys
 	for ik := range infoKeys {
-		l_metrics_to_send := parseSingleLatenciesKey(infoKeys[ik], rawMetrics, allowedLatenciesList, blockedLatenciessList)
-		metrics_to_send = append(metrics_to_send, l_metrics_to_send...)
+		latencyMetricsToSend := parseSingleLatenciesKey(infoKeys[ik], rawMetrics, allowedLatenciesList, blockedLatenciessList)
+		allMetricsToSend = append(allMetricsToSend, latencyMetricsToSend...)
 	}
 
-	return metrics_to_send, nil
+	return allMetricsToSend, nil
 }
 
 func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]string,
@@ -153,7 +153,7 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 	// log.Tracef("latency-stats:%+v", latencyStats)
 	log.Tracef("latencies-stats:%+v:%+v", singleLatencyKey, rawMetrics[singleLatencyKey])
 
-	var metrics_to_send = []AerospikeStat{}
+	var latencyMetricsToSend = []AerospikeStat{}
 
 	for namespaceName, nsLatencyStats := range latencyStats {
 		for operation, opLatencyStats := range nsLatencyStats {
@@ -180,7 +180,7 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 
 				asMetric := NewAerospikeStat(commons.CTX_LATENCIES, operation+"_"+opLatencyStats.(LatencyStatsMap)["timeUnit"].(string)+"_bucket")
 				asMetric.updateValues(pv, labels, labelValues)
-				metrics_to_send = append(metrics_to_send, asMetric)
+				latencyMetricsToSend = append(latencyMetricsToSend, asMetric)
 
 				// aerospike_latencies_<operation>_<timeunit>_count metric
 				if i == 0 {
@@ -190,12 +190,12 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 
 					asMetric := NewAerospikeStat(commons.CTX_LATENCIES, operation+"_"+opLatencyStats.(LatencyStatsMap)["timeUnit"].(string)+"_count")
 					asMetric.updateValues(pv, labels, labelValues)
-					metrics_to_send = append(metrics_to_send, asMetric)
+					latencyMetricsToSend = append(latencyMetricsToSend, asMetric)
 
 				}
 			}
 		}
 	}
 
-	return metrics_to_send
+	return latencyMetricsToSend
 }
