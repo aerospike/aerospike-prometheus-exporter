@@ -92,7 +92,7 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string, clusterName s
 		refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
 
 		// check and if latency benchmarks stat, is it enabled (bool true==1 and false==0 after conversion)
-		if canConsiderLatencyCommand(stat) {
+		if isStatLatencyRelated(stat) {
 			LatencyBenchmarks["service-"+stat] = pv
 		}
 	}

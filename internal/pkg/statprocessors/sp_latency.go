@@ -103,7 +103,7 @@ func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]stri
 }
 
 // checks if a stat can be considered for latency stat retrieval
-func canConsiderLatencyCommand(stat string) bool {
+func isStatLatencyRelated(stat string) bool {
 	return (strings.Contains(stat, "enable-benchmarks-") ||
 		strings.Contains(stat, "enable-hist-")) // hist-proxy & hist-info - both at service level
 }
