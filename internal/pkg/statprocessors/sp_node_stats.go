@@ -63,6 +63,11 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 
 func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string, clusterName string, service string) []AerospikeStat {
 
+	// check if LatencyBenchmarks is valid reference
+	if LatencyBenchmarks == nil {
+		LatencyBenchmarks = make(map[string]float64)
+	}
+
 	stats := commons.ParseStats(nodeRawMetrics, ";")
 
 	var refreshMetricsToSend = []AerospikeStat{}

@@ -155,6 +155,11 @@ func (nw *NamespaceStatsProcessor) refreshIndexPressure(singleInfoKey string, in
 // all namespace stats (except index-pressure)
 func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, infoKeys []string, rawMetrics map[string]string) []AerospikeStat {
 
+	// check if LatencyBenchmarks is valid reference
+	if LatencyBenchmarks == nil {
+		LatencyBenchmarks = make(map[string]float64)
+	}
+
 	// extract namespace from info-command, construct: namespace/test, namespace/bar
 	nsName := strings.ReplaceAll(singleInfoKey, (KEY_NS_NAMESPACE + "/"), "")
 
