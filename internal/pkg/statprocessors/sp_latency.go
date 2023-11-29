@@ -46,7 +46,7 @@ func (lw *LatencyStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (late
 }
 
 func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]string) []string {
-	var allInfoCommands = []string{"latencies:"}
+	var commands = []string{"latencies:"}
 
 	fmt.Println(" latency - LatencyBenchmarks-length ", len(LatencyBenchmarks))
 
@@ -54,57 +54,34 @@ func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]stri
 	// re-repl is auto-enabled, but not coming as part of latencies: list, hence we are adding it explicitly
 	//
 	// Hashmap content format := namespace-<histogram-key> = <0/1>
-	for lLatencyBenchmark := range LatencyBenchmarks {
-		// if enable-hist-proxy
-		//    command = latencies:hist={test}-proxy
-		// else if enable-benchmarks-fabric
-		//    command = latencies:hist=benchmarks-fabric
-		// else if re-repl
-		//    command = latencies:hist={test}-re-repl
-		infoCommand := ""
+	for latencyHistName := range LatencyBenchmarks {
+		histTokens := strings.Split(latencyHistName, "-")
 
-		tmp := lLatencyBenchmark
-		tmp = strings.Replace(tmp, "enable-", "", 1)
-		tmp = strings.Replace(tmp, "hist-", "", 1)
+		histCommand := "latencies:hist="
 
-		fmt.Print("latencies:hist={" + tmp)
-
-		if strings.Contains(lLatencyBenchmark, "re-repl") {
-			// Exception case
-			ns := strings.Split(lLatencyBenchmark, "-")[0]
-			infoCommand = "latencies:hist={" + ns + "}-re-repl"
-		} else if strings.Contains(lLatencyBenchmark, "enable-hist-proxy") {
-			// Exception case
-			ns := strings.Split(lLatencyBenchmark, "-")[0]
-			infoCommand = "latencies:hist={" + ns + "}-proxy"
-		} else if strings.Contains(lLatencyBenchmark, "enable-benchmarks-fabric") {
-			// Exception case - service level
-			infoCommand = "latencies:hist=benchmarks-fabric"
-		} else if strings.Contains(lLatencyBenchmark, "enable-hist-info") {
-			// Exception case - service level
-			infoCommand = "latencies:hist=info"
-		} else if strings.Contains(lLatencyBenchmark, "-benchmarks-") {
-			// remaining enabled benchmark latencies like
-			//         enable-benchmarks-fabric, enable-benchmarks-ops-sub, enable-benchmarks-read
-			//         enable-benchmarks-write, enable-benchmarks-udf, enable-benchmarks-udf-sub, enable-benchmarks-batch-sub
-
-			// format:= test-benchmarks-read (or) test-proxy
-			ns := strings.Split(lLatencyBenchmark, "-")[0]
-			benchmarksStartIndex := strings.LastIndex(lLatencyBenchmark, "-benchmarks-")
-			infoCommand = "latencies:hist={" + ns + "}" + lLatencyBenchmark[benchmarksStartIndex:]
+		// service-enable-benchmarks-fabric or ns-enable-benchmarks-ops-sub or service-enable-hist-info
+		if histTokens[0] != "service" {
+			histCommand = histCommand + "{" + histTokens[0] + "}-"
 		}
-		allInfoCommands = append(allInfoCommands, infoCommand)
+
+		if strings.Contains(latencyHistName, "enable-benchmarks-") {
+			histCommand = histCommand + strings.Join(histTokens[2:], "-")
+		} else {
+			histCommand = histCommand + strings.Join(histTokens[3:], "-")
+		}
+
+		commands = append(commands, histCommand)
 	}
 
-	log.Tracef("latency-passtwokeys:%s", allInfoCommands)
-	// fmt.Println("latency-passtwokeys:", commands)
+	log.Tracef("latency-passtwokeys:%s", commands)
 
-	return allInfoCommands
+	return commands
 }
 
 // checks if a stat can be considered for latency stat retrieval
-func isStatLatencyRelated(stat string) bool {
-	return (strings.Contains(stat, "enable-benchmarks-") ||
+func isStatLatencyHistRelated(stat string) bool {
+	// is not enable-benchmarks-storage and (enable-benchmarks-* or enable-hist-*)
+	return (!strings.Contains(stat, "enable-benchmarks-storage")) && (strings.Contains(stat, "enable-benchmarks-") ||
 		strings.Contains(stat, "enable-hist-")) // hist-proxy & hist-info - both at service level
 }
 

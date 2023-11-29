@@ -14,7 +14,7 @@ func Refresh() ([]AerospikeStat, error) {
 
 	// Reset global variables
 	fmt.Println("statsrefresh - len(LatencyBenchmarks): ", len(LatencyBenchmarks))
-	LatencyBenchmarks = make(map[string]float64)
+	LatencyBenchmarks = make(map[string]string)
 
 	fullHost := commons.GetFullHost()
 	log.Debugf("Refreshing node %s", fullHost)
