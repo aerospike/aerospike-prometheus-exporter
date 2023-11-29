@@ -1,6 +1,7 @@
 package statprocessors
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -157,6 +158,7 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 
 	// check if LatencyBenchmarks is valid reference
 	if LatencyBenchmarks == nil {
+		fmt.Println("namespaces - Initialing LatencyBenchmarks as it is Nil")
 		LatencyBenchmarks = make(map[string]float64)
 	}
 
@@ -236,12 +238,12 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 		// below code section is to ensure ns+latencies combination is handled during LatencyWatcher
 		//
 		// check and if latency benchmarks stat - is it enabled (bool true==1 and false==0 after conversion)
-		if isStatLatencyRelated(stat) {
+		if isStatLatencyRelated(stat) && pv == 1 {
 			LatencyBenchmarks[nsName+"-"+stat] = pv
 		}
-		// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
-		LatencyBenchmarks[nsName+"-re-repl"] = 1
 	}
+	// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
+	LatencyBenchmarks[nsName+"-re-repl"] = 1
 
 	return nsMetricsToSend
 }

@@ -52,48 +52,45 @@ func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]stri
 	//
 	// Hashmap content format := namespace-<histogram-key> = <0/1>
 	for lLatencyBenchmark := range LatencyBenchmarks {
-		isBenchmarkEnabled := LatencyBenchmarks[lLatencyBenchmark]
-		// only if enabled, fetch the metrics
-		if isBenchmarkEnabled == 1 {
-			// if enable-hist-proxy
-			//    command = latencies:hist={test}-proxy
-			// else if enable-benchmarks-fabric
-			//    command = latencies:hist=benchmarks-fabric
-			// else if re-repl
-			//    command = latencies:hist={test}-re-repl
+		// if enable-hist-proxy
+		//    command = latencies:hist={test}-proxy
+		// else if enable-benchmarks-fabric
+		//    command = latencies:hist=benchmarks-fabric
+		// else if re-repl
+		//    command = latencies:hist={test}-re-repl
+		infoCommand := ""
 
-			// fmt.Println("ns_latency_enabled_benchmark: ", ns_latency_enabled_benchmark)
-			if strings.Contains(lLatencyBenchmark, "re-repl") {
-				// Exception case
-				ns := strings.Split(lLatencyBenchmark, "-")[0]
-				infoCommand := "latencies:hist={" + ns + "}-re-repl"
-				allInfoCommands = append(allInfoCommands, infoCommand)
-			} else if strings.Contains(lLatencyBenchmark, "enable-hist-proxy") {
-				// Exception case
-				ns := strings.Split(lLatencyBenchmark, "-")[0]
-				infoCommand := "latencies:hist={" + ns + "}-proxy"
-				allInfoCommands = append(allInfoCommands, infoCommand)
-			} else if strings.Contains(lLatencyBenchmark, "enable-benchmarks-fabric") {
-				// Exception case
-				infoCommand := "latencies:hist=benchmarks-fabric"
-				allInfoCommands = append(allInfoCommands, infoCommand)
-			} else if strings.Contains(lLatencyBenchmark, "enable-hist-info") {
-				// Exception case
-				infoCommand := "latencies:hist=info"
-				allInfoCommands = append(allInfoCommands, infoCommand)
-			} else if strings.Contains(lLatencyBenchmark, "-benchmarks-") {
-				// remaining enabled benchmark latencies like
-				//         enable-benchmarks-fabric, enable-benchmarks-ops-sub, enable-benchmarks-read
-				//         enable-benchmarks-write, enable-benchmarks-udf, enable-benchmarks-udf-sub, enable-benchmarks-batch-sub
+		tmp := lLatencyBenchmark
+		tmp = strings.Replace(tmp, "enable-", "", 1)
+		tmp = strings.Replace(tmp, "hist-", "", 1)
 
-				// format:= test-enable-benchmarks-read (or) test-enable-hist-proxy
-				ns := strings.Split(lLatencyBenchmark, "-")[0]
-				benchmarksStartIndex := strings.LastIndex(lLatencyBenchmark, "-benchmarks-")
-				infoCommand := lLatencyBenchmark[benchmarksStartIndex:]
-				infoCommand = "latencies:hist={" + ns + "}" + infoCommand
-				allInfoCommands = append(allInfoCommands, infoCommand)
-			}
+		print("latencies:hist={" + tmp)
+
+		if strings.Contains(lLatencyBenchmark, "re-repl") {
+			// Exception case
+			ns := strings.Split(lLatencyBenchmark, "-")[0]
+			infoCommand = "latencies:hist={" + ns + "}-re-repl"
+		} else if strings.Contains(lLatencyBenchmark, "enable-hist-proxy") {
+			// Exception case
+			ns := strings.Split(lLatencyBenchmark, "-")[0]
+			infoCommand = "latencies:hist={" + ns + "}-proxy"
+		} else if strings.Contains(lLatencyBenchmark, "enable-benchmarks-fabric") {
+			// Exception case - service level
+			infoCommand = "latencies:hist=benchmarks-fabric"
+		} else if strings.Contains(lLatencyBenchmark, "enable-hist-info") {
+			// Exception case - service level
+			infoCommand = "latencies:hist=info"
+		} else if strings.Contains(lLatencyBenchmark, "-benchmarks-") {
+			// remaining enabled benchmark latencies like
+			//         enable-benchmarks-fabric, enable-benchmarks-ops-sub, enable-benchmarks-read
+			//         enable-benchmarks-write, enable-benchmarks-udf, enable-benchmarks-udf-sub, enable-benchmarks-batch-sub
+
+			// format:= test-benchmarks-read (or) test-proxy
+			ns := strings.Split(lLatencyBenchmark, "-")[0]
+			benchmarksStartIndex := strings.LastIndex(lLatencyBenchmark, "-benchmarks-")
+			infoCommand = "latencies:hist={" + ns + "}" + lLatencyBenchmark[benchmarksStartIndex:]
 		}
+		allInfoCommands = append(allInfoCommands, infoCommand)
 	}
 
 	log.Tracef("latency-passtwokeys:%s", allInfoCommands)

@@ -1,6 +1,8 @@
 package statprocessors
 
 import (
+	"fmt"
+
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 
 	log "github.com/sirupsen/logrus"
@@ -65,6 +67,7 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string, clusterName s
 
 	// check if LatencyBenchmarks is valid reference
 	if LatencyBenchmarks == nil {
+		fmt.Println("node-stats: Initialing LatencyBenchmarks as it is Nil")
 		LatencyBenchmarks = make(map[string]float64)
 	}
 
@@ -92,7 +95,7 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string, clusterName s
 		refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
 
 		// check and if latency benchmarks stat, is it enabled (bool true==1 and false==0 after conversion)
-		if isStatLatencyRelated(stat) {
+		if isStatLatencyRelated(stat) && pv == 1 {
 			LatencyBenchmarks["service-"+stat] = pv
 		}
 	}
