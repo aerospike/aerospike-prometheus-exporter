@@ -64,8 +64,6 @@ func Refresh() ([]AerospikeStat, error) {
 		}
 	}
 
-	// fmt.Println("\n-----------------\nwatcherInfoKeys: ", watcherInfoKeys)
-
 	// info request for second set of info keys, this retrieves all the stats from server
 	rawMetrics, err := dataprovider.GetProvider().RequestInfo(infoKeys)
 	if err != nil {
@@ -82,7 +80,7 @@ func Refresh() ([]AerospikeStat, error) {
 
 	// sanitize the utf8 strings before sending them to watchers
 	for i, c := range allStatsprocessorList {
-		// fmt.Println("\nSending... ", watcherInfoKeys[i], " keys to each Refresh ...")
+		fmt.Println("\nSending... ", allStatsprocessorList[i], " keys to each Refresh ...")
 		tmpRefreshedMetrics, err := c.Refresh(statprocessorInfoKeys[i], rawMetrics)
 		if err != nil {
 			return allMetricsToSend, err
