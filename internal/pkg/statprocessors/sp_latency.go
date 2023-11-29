@@ -1,6 +1,7 @@
 package statprocessors
 
 import (
+	"fmt"
 	"strings"
 
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -46,6 +47,8 @@ func (lw *LatencyStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (late
 
 func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]string) []string {
 	var allInfoCommands = []string{"latencies:"}
+
+	fmt.Println(" latency - LatencyBenchmarks-length ", len(LatencyBenchmarks))
 
 	// below latency-command are added to the auto-enabled list, i.e. latencies: command
 	// re-repl is auto-enabled, but not coming as part of latencies: list, hence we are adding it explicitly
