@@ -56,10 +56,14 @@ func Refresh() ([]AerospikeStat, error) {
 
 	infoKeys = []string{Infokey_ClusterName, Infokey_Service, Infokey_Build}
 	statprocessorInfoKeys := make([][]string, len(allStatsprocessorList))
+
 	for i, c := range allStatsprocessorList {
+
+		fmt.Printf("Calling... refresh of %T\n", c)
+		fmt.Println("\tLatencyCommands now are ", len(LatencyBenchmarks))
 		if keys := c.PassTwoKeys(passOneOutput); len(keys) > 0 {
+
 			infoKeys = append(infoKeys, keys...)
-			// fmt.Println("\nkeys: ", keys)
 			statprocessorInfoKeys[i] = keys
 		}
 	}
@@ -80,7 +84,6 @@ func Refresh() ([]AerospikeStat, error) {
 
 	// sanitize the utf8 strings before sending them to watchers
 	for i, c := range allStatsprocessorList {
-		fmt.Printf("\nSending... refresh of %T", c)
 
 		tmpRefreshedMetrics, err := c.Refresh(statprocessorInfoKeys[i], rawMetrics)
 		if err != nil {
