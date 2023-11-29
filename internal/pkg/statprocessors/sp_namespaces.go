@@ -1,7 +1,6 @@
 package statprocessors
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -98,8 +97,6 @@ func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[str
 		}
 
 	}
-
-	fmt.Println("namespace = len(LatencyBenchmarks) - ", len(LatencyBenchmarks))
 
 	return allMetricsToSend, nil
 }
