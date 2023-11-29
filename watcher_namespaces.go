@@ -219,10 +219,10 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 				LatencyBenchmarks[nsName+"-"+stat] = stat
 			}
 		}
-		// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
-		LatencyBenchmarks[nsName+"-latency-hist-re-repl"] = "{" + nsName + "}-re-repl"
 
 	}
+	// // append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
+	// LatencyBenchmarks[nsName+"-latency-hist-re-repl"] = "{" + nsName + "}-re-repl"
 
 }
 

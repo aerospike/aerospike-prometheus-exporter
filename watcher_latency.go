@@ -61,8 +61,8 @@ func (lw *LatencyWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 	}
 
 	// loop all the latency infokeys
-	for ik := range infoKeys {
-		err := parseSingleLatenciesKey(infoKeys[ik], rawMetrics, allowedLatenciesList, blockedLatenciessList, ch)
+	for _, infoKey := range infoKeys {
+		err := parseSingleLatenciesKey(infoKey, rawMetrics, allowedLatenciesList, blockedLatenciessList, ch)
 		if err != nil {
 			return err
 		}
@@ -130,10 +130,7 @@ func isStatLatencyHistRelated(stat string) bool {
 func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []string {
 	var commands = []string{"latencies:"}
 
-	// below latency-command are added to the auto-enabled list, i.e. latencies: command
-	// re-repl is auto-enabled, but not coming as part of latencies: list, hence we are adding it explicitly
-	//
-	// Hashmap content format := namespace-<histogram-key> = <0/1>
+	// Hashmap content format := namespace-<histogram-key> = <histogram-key>
 	for latencyHistName := range LatencyBenchmarks {
 		histTokens := strings.Split(latencyHistName, "-")
 
