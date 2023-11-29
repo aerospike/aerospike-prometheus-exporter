@@ -35,11 +35,11 @@ func (sw *NodeStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string
 
 func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 
-	// check if LatencyBenchmarks is valid reference
-	if LatencyBenchmarks == nil {
-		fmt.Println("node-stats: Initialing LatencyBenchmarks as it is Nil")
-		LatencyBenchmarks = make(map[string]float64)
-	}
+	// // check if LatencyBenchmarks is valid reference
+	// if LatencyBenchmarks == nil {
+	// 	fmt.Println("node-stats: Initialing LatencyBenchmarks as it is Nil")
+	// 	LatencyBenchmarks = make(map[string]float64)
+	// }
 
 	if sw.nodeMetrics == nil {
 		sw.nodeMetrics = make(map[string]AerospikeStat)

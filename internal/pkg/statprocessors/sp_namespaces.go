@@ -73,11 +73,11 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []s
 
 func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 
-	// check if LatencyBenchmarks is valid reference
-	if LatencyBenchmarks == nil {
-		fmt.Println("namespaces - Initialing LatencyBenchmarks as it is Nil")
-		LatencyBenchmarks = make(map[string]float64)
-	}
+	// // check if LatencyBenchmarks is valid reference
+	// if LatencyBenchmarks == nil {
+	// 	fmt.Println("namespaces - Initialing LatencyBenchmarks as it is Nil")
+	// 	LatencyBenchmarks = make(map[string]float64)
+	// }
 
 	if nw.namespaceStats == nil {
 		nw.namespaceStats = make(map[string]AerospikeStat)
