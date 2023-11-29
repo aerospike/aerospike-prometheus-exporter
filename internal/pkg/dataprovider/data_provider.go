@@ -20,7 +20,6 @@ var dp_mock_server = &MockAerospikeServer{}
 func GetProvider() DataProvider {
 
 	if config.Cfg.AeroProm.UseMockDatasource == 1 {
-		// fmt.Println(" Mock is enabled, going to use mock ")
 		// initialize, internally it will check if already initialized
 		dp_mock_server.Initialize()
 

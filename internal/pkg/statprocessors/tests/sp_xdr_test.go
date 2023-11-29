@@ -22,7 +22,6 @@ func Test_Xdr_PassOneKeys(t *testing.T) {
 	ndv := udh.GetUnittestValidator("xdr")
 	passOneOutputs := ndv.GetPassOneKeys()
 
-	// fmt.Println("TestPassOneKeys: ", passOneOutputs)
 	var expectedOutputs []string
 	expectedOutputs = append(expectedOutputs, passOneOutputs["xdr"])
 
@@ -55,9 +54,6 @@ func Test_Xdr_PassTwoKeys(t *testing.T) {
 
 	assert.NotEmpty(t, passTwoOutputs)
 	assert.NotEmpty(t, expectedPassTwoOutputs)
-
-	// fmt.Println("Test_Xdr_PassTwoKeys: passTwoOutputs: ", passTwoOutputs)
-	// fmt.Println("Test_Xdr_PassTwoKeys: expectedPassTwoOutputs: ", expectedPassTwoOutputs)
 
 	for idx := range expectedPassTwoOutputs {
 		// assert each element returned by NamespaceWatcher exists in expected outputs
@@ -101,14 +97,6 @@ func xdr_runTestcase(t *testing.T) {
 	xdrMetrics, err := xdrWatcher.Refresh(passTwoOutputs, arrRawMetrics)
 	assert.Nil(t, err, "Error while XdrWatcher.Refresh with passTwoOutputs ")
 	assert.NotEmpty(t, xdrMetrics, "Error while XdrWatcher.Refresh, XdrWatcher is EMPTY ")
-
-	// // check the WatcherMetrics if all stats & configs coming with required labels
-	// // below block of code is used when we create the baseline mock data, which is stored in exporter_mock_results.txt for test verification/assertion
-	// // do-not-remove below code, use when to dump the output
-	// for k := range nodeMetrics {
-	// 	str := fmt.Sprintf("%#v", xdrMetrics[k])
-	// 	fmt.Println(str)
-	// }
 
 	udh := &testutils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("xdr")

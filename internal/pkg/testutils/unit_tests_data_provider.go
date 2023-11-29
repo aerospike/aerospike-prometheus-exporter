@@ -37,11 +37,7 @@ type UnittestDataHandler struct {
 func (md *UnittestDataHandler) Initialize() {
 
 	fmt.Println("Unittest Initializing ....: ")
-	// avoid multiple initializations
-	// if Is_Unittests_Initialized == 1 {
-	// 	fmt.Println("Unittest data provider already Initialized: ")
-	// 	return
-	// }
+
 	// Mark as initialized
 	Is_Unittests_Initialized = 1
 
@@ -175,15 +171,12 @@ func (unp NamespaceUnittestValidator) GetPassOneKeys() map[string]string {
 func (unp NamespaceUnittestValidator) GetPassTwoKeys() map[string]string {
 	var outputs = make(map[string]string)
 
-	// fmt.Println("GetPassTwoKeys: ", udp.Namespace_PassTwo)
-
 	out_values := unp.PassTwoOutputs[0]
 	out_values = strings.Replace(out_values, "namespace-passtwokeys:", "", 1)
 	out_values = strings.Replace(out_values, "[", "", 1)
 	out_values = strings.Replace(out_values, "]", "", 1)
 	elements := strings.Split(out_values, " ")
 	for i := 0; i < len(elements); i++ {
-		// fmt.Println(" adding namespace: ", elements[i], " - as key to ", i)
 		outputs["namespace_"+strconv.Itoa(i)] = elements[i]
 	}
 
@@ -269,15 +262,13 @@ func (unp NodeUnittestValidator) GetPassOneKeys() map[string]string {
 func (unp NodeUnittestValidator) GetPassTwoKeys() map[string]string {
 	var outputs = make(map[string]string)
 
-	// fmt.Println("GetPassTwoKeys: ", udp.Namespace_PassTwo)
-
 	out_values := unp.PassTwoOutputs[0]
 	out_values = strings.Replace(out_values, "node-passtwokeys:", "", 1)
 	out_values = strings.Replace(out_values, "[", "", 1)
 	out_values = strings.Replace(out_values, "]", "", 1)
 	elements := strings.Split(out_values, " ")
+
 	for i := 0; i < len(elements); i++ {
-		// fmt.Println(" adding namespace: ", elements[i], " - as key to ", i)
 		outputs["node_stat_"+strconv.Itoa(i)] = elements[i]
 	}
 
@@ -575,7 +566,6 @@ type PrometheusUnittestValidator struct {
 
 func (unp PrometheusUnittestValidator) Initialize(data []string) {
 	for _, line := range data {
-		// fmt.Println("Prometheus_Label_and_Values: ", line)
 		if len(line) > 0 && strings.HasPrefix(line, "aerospike_") {
 			prom_validator.Metrics = append(prom_validator.Metrics, strings.TrimSpace(line))
 		}

@@ -67,7 +67,6 @@ func (o *AsPromImpl) Collect(ch chan<- prometheus.Metric) {
 
 	// push the fetched metrics to prometheus
 	for _, wm := range refreshed_metrics {
-		// fmt.Println("\n pushing metric: ", wm.Metric.Name, " to prometheus")
 		PushToPrometheus(wm, ch)
 	}
 

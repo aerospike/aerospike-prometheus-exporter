@@ -22,7 +22,6 @@ func Test_Namespace_PassOneKeys(t *testing.T) {
 	ndv := udh.GetUnittestValidator("namespace")
 	passOneOutputs := ndv.GetPassOneKeys()
 
-	// fmt.Println("TestPassOneKeys: ", passOneOutputs)
 	var expectedOutputs []string
 	expectedOutputs = append(expectedOutputs, passOneOutputs["namespaces"])
 
@@ -98,14 +97,6 @@ func namespace_runTestcase(t *testing.T) {
 	nsMetrics, err := nsWatcher.Refresh(passTwokeyOutputs, arrRawMetrics)
 	assert.Nil(t, err, "Error while NamespaceWatcher.Refresh with passTwokeyOutputs ")
 	assert.NotEmpty(t, nsMetrics, "Error while NamespaceWatcher.Refresh, WatcherMetrics is EMPTY ")
-
-	// check the WatcherMetrics if all stats & configs coming with required labels
-	// below block of code is used when we create the baseline mock data, which is stored in exporter_mock_results.txt for test verification/assertion
-	// do-not-remove below code, use when to dump the output
-	// // for k := range nsMetrics {
-	//// 	str := fmt.Sprintf("%#v", nsMetrics[k])
-	//// 	fmt.Println(str)
-	//// }
 
 	// check for defined pattern, namespace metrics
 	// context, name, labels: cluster, service, namespace,

@@ -94,14 +94,6 @@ func sindex_runTestcase(t *testing.T) {
 	assert.Nil(t, err, "Error while sindexMetrics.Refresh with passTwoOutputs ")
 	assert.NotEmpty(t, sindexMetrics, "Error while sindexMetrics.Refresh, sindexMetrics is EMPTY ")
 
-	// // check the WatcherMetrics if all stats & configs coming with required labels
-	// // below block of code is used when we create the baseline mock data, which is stored in exporter_mock_results.txt for test verification/assertion
-	// // do-not-remove below code, use when to dump the output
-	// for k := range sindexMetrics {
-	// 	str := fmt.Sprintf("%#v", sindexMetrics[k])
-	// 	fmt.Println(str)
-	// }
-
 	udh := &testutils.UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sindex")
 	expected_results := ndv.GetMetricLabelsWithValues()

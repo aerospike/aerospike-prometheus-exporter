@@ -24,7 +24,6 @@ once we have output from watcher-implementations ( like watcher_namespaces.go, w
 var MOCK_DATA_FILE = "mock_test_data.txt"
 
 func (mas MockAerospikeServer) RequestInfo(infokeys []string) (map[string]string, error) {
-	// fmt.Println("RequestInfo... ", infokeys)
 
 	return mas.fetchRequestInfoFromFile(infokeys), nil
 }
@@ -37,17 +36,12 @@ func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, err
 
 	user_keys := strings.Split(users, ";")
 
-	// fmt.Println("users string: ", users)
-	// fmt.Println(user_keys)
-
 	for _, l_user_key := range user_keys {
 		if len(l_user_key) > 0 {
 			l_aero_user := mas.constructAeroUserRolesObject(l_user_key)
 			aero_users = append(aero_users, l_aero_user)
 		}
 	}
-
-	// fmt.Println(aero_users)
 
 	return true, aero_users, nil
 }
@@ -96,7 +90,6 @@ func (md *MockAerospikeServer) Initialize() {
 
 	base_folder := commons.GetExporterBaseFolder()
 	filePath := base_folder + "/internal/pkg/dataprovider/mockdata/" + MOCK_DATA_FILE
-	// fmt.Println("\n*** MockDataProvider ... filePath: ", filePath, "\n********")
 
 	md.internalInitialize(filePath)
 }
@@ -105,7 +98,6 @@ func (md *MockAerospikeServer) internalInitialize(filePath string) {
 
 	// avoid multiple initializations
 	if Is_Mock_Initialized == 1 {
-		// fmt.Println("Mock data provider already Initialized: ")
 		return
 	}
 	fmt.Println("************************************************************************************************************")
@@ -197,7 +189,6 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 
 	for _, k := range infokeys {
 
-		// fmt.Println("fetchRequestInfoFromFile(): processing key: ", k, "\t===> strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH) ", strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH))
 		switch true {
 		case strings.HasPrefix(k, MOCK_IK_BUILD):
 			l_mock_data_map[k] = md.getBuild(k)
@@ -229,7 +220,6 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 			l_mock_data_map[k] = md.getLatenciesStats(k)
 		}
 	}
-	// fmt.Println("requested keys : ", infokeys, "\n\t values returned: ", l_mock_data_map)
 	return l_mock_data_map
 }
 
@@ -253,7 +243,6 @@ func (md *MockAerospikeServer) getSingleNamespaceStats(nsKey string) string {
 	rawMetrics := ""
 
 	ns := strings.Split(nsKey, "/")[1]
-	// fmt.Println("reading metrics for namespaceKey: ", nsKey, " ---> and the namespace is : ", ns)
 
 	// namespace
 	for _, entry := range md.Namespaces_stats {
@@ -304,7 +293,6 @@ func (md *MockAerospikeServer) getSetsStatistics(key string) string {
 		}
 	}
 
-	// fmt.Println(" ** getSetsStatistics() key: ", key, "\n\t values: ", rawMetrics)
 	return rawMetrics
 
 }
@@ -313,7 +301,6 @@ func (md *MockAerospikeServer) getSindex(key string) string {
 	rawMetrics := ""
 	// sindex
 	for _, entry := range md.Sindexes {
-		// fmt.Println("\tgetSindex() ... processing ", entry)
 		if strings.HasPrefix(key, "sindex") && strings.HasPrefix(entry, "sindex:") {
 			// set-stats:<node-configs>
 			elements := strings.Replace(entry, "sindex:", "", 1)
@@ -339,7 +326,6 @@ func (md *MockAerospikeServer) getSingleSindexStatistics(key string) string {
 		}
 	}
 
-	// fmt.Println(" ** getSingleSindexStatistics() key: ", key, "\n\t values: ", rawMetrics)
 	return rawMetrics
 
 }
@@ -348,7 +334,6 @@ func (md *MockAerospikeServer) getXdrConfigsContext(key string) string {
 	rawMetrics := ""
 	// sindex
 	for _, entry := range md.XdrContext {
-		// fmt.Println("\tgetSindex() ... processing ", entry)
 		if strings.HasPrefix(key, "get-config:context=xdr") {
 			// set-stats:<node-configs>
 			elements := strings.Replace(entry, "get-config:context=xdr:", "", 1)
@@ -368,10 +353,6 @@ func (md *MockAerospikeServer) getSingleXdrKeys(key string) string {
 	for _, entry := range md.Xdr_stats {
 		elements := ""
 
-		// fmt.Println("\n\t*** getSingleXdrKeys: ",
-		// 	"\n\t key: ", key,
-		// 	"\n\t entry: ", entry,
-		// 	"\n\t strings.Contains(entry, key): ", strings.Contains(entry, key))
 		if strings.HasPrefix(entry, "xdr") && strings.Contains(entry, key) {
 			// key := "xdr-"
 			elements = strings.Replace(entry, "xdr-", "", 1)
@@ -383,7 +364,6 @@ func (md *MockAerospikeServer) getSingleXdrKeys(key string) string {
 		}
 	}
 
-	// fmt.Println(" ** getSingleXdrKeys() key: ", key, "\n\t values: ", rawMetrics)
 	return rawMetrics
 }
 
@@ -416,7 +396,6 @@ func (md *MockAerospikeServer) getUsersDetails(key string) string {
 
 func (md *MockAerospikeServer) constructAeroUserRolesObject(key string) *aero.UserRoles {
 
-	// fmt.Println("\nprocessing user-key :", key)
 	var err error
 	tmp_user_role := &aero.UserRoles{}
 
@@ -439,7 +418,6 @@ func (md *MockAerospikeServer) constructAeroUserRolesObject(key string) *aero.Us
 	if len(elements) > 2 {
 		// read-info=1-2-3-4
 		l_read_info := strings.Split(strings.Split(elements[3], "=")[1], "-")
-		// fmt.Println("read-infos: ", elements[3])
 		l_int_read_info := []int{0, 0, 0, 0}
 		for i := 0; i < len(l_read_info); i++ {
 			l_int_read_info[i] = 0
@@ -452,7 +430,6 @@ func (md *MockAerospikeServer) constructAeroUserRolesObject(key string) *aero.Us
 		// write-info=11-12-13-14
 		l_write_info := strings.Split(strings.Split(elements[4], "=")[1], "-")
 		l_int_write_info := []int{0, 0, 0, 0}
-		// fmt.Println("write-infos: ", elements[4])
 		for i := 0; i < len(l_write_info); i++ {
 			l_int_write_info[i] = 0
 			if l_read_info[i] != "" {

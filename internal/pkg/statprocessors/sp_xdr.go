@@ -69,7 +69,6 @@ func (xw *XdrStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]st
 	for _, key := range infoKeys {
 
 		xdrRawMetrics := rawMetrics[key]
-		// fmt.Println("\n\nwatcher_xdr: xdrRawMetrics: ", xdrRawMetrics+"\n===========================")
 		// find and construct metric name
 		dcName, ns, metricPrefix := xw.constructMetricNamePrefix(key)
 		tmpXdrMetricsToSend := xw.handleRefresh(key, xdrRawMetrics, clusterName, service, dcName, ns, metricPrefix)

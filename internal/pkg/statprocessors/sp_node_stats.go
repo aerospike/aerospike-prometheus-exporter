@@ -1,8 +1,6 @@
 package statprocessors
 
 import (
-	"fmt"
-
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 
 	log "github.com/sirupsen/logrus"
@@ -35,12 +33,6 @@ func (sw *NodeStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string
 
 func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 
-	// // check if LatencyBenchmarks is valid reference
-	// if LatencyBenchmarks == nil {
-	// 	fmt.Println("node-stats: Initialing LatencyBenchmarks as it is Nil")
-	// 	LatencyBenchmarks = make(map[string]float64)
-	// }
-
 	if sw.nodeMetrics == nil {
 		sw.nodeMetrics = make(map[string]AerospikeStat)
 	}
@@ -65,8 +57,6 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	// merge both array into single
 	allMetricsToSend = append(allMetricsToSend, lCfgMetricsToSend...)
 	allMetricsToSend = append(allMetricsToSend, lStatMetricsToSend...)
-
-	fmt.Println("node = len(LatencyBenchmarks) - ", len(LatencyBenchmarks))
 
 	return allMetricsToSend, nil
 }
