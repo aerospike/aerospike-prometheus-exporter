@@ -177,8 +177,6 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 		sindexType := stats[SINDEX_TYPE]
 		storageEngine := stats[STORAGE_ENGINE]
 
-		// fmt.Println(" storageEngine: ", storageEngine)
-
 		// if stat is index-type or sindex-type , append addl label
 		if strings.HasPrefix(deviceType, INDEX_TYPE) && len(indexType) > 0 {
 			labels = append(labels, METRIC_LABEL_INDEX)

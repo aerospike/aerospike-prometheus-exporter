@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -152,7 +151,6 @@ func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []s
 		}
 
 		commands = append(commands, histCommand)
-		fmt.Println(" asinfo -h $1 -v ", histCommand)
 	}
 
 	log.Tracef("latency-passtwokeys:%s", commands)
