@@ -240,7 +240,7 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 		//
 		// check and if latency benchmarks stat - is it enabled (bool true==1 and false==0 after conversion)
 		if isStatLatencyRelated(stat) && pv == 1 {
-			fmt.Println("isStatLatencyRelated: ", stat)
+			fmt.Println("namespace - isStatLatencyRelated: ", stat)
 			LatencyBenchmarks[nsName+"-"+stat] = pv
 		}
 	}
