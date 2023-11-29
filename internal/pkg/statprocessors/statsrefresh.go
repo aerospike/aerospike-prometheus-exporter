@@ -1,8 +1,6 @@
 package statprocessors
 
 import (
-	"fmt"
-
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	log "github.com/sirupsen/logrus"
@@ -55,8 +53,6 @@ func Refresh() ([]AerospikeStat, error) {
 
 	for i, c := range allStatsprocessorList {
 
-		fmt.Printf("Calling... refresh of %T\n", c)
-		fmt.Println("\tLatencyCommands now are ", len(LatencyBenchmarks))
 		if keys := c.PassTwoKeys(passOneOutput); len(keys) > 0 {
 
 			infoKeys = append(infoKeys, keys...)
