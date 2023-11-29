@@ -67,7 +67,7 @@ func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]stri
 		tmp = strings.Replace(tmp, "enable-", "", 1)
 		tmp = strings.Replace(tmp, "hist-", "", 1)
 
-		print("latencies:hist={" + tmp)
+		fmt.Print("latencies:hist={" + tmp)
 
 		if strings.Contains(lLatencyBenchmark, "re-repl") {
 			// Exception case

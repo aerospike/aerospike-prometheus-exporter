@@ -72,6 +72,13 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []s
 }
 
 func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
+
+	// check if LatencyBenchmarks is valid reference
+	if LatencyBenchmarks == nil {
+		fmt.Println("namespaces - Initialing LatencyBenchmarks as it is Nil")
+		LatencyBenchmarks = make(map[string]float64)
+	}
+
 	if nw.namespaceStats == nil {
 		nw.namespaceStats = make(map[string]AerospikeStat)
 	}
@@ -155,12 +162,6 @@ func (nw *NamespaceStatsProcessor) refreshIndexPressure(singleInfoKey string, in
 
 // all namespace stats (except index-pressure)
 func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, infoKeys []string, rawMetrics map[string]string) []AerospikeStat {
-
-	// check if LatencyBenchmarks is valid reference
-	if LatencyBenchmarks == nil {
-		fmt.Println("namespaces - Initialing LatencyBenchmarks as it is Nil")
-		LatencyBenchmarks = make(map[string]float64)
-	}
 
 	// extract namespace from info-command, construct: namespace/test, namespace/bar
 	nsName := strings.ReplaceAll(singleInfoKey, (KEY_NS_NAMESPACE + "/"), "")
