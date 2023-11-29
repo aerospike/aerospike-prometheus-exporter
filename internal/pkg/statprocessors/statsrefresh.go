@@ -1,6 +1,8 @@
 package statprocessors
 
 import (
+	"fmt"
+
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	log "github.com/sirupsen/logrus"
@@ -11,6 +13,7 @@ import (
 func Refresh() ([]AerospikeStat, error) {
 
 	// Reset global variables
+	fmt.Println("statsrefresh - len(LatencyBenchmarks): ", len(LatencyBenchmarks))
 	LatencyBenchmarks = make(map[string]float64)
 
 	fullHost := commons.GetFullHost()
