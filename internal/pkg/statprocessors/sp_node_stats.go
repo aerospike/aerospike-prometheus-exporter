@@ -66,6 +66,8 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	allMetricsToSend = append(allMetricsToSend, lCfgMetricsToSend...)
 	allMetricsToSend = append(allMetricsToSend, lStatMetricsToSend...)
 
+	fmt.Println("node = len(LatencyBenchmarks) - ", len(LatencyBenchmarks))
+
 	return allMetricsToSend, nil
 }
 

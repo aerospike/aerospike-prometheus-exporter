@@ -99,6 +99,8 @@ func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[str
 
 	}
 
+	fmt.Println("namespace = len(LatencyBenchmarks) - ", len(LatencyBenchmarks))
+
 	return allMetricsToSend, nil
 }
 
