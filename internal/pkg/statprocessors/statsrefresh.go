@@ -80,7 +80,8 @@ func Refresh() ([]AerospikeStat, error) {
 
 	// sanitize the utf8 strings before sending them to watchers
 	for i, c := range allStatsprocessorList {
-		fmt.Println("\nSending... ", allStatsprocessorList[i], " keys to each Refresh ...")
+		fmt.Printf("\nSending... refresh of %T", c)
+
 		tmpRefreshedMetrics, err := c.Refresh(statprocessorInfoKeys[i], rawMetrics)
 		if err != nil {
 			return allMetricsToSend, err
