@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -11,7 +12,7 @@ import (
 type LatencyWatcher struct {
 }
 
-var LatencyBenchmarks = make(map[string]float64)
+var LatencyBenchmarks = make(map[string]string)
 
 func (lw *LatencyWatcher) describe(ch chan<- *prometheus.Desc) {}
 
@@ -121,8 +122,9 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 
 // Utility methods
 // checks if a stat can be considered for latency stat retrieval
-func canConsiderLatencyCommand(stat string) bool {
-	return (strings.Contains(stat, "enable-benchmarks-") ||
+func isStatLatencyHistRelated(stat string) bool {
+	// is not enable-benchmarks-storage and (enable-benchmarks-* or enable-hist-*)
+	return (!strings.Contains(stat, "enable-benchmarks-storage")) && (strings.Contains(stat, "enable-benchmarks-") ||
 		strings.Contains(stat, "enable-hist-")) // hist-proxy & hist-info - both at service level
 }
 
@@ -133,48 +135,24 @@ func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []s
 	// re-repl is auto-enabled, but not coming as part of latencies: list, hence we are adding it explicitly
 	//
 	// Hashmap content format := namespace-<histogram-key> = <0/1>
-	for ns_latency_enabled_benchmark := range LatencyBenchmarks {
-		l_value := LatencyBenchmarks[ns_latency_enabled_benchmark]
-		// only if enabled, fetch the metrics
-		if l_value == 1 {
-			// if enable-hist-proxy
-			//    command = latencies:hist={test}-proxy
-			// else if enable-benchmarks-fabric
-			//    command = latencies:hist=benchmarks-fabric
-			// else if re-repl
-			//    command = latencies:hist={test}-re-repl
+	for latencyHistName := range LatencyBenchmarks {
+		histTokens := strings.Split(latencyHistName, "-")
 
-			if strings.Contains(ns_latency_enabled_benchmark, "re-repl") {
-				// Exception case
-				ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
-				l_command := "latencies:hist={" + ns + "}-re-repl"
-				commands = append(commands, l_command)
-			} else if strings.Contains(ns_latency_enabled_benchmark, "enable-hist-proxy") {
-				// Exception case
-				ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
-				l_command := "latencies:hist={" + ns + "}-proxy"
-				commands = append(commands, l_command)
-			} else if strings.Contains(ns_latency_enabled_benchmark, "enable-benchmarks-fabric") {
-				// Exception case
-				l_command := "latencies:hist=benchmarks-fabric"
-				commands = append(commands, l_command)
-			} else if strings.Contains(ns_latency_enabled_benchmark, "enable-hist-info") {
-				// Exception case
-				l_command := "latencies:hist=info"
-				commands = append(commands, l_command)
-			} else if strings.Contains(ns_latency_enabled_benchmark, "-benchmarks-") {
-				// remaining enabled benchmark latencies like
-				//         enable-benchmarks-fabric, enable-benchmarks-ops-sub, enable-benchmarks-read
-				//         enable-benchmarks-write, enable-benchmarks-udf, enable-benchmarks-udf-sub, enable-benchmarks-batch-sub
+		histCommand := "latencies:hist="
 
-				// format:= test-enable-benchmarks-read (or) test-enable-hist-proxy
-				ns := strings.Split(ns_latency_enabled_benchmark, "-")[0]
-				benchmarks_start_index := strings.LastIndex(ns_latency_enabled_benchmark, "-benchmarks-")
-				l_command := ns_latency_enabled_benchmark[benchmarks_start_index:]
-				l_command = "latencies:hist={" + ns + "}" + l_command
-				commands = append(commands, l_command)
-			}
+		// service-enable-benchmarks-fabric or ns-enable-benchmarks-ops-sub or service-enable-hist-info
+		if histTokens[0] != "service" {
+			histCommand = histCommand + "{" + histTokens[0] + "}-"
 		}
+
+		if strings.Contains(latencyHistName, "enable-benchmarks-") {
+			histCommand = histCommand + strings.Join(histTokens[2:], "-")
+		} else {
+			histCommand = histCommand + strings.Join(histTokens[3:], "-")
+		}
+
+		commands = append(commands, histCommand)
+		fmt.Println(" asinfo -h $1 -v ", histCommand)
 	}
 
 	log.Tracef("latency-passtwokeys:%s", commands)
