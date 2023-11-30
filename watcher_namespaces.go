@@ -177,8 +177,6 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 		sindexType := stats[SINDEX_TYPE]
 		storageEngine := stats[STORAGE_ENGINE]
 
-		// fmt.Println(" storageEngine: ", storageEngine)
-
 		// if stat is index-type or sindex-type , append addl label
 		if strings.HasPrefix(deviceType, INDEX_TYPE) && len(indexType) > 0 {
 			labels = append(labels, METRIC_LABEL_INDEX)
@@ -210,7 +208,21 @@ func (nw *NamespaceWatcher) refreshNamespaceStats(singleInfoKey string, infoKeys
 			// push to prom-channel
 			pushToPrometheus(asMetric, pv, labels, labelValues, ch)
 		}
+
+		// below code section is to ensure ns+latencies combination is handled during LatencyWatcher
+		//
+		// check and if latency benchmarks stat - is it enabled (bool true==1 and false==0 after conversion)
+		if isStatLatencyHistRelated(stat) {
+			delete(LatencyBenchmarks, nsName+"-"+stat)
+
+			if pv == 1 {
+				LatencyBenchmarks[nsName+"-"+stat] = stat
+			}
+		}
+
 	}
+	// // append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
+	// LatencyBenchmarks[nsName+"-latency-hist-re-repl"] = "{" + nsName + "}-re-repl"
 
 }
 

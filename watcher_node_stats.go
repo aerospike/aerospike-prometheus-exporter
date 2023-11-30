@@ -75,5 +75,15 @@ func (sw *StatsWatcher) handleRefresh(o *Observer, nodeRawMetrics string, cluste
 
 		pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
 
+		// check and if latency benchmarks stat, is it enabled (bool true==1 and false==0 after conversion)
+		if isStatLatencyHistRelated(stat) {
+			// remove old value as microbenchmark may get enabled / disable on-the-fly at server so we cannot rely on value
+			delete(LatencyBenchmarks, "service-"+stat)
+
+			if pv == 1 {
+				LatencyBenchmarks["service-"+stat] = stat
+			}
+		}
+
 	}
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	log "github.com/sirupsen/logrus"
@@ -8,6 +10,8 @@ import (
 
 type LatencyWatcher struct {
 }
+
+var LatencyBenchmarks = make(map[string]string)
 
 func (lw *LatencyWatcher) describe(ch chan<- *prometheus.Desc) {}
 
@@ -33,7 +37,7 @@ func (lw *LatencyWatcher) passTwoKeys(rawMetrics map[string]string) (latencyComm
 	}
 
 	if ok {
-		return []string{"latencies:"}
+		return lw.getLatenciesCommands(rawMetrics)
 	}
 
 	return []string{"latency:"}
@@ -56,10 +60,25 @@ func (lw *LatencyWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 		}
 	}
 
+	// loop all the latency infokeys
+	for _, infoKey := range infoKeys {
+		err := parseSingleLatenciesKey(infoKey, rawMetrics, allowedLatenciesList, blockedLatenciessList, ch)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]string,
+	allowedLatenciesList map[string]struct{},
+	blockedLatenciessList map[string]struct{}, ch chan<- prometheus.Metric) error {
+
 	var latencyStats map[string]StatsMap
 
 	if rawMetrics["latencies:"] != "" {
-		latencyStats = parseLatencyInfo(rawMetrics["latencies:"], int(config.Aerospike.LatencyBucketsCount))
+		latencyStats = parseLatencyInfo(rawMetrics[singleLatencyKey], int(config.Aerospike.LatencyBucketsCount))
 	} else {
 		latencyStats = parseLatencyInfoLegacy(rawMetrics["latency:"], int(config.Aerospike.LatencyBucketsCount))
 	}
@@ -98,4 +117,40 @@ func (lw *LatencyWatcher) refresh(o *Observer, infoKeys []string, rawMetrics map
 	}
 
 	return nil
+}
+
+// Utility methods
+// checks if a stat can be considered for latency stat retrieval
+func isStatLatencyHistRelated(stat string) bool {
+	// is not enable-benchmarks-storage and (enable-benchmarks-* or enable-hist-*)
+	return (!strings.Contains(stat, "enable-benchmarks-storage")) && (strings.Contains(stat, "enable-benchmarks-") ||
+		strings.Contains(stat, "enable-hist-")) // hist-proxy & hist-info - both at service level
+}
+
+func (lw *LatencyWatcher) getLatenciesCommands(rawMetrics map[string]string) []string {
+	var commands = []string{"latencies:"}
+
+	// Hashmap content format := namespace-<histogram-key> = <histogram-key>
+	for latencyHistName := range LatencyBenchmarks {
+		histTokens := strings.Split(latencyHistName, "-")
+
+		histCommand := "latencies:hist="
+
+		// service-enable-benchmarks-fabric or ns-enable-benchmarks-ops-sub or service-enable-hist-info
+		if histTokens[0] != "service" {
+			histCommand = histCommand + "{" + histTokens[0] + "}-"
+		}
+
+		if strings.Contains(latencyHistName, "enable-benchmarks-") {
+			histCommand = histCommand + strings.Join(histTokens[2:], "-")
+		} else {
+			histCommand = histCommand + strings.Join(histTokens[3:], "-")
+		}
+
+		commands = append(commands, histCommand)
+	}
+
+	log.Tracef("latency-passtwokeys:%s", commands)
+
+	return commands
 }
