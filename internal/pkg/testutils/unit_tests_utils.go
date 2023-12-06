@@ -54,10 +54,10 @@ func GetWatchersMockResultsFile(filename string) string {
 	return commons.GetExporterBaseFolder() + "/internal/pkg/statprocessors/tests/" + filename
 }
 
-func GetMetricHandlerConfigFile(filename string) string {
-	return commons.GetExporterBaseFolder() + "/internal/pkg/metrichandlers/tests/" + filename
+func GetExecutorsConfigFile(filename string) string {
+	return commons.GetExporterBaseFolder() + "/internal/pkg/executors/tests/" + filename
 }
 
 func GetPromMockResultsFile(filename string) string {
-	return commons.GetExporterBaseFolder() + "/internal/pkg/metrichandlers/tests/" + filename
+	return commons.GetExporterBaseFolder() + "/internal/pkg/executors/tests/" + filename
 }
