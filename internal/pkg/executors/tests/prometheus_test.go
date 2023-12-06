@@ -23,17 +23,17 @@ var DEFAULT_PROM_URL = "http://localhost:9145/metrics"
 
 var metrics_from_prom = []string{}
 
-func Test_Initialize_Prom_Exporter(t *testing.T) {
+func Test_InitializePromExporter(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Initialize_Prom_Exporter")
 	// initialize config and gauge-lists
 	initConfigsAndGauges()
 
 	// initialize prom
-	initialize_prom_processor()
+	initializePromProcessor()
 
 	// generate and validate labels, global call, only once else Prom will not serve metrics as there is no change
-	metrics_from_prom = make_http_call_to_prom_processor(t, nil)
+	metrics_from_prom = makeHttpCallToPromProcessor(t, nil)
 }
 
 func Test_RefreshDefault(t *testing.T) {
@@ -54,7 +54,7 @@ func Test_RefreshDefault(t *testing.T) {
 
 }
 
-func Test_A_Unique_Metrics_Count(t *testing.T) {
+func Test_UniqueMetricsCount(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Unique_Metrics_Count")
 
@@ -78,7 +78,7 @@ func Test_A_Unique_Metrics_Count(t *testing.T) {
 /**
 * makes a http call to the running prom and returns the output
  */
-func make_http_call_to_prom_processor(t *testing.T, asMetrics []statprocessors.AerospikeStat) []string {
+func makeHttpCallToPromProcessor(t *testing.T, asMetrics []statprocessors.AerospikeStat) []string {
 	// prometheus http server is initialized
 	httpClient := http.Client{Timeout: time.Duration(1) * time.Second}
 	resp, err := httpClient.Get(DEFAULT_PROM_URL)
@@ -113,7 +113,7 @@ func make_http_call_to_prom_processor(t *testing.T, asMetrics []statprocessors.A
 
 // Data fetch helpers functions
 
-func initialize_prom_processor() {
+func initializePromProcessor() {
 	metric_processors := executors.GetExecutors()
 	processor := metric_processors[executors.PROMETHEUS]
 
