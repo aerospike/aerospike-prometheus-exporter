@@ -17,53 +17,7 @@ permissions:
   contents: write
 
 jobs:
-    job_build_tar_gz:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v3
-          with:
-            fetch-depth: 0
-
-        - uses: actions-ecosystem/action-get-latest-tag@v1
-          id: get-latest-tag
-    
-        - name: Set up Go
-          uses: actions/setup-go@v3
-          with:
-            go-version: 1.20.2
-
-        - name: go mod tidy
-          run: |
-             dpkg-architecture -q DEB_BUILD_ARCH
-             (git describe --tags --always --abbrev=0 | cut -c 1-)
-             go mod tidy
-
-        - uses: ruby/setup-ruby@v1
-          with:
-            ruby-version: '3.2' # Not needed with a .ruby-version file
-            bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-        - run: |
-            gem install fpm --no-document
-
-        - name: make exporter tar/gz for amd64/arm64 and x86_64/aarch64
-          run: |
-            make tar GOOS=linux GOARCH=amd64 DEB_PKG_ARCH=amd64 ARCH=x86_64
-            make tar GOOS=linux GOARCH=arm64 DEB_PKG_ARCH=arm64 ARCH=aarch64      
-        - name: Upload Release Asset
-          env:
-            GH_TOKEN: ${{ github.token }}
-            TAG_NAME: "${{ steps.get-latest-tag.outputs.tag }}"
-          run: |
-             # echo "tag_name $TAG_NAME"
-             echo
-             
-             files=$(find pkg/target -type f -name "aerospike-prome*" -printf "$(realpath -s %p) ")
-         
-             for file in $files; do
-               echo "uploading file === $file to release-tag $TAG_NAME"
-               gh release upload "$TAG_NAME" "$file"
-             done   
-            
+      
     job_build:
       strategy:
         fail-fast: false
