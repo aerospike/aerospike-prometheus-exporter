@@ -14,7 +14,7 @@ type DataProvider interface {
 }
 
 // pre-create the instances
-var dp_aerospike_server = &AerospikeServerProvider{}
+var dp_aerospike_server = &AerospikeServer{}
 var dp_mock_server = &MockAerospikeServer{}
 
 func GetProvider() DataProvider {

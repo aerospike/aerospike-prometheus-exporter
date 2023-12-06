@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/metrichandlers"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/executors"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -114,8 +114,8 @@ func make_http_call_to_prom_processor(t *testing.T, asMetrics []statprocessors.A
 // Data fetch helpers functions
 
 func initialize_prom_processor() {
-	metric_processors := metrichandlers.GetMetricHandlers()
-	processor := metric_processors[metrichandlers.PROM]
+	metric_processors := executors.GetExecutors()
+	processor := metric_processors[executors.PROMETHEUS]
 
 	// run Prom as a separate process
 	go func() {

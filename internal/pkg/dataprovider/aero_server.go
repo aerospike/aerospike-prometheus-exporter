@@ -17,14 +17,14 @@ import (
 )
 
 // Inherits DataProvider interface
-type AerospikeServerProvider struct {
+type AerospikeServer struct {
 }
 
-func (asm AerospikeServerProvider) RequestInfo(infoKeys []string) (map[string]string, error) {
+func (asm AerospikeServer) RequestInfo(infoKeys []string) (map[string]string, error) {
 	return fetchRequestInfoFromAerospike(infoKeys)
 }
 
-func (asm AerospikeServerProvider) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
+func (asm AerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
 	return fetchUsersRoles()
 }
 

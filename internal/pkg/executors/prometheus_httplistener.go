@@ -1,4 +1,4 @@
-package metrichandlers
+package executors
 
 import (
 	"crypto/tls"
@@ -15,14 +15,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type AsmetricsHttpProcessor struct {
-	promimpl *AsPromImpl
+type PrometheusHttpExecutor struct {
+	promimpl *PrometheusImpl
 }
 
-func (pm AsmetricsHttpProcessor) Initialize() error {
+func (pm PrometheusHttpExecutor) Initialize() error {
 	mux := http.NewServeMux()
 
-	pm.promimpl = NewAsPromImpl()
+	pm.promimpl = NewPrometheusImpl()
 
 	promReg := prometheus.NewRegistry()
 	promReg.MustRegister(pm.promimpl)

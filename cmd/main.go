@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/metrichandlers"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/executors"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -15,7 +15,7 @@ var (
 	configFile   = flag.String("config", "/etc/aerospike-prometheus-exporter/ape.toml", "Config File")
 	showUsage    = flag.Bool("u", false, "Show usage information")
 	showVersion  = flag.Bool("version", false, "Print version")
-	serving_mode = flag.String("serve_mode", metrichandlers.PROM, "Exporter metrics serving mode")
+	serving_mode = flag.String("serve_mode", executors.PROMETHEUS, "Exporter metrics serving mode")
 
 	version = "v1.9.0"
 
@@ -33,7 +33,7 @@ func main() {
 	config.InitConfig(*configFile)
 	config.InitGaugeStats(*gaugeStatsFile)
 
-	metric_handlers := metrichandlers.GetMetricHandlers()
+	metric_handlers := executors.GetExecutors()
 	processor := metric_handlers[*serving_mode]
 
 	if processor != nil {
