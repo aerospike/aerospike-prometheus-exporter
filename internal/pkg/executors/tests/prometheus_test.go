@@ -1,4 +1,4 @@
-package processors
+package executors
 
 import (
 	"bufio"
@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/executors"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,7 +40,7 @@ func Test_RefreshDefault(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_RefreshDefault")
 
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	pdv := udh.GetUnittestValidator("prometheus")
 	expectedOutputs := pdv.GetMetricLabelsWithValues()
 
@@ -134,8 +134,8 @@ var TESTS_DEFAULT_GAUGE_LIST_FILE = "configs/gauge_stats_list.toml"
 func initConfigsAndGauges() {
 	// Initialize and validate Gauge config
 	// config.InitConfig(testutils.GetConfigfileLocation(testutils.TESTS_MOCK_CONFIG_FILE))
-	config.InitConfig(testutils.GetExecutorsConfigFile(testutils.TESTS_MOCK_CONFIG_FILE))
+	config.InitConfig(commons.GetExecutorsConfigFile(commons.TESTS_MOCK_CONFIG_FILE))
 
-	config.InitGaugeStats(testutils.GetDefaultGaugeListFilename())
+	config.InitGaugeStats(commons.GetDefaultGaugeListFilename())
 
 }

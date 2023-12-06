@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +18,7 @@ func Test_Sindex_PassOneKeys(t *testing.T) {
 	sindexWatcher := &statprocessors.SindexStatsProcessor{}
 	nwPassOneKeys := sindexWatcher.PassOneKeys()
 
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sindex")
 	passOneOutputs := ndv.GetPassOneKeys()
 
@@ -34,7 +34,7 @@ func Test_Sindex_PassTwoKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sindex_PassTwoKeys")
 
 	// initialize config and gauge-lists
-	testutils.InitConfigurations(testutils.GetWatchersConfigFile(testutils.TESTS_DEFAULT_CONFIG_FILE))
+	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
 	sindexWatcher := &statprocessors.SindexStatsProcessor{}
@@ -43,7 +43,7 @@ func Test_Sindex_PassTwoKeys(t *testing.T) {
 	fmt.Println("Test_Sindex_PassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := sindexWatcher.PassTwoKeys(passOneOutput)
 
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sindex")
 	expectedPassTwoOutputs := ndv.GetPassTwoKeys()
 
@@ -62,7 +62,7 @@ func Test_Sindex_RefreshDefault(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sindex_RefreshDefault")
 
 	// initialize config and gauge-lists
-	testutils.InitConfigurations(testutils.GetWatchersConfigFile(testutils.TESTS_DEFAULT_CONFIG_FILE))
+	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
 	sindex_runTestcase(t)
 }
@@ -94,7 +94,7 @@ func sindex_runTestcase(t *testing.T) {
 	assert.Nil(t, err, "Error while sindexMetrics.Refresh with passTwoOutputs ")
 	assert.NotEmpty(t, sindexMetrics, "Error while sindexMetrics.Refresh, sindexMetrics is EMPTY ")
 
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sindex")
 	expected_results := ndv.GetMetricLabelsWithValues()
 

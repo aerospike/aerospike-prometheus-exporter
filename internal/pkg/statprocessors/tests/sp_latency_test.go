@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +18,7 @@ func Test_Latency_PassOneKeys(t *testing.T) {
 	latencyStatsProcessor := &statprocessors.LatencyStatsProcessor{}
 	nwPassOneKeys := latencyStatsProcessor.PassOneKeys()
 
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("latency")
 	passOneOutputs := ndv.GetPassOneKeys()
 
@@ -31,7 +31,7 @@ func Test_Latency_PassTwoKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Latency_PassTwoKeys")
 
 	// initialize config and gauge-lists
-	testutils.InitConfigurations(testutils.TESTS_DEFAULT_CONFIG_FILE)
+	commons.InitConfigurations(commons.TESTS_DEFAULT_CONFIG_FILE)
 
 	// Check passoneKeys
 	latencyStatsProcessor := &statprocessors.LatencyStatsProcessor{}
@@ -40,7 +40,7 @@ func Test_Latency_PassTwoKeys(t *testing.T) {
 	fmt.Println("Test_Latency_PassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := latencyStatsProcessor.PassTwoKeys(passOneOutput)
 
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("latency")
 	expectedPassTwoOutputs := ndv.GetPassTwoKeys()
 
@@ -59,7 +59,7 @@ func Test_Latency_RefreshDefault(t *testing.T) {
 	fmt.Println("initializing config ... Test_Latency_RefreshDefault")
 
 	// initialize config and gauge-lists
-	testutils.InitConfigurations(testutils.TESTS_DEFAULT_CONFIG_FILE)
+	commons.InitConfigurations(commons.TESTS_DEFAULT_CONFIG_FILE)
 
 	latency_runTestcase(t)
 }
@@ -97,7 +97,7 @@ func latency_runTestcase(t *testing.T) {
 	// 	fmt.Println(str)
 	// }
 
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("latency")
 	expected_results := ndv.GetMetricLabelsWithValues()
 

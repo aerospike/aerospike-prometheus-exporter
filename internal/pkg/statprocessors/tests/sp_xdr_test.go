@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +18,7 @@ func Test_Xdr_PassOneKeys(t *testing.T) {
 	xdrWatcher := &statprocessors.XdrStatsProcessor{}
 	xdrPassOneKeys := xdrWatcher.PassOneKeys()
 
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("xdr")
 	passOneOutputs := ndv.GetPassOneKeys()
 
@@ -34,7 +34,7 @@ func Test_Xdr_PassTwoKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Xdr_PassTwoKeys")
 
 	// initialize config and gauge-lists
-	testutils.InitConfigurations(testutils.GetWatchersConfigFile(testutils.TESTS_DEFAULT_CONFIG_FILE))
+	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
 	xdrWatcher := &statprocessors.XdrStatsProcessor{}
@@ -48,7 +48,7 @@ func Test_Xdr_PassTwoKeys(t *testing.T) {
 
 	passTwoOutputs := xdrWatcher.PassTwoKeys(passOneOutput)
 
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("xdr")
 	expectedPassTwoOutputs := ndv.GetPassTwoKeys()
 
@@ -67,7 +67,7 @@ func Test_Xdr_RefreshDefault(t *testing.T) {
 	fmt.Println("initializing config ... Test_Xdr_RefreshDefault")
 
 	// initialize config and gauge-lists
-	testutils.InitConfigurations(testutils.GetWatchersConfigFile(testutils.TESTS_DEFAULT_CONFIG_FILE))
+	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
 	xdr_runTestcase(t)
 }
@@ -98,7 +98,7 @@ func xdr_runTestcase(t *testing.T) {
 	assert.Nil(t, err, "Error while XdrWatcher.Refresh with passTwoOutputs ")
 	assert.NotEmpty(t, xdrMetrics, "Error while XdrWatcher.Refresh, XdrWatcher is EMPTY ")
 
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("xdr")
 	expected_results := ndv.GetMetricLabelsWithValues()
 

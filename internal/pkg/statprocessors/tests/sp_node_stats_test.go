@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +18,7 @@ func Test_Node_PassOneKeys(t *testing.T) {
 	nodeWatcher := &statprocessors.NodeStatsProcessor{}
 	nwPassOneKeys := nodeWatcher.PassOneKeys()
 
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("node")
 	passOneOutputs := ndv.GetPassOneKeys()
 
@@ -31,7 +31,7 @@ func Test_Node_PassTwoKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Node_PassTwoKeys")
 
 	// initialize config and gauge-lists
-	testutils.InitConfigurations(testutils.GetWatchersConfigFile(testutils.TESTS_DEFAULT_CONFIG_FILE))
+	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
 	nodeWatcher := &statprocessors.NodeStatsProcessor{}
@@ -40,7 +40,7 @@ func Test_Node_PassTwoKeys(t *testing.T) {
 	fmt.Println("Test_Node_PassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := nodeWatcher.PassTwoKeys(passOneOutput)
 
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("node")
 	expectedPassTwoOutputs := ndv.GetPassTwoKeys()
 
@@ -59,7 +59,7 @@ func Test_Node_RefreshDefault(t *testing.T) {
 	fmt.Println("initializing config ... Test_Node_RefreshDefault")
 
 	// initialize config and gauge-lists
-	testutils.InitConfigurations(testutils.GetWatchersConfigFile(testutils.TESTS_DEFAULT_CONFIG_FILE))
+	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
 	node_runTestcase(t)
 }
@@ -89,7 +89,7 @@ func node_runTestcase(t *testing.T) {
 	assert.Nil(t, err, "Error while NodeStatsWatcher.Refresh with passTwoOutputs ")
 	assert.NotEmpty(t, nodeMetrics, "Error while NodeStatsWatcher.Refresh, NodeStatsWatcher is EMPTY ")
 
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("node")
 	expected_results := ndv.GetMetricLabelsWithValues()
 

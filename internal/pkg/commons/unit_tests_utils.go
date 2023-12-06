@@ -1,10 +1,9 @@
-package testutils
+package commons
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 )
 
@@ -43,21 +42,21 @@ func InitConfigurations(config_filename string) {
 }
 
 func GetDefaultGaugeListFilename() string {
-	return commons.GetExporterBaseFolder() + "/" + TESTS_DEFAULT_GAUGE_LIST_FILE
+	return GetExporterBaseFolder() + "/" + TESTS_DEFAULT_GAUGE_LIST_FILE
 }
 
 func GetWatchersConfigFile(filename string) string {
-	return commons.GetExporterBaseFolder() + "/internal/pkg/statprocessors/tests/" + filename
+	return GetExporterBaseFolder() + "/internal/pkg/statprocessors/tests/" + filename
 }
 
 func GetWatchersMockResultsFile(filename string) string {
-	return commons.GetExporterBaseFolder() + "/internal/pkg/statprocessors/tests/" + filename
+	return GetExporterBaseFolder() + "/internal/pkg/statprocessors/tests/" + filename
 }
 
 func GetExecutorsConfigFile(filename string) string {
-	return commons.GetExporterBaseFolder() + "/internal/pkg/executors/tests/" + filename
+	return GetExporterBaseFolder() + "/internal/pkg/executors/tests/" + filename
 }
 
 func GetPromMockResultsFile(filename string) string {
-	return commons.GetExporterBaseFolder() + "/internal/pkg/executors/tests/" + filename
+	return GetExporterBaseFolder() + "/internal/pkg/executors/tests/" + filename
 }

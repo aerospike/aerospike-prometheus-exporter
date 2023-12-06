@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +18,7 @@ func Test_Namespace_PassOneKeys(t *testing.T) {
 	nsWatcher := &statprocessors.NamespaceStatsProcessor{}
 	nsPassOneKeys := nsWatcher.PassOneKeys()
 
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("namespace")
 	passOneOutputs := ndv.GetPassOneKeys()
 
@@ -34,7 +34,7 @@ func Test_Namespace_PassTwoKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Namespace_PassTwoKeys")
 
 	// initialize config and gauge-lists
-	testutils.InitConfigurations(testutils.GetWatchersConfigFile(testutils.TESTS_DEFAULT_CONFIG_FILE))
+	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
 	// rawMetrics := getRawMetrics()
 	nsWatcher := &statprocessors.NamespaceStatsProcessor{}
@@ -46,7 +46,7 @@ func Test_Namespace_PassTwoKeys(t *testing.T) {
 	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
 
 	// expectedOutputs := []string{"namespace/bar", "namespace/test"}
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("namespace")
 	expectedOutputs := ndv.GetPassTwoKeys()
 
@@ -67,7 +67,7 @@ func Test_Namespace_RefreshDefault(t *testing.T) {
 	// Initialize and validate config
 
 	// initialize config and gauge-lists
-	testutils.InitConfigurations(testutils.GetWatchersConfigFile(testutils.TESTS_DEFAULT_CONFIG_FILE))
+	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
 	namespace_runTestcase(t)
 }
@@ -100,7 +100,7 @@ func namespace_runTestcase(t *testing.T) {
 
 	// check for defined pattern, namespace metrics
 	// context, name, labels: cluster, service, namespace,
-	udh := &testutils.UnittestDataHandler{}
+	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("namespace")
 	expected_results := ndv.GetMetricLabelsWithValues()
 	for k := range nsMetrics {
