@@ -89,6 +89,9 @@ fips-rpm: fipsparam rpm
 
 .PHONY: rpm
 rpm: prep
+	$(eval ARCH := $(shell uname -m))
+	$(eval DISTRO_VERSION := $(shell echo $(DISTRO_VERSION) | cut -d'.' -f1)) # Only major version for RPM
+
 	fpm --force \
 		--config-files /etc/aerospike-prometheus-exporter \
 		--input-type dir \

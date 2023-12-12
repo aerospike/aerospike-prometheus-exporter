@@ -23,10 +23,7 @@ jobs:
         fail-fast: false
         matrix:
           arch: ["amd64","arm64"]
-          container: ["ubuntu:20.04","ubuntu:22.04","redhat:8","redhat:9","amazonlinux:2023","debian:10","debian:11","debian:12"]
-          exclude:
-            - container: "debian:10"
-              arch: "arm64"
+          container: ["ubuntu:20.04","ubuntu:22.04","redhat:8","redhat:9","amazonlinux:2023","debian:11","debian:12"]
           include:
             - container: "ubuntu:22.04"
               name: "Ubuntu22.04"
