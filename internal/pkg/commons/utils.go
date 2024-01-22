@@ -8,15 +8,18 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 	"unicode/utf8"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
+	log "github.com/sirupsen/logrus"
 )
 
 // Utility functions
@@ -288,4 +291,39 @@ func GetExporterBaseFolder() string {
 	base_dir_idx := strings.Index(l_cwd, EXPORTER_NAME)
 
 	return l_cwd[0:(base_dir_idx + len(EXPORTER_NAME))]
+}
+
+// OS Signal handling logic
+var ProcessExit chan bool
+
+func HandleSignals() {
+	ProcessExit = make(chan bool)
+	sigChan := make(chan os.Signal, 1)
+
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// Spawn a goroutine to handle signals
+	go func() {
+		for {
+			// Block until a signal is received
+			sig := <-sigChan
+
+			switch sig {
+			case syscall.SIGINT:
+				log.Infof("Received SIGINT. Shutting down...")
+			case syscall.SIGTERM:
+				log.Infof("Received SIGTERM. Shutting down...")
+			default:
+				log.Infof("Received unexpected signal: %v", sig)
+			}
+
+			// Inform listeners to exit
+			close(ProcessExit)
+
+			// Wait for listeners to exit
+			time.Sleep(1 * time.Second)
+
+			os.Exit(0)
+		}
+	}()
 }

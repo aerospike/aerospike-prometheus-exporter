@@ -40,6 +40,16 @@ export JOB_METRICS_BLOCKLIST=${JOB_METRICS_BLOCKLIST:-""}
 export SINDEX_METRICS_ALLOWLIST=${SINDEX_METRICS_ALLOWLIST:-""}
 export SINDEX_METRICS_BLOCKLIST=${SINDEX_METRICS_BLOCKLIST:-""}
 
+export AGENT_PROMETHEUS=${AGENT_PROMETHEUS:-"true"}
+export AGENT_OTEL=${AGENT_OTEL:-"false"}
+
+export USE_MOCK_DATASOURCE=${USE_MOCK_DATASOURCE:-"true"}
+export AGENT_OTEL_APP_SERVICE_NAME=${AGENT_OTEL_APP_SERVICE_NAME:-"aerospike-server-metrics"}
+export AGENT_OTEL_ENDPOINT=${AGENT_OTEL_ENDPOINT:-""}
+export AGENT_OTEL_HEADERS=${AGENT_OTEL_HEADERS:-""}
+export AGENT_OTEL_SERVER_STAT_FETCH_INTERVAL=${AGENT_OTEL_SERVER_STAT_FETCH_INTERVAL:-"60"}
+
+
 if [ -f /etc/aerospike-prometheus-exporter/ape.toml.template ]; then
         env | while IFS= read -r line; do
                 name=${line%%=*}

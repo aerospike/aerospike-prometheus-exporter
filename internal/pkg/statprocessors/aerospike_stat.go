@@ -1,6 +1,10 @@
 package statprocessors
 
-import "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+import (
+	"strings"
+
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+)
 
 // this is used as a prefix to qualify a metric while pushing to Prometheus or something
 var PREFIX_AEROSPIKE = "aerospike_"
@@ -11,6 +15,7 @@ type AerospikeStat struct {
 	Name      string
 	MType     commons.MetricType
 	IsAllowed bool
+	IsConfig  bool
 
 	// Value, Label and Label values
 	Value       float64
@@ -33,7 +38,12 @@ func NewAerospikeStat(pContext commons.ContextType, pStatName string) AerospikeS
 	isAllowed := isMetricAllowed(pContext, pStatName)
 	mType := GetMetricType(pContext, pStatName)
 
-	return AerospikeStat{pContext, pStatName, mType, isAllowed, 0.0, nil, nil}
+	isConfig := false
+	if strings.Contains(pStatName, "-") {
+		isConfig = true
+	}
+
+	return AerospikeStat{pContext, pStatName, mType, isAllowed, isConfig, 0.0, nil, nil}
 }
 
 func (as *AerospikeStat) updateValues(value float64, labels []string, labelValues []string) {

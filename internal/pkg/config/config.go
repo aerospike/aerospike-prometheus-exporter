@@ -15,6 +15,9 @@ var Cfg Config
 // Config represents the aerospike-prometheus-exporter configuration
 type Config struct {
 	AeroProm struct {
+		OtelMode       bool `toml:"OTEL"`
+		PrometheusMode bool `toml:"PROMETHEUS"`
+
 		CertFile          string `toml:"cert_file"`
 		KeyFile           string `toml:"key_file"`
 		RootCA            string `toml:"root_ca"`
@@ -22,10 +25,16 @@ type Config struct {
 
 		MetricLabels map[string]string `toml:"labels"`
 
-		UseMockDatasource uint8 `toml:"use_mock_datasource"`
+		UseMockDatasource bool `toml:"use_mock_datasource"`
 
 		Bind    string `toml:"bind"`
 		Timeout uint8  `toml:"timeout"`
+
+		OtelServiceName             string            `toml:"otel_service_name"`
+		OtelEndpoint                string            `toml:"otel_endpoint"`
+		OtelHeaders                 map[string]string `toml:"otel_headers"`
+		OtelPushInterval            uint8             `toml:"otel_push_interval"`
+		OtelServerStatFetchInterval uint8             `toml:"otel_server_stat_fetch_interval"`
 
 		LogFile  string `toml:"log_file"`
 		LogLevel string `toml:"log_level"`
@@ -126,7 +135,8 @@ type Config struct {
 }
 
 // Validate and update exporter configuration
-func (c *Config) ValidateAndUpdate() {
+func (c *Config) ValidateAndUpdate(md toml.MetaData) {
+
 	if c.AeroProm.Bind == "" {
 		c.AeroProm.Bind = ":9145"
 	}
@@ -143,8 +153,22 @@ func (c *Config) ValidateAndUpdate() {
 		c.Aerospike.Timeout = 5
 	}
 
-	if c.AeroProm.UseMockDatasource > 1 {
-		c.AeroProm.UseMockDatasource = 0
+	if md.IsDefined("Agent", "use_mock_datasource") && c.AeroProm.UseMockDatasource {
+		c.AeroProm.UseMockDatasource = true
+	} else {
+		c.AeroProm.UseMockDatasource = false
+	}
+
+	if len(c.AeroProm.OtelServiceName) == 0 {
+		c.AeroProm.OtelServiceName = "aerospike-server-metrics-service"
+	}
+
+	if c.AeroProm.OtelPushInterval == 0 {
+		c.AeroProm.OtelPushInterval = 60
+	}
+
+	if c.AeroProm.OtelServerStatFetchInterval == 0 {
+		c.AeroProm.OtelPushInterval = 15
 	}
 
 }
@@ -172,7 +196,7 @@ func InitConfig(configFile string) {
 	aslog.Logger.SetLogger(log.StandardLogger())
 	setLogLevel(Cfg.AeroProm.LogLevel)
 
-	Cfg.ValidateAndUpdate()
+	Cfg.ValidateAndUpdate(md)
 }
 
 // Set log file path

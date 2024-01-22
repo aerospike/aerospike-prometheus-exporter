@@ -1,4 +1,8 @@
 [Agent]
+# Metrics Serving modes
+PROMETHEUS = true
+OTEL = false
+
 # Exporter HTTPS (TLS) configuration
 # HTTPS between Prometheus and Exporter
 
@@ -29,13 +33,29 @@ key_file_passphrase = ""
 # labels to add to the prometheus metrics for e.g. labels={zone="asia-south1-a", platform="google compute engine"}
 labels = {latitude="0",longitude="0"}
 
+# prometheus binding port
 bind = ":9145"
 
 # is exporter running in mock test mode
-use_mock_datasource = 0
+# use_mock_datasource = 0
 
 # metrics server timeout in seconds
 timeout = 10
+
+# OTel service-name
+otel_service_name = "aerospike-server-metrics-service"
+
+# OTel Endpoint
+otel_endpoint = ""
+
+# OTel headers
+otel_headers = {}
+
+# OTel server-stat fetch interval (default 15, not recommended to to reduce this)
+otel_server_stat_fetch_interval = 15
+
+# OTel metric push interval (default 60, not recommended to to reduce this)
+otel_push_interval = 60
 
 # Exporter logging configuration
 # Log file path (optional, logs to console by default)
