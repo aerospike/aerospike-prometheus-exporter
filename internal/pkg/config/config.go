@@ -32,6 +32,7 @@ type Config struct {
 
 		OtelServiceName             string            `toml:"otel_service_name"`
 		OtelEndpoint                string            `toml:"otel_endpoint"`
+		OtelTlsEnabled              bool              `toml:"otel_tls_enabled"`
 		OtelHeaders                 map[string]string `toml:"otel_headers"`
 		OtelPushInterval            uint8             `toml:"otel_push_interval"`
 		OtelServerStatFetchInterval uint8             `toml:"otel_server_stat_fetch_interval"`

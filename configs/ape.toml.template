@@ -47,6 +47,9 @@ otel_service_name = "${AGENT_OTEL_APP_SERVICE_NAME}"
 # OTel Endpoint
 otel_endpoint = "${AGENT_OTEL_ENDPOINT}"
 
+# OTel SSL/TLS, for HTTPS endpoints
+otel_tls_enabled = ${AGENT_OTEL_TLS_ENABLED}
+
 # OTel headers
 otel_headers = "{${AGENT_OTEL_HEADERS}}"
 

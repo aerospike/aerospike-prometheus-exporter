@@ -2,136 +2,167 @@ package executors
 
 import (
 	"context"
+	"strconv"
+	"time"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	log "github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	// "go.opentelemetry.io/otel/label"
 )
 
-func sendNodeUp(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, value float64) {
+type OtelExecutor struct {
+}
 
-	nodeActiveDesc, _ := meter.Float64ObservableGauge(
-		"aerospike_node_up",
-		metric.WithDescription("Aerospike node active status"),
+// Variables
+
+var (
+	currentRefreshStats  []statprocessors.AerospikeStat
+	previousRefreshStats map[string]statprocessors.AerospikeStat
+	// mapCounterMetricObjects map[string]metric.Float64Counter
+	// mapGaugeMetricObjects   map[string]metric.Float64ObservableGauge
+
+)
+
+// Exporter interface implementation
+func (oe OtelExecutor) Initialize() error {
+
+	// Observe OS Signals
+	commons.HandleSignals()
+
+	// Initialize storage maps
+	currentRefreshStats = []statprocessors.AerospikeStat{}
+	previousRefreshStats = make(map[string]statprocessors.AerospikeStat)
+	// mapCounterMetricObjects = make(map[string]metric.Float64Counter)
+	// mapGaugeMetricObjects = make(map[string]metric.Float64ObservableGauge)
+
+	log.Infof("*** Initializing Otel Exporter.. START ")
+
+	shutdown := initProvider()
+	defer shutdown()
+	log.Infof("*** Starting Otel Metrics Push thread... ")
+
+	// Start a goroutine to handle exit signals
+	go func() {
+		<-commons.ProcessExit
+		log.Debugf("OTel Executor got EXIT signal from OS")
+		shutdown()
+	}()
+
+	// start push executor
+	startMetricExecutor()
+
+	return nil
+}
+
+// Aerospike Otel metrics serving implementation
+//
+// Initializes an OTLP exporter, and configures the corresponding metric providers
+func initProvider() func() {
+
+	ctx := context.Background()
+	serviceName := config.Cfg.AeroProm.OtelServiceName
+
+	res, err := resource.New(ctx,
+		resource.WithFromEnv(),
+		// resource.WithProcess(),
+		// resource.WithTelemetrySDK(),
+		resource.WithHost(),
+		resource.WithContainer(),
+		resource.WithAttributes(
+			// the service name used to display traces/metrics in backends
+			semconv.ServiceNameKey.String(serviceName),
+		),
 	)
 
-	labels := []attribute.KeyValue{
-		attribute.String("cluster_name", statprocessors.ClusterName),
-		attribute.String("service", statprocessors.Service),
-		attribute.String("build", statprocessors.Build),
+	handleErr(err, "Failed to create OTel Resource")
+
+	otelAgentAddr := config.Cfg.AeroProm.OtelEndpoint
+	headers := readHeaders()
+
+	var metricExp *otlpmetricgrpc.Exporter
+	log.Infof("Creating MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.AeroProm.OtelTlsEnabled))
+
+	if config.Cfg.AeroProm.OtelTlsEnabled {
+		metricExp, err = otlpmetricgrpc.New(
+			ctx,
+			otlpmetricgrpc.WithHeaders(headers),
+			otlpmetricgrpc.WithEndpoint(otelAgentAddr),
+			otlpmetricgrpc.WithTemporalitySelector(temporalityDeltaSelector),
+		)
+	} else {
+		metricExp, err = otlpmetricgrpc.New(
+			ctx,
+			otlpmetricgrpc.WithInsecure(),
+			otlpmetricgrpc.WithHeaders(headers),
+			otlpmetricgrpc.WithEndpoint(otelAgentAddr),
+			otlpmetricgrpc.WithTemporalitySelector(temporalityDeltaSelector),
+		)
 	}
 
-	// append common labels
-	labels = append(labels, commonLabels...)
+	handleErr(err, "Failed to create the collector metric exporter")
 
-	_, err := meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-		o.ObserveFloat64(nodeActiveDesc, value, metric.WithAttributes(labels...))
-		return nil
-	}, nodeActiveDesc)
-
-	handleErr(err, "sendNodeUp() Error while creating object for stat 'aerospike_node_up' ")
-}
-
-func getCommonLabels() []attribute.KeyValue {
-	mlabels := config.Cfg.AeroProm.MetricLabels
-	attrkv := []attribute.KeyValue{}
-	if len(mlabels) > 0 {
-		for k, v := range mlabels {
-			attrkv = append(attrkv, attribute.String(k, v))
-		}
-	}
-
-	return attrkv
-}
-
-func processAerospikeStats(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
-
-	// create the required metered objectes
-	for _, stat := range refreshStats {
-
-		qualifiedName := stat.QualifyMetricContext() + "_" + NormalizeMetric(stat.Name)
-		desc := NormalizeMetric("description_" + stat.Name)
-
-		labels := []attribute.KeyValue{}
-		// label name to value mapped using index
-		for idx, label := range stat.Labels {
-			labels = append(labels, attribute.String(label, stat.LabelValues[idx]))
-		}
-
-		// append common labels
-		labels = append(labels, commonLabels...)
-
-		// log.Tracef("Otel.startServeMetrics() :%s:%s", qualifiedName, fmt.Sprintf("%f", stat.Value))
-		// create Otel metric
-		if stat.MType == commons.MetricTypeCounter {
-			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, stat)
-		} else if stat.MType == commons.MetricTypeGauge {
-			makeOtelGaugeMetric(meter, ctx, qualifiedName, desc, labels, stat)
-		}
-
-		// Add stat to previous-process-map
-		previousRefreshStats[getMetricMapKey(qualifiedName, stat)] = stat
-	}
-
-}
-
-func makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, stat statprocessors.AerospikeStat) {
-
-	value := stat.Value
-
-	// if previous value exists, then set value as DIFFerence ( current_value , previous_value)
-	prevStatState, ok := previousRefreshStats[getMetricMapKey(metricName, stat)]
-	// only if this is a stat and not a config,
-	if ok && !stat.IsConfig {
-		value = stat.Value - prevStatState.Value
-	}
-
-	ometric, _ := meter.Float64Counter(
-		metricName,
-		metric.WithDescription(desc),
+	meterProvider := sdkmetric.NewMeterProvider(
+		sdkmetric.WithResource(res),
+		sdkmetric.WithReader(
+			sdkmetric.NewPeriodicReader(
+				metricExp,
+				sdkmetric.WithInterval(time.Duration(config.Cfg.AeroProm.OtelPushInterval)*time.Second),
+			),
+		),
 	)
+	otel.SetMeterProvider(meterProvider)
 
-	ometric.Add(ctx, value, metric.WithAttributes(labels...))
-
-}
-
-func makeOtelGaugeMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, stat statprocessors.AerospikeStat) {
-
-	// _, ok := mapGaugeMetricObjects[metricName]
-	ometric, _ := meter.Float64ObservableGauge(
-		metricName,
-		metric.WithDescription(desc),
-	)
-	_, err := meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-		a := stat.Value
-		o.ObserveFloat64(ometric, a, metric.WithAttributes(labels...))
-		return nil
-	}, ometric)
-
-	handleErr(err, "makeOtelGaugeMetric() Error while creating object for stat "+metricName)
-
-}
-
-// Utility functions
-func readHeaders() map[string]string {
-	headers := make(map[string]string)
-	// headers["api-key"] = "08c5879e8cc53859d4a5554ec503558ee3ceNRAL"
-	headerPairs := config.Cfg.AeroProm.OtelHeaders
-	if len(headerPairs) > 0 {
-		for k, v := range headerPairs {
-			headers[k] = v
+	return func() {
+		cxt, cancel := context.WithTimeout(ctx, time.Duration(config.Cfg.AeroProm.Timeout)*time.Second)
+		defer cancel()
+		log.Infof("shuttting down..., flushing metrics to endpoint")
+		// pushes any last exports to the receiver
+		if err := meterProvider.Shutdown(cxt); err != nil {
+			otel.Handle(err)
 		}
 	}
-
-	return headers
 }
 
-func handleErr(err error, message string) {
-	if err != nil {
-		log.Fatalf("%s: %v", message, err)
+func temporalityDeltaSelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
+	if instrumentKind == sdkmetric.InstrumentKindCounter {
+		// fmt.Println("*** Input kind is ", instrumentKind, " .. so returning metricdata.CumulativeTemporality==> ", metricdata.CumulativeTemporality)
+		return metricdata.CumulativeTemporality
+	}
+	return metricdata.DeltaTemporality
+}
+
+func startMetricExecutor() {
+
+	meter := otel.Meter(config.Cfg.AeroProm.OtelServiceName + "_Meter")
+
+	// defaultCtx := baggage.ContextWithBaggage(context.Background())
+	defaultCtx := context.Background()
+
+	commonLabels := getCommonLabels()
+
+	for {
+		var err error
+
+		currentRefreshStats, err = statprocessors.Refresh()
+		if err != nil {
+			log.Errorln(err)
+			sendNodeUp(meter, defaultCtx, commonLabels, 0.0)
+		} else {
+			// aerospike server is up and we are able to fetch data
+			sendNodeUp(meter, defaultCtx, commonLabels, 1.0)
+			// process metrics
+			processAerospikeStats(meter, defaultCtx, commonLabels, currentRefreshStats)
+		}
+
+		// sleep for config.N seconds
+		time.Sleep(time.Duration(config.Cfg.AeroProm.OtelServerStatFetchInterval) * time.Second)
 	}
 }

@@ -48,6 +48,9 @@ otel_service_name = "aerospike-server-metrics-service"
 # OTel Endpoint
 otel_endpoint = ""
 
+# OTel SSL/TLS, for HTTPS endpoints
+otel_tls_enabled = true
+
 # OTel headers
 otel_headers = {}
 
