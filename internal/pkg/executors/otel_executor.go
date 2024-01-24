@@ -72,7 +72,7 @@ func initProvider() func() {
 
 	res, err := resource.New(ctx,
 		resource.WithFromEnv(),
-		// resource.WithProcess(),
+		resource.WithProcess(),
 		// resource.WithTelemetrySDK(),
 		resource.WithHost(),
 		resource.WithContainer(),
