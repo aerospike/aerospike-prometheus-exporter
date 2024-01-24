@@ -6,6 +6,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	log "github.com/sirupsen/logrus"
 )
@@ -54,6 +55,9 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 
 	o.ticks.Inc()
 	ch <- o.ticks
+
+	// read system metrics
+	dataprovider.GetSystemProvider().RequestInfo(nil)
 
 	// refresh metrics from various statprocessors,
 	refreshed_metrics, err := statprocessors.Refresh()
