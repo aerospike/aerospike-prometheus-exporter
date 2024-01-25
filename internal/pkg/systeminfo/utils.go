@@ -1,7 +1,11 @@
 package systeminfo
 
 import (
+	"bufio"
+	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/prometheus/procfs"
 )
@@ -10,18 +14,26 @@ var (
 	// The path of the proc filesystem.
 	// procPath = kingpin.Flag("path.procfs", "procfs mountpoint.").Default(procfs.DefaultMountPoint).String()
 	procPath = procfs.DefaultMountPoint
-	// sysPath      = kingpin.Flag("path.sysfs", "sysfs mountpoint.").Default("/sys").String()
+	sysPath  = "/sys"
 	// rootfsPath   = kingpin.Flag("path.rootfs", "rootfs mountpoint.").Default("/").String()
-	// udevDataPath = kingpin.Flag("path.udev.data", "udev data path.").Default("/run/udev/data").String()
+	udevDataPath = "/run/udev/data"
 )
 
-func procFilePath(name string) string {
+func GetProcFilePath(name string) string {
 	return filepath.Join(procPath, name)
 }
 
-// func sysFilePath(name string) string {
-// 	return filepath.Join(*sysPath, name)
-// }
+func GetSysFilePath(name string) string {
+	return filepath.Join(sysPath, name)
+}
+
+func GetUdevDataFilePath(name string) string {
+	return filepath.Join(udevDataPath, name)
+}
+
+func handleError(e error) {
+	fmt.Println("Error :- ", e)
+}
 
 // func rootfsFilePath(name string) string {
 // 	return filepath.Join(*rootfsPath, name)
@@ -41,3 +53,33 @@ func procFilePath(name string) string {
 // 	}
 // 	return stripped
 // }
+
+func getUdevDeviceProperties(major, minor uint32) (map[string]string, error) {
+	filename := GetUdevDataFilePath(fmt.Sprintf("b%d:%d", major, minor))
+
+	data, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer data.Close()
+
+	info := make(map[string]string)
+
+	scanner := bufio.NewScanner(data)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// We're only interested in device properties.
+		if !strings.HasPrefix(line, udevDevicePropertyPrefix) {
+			continue
+		}
+
+		line = strings.TrimPrefix(line, udevDevicePropertyPrefix)
+
+		if name, value, found := strings.Cut(line, "="); found {
+			info[name] = value
+		}
+	}
+
+	return info, nil
+}

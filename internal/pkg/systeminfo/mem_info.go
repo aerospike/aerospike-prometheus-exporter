@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/prometheus/procfs"
 )
 
 var (
@@ -15,7 +17,7 @@ var (
 )
 
 func GetMemInfo() (map[string]float64, error) {
-	pathMeminfo := procFilePath("meminfo")
+	pathMeminfo := GetProcFilePath("meminfo")
 	fmt.Println("\t\t *** pathMeminfo : ", pathMeminfo)
 	file, err := os.Open(pathMeminfo)
 	if err != nil {
@@ -23,7 +25,25 @@ func GetMemInfo() (map[string]float64, error) {
 	}
 	defer file.Close()
 
+	// testing
+	testingProcsFS()
+
 	return parseMemInfo(file)
+}
+
+func testingProcsFS() {
+	fs, err := procfs.NewFS("/proc")
+	handleError(err)
+	stats, err := fs.Stat()
+	handleError(err)
+	fmt.Println("\t\t ====> stats : ", stats.CPU)
+
+	// mem, err := procfs.NewFS(GetProcFilePath("meminfo"))
+	meminfo, err := fs.Meminfo()
+	handleError(err)
+	fmt.Println("\t\t Memory free: unit64 ", meminfo.MemFree)
+	fmt.Println("\t\t Memory free: float64 with pointer ", float64(*meminfo.MemFree))
+
 }
 
 func parseMemInfo(r io.Reader) (map[string]float64, error) {
