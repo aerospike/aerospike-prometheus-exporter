@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	aero "github.com/aerospike/aerospike-client-go/v6"
-	"github.com/prometheus/procfs"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/systeminfo"
 )
 
 // Inherits DataProvider interface
@@ -12,7 +12,8 @@ type SystemInfoProvider struct {
 }
 
 func (asm SystemInfoProvider) RequestInfo(infoKeys []string) (map[string]string, error) {
-	fetchProcStats()
+	fetchSystemStats()
+	systeminfo.GetDiskStats()
 
 	return nil, nil
 }
@@ -23,14 +24,7 @@ func (asm SystemInfoProvider) FetchUsersDetails() (bool, []*aero.UserRoles, erro
 
 // System server info
 
-func fetchProcStats() {
-	fs, err := procfs.NewFS("/proc")
-	handleError(err)
-	stats, err := fs.Stat()
-	handleError(err)
-	fmt.Print(stats.CPU)
-}
-
-func handleError(e error) {
-	fmt.Println("Error: ", e)
+func fetchSystemStats() {
+	fmt.Println("\n\n* ===============================================================================================")
+	fmt.Println(systeminfo.GetMemInfo())
 }
