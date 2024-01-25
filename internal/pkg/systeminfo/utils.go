@@ -83,3 +83,11 @@ func getUdevDeviceProperties(major, minor uint32) (map[string]string, error) {
 
 	return info, nil
 }
+
+func GetFloatValue(addr *uint64) float64 {
+	if addr != nil {
+		value := float64(*addr)
+		return value
+	}
+	return -1.0
+}
