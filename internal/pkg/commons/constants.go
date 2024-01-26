@@ -30,3 +30,9 @@ const (
 	INDEX_TYPE     = "index-type"
 	SINDEX_TYPE    = "sindex-type"
 )
+
+const (
+	CTX_MEMORY_STATS     ContextType = "memory_stats"
+	CTX_DISK_STATS       ContextType = "disk_stats"
+	CTX_FILESYSTEM_STATS ContextType = "filesystem_stats"
+)

@@ -5,43 +5,48 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/prometheus/procfs"
 )
 
 var (
-	// The path of the proc filesystem.
-	// procPath = kingpin.Flag("path.procfs", "procfs mountpoint.").Default(procfs.DefaultMountPoint).String()
-	procPath = procfs.DefaultMountPoint
-	sysPath  = "/sys"
-	// rootfsPath   = kingpin.Flag("path.rootfs", "rootfs mountpoint.").Default("/").String()
-	udevDataPath = "/run/udev/data"
+	PROC_PATH      = procfs.DefaultMountPoint
+	SYS_PATH       = "/sys"
+	ROOTFS_PATH    = "/"
+	UDEV_DATA_PATH = "/run/udev/data"
 )
 
+const (
+	// diskstatsIgnoredDevices = "^(z?ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\\d+n\\d+p)\\d+$"
+	diskstatsIgnoredDevices = "^(z?ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\\d+n\\d+p)\\d$"
+	filestatIgnoreList      = "^(overlay|mqueue)$"
+)
+
+var diskIgnorePattern = regexp.MustCompile(diskstatsIgnoredDevices)
+var fileIgnorePattern = regexp.MustCompile(filestatIgnoreList)
+
 func GetProcFilePath(name string) string {
-	return filepath.Join(procPath, name)
+	return filepath.Join(PROC_PATH, name)
 }
 
 func GetSysFilePath(name string) string {
-	return filepath.Join(sysPath, name)
+	return filepath.Join(SYS_PATH, name)
 }
 
 func GetUdevDataFilePath(name string) string {
-	return filepath.Join(udevDataPath, name)
+	return filepath.Join(UDEV_DATA_PATH, name)
+}
+
+func GetRootfsFilePath(name string) string {
+	return filepath.Join(ROOTFS_PATH, name)
 }
 
 func handleError(e error) {
 	fmt.Println("Error :- ", e)
 }
-
-// func rootfsFilePath(name string) string {
-// 	return filepath.Join(*rootfsPath, name)
-// }
-
-// func udevDataFilePath(name string) string {
-// 	return filepath.Join(*udevDataPath, name)
-// }
 
 // func rootfsStripPrefix(path string) string {
 // 	if *rootfsPath == "/" {
@@ -90,4 +95,24 @@ func GetFloatValue(addr *uint64) float64 {
 		return value
 	}
 	return -1.0
+}
+
+// ignoreDisk returns whether the device should be ignoreDisk
+func ignoreDisk(name string) bool {
+	return (diskIgnorePattern != nil && diskIgnorePattern.MatchString(name))
+	//  || (acceptPattern != nil && !acceptPattern.MatchString(name))
+}
+
+// ignoreDisk returns whether the device should be ignoreDisk
+func ignoreFileSystem(name string) bool {
+	return (fileIgnorePattern != nil && fileIgnorePattern.MatchString(name))
+	//  || (acceptPattern != nil && !acceptPattern.MatchString(name))
+}
+
+func GetMetricType(pContext commons.ContextType, pRawMetricName string) commons.MetricType {
+	return commons.MetricTypeGauge
+}
+
+func isMetricAllowed(pContext commons.ContextType, pRawMetricName string) bool {
+	return true
 }

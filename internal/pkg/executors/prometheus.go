@@ -6,8 +6,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/systeminfo"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -56,9 +56,6 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 	o.ticks.Inc()
 	ch <- o.ticks
 
-	// read system metrics
-	dataprovider.GetSystemProvider().RequestInfo(nil)
-
 	// refresh metrics from various statprocessors,
 	refreshed_metrics, err := statprocessors.Refresh()
 	if err != nil {
@@ -67,10 +64,20 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	// push the fetched metrics to prometheus
+	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, statprocessors.ClusterName, statprocessors.Service, statprocessors.Build)
+
+	// System Metrics - Memory, Disk and Filesystem - push the fetched metrics to prometheus
+	//
 	for _, wm := range refreshed_metrics {
 		PushToPrometheus(wm, ch)
 	}
 
-	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, statprocessors.ClusterName, statprocessors.Service, statprocessors.Build)
+	// read system metrics
+	system_metrics := systeminfo.Refresh()
+
+	// push the fetched metrics to prometheus
+	for _, sm := range system_metrics {
+		PushSystemInfoMetricToPrometheus(sm, ch)
+	}
+
 }

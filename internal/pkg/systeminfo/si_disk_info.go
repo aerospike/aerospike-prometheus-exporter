@@ -2,7 +2,6 @@ package systeminfo
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/prometheus/procfs/blockdevice"
 	log "github.com/sirupsen/logrus"
@@ -14,8 +13,6 @@ const (
 	// Read sectors and write sectors are the "standard UNIX 512-byte sectors, not any device- or filesystem-specific block size."
 	// See also https://www.kernel.org/doc/Documentation/block/stat.txt
 	unixSectorSize = 512.0
-
-	diskstatsDefaultIgnoredDevices = "^(z?ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\\d+n\\d+p)\\d+$"
 
 	// See udevadm(8).
 	udevDevicePropertyPrefix = "E:"
@@ -50,23 +47,15 @@ type DiskStats struct {
 	udev_info  map[string]string
 }
 
-var (
-	// g_device_stats = make(map[string]DiskStats)
-
-	ignorePattern *regexp.Regexp
-	// acceptPattern *regexp.Regexp
-)
-
 // func GetDiskStats() ([]*iostat.DriveStats, error) {
 func GetDiskStats() map[string]DiskStats {
-	ignorePattern = regexp.MustCompile(diskstatsDefaultIgnoredDevices)
 	// acceptPattern = regexp.MustCompile(acceptPattern)
 
 	device_stats := parseDiskStats()
 
-	for k, v := range device_stats {
-		fmt.Println("\t *** Device name is ", k, " and \n\t *** v.stats_info ", v.stats_info)
-	}
+	// for k, v := range device_stats {
+	// 	fmt.Println("\t *** Device name is ", k, " and \n\t *** v.stats_info ", v.stats_info)
+	// }
 
 	return device_stats
 }
@@ -77,7 +66,7 @@ func parseDiskStats() map[string]DiskStats {
 	var diskLabelNames = []string{"device"}
 	fmt.Println(" diskLabelNames --> ", diskLabelNames)
 
-	fs, err := blockdevice.NewFS(procPath, sysPath)
+	fs, err := blockdevice.NewFS(PROC_PATH, SYS_PATH)
 	handleError(err)
 	diskStats, err := fs.ProcDiskstats()
 	handleError(err)
@@ -85,17 +74,16 @@ func parseDiskStats() map[string]DiskStats {
 	for _, stats := range diskStats {
 		dev := stats.DeviceName
 
+		if ignoreDisk(dev) {
+			fmt.Println("\t ** DiskStats -- Ignoring mount ", dev)
+			continue
+		}
+
 		l_stats_info := make(map[string]float64)
 		l_udev_info := make(map[string]string)
 
 		ds := DiskStats{l_stats_info, l_udev_info}
 		deviceStats[dev] = ds
-
-		// TODO: check is device in block-list
-		if ignored(dev) {
-			fmt.Println("Device .. ", dev, " is IGNORED")
-			continue
-		}
 
 		l_stats_info["ReadIOs"] = float64(stats.ReadIOs)
 		l_stats_info["ReadMerges"] = float64(stats.ReadMerges)
@@ -120,10 +108,12 @@ func parseDiskStats() map[string]DiskStats {
 		info, err := getUdevDeviceProperties(stats.MajorNumber, stats.MinorNumber)
 
 		if err != nil {
+			fmt.Println("\t\t *** msg", "Failed to parse udev info", "err", err)
 			log.Debug("msg", "Failed to parse udev info", "err", err)
 		}
 
 		for k, v := range info {
+			fmt.Println("info k: ", k, "\t v: ", v)
 			l_udev_info[k] = v
 		}
 		// This is usually the serial printed on the disk label.
@@ -137,10 +127,4 @@ func parseDiskStats() map[string]DiskStats {
 	}
 
 	return deviceStats
-}
-
-// ignored returns whether the device should be ignored
-func ignored(name string) bool {
-	return (ignorePattern != nil && ignorePattern.MatchString(name))
-	//  || (acceptPattern != nil && !acceptPattern.MatchString(name))
 }

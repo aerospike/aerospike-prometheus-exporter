@@ -10,24 +10,32 @@ import (
 	"strings"
 
 	"github.com/prometheus/procfs"
+	log "github.com/sirupsen/logrus"
 )
+
+type MeminfoStats struct {
+	mem_stats map[string]float64
+}
 
 var (
 	reParens = regexp.MustCompile(`\((.*)\)`)
 )
 
-func GetMemInfo() (map[string]float64, error) {
+func GetMemInfo() MeminfoStats {
 	stats := GetMemInfoUsingProcFS()
 
-	return stats, nil
+	return stats
 }
 
-func GetMemInfoUsingProcFS() map[string]float64 {
-	fs, err := procfs.NewFS("/proc")
+func GetMemInfoUsingProcFS() MeminfoStats {
+	fs, err := procfs.NewFS(PROC_PATH)
 	handleError(err)
 
 	meminfo, err := fs.Meminfo()
-	handleError(err)
+	if err != nil {
+		log.Debug("Eror while reading MemInfo, error: ", err)
+		return MeminfoStats{nil}
+	}
 
 	memStats := make(map[string]float64)
 
@@ -79,7 +87,7 @@ func GetMemInfoUsingProcFS() map[string]float64 {
 	memStats["Writeback"] = GetFloatValue(meminfo.Writeback)
 	memStats["WritebackTmp"] = GetFloatValue(meminfo.WritebackTmp)
 
-	return memStats
+	return MeminfoStats{memStats}
 }
 
 func GetMemInfoParsingFile() (map[string]float64, error) {
@@ -90,8 +98,6 @@ func GetMemInfoParsingFile() (map[string]float64, error) {
 		return nil, err
 	}
 	defer file.Close()
-
-	// testing
 
 	return parseMemInfo(file)
 }
