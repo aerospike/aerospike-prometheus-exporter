@@ -44,7 +44,7 @@ func GetMemInfoUsingProcFS() MeminfoStats {
 	memStats := make(map[string]float64)
 
 	memStats["Active"] = GetFloatValue(meminfo.Active)
-	memStats["Active_Anon_bytes"] = GetFloatValue(meminfo.ActiveAnon)
+	memStats["Active_Anon"] = GetFloatValue(meminfo.ActiveAnon)
 	memStats["Active_File"] = GetFloatValue(meminfo.ActiveFile)
 	memStats["Anon_Pages"] = GetFloatValue(meminfo.AnonPages)
 	memStats["Anon_Huge_Pages"] = GetFloatValue(meminfo.AnonHugePages)

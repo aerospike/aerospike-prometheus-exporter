@@ -35,7 +35,8 @@ func createMemInfoStats() []SystemInfoStat {
 	labelValues := []string{clusterName, service}
 
 	for k, v := range memStats.mem_stats {
-		sysMetric := NewSystemInfoStat(commons.CTX_MEMORY_STATS, strings.ToLower(k))
+		l_metricName := strings.ToLower(k) + "_bytes"
+		sysMetric := NewSystemInfoStat(commons.CTX_MEMORY_STATS, l_metricName)
 		sysMetric.Labels = labels
 		sysMetric.LabelValues = labelValues
 		sysMetric.Value = v
