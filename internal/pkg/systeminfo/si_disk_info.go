@@ -61,13 +61,9 @@ func GetDiskStats() []SystemInfoStat {
 
 func parseDiskStats() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
-	clusterName := statprocessors.ClusterName
-	service := statprocessors.Service
-
 	deviceStats := make(map[string]DiskStats)
-
-	var diskLabelNames = []string{"device"}
-	fmt.Println(" diskLabelNames --> ", diskLabelNames)
+	// var diskLabelNames = []string{"device"}
+	// fmt.Println(" diskLabelNames --> ", diskLabelNames)
 
 	fs, err := blockdevice.NewFS(PROC_PATH, SYS_PATH)
 	if err != nil {
@@ -139,16 +135,9 @@ func parseDiskStats() []SystemInfoStat {
 		// add to return array
 		arrSysInfoStats = append(arrSysInfoStats, l_sysinfo_stats...)
 
-		// add disk_info
-		labels := []string{}
-		labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE)
-		labels = append(labels, commons.METRIC_LABEL_MAJOR, commons.METRIC_LABEL_MINOR, commons.METRIC_LABEL_SERIAL)
-
-		labelValues := []string{clusterName, service, deviceName, fmt.Sprint(stats.MajorNumber), fmt.Sprint(stats.MinorNumber), serial}
-		sysMetric := NewSystemInfoStat(commons.CTX_DISK_STATS, "info")
-		sysMetric.Labels = labels
-		sysMetric.LabelValues = labelValues
-		sysMetric.Value = 1
+		// add disk-info
+		statDiskInfo := constructDiskInfo(deviceName, fmt.Sprint(stats.MajorNumber), fmt.Sprint(stats.MinorNumber), serial)
+		arrSysInfoStats = append(arrSysInfoStats, statDiskInfo)
 
 		// 	desc: prometheus.NewDesc(prometheus.BuildFQName(namespace, diskSubsystem, "info"),
 		// 	"Info of /sys/block/<block_device>.",
@@ -167,6 +156,26 @@ func parseDiskStats() []SystemInfoStat {
 	}
 
 	return arrSysInfoStats
+}
+
+func constructDiskInfo(deviceName string, major string, minor string, serial string) SystemInfoStat {
+	clusterName := statprocessors.ClusterName
+	service := statprocessors.Service
+
+	// add disk_info
+	labels := []string{}
+	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE)
+	labels = append(labels, commons.METRIC_LABEL_MAJOR, commons.METRIC_LABEL_MINOR, commons.METRIC_LABEL_SERIAL)
+
+	labelValues := []string{clusterName, service, deviceName, major, minor, serial}
+
+	sysMetric := NewSystemInfoStat(commons.CTX_DISK_STATS, "info")
+	sysMetric.Labels = labels
+	sysMetric.LabelValues = labelValues
+	sysMetric.Value = 1
+
+	return sysMetric
+
 }
 
 func constructDiskinfoStats(deviceName string, v_stats_info map[string]float64) []SystemInfoStat {
