@@ -2,6 +2,7 @@ package systeminfo
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
@@ -34,7 +35,7 @@ func createMemInfoStats() []SystemInfoStat {
 	labelValues := []string{clusterName, service}
 
 	for k, v := range memStats.mem_stats {
-		sysMetric := NewSystemInfoStat(commons.CTX_MEMORY_STATS, k)
+		sysMetric := NewSystemInfoStat(commons.CTX_MEMORY_STATS, strings.ToLower(k))
 		sysMetric.Labels = labels
 		sysMetric.LabelValues = labelValues
 		sysMetric.Value = v

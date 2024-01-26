@@ -67,9 +67,13 @@ func parseDiskStats() map[string]DiskStats {
 	fmt.Println(" diskLabelNames --> ", diskLabelNames)
 
 	fs, err := blockdevice.NewFS(PROC_PATH, SYS_PATH)
-	handleError(err)
+	if err != nil {
+		return deviceStats
+	}
 	diskStats, err := fs.ProcDiskstats()
-	handleError(err)
+	if err != nil {
+		return deviceStats
+	}
 
 	for _, stats := range diskStats {
 		dev := stats.DeviceName

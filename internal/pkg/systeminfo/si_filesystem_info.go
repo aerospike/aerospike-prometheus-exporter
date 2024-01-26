@@ -24,7 +24,9 @@ func GetFileSystemInfo() map[string]FileSystemStat {
 	filesystem_stats := make(map[string]FileSystemStat)
 
 	mnts, err := procfs.GetMounts()
-	handleError(err)
+	if err != nil {
+		return filesystem_stats
+	}
 
 	for _, mnt := range mnts {
 
