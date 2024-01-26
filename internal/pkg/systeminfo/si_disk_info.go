@@ -126,8 +126,8 @@ func parseDiskStats() map[string]DiskStats {
 		l_stats_info["discard_time_seconds_total"] = float64(stats.DiscardTicks) * secondsPerTick
 		l_stats_info["flush_requests_total"] = float64(stats.FlushRequestsCompleted)
 		l_stats_info["flush_requests_time_seconds_total"] = float64(stats.TimeSpentFlushing) * secondsPerTick
-		l_stats_info["Major_Number"] = float64(stats.MajorNumber)
-		l_stats_info["Minor_Number"] = float64(stats.MinorNumber)
+		// l_stats_info["Major_Number"] = float64(stats.MajorNumber)
+		// l_stats_info["Minor_Number"] = float64(stats.MinorNumber)
 
 		info, err := getUdevDeviceProperties(stats.MajorNumber, stats.MinorNumber)
 
