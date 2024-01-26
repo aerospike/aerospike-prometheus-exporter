@@ -2,7 +2,10 @@ package systeminfo
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	"github.com/prometheus/procfs/blockdevice"
 	log "github.com/sirupsen/logrus"
 )
@@ -47,20 +50,20 @@ type DiskStats struct {
 	udev_info  map[string]string
 }
 
-// func GetDiskStats() ([]*iostat.DriveStats, error) {
-func GetDiskStats() map[string]DiskStats {
-	// acceptPattern = regexp.MustCompile(acceptPattern)
+func GetDiskStats() []SystemInfoStat {
+	arrSysInfoStats := []SystemInfoStat{}
 
-	device_stats := parseDiskStats()
+	diskStats := parseDiskStats()
+	fmt.Println("GetDiskStats - diskStats: ", len(diskStats), " arrSysInfoStats: ", len(arrSysInfoStats))
 
-	// for k, v := range device_stats {
-	// 	fmt.Println("\t *** Device name is ", k, " and \n\t *** v.stats_info ", v.stats_info)
-	// }
-
-	return device_stats
+	return arrSysInfoStats
 }
 
-func parseDiskStats() map[string]DiskStats {
+func parseDiskStats() []SystemInfoStat {
+	arrSysInfoStats := []SystemInfoStat{}
+	clusterName := statprocessors.ClusterName
+	service := statprocessors.Service
+
 	deviceStats := make(map[string]DiskStats)
 
 	var diskLabelNames = []string{"device"}
@@ -68,18 +71,18 @@ func parseDiskStats() map[string]DiskStats {
 
 	fs, err := blockdevice.NewFS(PROC_PATH, SYS_PATH)
 	if err != nil {
-		return deviceStats
+		return arrSysInfoStats
 	}
 	diskStats, err := fs.ProcDiskstats()
 	if err != nil {
-		return deviceStats
+		return arrSysInfoStats
 	}
 
 	for _, stats := range diskStats {
-		dev := stats.DeviceName
+		deviceName := stats.DeviceName
 
-		if ignoreDisk(dev) {
-			fmt.Println("\t ** DiskStats -- Ignoring mount ", dev)
+		if ignoreDisk(deviceName) {
+			fmt.Println("\t ** DiskStats -- Ignoring mount ", deviceName)
 			continue
 		}
 
@@ -87,27 +90,7 @@ func parseDiskStats() map[string]DiskStats {
 		l_udev_info := make(map[string]string)
 
 		ds := DiskStats{l_stats_info, l_udev_info}
-		deviceStats[dev] = ds
-
-		// l_stats_info["Read_IOs"] = float64(stats.ReadIOs)
-		// l_stats_info["Read_Merges"] = float64(stats.ReadMerges)
-		// l_stats_info["Read_Sectors"] = float64(stats.ReadSectors) * unixSectorSize
-		// l_stats_info["Read_Ticks"] = float64(stats.ReadTicks) * secondsPerTick
-		// l_stats_info["Write_IOs"] = float64(stats.WriteIOs)
-		// l_stats_info["Write_Merges"] = float64(stats.WriteMerges)
-		// l_stats_info["Write_Sectors"] = float64(stats.WriteSectors) * unixSectorSize
-		// l_stats_info["Write_Ticks"] = float64(stats.WriteTicks) * secondsPerTick
-		// l_stats_info["IOs_InProgress"] = float64(stats.IOsInProgress)
-		// l_stats_info["IOs_Total_Ticks"] = float64(stats.IOsTotalTicks) * secondsPerTick
-		// l_stats_info["Weighted_IO_Ticks"] = float64(stats.WeightedIOTicks) * secondsPerTick
-		// l_stats_info["Discard_IOs"] = float64(stats.DiscardIOs)
-		// l_stats_info["Discard_Merges"] = float64(stats.DiscardMerges)
-		// l_stats_info["Discard_Sectors"] = float64(stats.DiscardSectors)
-		// l_stats_info["Discard_Ticks"] = float64(stats.DiscardTicks) * secondsPerTick
-		// l_stats_info["Flush_Requests_Completed"] = float64(stats.FlushRequestsCompleted)
-		// l_stats_info["Time_Spent_Flushing"] = float64(stats.TimeSpentFlushing) * secondsPerTick
-		// l_stats_info["Major_Number"] = float64(stats.MajorNumber)
-		// l_stats_info["Minor_Number"] = float64(stats.MinorNumber)
+		deviceStats[deviceName] = ds
 
 		l_stats_info["reads_completed_total"] = float64(stats.ReadIOs)
 		l_stats_info["reads_merged_total"] = float64(stats.ReadMerges)
@@ -126,29 +109,85 @@ func parseDiskStats() map[string]DiskStats {
 		l_stats_info["discard_time_seconds_total"] = float64(stats.DiscardTicks) * secondsPerTick
 		l_stats_info["flush_requests_total"] = float64(stats.FlushRequestsCompleted)
 		l_stats_info["flush_requests_time_seconds_total"] = float64(stats.TimeSpentFlushing) * secondsPerTick
+		l_stats_info["flush_requests_time_seconds_total"] = float64(stats.TimeSpentFlushing) * secondsPerTick
 		// l_stats_info["Major_Number"] = float64(stats.MajorNumber)
 		// l_stats_info["Minor_Number"] = float64(stats.MinorNumber)
 
-		info, err := getUdevDeviceProperties(stats.MajorNumber, stats.MinorNumber)
+		udevDeviceProps, err := getUdevDeviceProperties(stats.MajorNumber, stats.MinorNumber)
 
 		if err != nil {
 			fmt.Println("\t\t *** msg", "Failed to parse udev info", "err", err)
 			log.Debug("msg", "Failed to parse udev info", "err", err)
 		}
 
-		for k, v := range info {
+		for k, v := range udevDeviceProps {
 			fmt.Println("info k: ", k, "\t v: ", v)
 			l_udev_info[k] = v
 		}
 		// This is usually the serial printed on the disk label.
-		serial := info[udevSCSIIdentSerial]
+		serial := udevDeviceProps[udevSCSIIdentSerial]
 
 		// If it's undefined, fallback to ID_SERIAL_SHORT instead.
 		if serial == "" {
-			serial = info[udevIDSerialShort]
+			serial = udevDeviceProps[udevIDSerialShort]
 		}
 		l_udev_info["serial"] = serial
+
+		// create Stat objects now
+		l_sysinfo_stats := constructDiskinfoStats(deviceName, l_stats_info)
+
+		// add to return array
+		arrSysInfoStats = append(arrSysInfoStats, l_sysinfo_stats...)
+
+		// add disk_info
+		labels := []string{}
+		labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE)
+		labels = append(labels, commons.METRIC_LABEL_MAJOR, commons.METRIC_LABEL_MINOR, commons.METRIC_LABEL_SERIAL)
+
+		labelValues := []string{clusterName, service, deviceName, fmt.Sprint(stats.MajorNumber), fmt.Sprint(stats.MinorNumber), serial}
+		sysMetric := NewSystemInfoStat(commons.CTX_DISK_STATS, "info")
+		sysMetric.Labels = labels
+		sysMetric.LabelValues = labelValues
+		sysMetric.Value = 1
+
+		// 	desc: prometheus.NewDesc(prometheus.BuildFQName(namespace, diskSubsystem, "info"),
+		// 	"Info of /sys/block/<block_device>.",
+		// 	[]string{"device", "major", "minor", "path", "wwn", "model", "serial", "revision"},
+		// 	nil,
+		// ), valueType: prometheus.GaugeValue,
+
+		// fmt.Sprint(stats.MajorNumber),
+		// fmt.Sprint(stats.MinorNumber),
+		// info[udevIDPath],
+		// info[udevIDWWN],
+		// info[udevIDModel],
+		// serial,
+		// info[udevIDRevision],
+
 	}
 
-	return deviceStats
+	return arrSysInfoStats
+}
+
+func constructDiskinfoStats(deviceName string, v_stats_info map[string]float64) []SystemInfoStat {
+	arrSysInfoStats := []SystemInfoStat{}
+
+	clusterName := statprocessors.ClusterName
+	service := statprocessors.Service
+
+	for sk, sv := range v_stats_info {
+		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE}
+		labelValues := []string{clusterName, service, deviceName}
+
+		l_metricName := strings.ToLower(sk)
+		sysMetric := NewSystemInfoStat(commons.CTX_DISK_STATS, l_metricName)
+
+		sysMetric.Labels = labels
+		sysMetric.LabelValues = labelValues
+		sysMetric.Value = sv
+
+		arrSysInfoStats = append(arrSysInfoStats, sysMetric)
+	}
+
+	return arrSysInfoStats
 }

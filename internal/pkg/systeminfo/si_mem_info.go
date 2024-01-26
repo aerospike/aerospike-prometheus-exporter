@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	"github.com/prometheus/procfs"
 	log "github.com/sirupsen/logrus"
 )
@@ -21,10 +23,27 @@ var (
 	reParens = regexp.MustCompile(`\((.*)\)`)
 )
 
-func GetMemInfo() MeminfoStats {
-	stats := GetMemInfoUsingProcFS()
+func GetMemInfo() []SystemInfoStat {
+	arrSysInfoStats := []SystemInfoStat{}
 
-	return stats
+	clusterName := statprocessors.ClusterName
+	service := statprocessors.Service
+
+	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
+	labelValues := []string{clusterName, service}
+
+	memStats := GetMemInfoUsingProcFS()
+	for k, v := range memStats.mem_stats {
+		l_metricName := strings.ToLower(k) + "_bytes"
+		sysMetric := NewSystemInfoStat(commons.CTX_MEMORY_STATS, l_metricName)
+		sysMetric.Labels = labels
+		sysMetric.LabelValues = labelValues
+		sysMetric.Value = v
+
+		arrSysInfoStats = append(arrSysInfoStats, sysMetric)
+	}
+
+	return arrSysInfoStats
 }
 
 func GetMemInfoUsingProcFS() MeminfoStats {
