@@ -51,10 +51,9 @@ type DiskStats struct {
 }
 
 func GetDiskStats() []SystemInfoStat {
-	arrSysInfoStats := []SystemInfoStat{}
 
-	diskStats := parseDiskStats()
-	fmt.Println("GetDiskStats - diskStats: ", len(diskStats), " arrSysInfoStats: ", len(arrSysInfoStats))
+	arrSysInfoStats := parseDiskStats()
+	fmt.Println("GetDiskStats - arrSysInfoStats: ", len(arrSysInfoStats))
 
 	return arrSysInfoStats
 }
