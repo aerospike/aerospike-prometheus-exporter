@@ -58,15 +58,12 @@ func createDiskStats() []SystemInfoStat {
 	diskStats := GetDiskStats()
 	for k, v := range diskStats {
 		fmt.Println(" processing disk-device stat k: ", k)
-		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE}
-		labelValues := []string{clusterName, service}
 
 		for sk, sv := range v.stats_info {
+			labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE}
+			labelValues := []string{clusterName, service, k}
+
 			l_metricName := strings.ToLower(sk)
-
-			// add labels
-			labelValues = append(labelValues, k)
-
 			sysMetric := NewSystemInfoStat(commons.CTX_DISK_STATS, l_metricName)
 
 			sysMetric.Labels = labels
