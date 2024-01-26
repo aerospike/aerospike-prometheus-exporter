@@ -94,7 +94,7 @@ func GetFloatValue(addr *uint64) float64 {
 		value := float64(*addr)
 		return value
 	}
-	return -1.0
+	return 0.0
 }
 
 // ignoreDisk returns whether the device should be ignoreDisk

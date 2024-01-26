@@ -16,16 +16,16 @@ func Refresh() []SystemInfoStat {
 	var stats = []SystemInfoStat{}
 
 	// Get Memory Stats
-	memstats := createMemInfoStats()
+	memStats := createMemInfoStats()
+	stats = append(stats, memStats...)
 
-	stats = append(stats, memstats...)
+	diskStats := createDiskStats()
+	stats = append(stats, diskStats...)
 
 	return stats
 }
 
 func createMemInfoStats() []SystemInfoStat {
-	memStats := GetMemInfo()
-
 	arrSysInfoStats := []SystemInfoStat{}
 
 	clusterName := statprocessors.ClusterName
@@ -34,6 +34,7 @@ func createMemInfoStats() []SystemInfoStat {
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
 	labelValues := []string{clusterName, service}
 
+	memStats := GetMemInfo()
 	for k, v := range memStats.mem_stats {
 		l_metricName := strings.ToLower(k) + "_bytes"
 		sysMetric := NewSystemInfoStat(commons.CTX_MEMORY_STATS, l_metricName)
@@ -48,9 +49,31 @@ func createMemInfoStats() []SystemInfoStat {
 }
 
 func createDiskStats() []SystemInfoStat {
+
+	arrSysInfoStats := []SystemInfoStat{}
+
+	clusterName := statprocessors.ClusterName
+	service := statprocessors.Service
+
+	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
+	labelValues := []string{clusterName, service}
+
 	diskStats := GetDiskStats()
+	for k, v := range diskStats {
+		fmt.Println(" processing disk-device stat k: ", k)
+		for sk, sv := range v.stats_info {
+			l_metricName := strings.ToLower(sk)
+			sysMetric := NewSystemInfoStat(commons.CTX_MEMORY_STATS, l_metricName)
+			sysMetric.Labels = labels
+			sysMetric.LabelValues = labelValues
+			sysMetric.Value = sv
+
+			arrSysInfoStats = append(arrSysInfoStats, sysMetric)
+		}
+	}
+
 	fmt.Println("createDiskStats - diskStats: ", len(diskStats))
-	return nil
+	return arrSysInfoStats
 }
 
 func createFileSystemStats() []SystemInfoStat {
