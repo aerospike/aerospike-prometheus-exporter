@@ -5,7 +5,7 @@ import (
 )
 
 // this is used as a prefix to qualify a metric while pushing to Prometheus or something
-var PREFIX_AEROSPIKE_SYSINFO = "aerospike_systeminfo_"
+var PREFIX_AEROSPIKE_SYSINFO = "aerospike_si_"
 
 type SystemInfoStat struct {
 	// type of metric, name and allow/disallow
