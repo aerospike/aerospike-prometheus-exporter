@@ -67,7 +67,7 @@ func createDiskStats() []SystemInfoStat {
 			// add labels
 			labelValues = append(labelValues, k)
 
-			sysMetric := NewSystemInfoStat(commons.CTX_MEMORY_STATS, l_metricName)
+			sysMetric := NewSystemInfoStat(commons.CTX_DISK_STATS, l_metricName)
 
 			sysMetric.Labels = labels
 			sysMetric.LabelValues = labelValues
