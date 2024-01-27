@@ -37,8 +37,10 @@ const (
 	CTX_FILESYSTEM_STATS ContextType = "filesystem_stats"
 )
 const (
-	METRIC_LABEL_DEVICE = "device"
-	METRIC_LABEL_MAJOR  = "major_version"
-	METRIC_LABEL_MINOR  = "minor_version"
-	METRIC_LABEL_SERIAL = "serial"
+	METRIC_LABEL_DEVICE      = "device"
+	METRIC_LABEL_MAJOR       = "major_version"
+	METRIC_LABEL_MINOR       = "minor_version"
+	METRIC_LABEL_SERIAL      = "serial"
+	METRIC_LABEL_MOUNT_POINT = "mountpoint"
+	METRIC_LABEL_FSTYPE      = "fstype"
 )

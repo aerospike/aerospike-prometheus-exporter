@@ -45,10 +45,10 @@ const (
 	udevSCSIIdentSerial         = "SCSI_IDENT_SERIAL"
 )
 
-type DiskStats struct {
-	stats_info map[string]float64
-	udev_info  map[string]string
-}
+// type DiskStats struct {
+// 	stats_info map[string]float64
+// 	udev_info  map[string]string
+// }
 
 func GetDiskStats() []SystemInfoStat {
 
@@ -60,7 +60,7 @@ func GetDiskStats() []SystemInfoStat {
 
 func parseDiskStats() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
-	deviceStats := make(map[string]DiskStats)
+	// deviceStats := make(map[string]DiskStats)
 	// var diskLabelNames = []string{"device"}
 	// fmt.Println(" diskLabelNames --> ", diskLabelNames)
 
@@ -68,12 +68,13 @@ func parseDiskStats() []SystemInfoStat {
 	if err != nil {
 		return arrSysInfoStats
 	}
-	diskStats, err := fs.ProcDiskstats()
+
+	procDiskStats, err := fs.ProcDiskstats()
 	if err != nil {
 		return arrSysInfoStats
 	}
 
-	for _, stats := range diskStats {
+	for _, stats := range procDiskStats {
 		deviceName := stats.DeviceName
 
 		if ignoreDisk(deviceName) {
@@ -84,8 +85,8 @@ func parseDiskStats() []SystemInfoStat {
 		l_stats_info := make(map[string]float64)
 		l_udev_info := make(map[string]string)
 
-		ds := DiskStats{l_stats_info, l_udev_info}
-		deviceStats[deviceName] = ds
+		// ds := DiskStats{l_stats_info, l_udev_info}
+		// deviceStats[deviceName] = ds
 
 		l_stats_info["reads_completed_total"] = float64(stats.ReadIOs)
 		l_stats_info["reads_merged_total"] = float64(stats.ReadMerges)
@@ -138,26 +139,14 @@ func parseDiskStats() []SystemInfoStat {
 		statDiskInfo := constructDiskInfo(deviceName, fmt.Sprint(stats.MajorNumber), fmt.Sprint(stats.MinorNumber), serial)
 		arrSysInfoStats = append(arrSysInfoStats, statDiskInfo)
 
-		// 	desc: prometheus.NewDesc(prometheus.BuildFQName(namespace, diskSubsystem, "info"),
-		// 	"Info of /sys/block/<block_device>.",
-		// 	[]string{"device", "major", "minor", "path", "wwn", "model", "serial", "revision"},
-		// 	nil,
-		// ), valueType: prometheus.GaugeValue,
-
-		// fmt.Sprint(stats.MajorNumber),
-		// fmt.Sprint(stats.MinorNumber),
-		// info[udevIDPath],
-		// info[udevIDWWN],
-		// info[udevIDModel],
-		// serial,
-		// info[udevIDRevision],
-
 	}
 
 	return arrSysInfoStats
 }
 
 func constructDiskInfo(deviceName string, major string, minor string, serial string) SystemInfoStat {
+	// 	[]string{"device", "major", "minor", "path", "wwn", "model", "serial", "revision"},
+	// (stats.MajorNumber),(stats.MinorNumber), info[udevIDPath], info[udevIDWWN], info[udevIDModel], serial, info[udevIDRevision],
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
