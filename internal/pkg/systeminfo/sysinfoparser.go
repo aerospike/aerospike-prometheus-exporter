@@ -1,9 +1,5 @@
 package systeminfo
 
-import (
-	"fmt"
-)
-
 const (
 	METRIC_LABEL_MEM = "memory"
 )
@@ -18,11 +14,8 @@ func Refresh() []SystemInfoStat {
 	diskStats := GetDiskStats()
 	stats = append(stats, diskStats...)
 
-	return stats
-}
+	fileSystemStats := GetFileSystemInfo()
+	stats = append(stats, fileSystemStats...)
 
-func createFileSystemStats() []SystemInfoStat {
-	fsStats := GetFileSystemInfo()
-	fmt.Println("createFileSystemStats - fsStats: ", len(fsStats))
-	return nil
+	return stats
 }
