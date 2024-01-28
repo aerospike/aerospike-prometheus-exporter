@@ -26,11 +26,13 @@ const (
 	filestatIgnoreList      = "^(overlay|mqueue)$"
 
 	netstatAcceptlist = "^(.*_(inerrors|inerrs)|ip_forwarding|ip(6|ext)_(inoctets|outoctets)|icmp6?_(inmsgs|outmsgs)|tcpext_(listen.*|syncookies.*|tcpsynretrans|tcptimeouts|tcpofoqueue)|tcp_(activeopens|insegs|outsegs|outrsts|passiveopens|retranssegs|currestab)|udp6?_(indatagrams|outdatagrams|noports|rcvbuferrors|sndbuferrors))$"
+	snmp6Acceptlist   = "^(ip6.*|icmp6.*|udp6.*)"
 )
 
 var diskIgnorePattern = regexp.MustCompile(diskstatsIgnoredDevices)
 var fileIgnorePattern = regexp.MustCompile(filestatIgnoreList)
 var netstatAcceptPattern = regexp.MustCompile(netstatAcceptlist)
+var snmp6AcceptPattern = regexp.MustCompile(snmp6Acceptlist)
 
 func GetProcFilePath(name string) string {
 	return filepath.Join(PROC_PATH, name)
@@ -109,6 +111,10 @@ func ignoreFileSystem(name string) bool {
 
 func acceptNetstat(name string) bool {
 	return (netstatAcceptPattern != nil && netstatAcceptPattern.MatchString(name))
+}
+
+func acceptSnmp6(name string) bool {
+	return (snmp6AcceptPattern != nil && snmp6AcceptPattern.MatchString(name))
 }
 
 func GetMetricType(pContext commons.ContextType, pRawMetricName string) commons.MetricType {
