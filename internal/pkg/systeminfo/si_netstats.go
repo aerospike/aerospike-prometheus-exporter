@@ -88,7 +88,7 @@ func parseSNMP6Stats(fileName string) []SystemInfoStat {
 			continue
 		}
 		// key will have IP6 as prefix
-		key := stat[0]
+		key := strings.ToLower(stat[0])
 		value := stat[1]
 		fmt.Println(" key ", key, " acceptNetstat(key) ", acceptNetstat(key), " value: ", value)
 
