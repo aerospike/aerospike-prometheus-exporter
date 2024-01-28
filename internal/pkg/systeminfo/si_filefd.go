@@ -34,7 +34,7 @@ func parseFilefdStats(fileName string) []SystemInfoStat {
 	for scanner.Scan() {
 		values := strings.Split(scanner.Text(), " ")
 
-		fmt.Println("len-values : ", len(values), " values ", values[0], values[1], values[2])
+		fmt.Println("len-values : ", len(values), " values ", values[0])
 		// for i := 1; i < len(statNames); i++ {
 		// 	key := strings.ToLower(protocol + "_" + statNames[i])
 		// 	val, _ := commons.TryConvert(values[i])
