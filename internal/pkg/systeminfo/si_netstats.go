@@ -43,7 +43,7 @@ func parseNetStats(fileName string) []SystemInfoStat {
 		}
 		for i := 1; i < len(nameParts); i++ {
 			key := strings.ToLower(protocol + "_" + nameParts[i])
-			fmt.Println("key ", key, " acceptNetstat(key): ", acceptNetstat(key), " valueParts[i] ", valueParts[i])
+			// fmt.Println("key ", key, " acceptNetstat(key): ", acceptNetstat(key), " valueParts[i] ", valueParts[i])
 			if acceptNetstat(key) {
 				val, _ := commons.TryConvert(valueParts[i])
 				arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, val))
