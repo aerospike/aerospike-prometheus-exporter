@@ -29,12 +29,14 @@ func parseCpuStats() []SystemInfoStat {
 		return arrSysInfoStats
 	}
 
-	fmt.Println("parsing CPU stats ", stats.CPU)
+	// fmt.Println("parsing CPU stats ", stats.CPU)
 	for index, cpu := range stats.CPU {
 		fmt.Println("parsing CPU stats ", index)
 		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("node_cpu_guest_seconds_total", index, "user", cpu.Guest))
 		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("node_cpu_guest_seconds_total", index, "nice", cpu.GuestNice))
 	}
+
+	fmt.Println(" si-cpu.go arrSysInfoStats... ", len(arrSysInfoStats))
 
 	return arrSysInfoStats
 }
