@@ -35,8 +35,9 @@ func parseVmStats(fileName string) []SystemInfoStat {
 
 		key := statElements[0]
 		value, _ := commons.TryConvert(statElements[1])
-
-		arrSysInfoStats = append(arrSysInfoStats, constructVmstat(key, value))
+		if acceptVmstat(key) {
+			arrSysInfoStats = append(arrSysInfoStats, constructVmstat(key, value))
+		}
 	}
 
 	return arrSysInfoStats

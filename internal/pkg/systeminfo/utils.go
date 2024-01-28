@@ -123,6 +123,10 @@ func acceptSnmp6(name string) bool {
 	return (snmp6PrefixPattern != nil && snmp6PrefixPattern.MatchString(name))
 }
 
+func acceptVmstat(name string) bool {
+	return (vmstatAcceptPattern != nil && vmstatAcceptPattern.MatchString(name))
+}
+
 func GetMetricType(pContext commons.ContextType, pRawMetricName string) commons.MetricType {
 	return commons.MetricTypeGauge
 }
