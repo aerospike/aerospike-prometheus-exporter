@@ -35,6 +35,7 @@ const (
 	CTX_MEMORY_STATS     ContextType = "memory_stats"
 	CTX_DISK_STATS       ContextType = "disk_stats"
 	CTX_FILESYSTEM_STATS ContextType = "filesystem_stats"
+	CTX_CPU_STATS        ContextType = "cpu"
 )
 const (
 	METRIC_LABEL_DEVICE      = "device"
@@ -43,4 +44,6 @@ const (
 	METRIC_LABEL_SERIAL      = "serial"
 	METRIC_LABEL_MOUNT_POINT = "mountpoint"
 	METRIC_LABEL_FSTYPE      = "fstype"
+	METRIC_LABEL_CPU         = "cpu"
+	METRIC_LABEL_CPU_MODE    = "mode"
 )

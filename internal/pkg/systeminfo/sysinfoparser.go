@@ -17,5 +17,8 @@ func Refresh() []SystemInfoStat {
 	fileSystemStats := GetFileSystemInfo()
 	stats = append(stats, fileSystemStats...)
 
+	cpuStats := GetCpuInfo()
+	stats = append(stats, cpuStats...)
+
 	return stats
 }
