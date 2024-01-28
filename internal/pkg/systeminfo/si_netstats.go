@@ -34,15 +34,15 @@ func parseNetStats(fileName string) []SystemInfoStat {
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
-		nameParts := strings.Split(scanner.Text(), " ")
+		statNames := strings.Split(scanner.Text(), " ")
 		scanner.Scan()
 		valueParts := strings.Split(scanner.Text(), " ")
-		protocol := nameParts[0][:len(nameParts[0])-1]
-		if len(nameParts) != len(valueParts) {
+		protocol := statNames[0][:len(statNames[0])-1]
+		if len(statNames) != len(valueParts) {
 			return arrSysInfoStats
 		}
-		for i := 1; i < len(nameParts); i++ {
-			key := strings.ToLower(protocol + "_" + nameParts[i])
+		for i := 1; i < len(statNames); i++ {
+			key := strings.ToLower(protocol + "_" + statNames[i])
 			// fmt.Println("key ", key, " acceptNetstat(key): ", acceptNetstat(key), " valueParts[i] ", valueParts[i])
 			if acceptNetstat(key) {
 				val, _ := commons.TryConvert(valueParts[i])
@@ -83,14 +83,25 @@ func parseSNMP6Stats(fileName string) []SystemInfoStat {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		stat := strings.Fields(scanner.Text())
-		if len(stat) < 2 {
+		snmp6Stat := strings.Fields(scanner.Text())
+		if len(snmp6Stat) < 2 {
 			continue
 		}
-		// key will have IP6 as prefix
-		key := strings.ToLower(stat[0])
-		value := stat[1]
-		fmt.Println(" key ", key, " acceptSnmp6(key) ", acceptSnmp6(key), " value: ", value)
+		// statProtocolName will have IP6 as prefix
+		statProtocolName := strings.ToLower(snmp6Stat[0])
+		value := snmp6Stat[1]
+		fmt.Println(" key ", statProtocolName, " acceptSnmp6(key) ", acceptSnmp6(statProtocolName), " value: ", value)
+
+		if acceptSnmp6(statProtocolName) {
+			ele := strings.Split(statProtocolName, "6")
+			// snmp6 metric format: ip6inreceives
+			protocol := ele[0]
+			stat := ele[1]
+
+			key := protocol + "6_" + stat
+			val, _ := commons.TryConvert(value)
+			arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, val))
+		}
 
 		// if sixIndex := strings.Index(stat[0], "6"); sixIndex != -1 {
 		// 	protocol := stat[0][:sixIndex+1]
