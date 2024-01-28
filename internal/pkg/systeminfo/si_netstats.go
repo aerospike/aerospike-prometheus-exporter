@@ -2,6 +2,7 @@ package systeminfo
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"strings"
 
@@ -37,6 +38,7 @@ func parseNetStats(fileName string) []SystemInfoStat {
 		}
 		for i := 1; i < len(nameParts); i++ {
 			key := strings.ToLower(protocol + "_" + nameParts[i])
+			fmt.Println("key ", key, " acceptNetstat(key): ", acceptNetstat(key), " valueParts[i] ", valueParts[i])
 			if acceptNetstat(key) {
 				val, _ := commons.TryConvert(valueParts[i])
 				arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, val))
@@ -56,7 +58,7 @@ func constructNetstat(netStatKey string, value float64) SystemInfoStat {
 
 	labelValues := []string{clusterName, service}
 
-	sysMetric := NewSystemInfoStat(commons.CTX_CPU_STATS, netStatKey)
+	sysMetric := NewSystemInfoStat(commons.CTX_NET_STATS, netStatKey)
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value = value
