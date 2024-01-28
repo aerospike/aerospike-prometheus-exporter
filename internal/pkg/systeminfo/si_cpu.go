@@ -43,8 +43,6 @@ func parseCpuStats() []SystemInfoStat {
 		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("seconds_total", index, "user", cpu.User))
 	}
 
-	fmt.Println(" si-cpu.go arrSysInfoStats... \n", arrSysInfoStats)
-
 	return arrSysInfoStats
 }
 
@@ -65,26 +63,3 @@ func constructCpuStats(cpuStatName string, cpuNo int64, cpuMode string, value fl
 
 	return sysMetric
 }
-
-// func constructCpuStats(deviceName string, v_stats_info map[string]float64) []SystemInfoStat {
-// 	arrSysInfoStats := []SystemInfoStat{}
-
-// 	clusterName := statprocessors.ClusterName
-// 	service := statprocessors.Service
-
-// 	for sk, sv := range v_stats_info {
-// 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE}
-// 		labelValues := []string{clusterName, service, deviceName}
-
-// 		l_metricName := strings.ToLower(sk)
-// 		sysMetric := NewSystemInfoStat(commons.CTX_CPU_STATS, l_metricName)
-
-// 		sysMetric.Labels = labels
-// 		sysMetric.LabelValues = labelValues
-// 		sysMetric.Value = sv
-
-// 		arrSysInfoStats = append(arrSysInfoStats, sysMetric)
-// 	}
-
-// 	return arrSysInfoStats
-// }

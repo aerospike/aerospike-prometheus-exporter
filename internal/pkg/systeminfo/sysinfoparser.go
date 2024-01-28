@@ -18,8 +18,10 @@ func Refresh() []SystemInfoStat {
 	stats = append(stats, fileSystemStats...)
 
 	cpuStats := GetCpuInfo()
-	// fmt.Println("\n\t **** # of CPU Stats ... ", len(cpuStats))
 	stats = append(stats, cpuStats...)
+
+	netStats := GetNetStatnfo()
+	stats = append(stats, netStats...)
 
 	return stats
 }
