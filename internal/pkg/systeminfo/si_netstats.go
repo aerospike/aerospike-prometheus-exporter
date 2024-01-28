@@ -12,7 +12,11 @@ import (
 )
 
 func GetNetStatnfo() []SystemInfoStat {
-	arrSysInfoStats := parseNetStats(GetProcFilePath("net/netstat"))
+	arrSysInfoStats := []SystemInfoStat{}
+
+	arrSysInfoStats = append(arrSysInfoStats, parseNetStats(GetProcFilePath("net/netstat"))...)
+	arrSysInfoStats = append(arrSysInfoStats, parseNetStats(GetProcFilePath("net/snmp"))...)
+
 	return arrSysInfoStats
 }
 
