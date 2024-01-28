@@ -16,7 +16,8 @@ func parseNetStats() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
 	// fs, err := procfs.NewFS(GetProcFilePath(NET_STAT_PATH))
-	fs, err := procfs.NewFS(PROC_PATH)
+	fs, err := procfs.NewFS("/proc/net")
+
 	fmt.Println("\n\n ***** GetProcFilePath(net) ", GetProcFilePath("net"))
 	if err != nil {
 		log.Error("parseNetStats Error while reading NET Stats from ", NET_STAT_PATH, " Error ", err)
@@ -29,11 +30,7 @@ func parseNetStats() []SystemInfoStat {
 		return arrSysInfoStats
 	}
 
-	fmt.Println(" \t\t **** NetStats ", stats)
-
-	for k, v := range stats {
-		fmt.Println("key -- ", k, " -- value ", v)
-	}
+	fmt.Println(" \t\t **** Netsocket Stats  ", stats)
 
 	return arrSysInfoStats
 }

@@ -10,12 +10,6 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// type FileSystemStat struct {
-// 	mount_stats map[string]float64
-// 	mount_info  map[string]string
-// 	is_error    int
-// }
-
 func GetFileSystemInfo() []SystemInfoStat {
 	arrSysInfoStats := parseFileSystemInfo()
 	return arrSysInfoStats
@@ -47,31 +41,6 @@ func parseFileSystemInfo() []SystemInfoStat {
 		if roKeyFound {
 			isreadonly = 1.0
 		}
-
-		// l_mount_info := make(map[string]string)
-
-		// l_mount_info["FSType"] = mnt.FSType
-		// l_mount_info["MajorMinorVer"] = mnt.MajorMinorVer
-		// l_mount_info["MountID"] = strconv.Itoa(mnt.MountID)
-		// l_mount_info["MountPoint"] = mnt.MountPoint
-		// l_mount_info["Root"] = mnt.Root
-		// l_mount_info["Source"] = mnt.Source
-		// l_mount_info["ParentID"] = strconv.Itoa(mnt.ParentID)
-
-		// for k, v := range mnt.OptionalFields {
-		// 	if strings.Contains(k, "ro") {
-		// 		isreadonly = 1.0
-		// 	}
-		// 	// l_mount_info["optionfields_"+k] = v
-		// }
-		// l_mount_info["isreadonly"] = strconv.Itoa(int(isreadonly))
-
-		// for k, v := range mnt.Options {
-		// 	l_mount_info["options_"+k] = v
-		// }
-		// for k, v := range mnt.SuperOptions {
-		// 	l_mount_info["superoptions_"+k] = v
-		// }
 
 		size, free, avail, files, filesFree, isError = GetMountData(mnt.Source)
 		if isError {
