@@ -28,6 +28,8 @@ func parseNetStats() []SystemInfoStat {
 		return arrSysInfoStats
 	}
 
+	fmt.Println(" \t\t **** NetStats ", stats)
+
 	for k, v := range stats {
 		fmt.Println("key -- ", k, " -- value ", v)
 	}
