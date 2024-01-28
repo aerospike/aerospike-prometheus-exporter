@@ -1,36 +1,40 @@
 package systeminfo
 
 import (
+	"bufio"
 	"fmt"
-
-	"github.com/prometheus/procfs"
-	log "github.com/sirupsen/logrus"
+	"os"
+	"strings"
 )
 
 func GetNetStatnfo() []SystemInfoStat {
-	arrSysInfoStats := parseNetStats()
+	arrSysInfoStats := parseNetStats(GetProcFilePath("net/netstat"))
 	return arrSysInfoStats
 }
 
-func parseNetStats() []SystemInfoStat {
+func parseNetStats(fileName string) []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
-	// fs, err := procfs.NewFS(GetProcFilePath(NET_STAT_PATH))
-	fs, err := procfs.NewFS("/proc/net")
-
-	fmt.Println("\n\n ***** GetProcFilePath(net) ", GetProcFilePath("net"))
+	file, err := os.Open(fileName)
 	if err != nil {
-		log.Error("parseNetStats Error while reading NET Stats from ", NET_STAT_PATH, " Error ", err)
-		return arrSysInfoStats
+		return nil, err
 	}
+	defer file.Close()
 
-	stats, err := fs.NetStat()
-	if err != nil {
-		log.Debug("Eror while reading procfs.NewFS system,  error: ", err)
-		return arrSysInfoStats
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		nameParts := strings.Split(scanner.Text(), " ")
+		scanner.Scan()
+		valueParts := strings.Split(scanner.Text(), " ")
+		protocol := nameParts[0][:len(nameParts[0])-1]
+		if len(nameParts) != len(valueParts) {
+			return arrSysInfoStats
+		}
+		for i := 1; i < len(nameParts); i++ {
+			fmt.Println("protocol: ", protocol, " name: ", nameParts[i], " value: ", valueParts[i])
+		}
 	}
-
-	fmt.Println(" \t\t **** Netsocket Stats  ", stats)
 
 	return arrSysInfoStats
 }
