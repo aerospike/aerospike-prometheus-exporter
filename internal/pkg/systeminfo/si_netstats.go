@@ -2,7 +2,6 @@ package systeminfo
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"strings"
 
@@ -38,9 +37,10 @@ func parseNetStats(fileName string) []SystemInfoStat {
 		}
 		for i := 1; i < len(nameParts); i++ {
 			key := strings.ToLower(protocol + "_" + nameParts[i])
-			fmt.Println("protocol: ", protocol, " name: ", nameParts[i], " value: ", valueParts[i], " accepted/Ignored : ", acceptNetstat(key))
-			val, _ := commons.TryConvert(valueParts[i])
-			constructNetstat(key, val)
+			if acceptNetstat(key) {
+				val, _ := commons.TryConvert(valueParts[i])
+				arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, val))
+			}
 		}
 	}
 
