@@ -37,7 +37,8 @@ func parseNetStats(fileName string) []SystemInfoStat {
 			return arrSysInfoStats
 		}
 		for i := 1; i < len(nameParts); i++ {
-			fmt.Println("protocol: ", protocol, " name: ", nameParts[i], " value: ", valueParts[i], " accepted/Ignored : ", acceptNetstat(nameParts[i]))
+			key := protocol + "_" + nameParts[i]
+			fmt.Println("protocol: ", protocol, " name: ", nameParts[i], " value: ", valueParts[i], " accepted/Ignored : ", acceptNetstat(key))
 		}
 	}
 
