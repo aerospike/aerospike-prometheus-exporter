@@ -33,6 +33,14 @@ func parseCpuStats() []SystemInfoStat {
 		fmt.Println("parsing CPU stats ", index)
 		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("guest_seconds_total", index, "user", cpu.Guest))
 		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("guest_seconds_total", index, "nice", cpu.GuestNice))
+		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("seconds_total", index, "idle", cpu.Idle))
+		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("seconds_total", index, "irq", cpu.IRQ))
+		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("seconds_total", index, "iowait", cpu.Iowait))
+		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("seconds_total", index, "nice", cpu.Nice))
+		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("seconds_total", index, "soft_irq", cpu.SoftIRQ))
+		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("seconds_total", index, "steal", cpu.Steal))
+		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("seconds_total", index, "system", cpu.System))
+		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("seconds_total", index, "user", cpu.User))
 	}
 
 	fmt.Println(" si-cpu.go arrSysInfoStats... \n", arrSysInfoStats)
