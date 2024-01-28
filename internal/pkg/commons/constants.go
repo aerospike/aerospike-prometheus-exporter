@@ -37,6 +37,7 @@ const (
 	CTX_FILESYSTEM_STATS ContextType = "filesystem_stats"
 	CTX_CPU_STATS        ContextType = "cpu"
 	CTX_NET_STATS        ContextType = "netstat"
+	CTX_NET_DEV_STATS    ContextType = "net_dev"
 )
 const (
 	METRIC_LABEL_DEVICE      = "device"

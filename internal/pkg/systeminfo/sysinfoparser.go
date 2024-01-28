@@ -8,20 +8,12 @@ func Refresh() []SystemInfoStat {
 	var stats = []SystemInfoStat{}
 
 	// Get Memory Stats
-	memStats := GetMemInfo()
-	stats = append(stats, memStats...)
-
-	diskStats := GetDiskStats()
-	stats = append(stats, diskStats...)
-
-	fileSystemStats := GetFileSystemInfo()
-	stats = append(stats, fileSystemStats...)
-
-	cpuStats := GetCpuInfo()
-	stats = append(stats, cpuStats...)
-
-	netStats := GetNetStatnfo()
-	stats = append(stats, netStats...)
+	stats = append(stats, GetMemInfo()...)
+	stats = append(stats, GetDiskStats()...)
+	stats = append(stats, GetFileSystemInfo()...)
+	stats = append(stats, GetCpuInfo()...)
+	stats = append(stats, GetNetStatInfo()...)
+	stats = append(stats, GetNetworkStatsInfo()...)
 
 	return stats
 }

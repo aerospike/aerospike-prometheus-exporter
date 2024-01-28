@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func GetNetStatnfo() []SystemInfoStat {
+func GetNetStatInfo() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
 	arrSysInfoStats = append(arrSysInfoStats, parseNetStats(GetProcFilePath("net/netstat"))...)

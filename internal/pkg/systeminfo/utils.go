@@ -13,11 +13,12 @@ import (
 )
 
 var (
-	PROC_PATH      = procfs.DefaultMountPoint
-	SYS_PATH       = "/sys"
-	ROOTFS_PATH    = "/"
-	UDEV_DATA_PATH = "/run/udev/data"
-	NET_STAT_PATH  = "net/netstat"
+	PROC_PATH         = procfs.DefaultMountPoint
+	SYS_PATH          = "/sys"
+	ROOTFS_PATH       = "/"
+	UDEV_DATA_PATH    = "/run/udev/data"
+	NET_STAT_PATH     = "net/netstat"
+	NET_DEV_STAT_PATH = "/proc/net/dev"
 )
 
 const (
@@ -26,13 +27,13 @@ const (
 	filestatIgnoreList      = "^(overlay|mqueue)$"
 
 	netstatAcceptlist = "^(.*_(inerrors|inerrs)|ip_forwarding|ip(6|ext)_(inoctets|outoctets)|icmp6?_(inmsgs|outmsgs)|tcpext_(listen.*|syncookies.*|tcpsynretrans|tcptimeouts|tcpofoqueue)|tcp_(activeopens|insegs|outsegs|outrsts|passiveopens|retranssegs|currestab)|udp6?_(indatagrams|outdatagrams|noports|rcvbuferrors|sndbuferrors))$"
-	snmp6Acceptlist   = "^(ip6.*|icmp6.*|udp6.*)"
+	snmp6Prefixlist   = "^(ip6.*|icmp6.*|udp6.*)"
 )
 
 var diskIgnorePattern = regexp.MustCompile(diskstatsIgnoredDevices)
 var fileIgnorePattern = regexp.MustCompile(filestatIgnoreList)
 var netstatAcceptPattern = regexp.MustCompile(netstatAcceptlist)
-var snmp6AcceptPattern = regexp.MustCompile(snmp6Acceptlist)
+var snmp6PrefixPattern = regexp.MustCompile(snmp6Prefixlist)
 
 func GetProcFilePath(name string) string {
 	return filepath.Join(PROC_PATH, name)
@@ -114,7 +115,7 @@ func acceptNetstat(name string) bool {
 }
 
 func acceptSnmp6(name string) bool {
-	return (snmp6AcceptPattern != nil && snmp6AcceptPattern.MatchString(name))
+	return (snmp6PrefixPattern != nil && snmp6PrefixPattern.MatchString(name))
 }
 
 func GetMetricType(pContext commons.ContextType, pRawMetricName string) commons.MetricType {
