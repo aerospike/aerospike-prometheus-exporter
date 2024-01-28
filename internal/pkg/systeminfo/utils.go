@@ -17,6 +17,7 @@ var (
 	SYS_PATH       = "/sys"
 	ROOTFS_PATH    = "/"
 	UDEV_DATA_PATH = "/run/udev/data"
+	NET_STAT_PATH  = "net/netstat"
 )
 
 const (
