@@ -12,7 +12,7 @@ import (
 func GetNetworkStatsInfo() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
-	arrSysInfoStats = append(arrSysInfoStats, parseNetworkStats(GetProcFilePath("net/netstat"))...)
+	arrSysInfoStats = append(arrSysInfoStats, parseNetworkStats(GetProcFilePath("net/dev"))...)
 
 	return arrSysInfoStats
 }
@@ -20,7 +20,7 @@ func GetNetworkStatsInfo() []SystemInfoStat {
 func parseNetworkStats(fileName string) []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
-	fs, err := procfs.NewFS(NET_DEV_STAT_PATH)
+	fs, err := procfs.NewFS(fileName)
 	if err != nil {
 		log.Debug("parseCpuStats Error while reading Network/Net-Dev Stats from ", NET_DEV_STAT_PATH, " Error ", err)
 		return arrSysInfoStats

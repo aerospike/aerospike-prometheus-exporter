@@ -2,7 +2,6 @@ package systeminfo
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"strings"
 
@@ -90,7 +89,6 @@ func parseSNMP6Stats(fileName string) []SystemInfoStat {
 		// statProtocolName will have IP6 as prefix
 		statProtocolName := strings.ToLower(snmp6Stat[0])
 		value := snmp6Stat[1]
-		fmt.Println(" key ", statProtocolName, " acceptSnmp6(key) ", acceptSnmp6(statProtocolName), " value: ", value)
 
 		if acceptSnmp6(statProtocolName) {
 			ele := strings.Split(statProtocolName, "6")
