@@ -38,7 +38,7 @@ func parseNetworkStats() []SystemInfoStat {
 	}
 
 	for k, v := range stats {
-		// fmt.Println("stats.Total().Name: ... key: ", k, " value: ", v.Name)
+		fmt.Println("stats.Total().Name: ... key: ", k, " value: ", v.Name)
 		arrSysInfoStats = append(arrSysInfoStats, constructNetworkDevStat("group", k, 0))
 	}
 
