@@ -1,5 +1,7 @@
 package systeminfo
 
+import "fmt"
+
 const (
 	METRIC_LABEL_MEM = "memory"
 )
@@ -18,6 +20,7 @@ func Refresh() []SystemInfoStat {
 	stats = append(stats, fileSystemStats...)
 
 	cpuStats := GetCpuInfo()
+	fmt.Println("\n\t **** # of CPU Stats ... ", len(cpuStats))
 	stats = append(stats, cpuStats...)
 
 	return stats
