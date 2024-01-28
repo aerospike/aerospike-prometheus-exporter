@@ -38,20 +38,21 @@ func parseNetworkStats() []SystemInfoStat {
 	}
 
 	for k, v := range stats {
-		fmt.Println("stats.Total().Name: ... key: ", k, " value: ", v.Name)
+		// fmt.Println("stats.Total().Name: ... key: ", k, " value: ", v.Name)
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkDevStat("group", k, 0))
 	}
 
 	return arrSysInfoStats
 }
 
-func constructNetworkStat(netStatKey string, value float64) SystemInfoStat {
+func constructNetworkDevStat(netStatKey string, deviceName string, value float64) SystemInfoStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
 	labels := []string{}
-	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
+	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE)
 
-	labelValues := []string{clusterName, service}
+	labelValues := []string{clusterName, service, deviceName}
 
 	sysMetric := NewSystemInfoStat(commons.CTX_NET_DEV_STATS, netStatKey)
 	sysMetric.Labels = labels
