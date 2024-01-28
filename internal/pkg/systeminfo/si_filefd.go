@@ -32,20 +32,19 @@ func parseFilefdStats(fileName string) []SystemInfoStat {
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
-		values := strings.Split(scanner.Text(), " ")
+		values := strings.Split(scanner.Text(), "\t")
 
 		fmt.Println("len-values : ", len(values), " values ", values[0])
-		// for i := 1; i < len(statNames); i++ {
-		// 	key := strings.ToLower(protocol + "_" + statNames[i])
-		// 	val, _ := commons.TryConvert(values[i])
-		// 	arrSysInfoStats = append(arrSysInfoStats, constructFileFDstat(key, val))
-		// }
+		allocated, _ := commons.TryConvert(values[0])
+		maximum, _ := commons.TryConvert(values[1])
+		arrSysInfoStats = append(arrSysInfoStats, constructFileFDstat("allocated", allocated))
+		arrSysInfoStats = append(arrSysInfoStats, constructFileFDstat("maximum", maximum))
 	}
 
 	return arrSysInfoStats
 }
 
-func constructFileFDstat(netStatKey string, value float64) SystemInfoStat {
+func constructFileFDstat(key string, value float64) SystemInfoStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
@@ -54,7 +53,7 @@ func constructFileFDstat(netStatKey string, value float64) SystemInfoStat {
 
 	labelValues := []string{clusterName, service}
 
-	sysMetric := NewSystemInfoStat(commons.CTX_FILEFD_STATS, netStatKey)
+	sysMetric := NewSystemInfoStat(commons.CTX_FILEFD_STATS, key)
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value = value
