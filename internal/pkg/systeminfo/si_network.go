@@ -1,8 +1,6 @@
 package systeminfo
 
 import (
-	"fmt"
-
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	"github.com/prometheus/procfs"
@@ -13,8 +11,6 @@ func GetNetworkStatsInfo() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
 	arrSysInfoStats = append(arrSysInfoStats, parseNetworkStats()...)
-
-	fmt.Println("\t GetNetworkStatsInfo **** arrSysInfoStats ", len(arrSysInfoStats))
 
 	return arrSysInfoStats
 }
