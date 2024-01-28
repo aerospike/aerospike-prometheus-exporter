@@ -90,7 +90,7 @@ func parseSNMP6Stats(fileName string) []SystemInfoStat {
 		// key will have IP6 as prefix
 		key := stat[0]
 		value := stat[1]
-		fmt.Println(" stat ", stat, " acceptNetstat(key) ", acceptNetstat(key), " value: ", value)
+		fmt.Println(" key ", key, " acceptNetstat(key) ", acceptNetstat(key), " value: ", value)
 
 		// if sixIndex := strings.Index(stat[0], "6"); sixIndex != -1 {
 		// 	protocol := stat[0][:sixIndex+1]
