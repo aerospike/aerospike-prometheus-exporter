@@ -28,12 +28,17 @@ const (
 
 	netstatAcceptlist = "^(.*_(inerrors|inerrs)|ip_forwarding|ip(6|ext)_(inoctets|outoctets)|icmp6?_(inmsgs|outmsgs)|tcpext_(listen.*|syncookies.*|tcpsynretrans|tcptimeouts|tcpofoqueue)|tcp_(activeopens|insegs|outsegs|outrsts|passiveopens|retranssegs|currestab)|udp6?_(indatagrams|outdatagrams|noports|rcvbuferrors|sndbuferrors))$"
 	snmp6Prefixlist   = "^(ip6.*|icmp6.*|udp6.*)"
+
+	vmstatAcceptList = "^(oom_kill|pgpg|pswp|pg.*fault).*"
 )
 
-var diskIgnorePattern = regexp.MustCompile(diskstatsIgnoredDevices)
-var fileIgnorePattern = regexp.MustCompile(filestatIgnoreList)
-var netstatAcceptPattern = regexp.MustCompile(netstatAcceptlist)
-var snmp6PrefixPattern = regexp.MustCompile(snmp6Prefixlist)
+var (
+	diskIgnorePattern    = regexp.MustCompile(diskstatsIgnoredDevices)
+	fileIgnorePattern    = regexp.MustCompile(filestatIgnoreList)
+	netstatAcceptPattern = regexp.MustCompile(netstatAcceptlist)
+	snmp6PrefixPattern   = regexp.MustCompile(snmp6Prefixlist)
+	vmstatAcceptPattern  = regexp.MustCompile(vmstatAcceptList)
+)
 
 func GetProcFilePath(name string) string {
 	return filepath.Join(PROC_PATH, name)

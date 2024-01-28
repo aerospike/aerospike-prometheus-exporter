@@ -15,6 +15,7 @@ func Refresh() []SystemInfoStat {
 	stats = append(stats, GetNetStatInfo()...)
 	stats = append(stats, GetNetworkStatsInfo()...)
 	stats = append(stats, GetFileFDInfo()...)
+	stats = append(stats, GetVmStatInfo()...)
 
 	return stats
 }

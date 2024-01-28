@@ -10,15 +10,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func GetFileFDInfo() []SystemInfoStat {
+func GetVmStatInfo() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
-	arrSysInfoStats = append(arrSysInfoStats, parseFilefdStats(GetProcFilePath("sys/fs/file-nr"))...)
+	arrSysInfoStats = append(arrSysInfoStats, parseVmStats(GetProcFilePath("vmstat"))...)
 
 	return arrSysInfoStats
 }
 
-func parseFilefdStats(fileName string) []SystemInfoStat {
+func parseVmStats(fileName string) []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
 	file, err := os.Open(fileName)
@@ -31,18 +31,18 @@ func parseFilefdStats(fileName string) []SystemInfoStat {
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
-		values := strings.Split(scanner.Text(), "\t")
+		statElements := strings.Split(scanner.Text(), " ")
 
-		allocated, _ := commons.TryConvert(values[0])
-		maximum, _ := commons.TryConvert(values[2])
-		arrSysInfoStats = append(arrSysInfoStats, constructFileFDstat("allocated", allocated))
-		arrSysInfoStats = append(arrSysInfoStats, constructFileFDstat("maximum", maximum))
+		key := statElements[0]
+		value, _ := commons.TryConvert(statElements[1])
+
+		arrSysInfoStats = append(arrSysInfoStats, constructVmstat(key, value))
 	}
 
 	return arrSysInfoStats
 }
 
-func constructFileFDstat(key string, value float64) SystemInfoStat {
+func constructVmstat(key string, value float64) SystemInfoStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
