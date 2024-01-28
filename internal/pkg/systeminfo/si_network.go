@@ -40,6 +40,26 @@ func parseNetworkStats() []SystemInfoStat {
 	for k, v := range stats {
 		fmt.Println("stats.Total().Name: ... key: ", k, " value: ", v.Name)
 		arrSysInfoStats = append(arrSysInfoStats, constructNetworkDevStat("group", k, 0))
+
+		// network receive
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_bytes_total", k, float64(v.RxBytes)))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_compressed_total", k, float64(v.RxCompressed)))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_dropped_total", k, float64(v.RxDropped)))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_errors_total", k, float64(v.RxErrors)))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_fifo_total", k, float64(v.RxFIFO)))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_frame_total", k, float64(v.RxFrame)))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_multicast_total", k, float64(v.RxMulticast)))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_packets_total", k, float64(v.RxPackets)))
+
+		// network transfer
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_bytes_total", k, float64(v.TxBytes)))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_carrier_total", k, float64(v.TxCarrier)))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_collisions_total", k, float64(v.TxCollisions)))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_compressed_total", k, float64(v.TxCompressed)))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_errors_total", k, float64(v.TxErrors)))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_fifo_total", k, float64(v.TxFIFO)))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_packets_total", k, float64(v.TxPackets)))
+
 	}
 
 	return arrSysInfoStats
@@ -55,6 +75,23 @@ func constructNetworkDevStat(netStatKey string, deviceName string, value float64
 	labelValues := []string{clusterName, service, deviceName}
 
 	sysMetric := NewSystemInfoStat(commons.CTX_NET_DEV_STATS, netStatKey)
+	sysMetric.Labels = labels
+	sysMetric.LabelValues = labelValues
+	sysMetric.Value = value
+
+	return sysMetric
+}
+
+func constructNetworkStat(netStatKey string, deviceName string, value float64) SystemInfoStat {
+	clusterName := statprocessors.ClusterName
+	service := statprocessors.Service
+
+	labels := []string{}
+	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE)
+
+	labelValues := []string{clusterName, service, deviceName}
+
+	sysMetric := NewSystemInfoStat(commons.CTX_NETWORK_STATS, netStatKey)
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value = value
