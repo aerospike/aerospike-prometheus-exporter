@@ -24,10 +24,13 @@ const (
 	// diskstatsIgnoredDevices = "^(z?ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\\d+n\\d+p)\\d+$"
 	diskstatsIgnoredDevices = "^(z?ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\\d+n\\d+p)\\d$"
 	filestatIgnoreList      = "^(overlay|mqueue)$"
+
+	netstatAcceptlist = "^(.*_(InErrors|InErrs)|Ip_Forwarding|Ip(6|Ext)_(InOctets|OutOctets)|Icmp6?_(InMsgs|OutMsgs)|TcpExt_(Listen.*|Syncookies.*|TCPSynRetrans|TCPTimeouts|TCPOFOQueue)|Tcp_(ActiveOpens|InSegs|OutSegs|OutRsts|PassiveOpens|RetransSegs|CurrEstab)|Udp6?_(InDatagrams|OutDatagrams|NoPorts|RcvbufErrors|SndbufErrors))$"
 )
 
 var diskIgnorePattern = regexp.MustCompile(diskstatsIgnoredDevices)
 var fileIgnorePattern = regexp.MustCompile(filestatIgnoreList)
+var netstatAcceptPattern = regexp.MustCompile(netstatAcceptlist)
 
 func GetProcFilePath(name string) string {
 	return filepath.Join(PROC_PATH, name)
@@ -43,10 +46,6 @@ func GetUdevDataFilePath(name string) string {
 
 func GetRootfsFilePath(name string) string {
 	return filepath.Join(ROOTFS_PATH, name)
-}
-
-func handleError(e error) {
-	fmt.Println("Error :- ", e)
 }
 
 // func rootfsStripPrefix(path string) string {
@@ -101,13 +100,15 @@ func GetFloatValue(addr *uint64) float64 {
 // ignoreDisk returns whether the device should be ignoreDisk
 func ignoreDisk(name string) bool {
 	return (diskIgnorePattern != nil && diskIgnorePattern.MatchString(name))
-	//  || (acceptPattern != nil && !acceptPattern.MatchString(name))
 }
 
 // ignoreDisk returns whether the device should be ignoreDisk
 func ignoreFileSystem(name string) bool {
 	return (fileIgnorePattern != nil && fileIgnorePattern.MatchString(name))
-	//  || (acceptPattern != nil && !acceptPattern.MatchString(name))
+}
+
+func acceptNetstat(name string) bool {
+	return (netstatAcceptPattern != nil && netstatAcceptPattern.MatchString(name))
 }
 
 func GetMetricType(pContext commons.ContextType, pRawMetricName string) commons.MetricType {
