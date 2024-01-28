@@ -32,8 +32,8 @@ func parseCpuStats() []SystemInfoStat {
 	// fmt.Println("parsing CPU stats ", stats.CPU)
 	for index, cpu := range stats.CPU {
 		fmt.Println("parsing CPU stats ", index)
-		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("node_cpu_guest_seconds_total", index, "user", cpu.Guest))
-		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("node_cpu_guest_seconds_total", index, "nice", cpu.GuestNice))
+		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("guest_seconds_total", index, "user", cpu.Guest))
+		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("guest_seconds_total", index, "nice", cpu.GuestNice))
 	}
 
 	fmt.Println(" si-cpu.go arrSysInfoStats... ", len(arrSysInfoStats))
@@ -50,9 +50,9 @@ func constructCpuStats(cpuStatName string, cpuNo int64, cpuMode string, value fl
 	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
 	labels = append(labels, commons.METRIC_LABEL_CPU, commons.METRIC_LABEL_CPU_MODE)
 
-	labelValues := []string{clusterName, service, string(cpuNo), cpuMode}
+	labelValues := []string{clusterName, service, fmt.Sprint(cpuNo), cpuMode}
 
-	sysMetric := NewSystemInfoStat(commons.CTX_DISK_STATS, cpuStatName)
+	sysMetric := NewSystemInfoStat(commons.CTX_CPU_STATS, cpuStatName)
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value = value
