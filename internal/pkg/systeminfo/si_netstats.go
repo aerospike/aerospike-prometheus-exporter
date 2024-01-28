@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -35,13 +37,27 @@ func parseNetStats(fileName string) []SystemInfoStat {
 			return arrSysInfoStats
 		}
 		for i := 1; i < len(nameParts); i++ {
-			if acceptNetstat(nameParts[i]) {
-				fmt.Println("protocol: ", protocol, " name: ", nameParts[i], " value: ", valueParts[i])
-			} else {
-				fmt.Println("IGNORED name: ", nameParts[i], " value: ", valueParts[i])
-			}
+			fmt.Println("protocol: ", protocol, " name: ", nameParts[i], " value: ", valueParts[i], " accepted/Ignored : ", acceptNetstat(nameParts[i]))
 		}
 	}
 
 	return arrSysInfoStats
+}
+
+func constructNetstat(cpuStatName string, cpuNo int64, cpuMode string, value float64) SystemInfoStat {
+	clusterName := statprocessors.ClusterName
+	service := statprocessors.Service
+
+	labels := []string{}
+	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
+	labels = append(labels, commons.METRIC_LABEL_CPU, commons.METRIC_LABEL_CPU_MODE)
+
+	labelValues := []string{clusterName, service, fmt.Sprint(cpuNo), cpuMode}
+
+	sysMetric := NewSystemInfoStat(commons.CTX_CPU_STATS, cpuStatName)
+	sysMetric.Labels = labels
+	sysMetric.LabelValues = labelValues
+	sysMetric.Value = value
+
+	return sysMetric
 }
