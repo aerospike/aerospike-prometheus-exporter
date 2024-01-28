@@ -35,16 +35,16 @@ func parseNetStats(fileName string) []SystemInfoStat {
 	for scanner.Scan() {
 		statNames := strings.Split(scanner.Text(), " ")
 		scanner.Scan()
-		valueParts := strings.Split(scanner.Text(), " ")
+		values := strings.Split(scanner.Text(), " ")
 		protocol := statNames[0][:len(statNames[0])-1]
-		if len(statNames) != len(valueParts) {
+		if len(statNames) != len(values) {
 			return arrSysInfoStats
 		}
 		for i := 1; i < len(statNames); i++ {
 			key := strings.ToLower(protocol + "_" + statNames[i])
 			// fmt.Println("key ", key, " acceptNetstat(key): ", acceptNetstat(key), " valueParts[i] ", valueParts[i])
 			if acceptNetstat(key) {
-				val, _ := commons.TryConvert(valueParts[i])
+				val, _ := commons.TryConvert(values[i])
 				arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, val))
 			}
 		}

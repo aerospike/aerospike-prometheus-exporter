@@ -23,22 +23,18 @@ func parseNetworkStats() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
 	fs, err := procfs.NewFS(PROC_PATH)
-	fmt.Println("stats.Total().Name: ... 1", PROC_PATH)
-
 	if err != nil {
 		log.Debug("parseNetworkStats Error while reading Net_Dev Stats from ", PROC_PATH, " Error ", err)
 		return arrSysInfoStats
 	}
 
 	stats, err := fs.NetDev()
-	fmt.Println("stats.Total().Name: ... 2", stats)
 	if err != nil {
 		log.Debug("Eror while reading procfs.NewFS system, error: ", err)
 		return arrSysInfoStats
 	}
 
 	for k, v := range stats {
-		fmt.Println("stats.Total().Name: ... key: ", k, " value: ", v.Name)
 		arrSysInfoStats = append(arrSysInfoStats, constructNetworkDevStat("group", k, 0))
 
 		// network receive
@@ -59,7 +55,6 @@ func parseNetworkStats() []SystemInfoStat {
 		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_errors_total", k, float64(v.TxErrors)))
 		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_fifo_total", k, float64(v.TxFIFO)))
 		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_packets_total", k, float64(v.TxPackets)))
-
 	}
 
 	return arrSysInfoStats
