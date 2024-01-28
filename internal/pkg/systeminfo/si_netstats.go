@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/DataDog/datadog-agent/pkg/util/log"
+	log "github.com/sirupsen/logrus"
 )
 
 func GetNetStatnfo() []SystemInfoStat {
