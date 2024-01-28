@@ -32,6 +32,6 @@ func GetProvider() DataProvider {
 	return dp_aerospike_server
 }
 
-func GetSystemProvider() DataProvider {
+func GetSystemProvider() *SystemInfoProvider {
 	return sys_info_provider
 }

@@ -59,6 +59,9 @@ otel_server_stat_fetch_interval = ${AGENT_OTEL_SERVER_STAT_FETCH_INTERVAL}
 # OTel metric push interval (default 60, not recommended to to reduce this)
 otel_push_interval = ${AGENT_OTEL_PUSH_INTERVAL}
 
+# support system statistics also
+refresh_system_stats = ${AGENT_REFRESH_SYSTEM_STATS}
+
 # Exporter logging configuration
 # Log file path (optional, logs to console by default)
 # Level can be info|warning,warn|error,err|debug|trace ('info' by default)

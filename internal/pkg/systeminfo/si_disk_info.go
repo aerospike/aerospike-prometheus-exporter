@@ -13,8 +13,7 @@ import (
 const (
 	secondsPerTick = 1.0 / 1000.0
 
-	// Read sectors and write sectors are the "standard UNIX 512-byte sectors, not any device- or filesystem-specific block size."
-	// See also https://www.kernel.org/doc/Documentation/block/stat.txt
+	// Read and write sectors are "standard UNIX 512-byte sectors" (https://www.kernel.org/doc/Documentation/block/stat.txt)
 	unixSectorSize = 512.0
 
 	// See udevadm(8).

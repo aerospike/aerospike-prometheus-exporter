@@ -1,11 +1,18 @@
 package systeminfo
 
+import "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
+
 const (
 	METRIC_LABEL_MEM = "memory"
 )
 
 func Refresh() []SystemInfoStat {
 	var stats = []SystemInfoStat{}
+
+	// Refresh System Info stats only when enabled
+	if !config.Cfg.AeroProm.RefreshSystemStats {
+		return stats
+	}
 
 	// Get Memory Stats
 	stats = append(stats, GetMemInfo()...)

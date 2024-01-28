@@ -30,6 +30,8 @@ type Config struct {
 		Bind    string `toml:"bind"`
 		Timeout uint8  `toml:"timeout"`
 
+		RefreshSystemStats bool `toml:"refresh_system_stats"`
+
 		OtelServiceName             string            `toml:"otel_service_name"`
 		OtelEndpoint                string            `toml:"otel_endpoint"`
 		OtelTlsEnabled              bool              `toml:"otel_tls_enabled"`
