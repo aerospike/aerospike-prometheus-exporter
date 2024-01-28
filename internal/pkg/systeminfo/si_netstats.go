@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 func GetNetStatnfo() []SystemInfoStat {
@@ -17,7 +19,8 @@ func parseNetStats(fileName string) []SystemInfoStat {
 
 	file, err := os.Open(fileName)
 	if err != nil {
-		return nil, err
+		log.Error("Error while opening file,", fileName, " Error: ", err)
+		return arrSysInfoStats
 	}
 	defer file.Close()
 
