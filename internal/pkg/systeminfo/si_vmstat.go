@@ -51,7 +51,7 @@ func constructVmstat(key string, value float64) SystemInfoStat {
 
 	labelValues := []string{clusterName, service}
 
-	sysMetric := NewSystemInfoStat(commons.CTX_FILEFD_STATS, key)
+	sysMetric := NewSystemInfoStat(commons.CTX_VM_STATS, key)
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value = value

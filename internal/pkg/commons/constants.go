@@ -40,6 +40,7 @@ const (
 	CTX_NET_DEV_STATS    ContextType = "net_dev"
 	CTX_NETWORK_STATS    ContextType = "network"
 	CTX_FILEFD_STATS     ContextType = "filefd"
+	CTX_VM_STATS         ContextType = "vmstat"
 )
 const (
 	METRIC_LABEL_DEVICE      = "device"
