@@ -17,7 +17,7 @@ func parseNetStats() []SystemInfoStat {
 
 	fs, err := procfs.NewFS(GetProcFilePath(NET_STAT_PATH))
 	if err != nil {
-		log.Error("GetCpuStats Error while reading NET Stats from ", NET_STAT_PATH)
+		log.Error("parseNetStats Error while reading NET Stats from ", NET_STAT_PATH, " Error ", err)
 		return arrSysInfoStats
 	}
 

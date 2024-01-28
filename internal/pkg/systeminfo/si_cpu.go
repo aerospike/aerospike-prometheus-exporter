@@ -19,13 +19,13 @@ func parseCpuStats() []SystemInfoStat {
 
 	fs, err := procfs.NewFS(PROC_PATH)
 	if err != nil {
-		log.Debug("GetCpuStats Error while reading CPU Stats from ", PROC_PATH)
+		log.Debug("parseCpuStats Error while reading CPU Stats from ", PROC_PATH, " Error ", err)
 		return arrSysInfoStats
 	}
 
 	stats, err := fs.Stat()
 	if err != nil {
-		log.Debug("Eror while reading procfs.NewFS system,  error: ", err)
+		log.Debug("Eror while reading procfs.NewFS system, error: ", err)
 		return arrSysInfoStats
 	}
 
