@@ -99,8 +99,10 @@ func parseSNMP6Stats(fileName string) []SystemInfoStat {
 			stat := ele[1]
 
 			key := protocol + "6_" + stat
-			val, _ := commons.TryConvert(value)
-			arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, val))
+			if acceptNetstat(key) {
+				val, _ := commons.TryConvert(value)
+				arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, val))
+			}
 		}
 
 		// if sixIndex := strings.Index(stat[0], "6"); sixIndex != -1 {
