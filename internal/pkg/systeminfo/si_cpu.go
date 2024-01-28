@@ -22,21 +22,20 @@ func parseCpuStats() []SystemInfoStat {
 		log.Debug("GetCpuStats Error while reading CPU Stats from ", PROC_PATH)
 		return arrSysInfoStats
 	}
-	stats, err := fs.Stat()
 
+	stats, err := fs.Stat()
 	if err != nil {
 		log.Debug("Eror while reading procfs.NewFS system,  error: ", err)
 		return arrSysInfoStats
 	}
 
-	// fmt.Println("parsing CPU stats ", stats.CPU)
 	for index, cpu := range stats.CPU {
 		fmt.Println("parsing CPU stats ", index)
 		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("guest_seconds_total", index, "user", cpu.Guest))
 		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("guest_seconds_total", index, "nice", cpu.GuestNice))
 	}
 
-	fmt.Println(" si-cpu.go arrSysInfoStats... ", len(arrSysInfoStats))
+	fmt.Println(" si-cpu.go arrSysInfoStats... \n", arrSysInfoStats)
 
 	return arrSysInfoStats
 }
@@ -45,7 +44,6 @@ func constructCpuStats(cpuStatName string, cpuNo int64, cpuMode string, value fl
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
-	// add disk_info
 	labels := []string{}
 	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
 	labels = append(labels, commons.METRIC_LABEL_CPU, commons.METRIC_LABEL_CPU_MODE)
