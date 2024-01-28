@@ -53,7 +53,7 @@ const (
 func GetDiskStats() []SystemInfoStat {
 
 	arrSysInfoStats := parseDiskStats()
-	fmt.Println("GetDiskStats - arrSysInfoStats: ", len(arrSysInfoStats))
+	// fmt.Println("GetDiskStats - arrSysInfoStats: ", len(arrSysInfoStats))
 
 	return arrSysInfoStats
 }
@@ -78,7 +78,7 @@ func parseDiskStats() []SystemInfoStat {
 		deviceName := stats.DeviceName
 
 		if ignoreDisk(deviceName) {
-			fmt.Println("\t ** DiskStats -- Ignoring mount ", deviceName)
+			log.Debug("\t ** DiskStats -- Ignoring mount ", deviceName)
 			continue
 		}
 
@@ -112,12 +112,12 @@ func parseDiskStats() []SystemInfoStat {
 		udevDeviceProps, err := getUdevDeviceProperties(stats.MajorNumber, stats.MinorNumber)
 
 		if err != nil {
-			fmt.Println("\t\t *** msg", "Failed to parse udev info", "err", err)
+			// fmt.Println("\t\t *** msg", "Failed to parse udev info", "err", err)
 			log.Debug("msg", "Failed to parse udev info", "err", err)
 		}
 
 		for k, v := range udevDeviceProps {
-			fmt.Println("info k: ", k, "\t v: ", v)
+			// fmt.Println("info k: ", k, "\t v: ", v)
 			l_udev_info[k] = v
 		}
 		// This is usually the serial printed on the disk label.

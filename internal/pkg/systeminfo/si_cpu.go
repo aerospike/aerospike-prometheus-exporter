@@ -1,6 +1,8 @@
 package systeminfo
 
 import (
+	"fmt"
+
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	"github.com/prometheus/procfs"
@@ -27,10 +29,9 @@ func parseCpuStats() []SystemInfoStat {
 		return arrSysInfoStats
 	}
 
-	l_stats_info := make(map[string]float64)
-
+	fmt.Println("parsing CPU stats ", stats.CPU)
 	for index, cpu := range stats.CPU {
-		l_stats_info[""] = float64(index)
+		fmt.Println("parsing CPU stats ")
 		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("node_cpu_guest_seconds_total", index, "user", cpu.Guest))
 		arrSysInfoStats = append(arrSysInfoStats, constructCpuStats("node_cpu_guest_seconds_total", index, "nice", cpu.GuestNice))
 	}
