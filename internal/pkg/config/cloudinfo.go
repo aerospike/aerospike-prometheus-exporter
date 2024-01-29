@@ -10,6 +10,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	BASE_CLOUD_METADATA_URL = "http://169.254.169.254/"
+)
+
 var (
 	cloudInfo map[string]string
 )
@@ -18,6 +22,14 @@ func CollectCloudMetrics() map[string]string {
 
 	cloudInfo = make(map[string]string)
 	startTime := time.Now()
+
+	// check if base url is accessible, if yes, then continue other cloud check
+	_, ok := callUrl("GET", BASE_CLOUD_METADATA_URL, nil)
+	if !ok {
+		log.Debug("Base URL is not accessible / timedout, hence not accessing other cloud to fetch region, zone, location etc.,")
+		return cloudInfo
+	}
+
 	getAwsCloudDetails()
 	getGoogleCloudDetails()
 	getAzureCloudDetails()
@@ -31,22 +43,22 @@ func getAwsCloudDetails() {
 	var token, awsRegion, awsAvailZoneId, awsAvailZone string
 	var tokenHeaders = make(map[string]string)
 	tokenHeaders["X-aws-ec2-metadata-token-ttl-seconds"] = "21600"
-	token, ok := callUrl("PUT", "http://169.254.169.254/latest/api/token", tokenHeaders)
+	token, ok := callUrl("PUT", BASE_CLOUD_METADATA_URL+"/latest/api/token", tokenHeaders)
 	if !ok {
 		return
 	}
 
 	tokenHeaders["X-aws-ec2-metadata-token"] = token
-	awsRegion, ok = callUrl("GET", "http://169.254.169.254/latest/meta-data/placement/region", tokenHeaders)
+	awsRegion, ok = callUrl("GET", BASE_CLOUD_METADATA_URL+"/latest/meta-data/placement/region", tokenHeaders)
 	if !ok {
 		return
 	}
 
-	awsAvailZoneId, ok = callUrl("GET", "http://169.254.169.254/latest/meta-data/placement/availability-zone-id", tokenHeaders)
+	awsAvailZoneId, ok = callUrl("GET", BASE_CLOUD_METADATA_URL+"/latest/meta-data/placement/availability-zone-id", tokenHeaders)
 	if !ok {
 		return
 	}
-	awsAvailZone, ok = callUrl("GET", "http://169.254.169.254/latest/meta-data/placement/availability-zone", tokenHeaders)
+	awsAvailZone, ok = callUrl("GET", BASE_CLOUD_METADATA_URL+"/latest/meta-data/placement/availability-zone", tokenHeaders)
 	if !ok {
 		return
 	}
@@ -59,12 +71,12 @@ func getAwsCloudDetails() {
 func getAzureCloudDetails() {
 	var tokenHeaders = make(map[string]string)
 	tokenHeaders["Metadata"] = "true"
-	azureLocation, ok := callUrl("GET", "http://169.254.169.254/metadata/instance/compute/location?api-version=2021-02-01&format=text", tokenHeaders)
+	azureLocation, ok := callUrl("GET", BASE_CLOUD_METADATA_URL+"/metadata/instance/compute/location?api-version=2021-02-01&format=text", tokenHeaders)
 	if !ok {
 		return
 	}
 
-	azureZone, ok := callUrl("GET", "http://169.254.169.254/metadata/instance/compute/zone?api-version=2021-02-01&format=text", tokenHeaders)
+	azureZone, ok := callUrl("GET", BASE_CLOUD_METADATA_URL+"/metadata/instance/compute/zone?api-version=2021-02-01&format=text", tokenHeaders)
 	if !ok {
 		return
 	}
@@ -77,7 +89,7 @@ func getAzureCloudDetails() {
 func getGoogleCloudDetails() {
 	var tokenHeaders = make(map[string]string)
 	tokenHeaders["Metadata-Flavor"] = "Google"
-	gcpZone, ok := callUrl("GET", "http://169.254.169.254/computeMetadata/v1/instance/zone", tokenHeaders)
+	gcpZone, ok := callUrl("GET", BASE_CLOUD_METADATA_URL+"/computeMetadata/v1/instance/zone", tokenHeaders)
 	if !ok {
 		return
 	}
@@ -88,9 +100,16 @@ func getGoogleCloudDetails() {
 
 func callUrl(method string, url string, headers map[string]string) (string, bool) {
 	request, err := http.NewRequest(method, url, nil)
+	if err != nil {
+		log.Debug("Error while creating new-http-request, Error ", err)
+		return "", false
+	}
+
 	request.Header.Set("Content-Type", "text/html; charset=utf-8")
-	for k, v := range headers {
-		request.Header.Set(k, v)
+	if headers != nil {
+		for k, v := range headers {
+			request.Header.Set(k, v)
+		}
 	}
 
 	// send the request
@@ -98,7 +117,7 @@ func callUrl(method string, url string, headers map[string]string) (string, bool
 	response, err := client.Do(request)
 
 	if err != nil {
-		fmt.Println("Error 1 ", err)
+		log.Debug("Call failed to URL ", url, " Error ", err)
 		return "", false
 	}
 
