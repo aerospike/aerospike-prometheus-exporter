@@ -12,6 +12,7 @@ import (
 
 const (
 	BASE_CLOUD_METADATA_URL = "http://169.254.169.254/"
+	HTTP_DEFAULT_TIMEOUT    = time.Duration(2 * time.Second)
 )
 
 var (
@@ -106,14 +107,12 @@ func callUrl(method string, url string, headers map[string]string) (string, bool
 	}
 
 	request.Header.Set("Content-Type", "text/html; charset=utf-8")
-	if headers != nil {
-		for k, v := range headers {
-			request.Header.Set(k, v)
-		}
+	for k, v := range headers {
+		request.Header.Set(k, v)
 	}
 
 	// send the request
-	client := &http.Client{}
+	client := &http.Client{Timeout: HTTP_DEFAULT_TIMEOUT}
 	response, err := client.Do(request)
 
 	if err != nil {
