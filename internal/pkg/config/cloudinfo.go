@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -12,17 +11,20 @@ import (
 
 const (
 	BASE_CLOUD_METADATA_URL = "http://169.254.169.254/"
-	HTTP_DEFAULT_TIMEOUT    = time.Duration(2 * time.Second)
+	HTTP_DEFAULT_TIMEOUT    = time.Duration(5 * time.Second)
 )
 
 var (
 	cloudInfo map[string]string
 )
 
-func CollectCloudMetrics() map[string]string {
+func CollectCloudDetails() map[string]string {
 
 	cloudInfo = make(map[string]string)
 	startTime := time.Now()
+
+	cloudInfo["aws_region"] = "us-east1"
+	cloudInfo["aws_availability_zone"] = "us-east-1a"
 
 	// check if base url is accessible, if yes, then continue other cloud check
 	_, ok := callUrl("GET", BASE_CLOUD_METADATA_URL, nil)
@@ -123,7 +125,7 @@ func callUrl(method string, url string, headers map[string]string) (string, bool
 	esponseBodyBytes, err := io.ReadAll(response.Body)
 
 	if err != nil {
-		fmt.Println("Error 2 ", err)
+		log.Debug("Error while reading response-bytes from URL ", url, " Error ", err)
 		return "", false
 	}
 

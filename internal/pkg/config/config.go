@@ -179,7 +179,7 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 
 func (c *Config) FetchCloudInfo() {
 	if Cfg.AeroProm.FetchCloudInfo {
-		cloudLabels := CollectCloudMetrics()
+		cloudLabels := CollectCloudDetails()
 		log.Debug("Adding Cloud Info to Metric Labels ", cloudLabels)
 
 		for k, v := range cloudLabels {
