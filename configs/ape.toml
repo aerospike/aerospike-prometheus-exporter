@@ -33,6 +33,9 @@ key_file_passphrase = ""
 # labels to add to the prometheus metrics for e.g. labels={zone="asia-south1-a", platform="google compute engine"}
 labels = {latitude="0",longitude="0"}
 
+# collect cloud region, location, zone etc.,
+fetch_cloud_info = false
+
 # prometheus binding port
 bind = ":9145"
 

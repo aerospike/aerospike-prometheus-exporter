@@ -33,6 +33,9 @@ key_file_passphrase = "${AGENT_KEY_FILE_PASSPHRASE}"
 # labels to add to the prometheus metrics for e.g. labels={zone="asia-south1-a", platform="google compute engine"}
 labels = {${METRIC_LABELS}}
 
+# collect cloud region, location, zone etc.,
+fetch_cloud_info = ${AGENT_FETCH_CLOUD_INFO}
+
 bind = "${AGENT_BIND_HOST}:${AGENT_BIND_PORT}"
 
 # is exporter running in mock test mode

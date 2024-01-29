@@ -31,6 +31,7 @@ type Config struct {
 		Timeout uint8  `toml:"timeout"`
 
 		RefreshSystemStats bool `toml:"refresh_system_stats"`
+		FetchCloudInfo     bool `toml:"fetch_cloud_info"`
 
 		OtelServiceName             string            `toml:"otel_service_name"`
 		OtelEndpoint                string            `toml:"otel_endpoint"`
@@ -176,6 +177,17 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 
 }
 
+func (c *Config) FetchCloudInfo() {
+	if Cfg.AeroProm.FetchCloudInfo {
+		cloudLabels := CollectCloudMetrics()
+		log.Debug("Adding Cloud Info to Metric Labels ", cloudLabels)
+
+		for k, v := range cloudLabels {
+			Cfg.AeroProm.MetricLabels[k] = v
+		}
+	}
+}
+
 // Initialize exporter configuration
 func InitConfig(configFile string) {
 	// to print everything out regarding reading the config in app init
@@ -200,6 +212,7 @@ func InitConfig(configFile string) {
 	setLogLevel(Cfg.AeroProm.LogLevel)
 
 	Cfg.ValidateAndUpdate(md)
+	Cfg.FetchCloudInfo()
 }
 
 // Set log file path
