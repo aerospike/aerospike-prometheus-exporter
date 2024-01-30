@@ -30,7 +30,7 @@ func parseNetworkStats() []SystemInfoStat {
 	for _, stats := range arrReceiveStats {
 		deviceName := stats["device_name"]
 		fmt.Println("Netdev Receive device: ", deviceName)
-		// arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_bytes_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_bytes_total", deviceName, stats))
 		// arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_compressed_total", deviceName, stats))
 		// arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_dropped_total", deviceName, stats))
 		// arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_errors_total", deviceName, stats))

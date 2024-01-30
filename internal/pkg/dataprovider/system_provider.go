@@ -342,7 +342,7 @@ func (sip SystemInfoProvider) GetNetDevStats() ([]map[string]string, []map[strin
 		receiveStats["receive_packets_total"] = fmt.Sprint(float64(stats.RxPackets))
 
 		// network transfer
-		receiveStats["device_name"] = deviceName
+		transferStats["device_name"] = deviceName
 		transferStats["transfer_bytes_total"] = fmt.Sprint(float64(stats.TxBytes))
 		transferStats["transfer_carrier_total"] = fmt.Sprint(float64(stats.TxCarrier))
 		transferStats["transfer_collisions_total"] = fmt.Sprint(float64(stats.TxCollisions))
