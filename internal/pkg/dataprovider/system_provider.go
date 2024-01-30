@@ -133,7 +133,7 @@ func (sip SystemInfoProvider) GetDiskStats() []map[string]string {
 func (sip SystemInfoProvider) GetFileFD() []map[string]string {
 	arrFileFdInfoStats := []map[string]string{}
 
-	fileName := GetProcFilePath("sys/fs/file-nr")
+	fileName := getProcFilePath("sys/fs/file-nr")
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -233,54 +233,54 @@ func (sip SystemInfoProvider) GetMemInfoStats() []map[string]string {
 	memStats := make(map[string]string)
 
 	// All values are in KB, convert to bytes
-	memStats["Active"] = fmt.Sprint(GetFloatValue(meminfo.Active) * ONE_KILO_BYTE)
-	memStats["Active_Anon"] = fmt.Sprint(GetFloatValue(meminfo.ActiveAnon) * ONE_KILO_BYTE)
-	memStats["Active_File"] = fmt.Sprint(GetFloatValue(meminfo.ActiveFile) * ONE_KILO_BYTE)
-	memStats["Anon_Pages"] = fmt.Sprint(GetFloatValue(meminfo.AnonPages) * ONE_KILO_BYTE)
-	memStats["Anon_Huge_Pages"] = fmt.Sprint(GetFloatValue(meminfo.AnonHugePages) * ONE_KILO_BYTE)
-	memStats["Bounce"] = fmt.Sprint(GetFloatValue(meminfo.Bounce) * ONE_KILO_BYTE)
-	memStats["Buffers"] = fmt.Sprint(GetFloatValue(meminfo.Buffers) * ONE_KILO_BYTE)
-	memStats["Cached"] = fmt.Sprint(GetFloatValue(meminfo.Cached) * ONE_KILO_BYTE)
-	memStats["CmaFree"] = fmt.Sprint(GetFloatValue(meminfo.CmaFree) * ONE_KILO_BYTE)
-	memStats["CmaTotal"] = fmt.Sprint(GetFloatValue(meminfo.CmaTotal) * ONE_KILO_BYTE)
-	memStats["Commit_Limit"] = fmt.Sprint(GetFloatValue(meminfo.CommitLimit) * ONE_KILO_BYTE)
-	memStats["Committed_AS"] = fmt.Sprint(GetFloatValue(meminfo.CommittedAS) * ONE_KILO_BYTE)
-	memStats["Direct_Map1G"] = fmt.Sprint(GetFloatValue(meminfo.DirectMap1G) * ONE_KILO_BYTE)
-	memStats["Direct_Map2M"] = fmt.Sprint(GetFloatValue(meminfo.DirectMap2M) * ONE_KILO_BYTE)
-	memStats["Direct_Map4k"] = fmt.Sprint(GetFloatValue(meminfo.DirectMap4k) * ONE_KILO_BYTE)
-	memStats["Dirty"] = fmt.Sprint(GetFloatValue(meminfo.Dirty) * ONE_KILO_BYTE)
-	memStats["Hardware_Corrupted"] = fmt.Sprint(GetFloatValue(meminfo.HardwareCorrupted) * ONE_KILO_BYTE)
-	memStats["Huge_Pages_Free"] = fmt.Sprint(GetFloatValue(meminfo.HugePagesFree) * ONE_KILO_BYTE)
-	memStats["Huge_Pages_Rsvd"] = fmt.Sprint(GetFloatValue(meminfo.HugePagesRsvd) * ONE_KILO_BYTE)
-	memStats["Huge_Pages_Surp"] = fmt.Sprint(GetFloatValue(meminfo.HugePagesSurp) * ONE_KILO_BYTE)
-	memStats["Huge_Pages_Total"] = fmt.Sprint(GetFloatValue(meminfo.HugePagesTotal) * ONE_KILO_BYTE)
-	memStats["Huge_page_size"] = fmt.Sprint(GetFloatValue(meminfo.Hugepagesize) * ONE_KILO_BYTE)
-	memStats["Inactive"] = fmt.Sprint(GetFloatValue(meminfo.Inactive) * ONE_KILO_BYTE)
-	memStats["Inactive_Anon"] = fmt.Sprint(GetFloatValue(meminfo.InactiveAnon) * ONE_KILO_BYTE)
-	memStats["Inactive_File"] = fmt.Sprint(GetFloatValue(meminfo.InactiveFile) * ONE_KILO_BYTE)
-	memStats["Kernel_Stack"] = fmt.Sprint(GetFloatValue(meminfo.KernelStack) * ONE_KILO_BYTE)
-	memStats["Mapped"] = fmt.Sprint(GetFloatValue(meminfo.Mapped) * ONE_KILO_BYTE)
-	memStats["Mem_Available"] = fmt.Sprint(GetFloatValue(meminfo.MemAvailable) * ONE_KILO_BYTE)
-	memStats["Mem_Free"] = fmt.Sprint(GetFloatValue(meminfo.MemFree) * ONE_KILO_BYTE)
-	memStats["Mem_Total"] = fmt.Sprint(GetFloatValue(meminfo.MemTotal) * ONE_KILO_BYTE)
-	memStats["Mlocked"] = fmt.Sprint(GetFloatValue(meminfo.Mlocked) * ONE_KILO_BYTE)
-	memStats["NFS_Unstable"] = fmt.Sprint(GetFloatValue(meminfo.NFSUnstable) * ONE_KILO_BYTE)
-	memStats["Page_Tables"] = fmt.Sprint(GetFloatValue(meminfo.PageTables) * ONE_KILO_BYTE)
-	memStats["SReclaimable"] = fmt.Sprint(GetFloatValue(meminfo.SReclaimable) * ONE_KILO_BYTE)
-	memStats["SUnreclaim"] = fmt.Sprint(GetFloatValue(meminfo.SUnreclaim) * ONE_KILO_BYTE)
-	memStats["Shmem"] = fmt.Sprint(GetFloatValue(meminfo.Shmem) * ONE_KILO_BYTE)
-	memStats["Shmem_Huge_Pages"] = fmt.Sprint(GetFloatValue(meminfo.ShmemHugePages) * ONE_KILO_BYTE)
-	memStats["Shmem_Pmd_Mapped"] = fmt.Sprint(GetFloatValue(meminfo.ShmemPmdMapped) * ONE_KILO_BYTE)
-	memStats["Slab"] = fmt.Sprint(GetFloatValue(meminfo.Slab) * ONE_KILO_BYTE)
-	memStats["Swap_Cached"] = fmt.Sprint(GetFloatValue(meminfo.SwapCached) * ONE_KILO_BYTE)
-	memStats["Swap_Free"] = fmt.Sprint(GetFloatValue(meminfo.SwapFree) * ONE_KILO_BYTE)
-	memStats["Swap_Total"] = fmt.Sprint(GetFloatValue(meminfo.SwapTotal) * ONE_KILO_BYTE)
-	memStats["Unevictable"] = fmt.Sprint(GetFloatValue(meminfo.Unevictable) * ONE_KILO_BYTE)
-	memStats["Vmalloc_Chunk"] = fmt.Sprint(GetFloatValue(meminfo.VmallocChunk) * ONE_KILO_BYTE)
-	memStats["Vmalloc_Total"] = fmt.Sprint(GetFloatValue(meminfo.VmallocTotal) * ONE_KILO_BYTE)
-	memStats["Vmalloc_Used"] = fmt.Sprint(GetFloatValue(meminfo.VmallocUsed) * ONE_KILO_BYTE)
-	memStats["Writeback"] = fmt.Sprint(GetFloatValue(meminfo.Writeback) * ONE_KILO_BYTE)
-	memStats["WritebackTmp"] = fmt.Sprint(GetFloatValue(meminfo.WritebackTmp) * ONE_KILO_BYTE)
+	memStats["Active"] = fmt.Sprint(getFloatValue(meminfo.Active) * ONE_KILO_BYTE)
+	memStats["Active_Anon"] = fmt.Sprint(getFloatValue(meminfo.ActiveAnon) * ONE_KILO_BYTE)
+	memStats["Active_File"] = fmt.Sprint(getFloatValue(meminfo.ActiveFile) * ONE_KILO_BYTE)
+	memStats["Anon_Pages"] = fmt.Sprint(getFloatValue(meminfo.AnonPages) * ONE_KILO_BYTE)
+	memStats["Anon_Huge_Pages"] = fmt.Sprint(getFloatValue(meminfo.AnonHugePages) * ONE_KILO_BYTE)
+	memStats["Bounce"] = fmt.Sprint(getFloatValue(meminfo.Bounce) * ONE_KILO_BYTE)
+	memStats["Buffers"] = fmt.Sprint(getFloatValue(meminfo.Buffers) * ONE_KILO_BYTE)
+	memStats["Cached"] = fmt.Sprint(getFloatValue(meminfo.Cached) * ONE_KILO_BYTE)
+	memStats["CmaFree"] = fmt.Sprint(getFloatValue(meminfo.CmaFree) * ONE_KILO_BYTE)
+	memStats["CmaTotal"] = fmt.Sprint(getFloatValue(meminfo.CmaTotal) * ONE_KILO_BYTE)
+	memStats["Commit_Limit"] = fmt.Sprint(getFloatValue(meminfo.CommitLimit) * ONE_KILO_BYTE)
+	memStats["Committed_AS"] = fmt.Sprint(getFloatValue(meminfo.CommittedAS) * ONE_KILO_BYTE)
+	memStats["Direct_Map1G"] = fmt.Sprint(getFloatValue(meminfo.DirectMap1G) * ONE_KILO_BYTE)
+	memStats["Direct_Map2M"] = fmt.Sprint(getFloatValue(meminfo.DirectMap2M) * ONE_KILO_BYTE)
+	memStats["Direct_Map4k"] = fmt.Sprint(getFloatValue(meminfo.DirectMap4k) * ONE_KILO_BYTE)
+	memStats["Dirty"] = fmt.Sprint(getFloatValue(meminfo.Dirty) * ONE_KILO_BYTE)
+	memStats["Hardware_Corrupted"] = fmt.Sprint(getFloatValue(meminfo.HardwareCorrupted) * ONE_KILO_BYTE)
+	memStats["Huge_Pages_Free"] = fmt.Sprint(getFloatValue(meminfo.HugePagesFree) * ONE_KILO_BYTE)
+	memStats["Huge_Pages_Rsvd"] = fmt.Sprint(getFloatValue(meminfo.HugePagesRsvd) * ONE_KILO_BYTE)
+	memStats["Huge_Pages_Surp"] = fmt.Sprint(getFloatValue(meminfo.HugePagesSurp) * ONE_KILO_BYTE)
+	memStats["Huge_Pages_Total"] = fmt.Sprint(getFloatValue(meminfo.HugePagesTotal) * ONE_KILO_BYTE)
+	memStats["Huge_page_size"] = fmt.Sprint(getFloatValue(meminfo.Hugepagesize) * ONE_KILO_BYTE)
+	memStats["Inactive"] = fmt.Sprint(getFloatValue(meminfo.Inactive) * ONE_KILO_BYTE)
+	memStats["Inactive_Anon"] = fmt.Sprint(getFloatValue(meminfo.InactiveAnon) * ONE_KILO_BYTE)
+	memStats["Inactive_File"] = fmt.Sprint(getFloatValue(meminfo.InactiveFile) * ONE_KILO_BYTE)
+	memStats["Kernel_Stack"] = fmt.Sprint(getFloatValue(meminfo.KernelStack) * ONE_KILO_BYTE)
+	memStats["Mapped"] = fmt.Sprint(getFloatValue(meminfo.Mapped) * ONE_KILO_BYTE)
+	memStats["Mem_Available"] = fmt.Sprint(getFloatValue(meminfo.MemAvailable) * ONE_KILO_BYTE)
+	memStats["Mem_Free"] = fmt.Sprint(getFloatValue(meminfo.MemFree) * ONE_KILO_BYTE)
+	memStats["Mem_Total"] = fmt.Sprint(getFloatValue(meminfo.MemTotal) * ONE_KILO_BYTE)
+	memStats["Mlocked"] = fmt.Sprint(getFloatValue(meminfo.Mlocked) * ONE_KILO_BYTE)
+	memStats["NFS_Unstable"] = fmt.Sprint(getFloatValue(meminfo.NFSUnstable) * ONE_KILO_BYTE)
+	memStats["Page_Tables"] = fmt.Sprint(getFloatValue(meminfo.PageTables) * ONE_KILO_BYTE)
+	memStats["SReclaimable"] = fmt.Sprint(getFloatValue(meminfo.SReclaimable) * ONE_KILO_BYTE)
+	memStats["SUnreclaim"] = fmt.Sprint(getFloatValue(meminfo.SUnreclaim) * ONE_KILO_BYTE)
+	memStats["Shmem"] = fmt.Sprint(getFloatValue(meminfo.Shmem) * ONE_KILO_BYTE)
+	memStats["Shmem_Huge_Pages"] = fmt.Sprint(getFloatValue(meminfo.ShmemHugePages) * ONE_KILO_BYTE)
+	memStats["Shmem_Pmd_Mapped"] = fmt.Sprint(getFloatValue(meminfo.ShmemPmdMapped) * ONE_KILO_BYTE)
+	memStats["Slab"] = fmt.Sprint(getFloatValue(meminfo.Slab) * ONE_KILO_BYTE)
+	memStats["Swap_Cached"] = fmt.Sprint(getFloatValue(meminfo.SwapCached) * ONE_KILO_BYTE)
+	memStats["Swap_Free"] = fmt.Sprint(getFloatValue(meminfo.SwapFree) * ONE_KILO_BYTE)
+	memStats["Swap_Total"] = fmt.Sprint(getFloatValue(meminfo.SwapTotal) * ONE_KILO_BYTE)
+	memStats["Unevictable"] = fmt.Sprint(getFloatValue(meminfo.Unevictable) * ONE_KILO_BYTE)
+	memStats["Vmalloc_Chunk"] = fmt.Sprint(getFloatValue(meminfo.VmallocChunk) * ONE_KILO_BYTE)
+	memStats["Vmalloc_Total"] = fmt.Sprint(getFloatValue(meminfo.VmallocTotal) * ONE_KILO_BYTE)
+	memStats["Vmalloc_Used"] = fmt.Sprint(getFloatValue(meminfo.VmallocUsed) * ONE_KILO_BYTE)
+	memStats["Writeback"] = fmt.Sprint(getFloatValue(meminfo.Writeback) * ONE_KILO_BYTE)
+	memStats["WritebackTmp"] = fmt.Sprint(getFloatValue(meminfo.WritebackTmp) * ONE_KILO_BYTE)
 
 	arrMemInfoStats = append(arrMemInfoStats, memStats)
 
@@ -293,9 +293,9 @@ func (sip SystemInfoProvider) GetNetStatInfo() ([]map[string]string, []map[strin
 	arrSnmpStats := []map[string]string{}
 	arrSnmp6Stats := []map[string]string{}
 
-	arrNetStats = append(arrNetStats, parseNetStats(GetProcFilePath("net/netstat")))
-	arrSnmpStats = append(arrSnmpStats, parseNetStats(GetProcFilePath("net/snmp")))
-	arrSnmp6Stats = append(arrSnmp6Stats, parseSNMP6Stats(GetProcFilePath("net/snmp6")))
+	arrNetStats = append(arrNetStats, parseNetStats(getProcFilePath("net/netstat")))
+	arrSnmpStats = append(arrSnmpStats, parseNetStats(getProcFilePath("net/snmp")))
+	arrSnmp6Stats = append(arrSnmp6Stats, parseSNMP6Stats(getProcFilePath("net/snmp6")))
 
 	log.Debug("NetStatsInfo Net - Count of return stats ", len(arrNetStats))
 	log.Debug("NetStatsInfo SNMP - Count of return stats ", len(arrSnmpStats))
@@ -360,4 +360,29 @@ func (sip SystemInfoProvider) GetNetDevStats() ([]map[string]string, []map[strin
 	log.Debug("NetDevStats - RECEIVE Count of return status ", len(arrNetReceiveStats))
 	log.Debug("NetDevStats - TRANSFER Count of return status ", len(arrNetTransferStats))
 	return arrNetGroupStats, arrNetReceiveStats, arrNetTransferStats
+}
+
+func (sip SystemInfoProvider) GetVmStats() []map[string]string {
+	arrSysInfoStats := []map[string]string{}
+
+	file, err := os.Open("vmstat")
+	if err != nil {
+		log.Error("Error while opening file, 'vmstat' Error: ", err)
+		return arrSysInfoStats
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	vmStats := make(map[string]string)
+
+	for scanner.Scan() {
+		statElements := strings.Split(scanner.Text(), " ")
+
+		if acceptVmstat(statElements[0]) {
+			vmStats[statElements[0]] = statElements[1]
+		}
+	}
+
+	return arrSysInfoStats
 }

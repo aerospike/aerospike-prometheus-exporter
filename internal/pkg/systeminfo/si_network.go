@@ -7,10 +7,8 @@ import (
 )
 
 func GetNetworkStatsInfo() []SystemInfoStat {
-	arrSysInfoStats := []SystemInfoStat{}
 
-	arrSysInfoStats = append(arrSysInfoStats, parseNetworkStats()...)
-
+	arrSysInfoStats := parseNetworkStats()
 	return arrSysInfoStats
 }
 

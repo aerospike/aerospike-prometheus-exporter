@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/prometheus/procfs"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
@@ -56,19 +55,19 @@ var (
 	regexVmstatAcceptPattern  = regexp.MustCompile(vmstatAcceptList)
 )
 
-func GetProcFilePath(name string) string {
+func getProcFilePath(name string) string {
 	return filepath.Join(PROC_PATH, name)
 }
 
-func GetSysFilePath(name string) string {
+func getSysFilePath(name string) string {
 	return filepath.Join(SYS_PATH, name)
 }
 
-func GetUdevDataFilePath(name string) string {
+func getUdevDataFilePath(name string) string {
 	return filepath.Join(UDEV_DATA_PATH, name)
 }
 
-func GetRootfsFilePath(name string) string {
+func getRootfsFilePath(name string) string {
 	return filepath.Join(ROOTFS_PATH, name)
 }
 
@@ -105,16 +104,8 @@ func acceptVmstat(name string) bool {
 	return (regexVmstatAcceptPattern != nil && regexVmstatAcceptPattern.MatchString(name))
 }
 
-func GetMetricType(pContext commons.ContextType, pRawMetricName string) commons.MetricType {
-	return commons.MetricTypeGauge
-}
-
-func isMetricAllowed(pContext commons.ContextType, pRawMetricName string) bool {
-	return true
-}
-
 func getUdevDeviceProperties(major, minor uint32) (map[string]string, error) {
-	filename := GetUdevDataFilePath(fmt.Sprintf("b%d:%d", major, minor))
+	filename := getUdevDataFilePath(fmt.Sprintf("b%d:%d", major, minor))
 
 	data, err := os.Open(filename)
 	if err != nil {
@@ -145,7 +136,7 @@ func getUdevDeviceProperties(major, minor uint32) (map[string]string, error) {
 
 func readDiskMountData(mntpointsource string) (float64, float64, float64, float64, float64, bool) {
 	buf := new(unix.Statfs_t)
-	err := unix.Statfs(GetRootfsFilePath(mntpointsource), buf)
+	err := unix.Statfs(getRootfsFilePath(mntpointsource), buf)
 	// any kind of error
 	if err != nil {
 		log.Error("Error while fetching FileSystem stats for mount ", mntpointsource, ", hence, return all 0.0 --> error is ", err)
@@ -161,7 +152,7 @@ func readDiskMountData(mntpointsource string) (float64, float64, float64, float6
 	return size, free, avail, files, filesFree, false
 }
 
-func GetFloatValue(addr *uint64) float64 {
+func getFloatValue(addr *uint64) float64 {
 	if addr != nil {
 		value := float64(*addr)
 		return value

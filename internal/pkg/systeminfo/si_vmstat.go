@@ -1,49 +1,32 @@
 package systeminfo
 
 import (
-	"bufio"
-	"os"
-	"strings"
-
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	log "github.com/sirupsen/logrus"
 )
 
 func GetVmStatInfo() []SystemInfoStat {
-	arrSysInfoStats := []SystemInfoStat{}
 
-	arrSysInfoStats = append(arrSysInfoStats, parseVmStats(GetProcFilePath("vmstat"))...)
-
+	arrSysInfoStats := parseVmStats()
 	return arrSysInfoStats
 }
 
-func parseVmStats(fileName string) []SystemInfoStat {
+func parseVmStats() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
-	file, err := os.Open(fileName)
-	if err != nil {
-		log.Error("Error while opening file,", fileName, " Error: ", err)
-		return arrSysInfoStats
-	}
-	defer file.Close()
+	arrVmStats := dataprovider.GetSystemProvider().GetVmStats()
 
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		statElements := strings.Split(scanner.Text(), " ")
-
-		key := statElements[0]
-		value, _ := commons.TryConvert(statElements[1])
-		if acceptVmstat(key) {
-			arrSysInfoStats = append(arrSysInfoStats, constructVmstat(key, value))
+	for _, vmStats := range arrVmStats {
+		for key, _ := range vmStats {
+			arrSysInfoStats = append(arrSysInfoStats, constructVmstat(key, vmStats))
 		}
 	}
 
 	return arrSysInfoStats
 }
 
-func constructVmstat(key string, value float64) SystemInfoStat {
+func constructVmstat(key string, stats map[string]string) SystemInfoStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
@@ -55,7 +38,7 @@ func constructVmstat(key string, value float64) SystemInfoStat {
 	sysMetric := NewSystemInfoStat(commons.CTX_VM_STATS, key)
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
-	sysMetric.Value = value
+	sysMetric.Value, _ = commons.TryConvert(stats[key])
 
 	return sysMetric
 }
