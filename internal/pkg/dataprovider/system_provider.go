@@ -279,5 +279,6 @@ func (sip SystemInfoProvider) GetMemInfoStats() []map[string]string {
 	memStats["Writeback"] = fmt.Sprint(GetFloatValue(meminfo.Writeback) * ONE_KILO_BYTE)
 	memStats["WritebackTmp"] = fmt.Sprint(GetFloatValue(meminfo.WritebackTmp) * ONE_KILO_BYTE)
 
+	arrMemInfoStats = append(arrMemInfoStats, memStats)
 	return arrMemInfoStats
 }
