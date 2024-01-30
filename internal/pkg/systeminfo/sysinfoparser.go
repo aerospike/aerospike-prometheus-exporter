@@ -24,12 +24,12 @@ var sysinfoprocessors = []SysInfoProcessor{
 	&VmstatInfoProcessor{},
 }
 
-func Refresh() []SystemInfoStat {
+func Refresh() ([]SystemInfoStat, error) {
 	var stats = []SystemInfoStat{}
 
 	// Refresh System Info stats only when enabled
 	if !config.Cfg.AeroProm.RefreshSystemStats {
-		return stats
+		return stats, nil
 	}
 
 	for _, processor := range sysinfoprocessors {
@@ -41,5 +41,5 @@ func Refresh() []SystemInfoStat {
 		}
 	}
 
-	return stats
+	return stats, nil
 }

@@ -73,7 +73,10 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	// read system metrics
-	system_metrics := systeminfo.Refresh()
+	system_metrics, err := systeminfo.Refresh()
+	if err != nil {
+		log.Errorln("Error while refreshing SystemInfo Stats, error: ", err)
+	}
 
 	// push the fetched metrics to prometheus
 	for _, sm := range system_metrics {

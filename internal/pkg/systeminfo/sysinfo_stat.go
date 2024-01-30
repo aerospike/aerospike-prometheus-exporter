@@ -49,3 +49,12 @@ func (as *SystemInfoStat) updateValues(value float64, labels []string, labelValu
 func (as *SystemInfoStat) resetValues() string {
 	return PREFIX_AEROSPIKE_SYSINFO + string(as.Context)
 }
+
+func (sis *SystemInfoStat) GetMetricMapKey() string {
+	var key = sis.Name
+	for _, v := range sis.LabelValues {
+		key = key + "_" + v
+	}
+
+	return key
+}

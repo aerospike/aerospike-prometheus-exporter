@@ -6,6 +6,7 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/systeminfo"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -67,9 +68,12 @@ func processAerospikeStats(meter metric.Meter, ctx context.Context, commonLabels
 
 		// create Otel metric
 		if stat.MType == commons.MetricTypeCounter {
-			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, stat)
+			value := calcAerospikeStatValueToUse(qualifiedName, stat)
+
+			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, value)
+
 		} else if stat.MType == commons.MetricTypeGauge {
-			makeOtelGaugeMetric(meter, ctx, qualifiedName, desc, labels, stat)
+			makeOtelGaugeMetric(meter, ctx, qualifiedName, desc, labels, stat.Value)
 		}
 
 		// Add stat to previous-process-map
@@ -78,8 +82,7 @@ func processAerospikeStats(meter metric.Meter, ctx context.Context, commonLabels
 
 }
 
-func makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, stat statprocessors.AerospikeStat) {
-
+func calcAerospikeStatValueToUse(metricName string, stat statprocessors.AerospikeStat) float64 {
 	value := stat.Value
 
 	// if previous value exists, then set value as DIFFerence ( current_value , previous_value)
@@ -88,6 +91,57 @@ func makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName s
 	if ok && !stat.IsConfig {
 		value = stat.Value - prevStatState.Value
 	}
+
+	return value
+}
+
+func processSystemInfoStats(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, refreshStats []systeminfo.SystemInfoStat) {
+
+	// create the required metered objectes
+	for _, stat := range refreshStats {
+
+		qualifiedName := stat.QualifyMetricContext() + "_" + NormalizeMetric(stat.Name)
+		desc := NormalizeMetric("description_" + stat.Name)
+
+		labels := []attribute.KeyValue{}
+		// label name to value mapped using index
+		for idx, label := range stat.Labels {
+			labels = append(labels, attribute.String(label, stat.LabelValues[idx]))
+		}
+
+		// append common labels
+		labels = append(labels, commonLabels...)
+
+		// create Otel metric
+		if stat.MType == commons.MetricTypeCounter {
+			value := calcSysInfoStatValueToUse(qualifiedName, stat)
+
+			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, value)
+
+		} else if stat.MType == commons.MetricTypeGauge {
+			makeOtelGaugeMetric(meter, ctx, qualifiedName, desc, labels, stat.Value)
+		}
+
+		// Add stat to previous-process-map
+		previousSysInfoStats[stat.GetMetricMapKey()] = stat
+	}
+
+}
+
+func calcSysInfoStatValueToUse(metricName string, stat systeminfo.SystemInfoStat) float64 {
+	value := stat.Value
+
+	// if previous value exists, then set value as DIFFerence ( current_value , previous_value)
+	prevStatState, ok := previousRefreshStats[stat.GetMetricMapKey()]
+	// only if this is a stat and not a config, TODO:, how to check if system metric is a config
+	if ok {
+		value = stat.Value - prevStatState.Value
+	}
+
+	return value
+}
+
+func makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, value float64) {
 
 	ometric, _ := meter.Float64Counter(
 		metricName,
@@ -98,7 +152,7 @@ func makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName s
 
 }
 
-func makeOtelGaugeMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, stat statprocessors.AerospikeStat) {
+func makeOtelGaugeMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, value float64) {
 
 	// _, ok := mapGaugeMetricObjects[metricName]
 	ometric, _ := meter.Float64ObservableGauge(
@@ -106,7 +160,7 @@ func makeOtelGaugeMetric(meter metric.Meter, ctx context.Context, metricName str
 		metric.WithDescription(desc),
 	)
 	_, err := meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-		a := stat.Value
+		a := value
 		o.ObserveFloat64(ometric, a, metric.WithAttributes(labels...))
 		return nil
 	}, ometric)

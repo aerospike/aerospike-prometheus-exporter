@@ -8,9 +8,12 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/systeminfo"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -26,9 +29,10 @@ type OtelExecutor struct {
 var (
 	currentRefreshStats  []statprocessors.AerospikeStat
 	previousRefreshStats map[string]statprocessors.AerospikeStat
-	// mapCounterMetricObjects map[string]metric.Float64Counter
-	// mapGaugeMetricObjects   map[string]metric.Float64ObservableGauge
 
+	// SystemInfo
+	currentSysInfoStats  []systeminfo.SystemInfoStat
+	previousSysInfoStats map[string]systeminfo.SystemInfoStat
 )
 
 // Exporter interface implementation
@@ -149,20 +153,41 @@ func startMetricExecutor() {
 	commonLabels := getCommonLabels()
 
 	for {
-		var err error
+		// Aerospike Refresh stats
+		handleAerospikeMetrics(meter, defaultCtx, commonLabels)
 
-		currentRefreshStats, err = statprocessors.Refresh()
-		if err != nil {
-			log.Errorln(err)
-			sendNodeUp(meter, defaultCtx, commonLabels, 0.0)
-		} else {
-			// aerospike server is up and we are able to fetch data
-			sendNodeUp(meter, defaultCtx, commonLabels, 1.0)
-			// process metrics
-			processAerospikeStats(meter, defaultCtx, commonLabels, currentRefreshStats)
-		}
+		// System metrics
+		handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
 
 		// sleep for config.N seconds
 		time.Sleep(time.Duration(config.Cfg.AeroProm.OtelServerStatFetchInterval) * time.Second)
 	}
+}
+
+func handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
+	var err error
+	currentRefreshStats, err = statprocessors.Refresh()
+	if err != nil {
+		log.Errorln("Error while refreshing Aerospike Metrics, error: ", err)
+		sendNodeUp(meter, ctx, commonLabels, 0.0)
+		return
+	}
+	// aerospike server is up and we are able to fetch data
+	sendNodeUp(meter, ctx, commonLabels, 1.0)
+
+	// process metrics
+	processAerospikeStats(meter, ctx, commonLabels, currentRefreshStats)
+
+}
+
+func handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
+	var err error
+	currentSysInfoStats, err = systeminfo.Refresh()
+	if err != nil {
+		log.Errorln("Error while refreshing SystemInfo, error: ", err)
+		return
+	}
+	// process metrics
+	processSystemInfoStats(meter, ctx, commonLabels, currentSysInfoStats)
+
 }
