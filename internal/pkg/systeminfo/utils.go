@@ -1,12 +1,8 @@
 package systeminfo
 
 import (
-	"bufio"
-	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/prometheus/procfs"
@@ -22,7 +18,6 @@ var (
 )
 
 const (
-	// diskstatsIgnoredDevices = "^(z?ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\\d+n\\d+p)\\d+$"
 	diskstatsIgnoredDevices = "^(z?ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\\d+n\\d+p)\\d$"
 	filestatIgnoreList      = "^(overlay|mqueue)$"
 
@@ -30,6 +25,8 @@ const (
 	snmp6Prefixlist   = "^(ip6.*|icmp6.*|udp6.*)"
 
 	vmstatAcceptList = "^(oom_kill|pgpg|pswp|pg.*fault).*"
+
+	UDEV_PROP_PREFIX = "E:"
 )
 
 var (
@@ -67,35 +64,35 @@ func GetRootfsFilePath(name string) string {
 // 	return stripped
 // }
 
-func getUdevDeviceProperties(major, minor uint32) (map[string]string, error) {
-	filename := GetUdevDataFilePath(fmt.Sprintf("b%d:%d", major, minor))
+// func getUdevDeviceProperties(major, minor uint32) (map[string]string, error) {
+// 	filename := GetUdevDataFilePath(fmt.Sprintf("b%d:%d", major, minor))
 
-	data, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer data.Close()
+// 	data, err := os.Open(filename)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer data.Close()
 
-	info := make(map[string]string)
+// 	info := make(map[string]string)
 
-	scanner := bufio.NewScanner(data)
-	for scanner.Scan() {
-		line := scanner.Text()
+// 	scanner := bufio.NewScanner(data)
+// 	for scanner.Scan() {
+// 		line := scanner.Text()
 
-		// We're only interested in device properties.
-		if !strings.HasPrefix(line, udevDevicePropertyPrefix) {
-			continue
-		}
+// 		// We're only interested in device properties.
+// 		if !strings.HasPrefix(line, UDEV_PROP_PREFIX) {
+// 			continue
+// 		}
 
-		line = strings.TrimPrefix(line, udevDevicePropertyPrefix)
+// 		line = strings.TrimPrefix(line, UDEV_PROP_PREFIX)
 
-		if name, value, found := strings.Cut(line, "="); found {
-			info[name] = value
-		}
-	}
+// 		if name, value, found := strings.Cut(line, "="); found {
+// 			info[name] = value
+// 		}
+// 	}
 
-	return info, nil
-}
+// 	return info, nil
+// }
 
 func GetFloatValue(addr *uint64) float64 {
 	if addr != nil {

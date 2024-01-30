@@ -1,8 +1,12 @@
 package dataprovider
 
 import (
+	"bufio"
+	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/prometheus/procfs"
@@ -18,9 +22,9 @@ var (
 )
 
 const (
-	// diskstatsIgnoredDevices = "^(z?ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\\d+n\\d+p)\\d+$"
-	diskstatsIgnoredDevices = "^(z?ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\\d+n\\d+p)\\d$"
-	filestatIgnoreList      = "^(overlay|mqueue)$"
+	// DISK_IGNORE_NAME_LIST = "^(z?ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\\d+n\\d+p)\\d+$"
+	DISK_IGNORE_NAME_LIST = "^(z?ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\\d+n\\d+p)\\d$"
+	FILE_STAT_IGNORE_LIST = "^(overlay|mqueue)$"
 
 	netstatAcceptlist = "^(.*_(inerrors|inerrs)|ip_forwarding|ip(6|ext)_(inoctets|outoctets)|icmp6?_(inmsgs|outmsgs)|tcpext_(listen.*|syncookies.*|tcpsynretrans|tcptimeouts|tcpofoqueue)|tcp_(activeopens|insegs|outsegs|outrsts|passiveopens|retranssegs|currestab)|udp6?_(indatagrams|outdatagrams|noports|rcvbuferrors|sndbuferrors))$"
 	snmp6Prefixlist   = "^(ip6.*|icmp6.*|udp6.*)"
@@ -28,9 +32,21 @@ const (
 	vmstatAcceptList = "^(oom_kill|pgpg|pswp|pg.*fault).*"
 )
 
+const (
+	SECONDS_PER_TICK = 0.0001 // 1000 ticks per second
+
+	// Read/write sectors are "standard UNIX 512-byte sectors" (https://www.kernel.org/doc/Documentation/block/stat.txt)
+	DISK_SECTOR_SIZE_IN_UNIX = 512.0
+
+	// See udevadm(8).
+	UDEV_PROP_PREFIX       = "E:"
+	UDEV_ID_SERIAL_SHORT   = "ID_SERIAL_SHORT"
+	UDEV_SCSI_IDENT_SERIAL = "SCSI_IDENT_SERIAL"
+)
+
 var (
-	diskIgnorePattern    = regexp.MustCompile(diskstatsIgnoredDevices)
-	fileIgnorePattern    = regexp.MustCompile(filestatIgnoreList)
+	diskIgnorePattern    = regexp.MustCompile(DISK_IGNORE_NAME_LIST)
+	fileIgnorePattern    = regexp.MustCompile(FILE_STAT_IGNORE_LIST)
 	netstatAcceptPattern = regexp.MustCompile(netstatAcceptlist)
 	snmp6PrefixPattern   = regexp.MustCompile(snmp6Prefixlist)
 	vmstatAcceptPattern  = regexp.MustCompile(vmstatAcceptList)
@@ -91,4 +107,34 @@ func GetMetricType(pContext commons.ContextType, pRawMetricName string) commons.
 
 func isMetricAllowed(pContext commons.ContextType, pRawMetricName string) bool {
 	return true
+}
+
+func getUdevDeviceProperties(major, minor uint32) (map[string]string, error) {
+	filename := GetUdevDataFilePath(fmt.Sprintf("b%d:%d", major, minor))
+
+	data, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer data.Close()
+
+	info := make(map[string]string)
+
+	scanner := bufio.NewScanner(data)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// We're only interested in device properties.
+		if !strings.HasPrefix(line, UDEV_PROP_PREFIX) {
+			continue
+		}
+
+		line = strings.TrimPrefix(line, UDEV_PROP_PREFIX)
+
+		if name, value, found := strings.Cut(line, "="); found {
+			info[name] = value
+		}
+	}
+
+	return info, nil
 }

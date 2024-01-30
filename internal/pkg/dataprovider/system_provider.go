@@ -1,7 +1,10 @@
 package dataprovider
 
 import (
+	"fmt"
+
 	"github.com/prometheus/procfs"
+	"github.com/prometheus/procfs/blockdevice"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,8 +24,6 @@ func (sip SystemInfoProvider) GetCPUDetails() ([]map[string]float64, []map[strin
 		log.Debug("Eror while reading procfs.NewFS system, error: ", err)
 		return arrGuestCpuStats, arrCpuStats
 	}
-	// guest_seconds_total:user:100;nice:10
-	// seconds_total:
 
 	for index, cpu := range stats.CPU {
 		// fmt.Println("parsing CPU stats ", index)
@@ -46,17 +47,79 @@ func (sip SystemInfoProvider) GetCPUDetails() ([]map[string]float64, []map[strin
 		arrGuestCpuStats = append(arrGuestCpuStats, guestCpuValues)
 		arrCpuStats = append(arrCpuStats, cpuValues)
 
-		// arrGuestCpuStatDetails = append(arrGuestCpuStatDetails, CPUGuestStatDetails{index, "guest_seconds_total", "user", cpu.Guest})
-		// arrGuestCpuStatDetails = append(arrGuestCpuStatDetails, CPUGuestStatDetails{index, "guest_seconds_total", "nice", cpu.GuestNice})
-		// arrCpuStatDetails = append(arrCpuStatDetails, CPUStatDetails{index, "seconds_total", "idle", cpu.Idle})
-		// arrCpuStatDetails = append(arrCpuStatDetails, CPUStatDetails{index, "seconds_total", "irq", cpu.IRQ})
-		// arrCpuStatDetails = append(arrCpuStatDetails, CPUStatDetails{index, "seconds_total", "iowait", cpu.Iowait})
-		// arrCpuStatDetails = append(arrCpuStatDetails, CPUStatDetails{index, "seconds_total", "nice", cpu.Nice})
-		// arrCpuStatDetails = append(arrCpuStatDetails, CPUStatDetails{index, "seconds_total", "soft_irq", cpu.SoftIRQ})
-		// arrCpuStatDetails = append(arrCpuStatDetails, CPUStatDetails{index, "seconds_total", "steal", cpu.Steal})
-		// arrCpuStatDetails = append(arrCpuStatDetails, CPUStatDetails{index, "seconds_total", "system", cpu.System})
-		// arrCpuStatDetails = append(arrCpuStatDetails, CPUStatDetails{index, "seconds_total", "user", cpu.User})
 	}
 
 	return arrGuestCpuStats, arrCpuStats
+}
+
+func (sip SystemInfoProvider) GetDiskStats() []map[string]string {
+
+	arrDiskStats := []map[string]string{}
+
+	fs, err := blockdevice.NewFS(PROC_PATH, SYS_PATH)
+	if err != nil {
+		return arrDiskStats
+	}
+
+	procDiskStats, err := fs.ProcDiskstats()
+	if err != nil {
+		return arrDiskStats
+	}
+
+	for index, stats := range procDiskStats {
+
+		deviceName := stats.DeviceName
+
+		if ignoreDisk(deviceName) {
+			log.Debug("\t ** DiskStats -- Ignoring mount ", deviceName)
+			continue
+		}
+
+		diskStat := make(map[string]string)
+		// l_udev_info := make(map[string]string)
+
+		diskStat["index"] = fmt.Sprint(index)
+		diskStat["device_name"] = deviceName
+		diskStat["reads_completed_total"] = fmt.Sprint(stats.ReadIOs)
+		diskStat["reads_merged_total"] = fmt.Sprint(stats.ReadMerges)
+		diskStat["read_bytes_total"] = fmt.Sprint(float64(stats.ReadSectors) * DISK_SECTOR_SIZE_IN_UNIX)
+		diskStat["read_time_seconds_total"] = fmt.Sprint(float64(stats.ReadTicks) * SECONDS_PER_TICK)
+		diskStat["writes_completed_total"] = fmt.Sprint(stats.WriteIOs)
+		diskStat["writes_merged_total"] = fmt.Sprint(stats.WriteMerges)
+		diskStat["writes_bytes_total"] = fmt.Sprint(float64(stats.WriteSectors) * DISK_SECTOR_SIZE_IN_UNIX)
+		diskStat["write_time_seconds_total"] = fmt.Sprint(float64(stats.WriteTicks) * SECONDS_PER_TICK)
+		diskStat["io_now"] = fmt.Sprint(stats.IOsInProgress)
+		diskStat["io_time_seconds_total"] = fmt.Sprint(float64(stats.IOsTotalTicks) * SECONDS_PER_TICK)
+		diskStat["io_time_weighted_seconds_total"] = fmt.Sprint(float64(stats.WeightedIOTicks) * SECONDS_PER_TICK)
+		diskStat["discards_completed_total"] = fmt.Sprint(stats.DiscardIOs)
+		diskStat["discards_merged_total"] = fmt.Sprint(stats.DiscardMerges)
+		diskStat["discarded_sectors_total"] = fmt.Sprint(stats.DiscardSectors)
+		diskStat["discard_time_seconds_total"] = fmt.Sprint(float64(stats.DiscardTicks) * SECONDS_PER_TICK)
+		diskStat["flush_requests_total"] = fmt.Sprint(stats.FlushRequestsCompleted)
+		diskStat["flush_requests_time_seconds_total"] = fmt.Sprint(float64(stats.TimeSpentFlushing) * SECONDS_PER_TICK)
+		diskStat["flush_requests_time_seconds_total"] = fmt.Sprint(float64(stats.TimeSpentFlushing) * SECONDS_PER_TICK)
+		diskStat["major_number"] = fmt.Sprint(stats.MajorNumber)
+		diskStat["minor_number"] = fmt.Sprint(stats.MinorNumber)
+
+		udevDeviceProps, err := getUdevDeviceProperties(stats.MajorNumber, stats.MinorNumber)
+
+		if err != nil {
+			log.Debug("msg", "Failed to parse udev info", "err", err)
+		}
+
+		// a serial number printed on the disk label.
+		serial, ok := udevDeviceProps[UDEV_SCSI_IDENT_SERIAL]
+
+		// If it's undefined, fallback to ID_SERIAL_SHORT instead.
+		if !ok || len(serial) == 0 {
+			serial = udevDeviceProps[UDEV_ID_SERIAL_SHORT]
+		}
+		diskStat["major_number"] = fmt.Sprint(stats.MajorNumber)
+		diskStat["minor_number"] = fmt.Sprint(stats.MinorNumber)
+		diskStat["serial"] = serial
+
+		arrDiskStats = append(arrDiskStats, diskStat)
+	}
+
+	return arrDiskStats
 }
