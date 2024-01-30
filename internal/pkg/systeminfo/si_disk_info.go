@@ -49,11 +49,13 @@ func parseDiskStats() []SystemInfoStat {
 		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "flush_requests_total", stats))
 		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "flush_requests_time_seconds_total", stats))
 		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "flush_requests_time_seconds_total", stats))
+
 		arrSysInfoStats = append(arrSysInfoStats, constructDiskInfo(deviceName, stats["major_number"], stats["minor_number"], stats["serial"]))
 
 	}
 
 	fmt.Println("SI-DISK-INFO Number of SystemInfoStats return ", len(arrSysInfoStats))
+	fmt.Println("\n", arrSysInfoStats)
 
 	return arrSysInfoStats
 }
