@@ -44,8 +44,9 @@ func (oe OtelExecutor) Initialize() error {
 	// Initialize storage maps
 	currentRefreshStats = []statprocessors.AerospikeStat{}
 	previousRefreshStats = make(map[string]statprocessors.AerospikeStat)
-	// mapCounterMetricObjects = make(map[string]metric.Float64Counter)
-	// mapGaugeMetricObjects = make(map[string]metric.Float64ObservableGauge)
+
+	currentSysInfoStats = []systeminfo.SystemInfoStat{}
+	previousSysInfoStats = make(map[string]systeminfo.SystemInfoStat)
 
 	log.Infof("*** Initializing Otel Exporter.. START ")
 
