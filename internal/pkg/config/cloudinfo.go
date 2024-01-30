@@ -43,6 +43,10 @@ func CollectCloudDetails() map[string]string {
 }
 
 func getAwsCloudDetails() {
+	if len(cloudInfo) > 0 {
+		return
+	}
+
 	var token, awsRegion, awsAvailZoneId, awsAvailZone string
 	var tokenHeaders = make(map[string]string)
 	tokenHeaders["X-aws-ec2-metadata-token-ttl-seconds"] = "21600"
@@ -72,6 +76,9 @@ func getAwsCloudDetails() {
 }
 
 func getAzureCloudDetails() {
+	if len(cloudInfo) > 0 {
+		return
+	}
 	var tokenHeaders = make(map[string]string)
 	tokenHeaders["Metadata"] = "true"
 	azureLocation, ok := callUrl("GET", BASE_CLOUD_METADATA_URL+"/metadata/instance/compute/location?api-version=2021-02-01&format=text", tokenHeaders)
@@ -90,6 +97,10 @@ func getAzureCloudDetails() {
 }
 
 func getGoogleCloudDetails() {
+	if len(cloudInfo) > 0 {
+		return
+	}
+
 	var tokenHeaders = make(map[string]string)
 	tokenHeaders["Metadata-Flavor"] = "Google"
 	gcpZone, ok := callUrl("GET", BASE_CLOUD_METADATA_URL+"/computeMetadata/v1/instance/zone", tokenHeaders)
