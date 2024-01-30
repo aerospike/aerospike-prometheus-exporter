@@ -49,6 +49,8 @@ func (sip SystemInfoProvider) GetCPUDetails() ([]map[string]float64, []map[strin
 
 	}
 
+	log.Debug("GuestCPU Stats - Count of return stats ", len(arrGuestCpuStats))
+	log.Debug("CPU Stats - Count of return stats ", len(arrCpuStats))
 	return arrGuestCpuStats, arrCpuStats
 }
 
@@ -122,8 +124,6 @@ func (sip SystemInfoProvider) GetDiskStats() []map[string]string {
 		arrDiskStats = append(arrDiskStats, diskStat)
 	}
 
-	fmt.Println("\n\n\t*****DiskStats - Count of return status ", len(arrDiskStats))
-	fmt.Println("\n\n", arrDiskStats)
 	log.Debug("DiskStats - Count of return status ", len(arrDiskStats))
 	return arrDiskStats
 }
