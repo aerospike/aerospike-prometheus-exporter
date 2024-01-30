@@ -1,40 +1,25 @@
 package systeminfo
 
 import (
-	"bufio"
-	"os"
-	"strings"
-
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	log "github.com/sirupsen/logrus"
 )
 
 func GetFileFDInfo() []SystemInfoStat {
-	arrSysInfoStats := []SystemInfoStat{}
-
-	arrSysInfoStats = append(arrSysInfoStats, parseFilefdStats(GetProcFilePath("sys/fs/file-nr"))...)
-
+	arrSysInfoStats := parseFilefdStats()
 	return arrSysInfoStats
 }
 
-func parseFilefdStats(fileName string) []SystemInfoStat {
+func parseFilefdStats() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
-	file, err := os.Open(fileName)
-	if err != nil {
-		log.Error("Error while opening file,", fileName, " Error: ", err)
-		return arrSysInfoStats
-	}
-	defer file.Close()
+	fileFDStats := dataprovider.GetSystemProvider().GetFileFD()
 
-	scanner := bufio.NewScanner(file)
+	for _, stats := range fileFDStats {
 
-	for scanner.Scan() {
-		values := strings.Split(scanner.Text(), "\t")
-
-		allocated, _ := commons.TryConvert(values[0])
-		maximum, _ := commons.TryConvert(values[2])
+		allocated, _ := commons.TryConvert(stats["allocated"])
+		maximum, _ := commons.TryConvert(stats["maximum"])
 		arrSysInfoStats = append(arrSysInfoStats, constructFileFDstat("allocated", allocated))
 		arrSysInfoStats = append(arrSysInfoStats, constructFileFDstat("maximum", maximum))
 	}

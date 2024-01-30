@@ -18,19 +18,15 @@ var (
 )
 
 const (
-	diskstatsIgnoredDevices = "^(z?ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\\d+n\\d+p)\\d$"
-	filestatIgnoreList      = "^(overlay|mqueue)$"
+	filestatIgnoreList = "^(overlay|mqueue)$"
 
 	netstatAcceptlist = "^(.*_(inerrors|inerrs)|ip_forwarding|ip(6|ext)_(inoctets|outoctets)|icmp6?_(inmsgs|outmsgs)|tcpext_(listen.*|syncookies.*|tcpsynretrans|tcptimeouts|tcpofoqueue)|tcp_(activeopens|insegs|outsegs|outrsts|passiveopens|retranssegs|currestab)|udp6?_(indatagrams|outdatagrams|noports|rcvbuferrors|sndbuferrors))$"
 	snmp6Prefixlist   = "^(ip6.*|icmp6.*|udp6.*)"
 
 	vmstatAcceptList = "^(oom_kill|pgpg|pswp|pg.*fault).*"
-
-	UDEV_PROP_PREFIX = "E:"
 )
 
 var (
-	diskIgnorePattern    = regexp.MustCompile(diskstatsIgnoredDevices)
 	fileIgnorePattern    = regexp.MustCompile(filestatIgnoreList)
 	netstatAcceptPattern = regexp.MustCompile(netstatAcceptlist)
 	snmp6PrefixPattern   = regexp.MustCompile(snmp6Prefixlist)
@@ -100,11 +96,6 @@ func GetFloatValue(addr *uint64) float64 {
 		return value
 	}
 	return 0.0
-}
-
-// ignoreDisk returns whether the device should be ignoreDisk
-func ignoreDisk(name string) bool {
-	return (diskIgnorePattern != nil && diskIgnorePattern.MatchString(name))
 }
 
 // ignoreDisk returns whether the device should be ignoreDisk

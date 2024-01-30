@@ -1,7 +1,10 @@
 package dataprovider
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/prometheus/procfs"
 	"github.com/prometheus/procfs/blockdevice"
@@ -98,7 +101,6 @@ func (sip SystemInfoProvider) GetDiskStats() []map[string]string {
 		diskStat["discard_time_seconds_total"] = fmt.Sprint(float64(stats.DiscardTicks) * SECONDS_PER_TICK)
 		diskStat["flush_requests_total"] = fmt.Sprint(stats.FlushRequestsCompleted)
 		diskStat["flush_requests_time_seconds_total"] = fmt.Sprint(float64(stats.TimeSpentFlushing) * SECONDS_PER_TICK)
-		diskStat["flush_requests_time_seconds_total"] = fmt.Sprint(float64(stats.TimeSpentFlushing) * SECONDS_PER_TICK)
 
 		udevDeviceProps, err := getUdevDeviceProperties(stats.MajorNumber, stats.MinorNumber)
 
@@ -126,4 +128,35 @@ func (sip SystemInfoProvider) GetDiskStats() []map[string]string {
 
 	log.Debug("DiskStats - Count of return status ", len(arrDiskStats))
 	return arrDiskStats
+}
+
+func (sip SystemInfoProvider) GetFileFD() []map[string]string {
+	arrSysInfoStats := []map[string]string{}
+
+	fileName := GetProcFilePath("sys/fs/file-nr")
+
+	file, err := os.Open(fileName)
+	if err != nil {
+		log.Error("Error while opening file,", fileName, " Error: ", err)
+		return arrSysInfoStats
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	index := 0
+	for scanner.Scan() {
+		//
+		values := strings.Split(scanner.Text(), "\t")
+
+		fileFDStats := make(map[string]string)
+		fileFDStats["index"] = fmt.Sprint(index)
+		fileFDStats["allocated"] = values[0]
+		fileFDStats["maximum"] = values[0]
+
+		index++
+		arrSysInfoStats = append(arrSysInfoStats, fileFDStats)
+	}
+
+	return arrSysInfoStats
 }
