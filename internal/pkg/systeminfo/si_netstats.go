@@ -15,9 +15,24 @@ func GetNetStatInfo() []SystemInfoStat {
 func parseNetStats() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
-	netStats := dataprovider.GetSystemProvider().GetNetStatInfo()
+	netStats, snmpStats, snmp6Stats := dataprovider.GetSystemProvider().GetNetStatInfo()
 
+	// Net Dev
 	for _, stats := range netStats {
+		for key, _ := range stats {
+			arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, stats))
+		}
+	}
+
+	//Net SNMP
+	for _, stats := range snmpStats {
+		for key, _ := range stats {
+			arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, stats))
+		}
+	}
+
+	//Net SNMP6
+	for _, stats := range snmp6Stats {
 		for key, _ := range stats {
 			arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, stats))
 		}

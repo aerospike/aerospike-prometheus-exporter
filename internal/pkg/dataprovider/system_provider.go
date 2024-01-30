@@ -288,15 +288,19 @@ func (sip SystemInfoProvider) GetMemInfoStats() []map[string]string {
 	return arrMemInfoStats
 }
 
-func (sip SystemInfoProvider) GetNetStatInfo() []map[string]string {
-	arrSysInfoStats := []map[string]string{}
+func (sip SystemInfoProvider) GetNetStatInfo() ([]map[string]string, []map[string]string, []map[string]string) {
+	arrNetStats := []map[string]string{}
+	arrSnmpStats := []map[string]string{}
+	arrSnmp6Stats := []map[string]string{}
 
-	arrSysInfoStats = append(arrSysInfoStats, parseNetStats(GetProcFilePath("net/netstat")))
-	arrSysInfoStats = append(arrSysInfoStats, parseNetStats(GetProcFilePath("net/snmp")))
-	arrSysInfoStats = append(arrSysInfoStats, parseSNMP6Stats(GetProcFilePath("net/snmp6")))
+	arrNetStats = append(arrNetStats, parseNetStats(GetProcFilePath("net/netstat")))
+	arrSnmpStats = append(arrSnmpStats, parseNetStats(GetProcFilePath("net/snmp")))
+	arrSnmp6Stats = append(arrSnmp6Stats, parseSNMP6Stats(GetProcFilePath("net/snmp6")))
 
-	log.Debug("NetStatsInfo Stats - Count of return stats ", len(arrSysInfoStats))
-	return arrSysInfoStats
+	log.Debug("NetStatsInfo Net - Count of return stats ", len(arrNetStats))
+	log.Debug("NetStatsInfo SNMP - Count of return stats ", len(arrSnmpStats))
+	log.Debug("NetStatsInfo SBMP-6 - Count of return stats ", len(arrSnmp6Stats))
+	return arrNetStats, arrSnmpStats, arrSnmp6Stats
 }
 
 func (sip SystemInfoProvider) GetNetDevStats() ([]map[string]string, []map[string]string, []map[string]string) {
