@@ -11,7 +11,7 @@ import (
 
 const (
 	BASE_CLOUD_METADATA_URL = "http://169.254.169.254/"
-	HTTP_DEFAULT_TIMEOUT    = time.Duration(5 * time.Second)
+	HTTP_DEFAULT_TIMEOUT    = time.Duration(2 * time.Second)
 )
 
 var (
