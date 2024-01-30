@@ -8,14 +8,17 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 )
 
-func GetDiskStats() []SystemInfoStat {
-
-	arrSysInfoStats := parseDiskStats()
-
-	return arrSysInfoStats
+type DiskInfoProcessor struct {
 }
 
-func parseDiskStats() []SystemInfoStat {
+func (dip DiskInfoProcessor) Refresh() ([]SystemInfoStat, error) {
+
+	arrSysInfoStats := dip.parseDiskStats()
+
+	return arrSysInfoStats, nil
+}
+
+func (dip DiskInfoProcessor) parseDiskStats() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
 	diskStats := dataprovider.GetSystemProvider().GetDiskStats()
@@ -23,32 +26,32 @@ func parseDiskStats() []SystemInfoStat {
 	for _, stats := range diskStats {
 		deviceName := stats["device_name"]
 
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "reads_completed_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "reads_merged_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "read_bytes_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "read_time_seconds_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "writes_completed_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "writes_merged_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "writes_bytes_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "write_time_seconds_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "io_now", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "io_time_seconds_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "io_time_weighted_seconds_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "discards_completed_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "discards_merged_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "discarded_sectors_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "discard_time_seconds_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "flush_requests_total", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "flush_requests_time_seconds_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "reads_completed_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "reads_merged_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "read_bytes_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "read_time_seconds_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "writes_completed_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "writes_merged_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "writes_bytes_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "write_time_seconds_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "io_now", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "io_time_seconds_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "io_time_weighted_seconds_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "discards_completed_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "discards_merged_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "discarded_sectors_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "discard_time_seconds_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "flush_requests_total", stats))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskinfoSystemStat(deviceName, "flush_requests_time_seconds_total", stats))
 
-		arrSysInfoStats = append(arrSysInfoStats, constructDiskInfo(deviceName, stats["major_number"], stats["minor_number"], stats["serial"]))
+		arrSysInfoStats = append(arrSysInfoStats, dip.constructDiskInfo(deviceName, stats["major_number"], stats["minor_number"], stats["serial"]))
 
 	}
 
 	return arrSysInfoStats
 }
 
-func constructDiskInfo(deviceName string, major string, minor string, serial string) SystemInfoStat {
+func (dip DiskInfoProcessor) constructDiskInfo(deviceName string, major string, minor string, serial string) SystemInfoStat {
 	// 	[]string{"device", "major", "minor", "path", "wwn", "model", "serial", "revision"},
 	// (stats.MajorNumber),(stats.MinorNumber), info[udevIDPath], info[udevIDWWN], info[udevIDModel], serial, info[udevIDRevision],
 	clusterName := statprocessors.ClusterName
@@ -70,7 +73,7 @@ func constructDiskInfo(deviceName string, major string, minor string, serial str
 
 }
 
-func constructDiskinfoSystemStat(deviceName string, statName string, diskStats map[string]string) SystemInfoStat {
+func (dip DiskInfoProcessor) constructDiskinfoSystemStat(deviceName string, statName string, diskStats map[string]string) SystemInfoStat {
 
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service

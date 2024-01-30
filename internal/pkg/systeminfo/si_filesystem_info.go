@@ -8,12 +8,15 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 )
 
-func GetFileSystemInfo() []SystemInfoStat {
-	arrSysInfoStats := parseFileSystemInfo()
-	return arrSysInfoStats
+type FileSystemInfoProcessor struct {
 }
 
-func parseFileSystemInfo() []SystemInfoStat {
+func (fsip FileSystemInfoProcessor) Refresh() ([]SystemInfoStat, error) {
+	arrSysInfoStats := fsip.parseFileSystemInfo()
+	return arrSysInfoStats, nil
+}
+
+func (fsip FileSystemInfoProcessor) parseFileSystemInfo() []SystemInfoStat {
 
 	arrSysInfoStats := []SystemInfoStat{}
 
@@ -26,14 +29,14 @@ func parseFileSystemInfo() []SystemInfoStat {
 		mountPoint := stats["mount_point"]
 		fsType := stats["mount_point"]
 
-		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "size_bytes", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "free_bytes", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "avail_byts", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "files", stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "files_free", stats))
+		arrSysInfoStats = append(arrSysInfoStats, fsip.constructFileSystemSysInfoStats(fsType, mountPoint, source, "size_bytes", stats))
+		arrSysInfoStats = append(arrSysInfoStats, fsip.constructFileSystemSysInfoStats(fsType, mountPoint, source, "free_bytes", stats))
+		arrSysInfoStats = append(arrSysInfoStats, fsip.constructFileSystemSysInfoStats(fsType, mountPoint, source, "avail_byts", stats))
+		arrSysInfoStats = append(arrSysInfoStats, fsip.constructFileSystemSysInfoStats(fsType, mountPoint, source, "files", stats))
+		arrSysInfoStats = append(arrSysInfoStats, fsip.constructFileSystemSysInfoStats(fsType, mountPoint, source, "files_free", stats))
 
 		// add disk-info
-		statReadOnly := constructFileSystemReadOnly(fsType, mountPoint, source, isreadonly)
+		statReadOnly := fsip.constructFileSystemReadOnly(fsType, mountPoint, source, isreadonly)
 		arrSysInfoStats = append(arrSysInfoStats, statReadOnly)
 
 	}
@@ -41,7 +44,7 @@ func parseFileSystemInfo() []SystemInfoStat {
 	return arrSysInfoStats
 }
 
-func constructFileSystemReadOnly(fstype string, mountpoint string, deviceName string, isReadOnly string) SystemInfoStat {
+func (fsip FileSystemInfoProcessor) constructFileSystemReadOnly(fstype string, mountpoint string, deviceName string, isReadOnly string) SystemInfoStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
@@ -60,7 +63,7 @@ func constructFileSystemReadOnly(fstype string, mountpoint string, deviceName st
 
 }
 
-func constructFileSystemSysInfoStats(fstype string, mountpoint string, deviceName string, statName string, stats map[string]string) SystemInfoStat {
+func (fsip FileSystemInfoProcessor) constructFileSystemSysInfoStats(fstype string, mountpoint string, deviceName string, statName string, stats map[string]string) SystemInfoStat {
 
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service

@@ -6,13 +6,16 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 )
 
-func GetNetStatInfo() []SystemInfoStat {
-
-	arrSysInfoStats := parseNetStats()
-	return arrSysInfoStats
+type NetStatInfoProcessor struct {
 }
 
-func parseNetStats() []SystemInfoStat {
+func (nsip NetStatInfoProcessor) Refresh() ([]SystemInfoStat, error) {
+
+	arrSysInfoStats := nsip.parseNetStats()
+	return arrSysInfoStats, nil
+}
+
+func (nsip NetStatInfoProcessor) parseNetStats() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
 	netStats, snmpStats, snmp6Stats := dataprovider.GetSystemProvider().GetNetStatInfo()
@@ -20,28 +23,28 @@ func parseNetStats() []SystemInfoStat {
 	// Net Dev
 	for _, stats := range netStats {
 		for key, _ := range stats {
-			arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, stats))
+			arrSysInfoStats = append(arrSysInfoStats, nsip.constructNetstat(key, stats))
 		}
 	}
 
 	//Net SNMP
 	for _, stats := range snmpStats {
 		for key, _ := range stats {
-			arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, stats))
+			arrSysInfoStats = append(arrSysInfoStats, nsip.constructNetstat(key, stats))
 		}
 	}
 
 	//Net SNMP6
 	for _, stats := range snmp6Stats {
 		for key, _ := range stats {
-			arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, stats))
+			arrSysInfoStats = append(arrSysInfoStats, nsip.constructNetstat(key, stats))
 		}
 	}
 
 	return arrSysInfoStats
 }
 
-func constructNetstat(netStatKey string, stats map[string]string) SystemInfoStat {
+func (nsip NetStatInfoProcessor) constructNetstat(netStatKey string, stats map[string]string) SystemInfoStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 

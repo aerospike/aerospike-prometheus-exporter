@@ -6,12 +6,15 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 )
 
-func GetFileFDInfo() []SystemInfoStat {
-	arrSysInfoStats := parseFilefdStats()
-	return arrSysInfoStats
+type FileFDInfoProcessor struct {
 }
 
-func parseFilefdStats() []SystemInfoStat {
+func (ffdip FileFDInfoProcessor) Refresh() ([]SystemInfoStat, error) {
+	arrSysInfoStats := ffdip.parseFilefdStats()
+	return arrSysInfoStats, nil
+}
+
+func (ffdip FileFDInfoProcessor) parseFilefdStats() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
 	fileFDStats := dataprovider.GetSystemProvider().GetFileFD()
@@ -20,14 +23,14 @@ func parseFilefdStats() []SystemInfoStat {
 
 		allocated, _ := commons.TryConvert(stats["allocated"])
 		maximum, _ := commons.TryConvert(stats["maximum"])
-		arrSysInfoStats = append(arrSysInfoStats, constructFileFDstat("allocated", allocated))
-		arrSysInfoStats = append(arrSysInfoStats, constructFileFDstat("maximum", maximum))
+		arrSysInfoStats = append(arrSysInfoStats, ffdip.constructFileFDstat("allocated", allocated))
+		arrSysInfoStats = append(arrSysInfoStats, ffdip.constructFileFDstat("maximum", maximum))
 	}
 
 	return arrSysInfoStats
 }
 
-func constructFileFDstat(key string, value float64) SystemInfoStat {
+func (ffdip FileFDInfoProcessor) constructFileFDstat(key string, value float64) SystemInfoStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 

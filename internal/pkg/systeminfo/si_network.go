@@ -6,34 +6,37 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 )
 
-func GetNetworkStatsInfo() []SystemInfoStat {
-
-	arrSysInfoStats := parseNetworkStats()
-	return arrSysInfoStats
+type NetworkInfoProcessor struct {
 }
 
-func parseNetworkStats() []SystemInfoStat {
+func (nip NetworkInfoProcessor) Refresh() ([]SystemInfoStat, error) {
+
+	arrSysInfoStats := nip.parseNetworkStats()
+	return arrSysInfoStats, nil
+}
+
+func (nip NetworkInfoProcessor) parseNetworkStats() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
 	arrGroupStats, arrReceiveStats, arrTransferStats := dataprovider.GetSystemProvider().GetNetDevStats()
 
 	// netdev group
 	for _, stats := range arrGroupStats {
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkDevStat("group", stats["device_name"], stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkDevStat("group", stats["device_name"], stats))
 	}
 
 	// netdev receive
 	for _, stats := range arrReceiveStats {
 		deviceName := stats["device_name"]
 		// fmt.Println("Netdev Receive device: ", deviceName)
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_bytes_total", deviceName, stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_compressed_total", deviceName, stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_dropped_total", deviceName, stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_errors_total", deviceName, stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_fifo_total", deviceName, stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_frame_total", deviceName, stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_multicast_total", deviceName, stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_packets_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("receive_bytes_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("receive_compressed_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("receive_dropped_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("receive_errors_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("receive_fifo_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("receive_frame_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("receive_multicast_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("receive_packets_total", deviceName, stats))
 
 	}
 
@@ -41,19 +44,19 @@ func parseNetworkStats() []SystemInfoStat {
 	for _, stats := range arrTransferStats {
 		deviceName := stats["device_name"]
 		// fmt.Println("Netdev Transfer device: ", deviceName)
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_bytes_total", deviceName, stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_carrier_total", deviceName, stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_collisions_total", deviceName, stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_compressed_total", deviceName, stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_errors_total", deviceName, stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_fifo_total", deviceName, stats))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_packets_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("transfer_bytes_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("transfer_carrier_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("transfer_collisions_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("transfer_compressed_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("transfer_errors_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("transfer_fifo_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("transfer_packets_total", deviceName, stats))
 	}
 
 	return arrSysInfoStats
 }
 
-func constructNetworkDevStat(netStatKey string, deviceName string, stats map[string]string) SystemInfoStat {
+func (nip NetworkInfoProcessor) constructNetworkDevStat(netStatKey string, deviceName string, stats map[string]string) SystemInfoStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
@@ -70,7 +73,7 @@ func constructNetworkDevStat(netStatKey string, deviceName string, stats map[str
 	return sysMetric
 }
 
-func constructNetworkStat(netStatKey string, deviceName string, stats map[string]string) SystemInfoStat {
+func (nip NetworkInfoProcessor) constructNetworkStat(netStatKey string, deviceName string, stats map[string]string) SystemInfoStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 

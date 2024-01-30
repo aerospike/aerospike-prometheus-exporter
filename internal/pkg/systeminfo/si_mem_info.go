@@ -8,7 +8,10 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 )
 
-func GetMemInfo() []SystemInfoStat {
+type MemInfoProcessor struct {
+}
+
+func (mip MemInfoProcessor) Refresh() ([]SystemInfoStat, error) {
 	arrSysInfoStats := []SystemInfoStat{}
 
 	memStats := dataprovider.GetSystemProvider().GetMemInfoStats()
@@ -32,5 +35,5 @@ func GetMemInfo() []SystemInfoStat {
 		}
 	}
 
-	return arrSysInfoStats
+	return arrSysInfoStats, nil
 }

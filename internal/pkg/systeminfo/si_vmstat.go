@@ -6,27 +6,30 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 )
 
-func GetVmStatInfo() []SystemInfoStat {
-
-	arrSysInfoStats := parseVmStats()
-	return arrSysInfoStats
+type VmstatInfoProcessor struct {
 }
 
-func parseVmStats() []SystemInfoStat {
+func (vip VmstatInfoProcessor) Refresh() ([]SystemInfoStat, error) {
+
+	arrSysInfoStats := vip.parseVmStats()
+	return arrSysInfoStats, nil
+}
+
+func (vip VmstatInfoProcessor) parseVmStats() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
 	arrVmStats := dataprovider.GetSystemProvider().GetVmStats()
 
 	for _, vmStats := range arrVmStats {
 		for key, _ := range vmStats {
-			arrSysInfoStats = append(arrSysInfoStats, constructVmstat(key, vmStats))
+			arrSysInfoStats = append(arrSysInfoStats, vip.constructVmstat(key, vmStats))
 		}
 	}
 
 	return arrSysInfoStats
 }
 
-func constructVmstat(key string, stats map[string]string) SystemInfoStat {
+func (vip VmstatInfoProcessor) constructVmstat(key string, stats map[string]string) SystemInfoStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
