@@ -97,8 +97,6 @@ func (sip SystemInfoProvider) GetDiskStats() []map[string]string {
 		diskStat["flush_requests_total"] = fmt.Sprint(stats.FlushRequestsCompleted)
 		diskStat["flush_requests_time_seconds_total"] = fmt.Sprint(float64(stats.TimeSpentFlushing) * SECONDS_PER_TICK)
 		diskStat["flush_requests_time_seconds_total"] = fmt.Sprint(float64(stats.TimeSpentFlushing) * SECONDS_PER_TICK)
-		diskStat["major_number"] = fmt.Sprint(stats.MajorNumber)
-		diskStat["minor_number"] = fmt.Sprint(stats.MinorNumber)
 
 		udevDeviceProps, err := getUdevDeviceProperties(stats.MajorNumber, stats.MinorNumber)
 
@@ -113,6 +111,10 @@ func (sip SystemInfoProvider) GetDiskStats() []map[string]string {
 		if !ok || len(serial) == 0 {
 			serial = udevDeviceProps[UDEV_ID_SERIAL_SHORT]
 		}
+		if len(serial) == 0 {
+			serial = "null"
+		}
+
 		diskStat["major_number"] = fmt.Sprint(stats.MajorNumber)
 		diskStat["minor_number"] = fmt.Sprint(stats.MinorNumber)
 		diskStat["serial"] = serial
