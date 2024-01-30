@@ -76,7 +76,6 @@ func (sip SystemInfoProvider) GetDiskStats() []map[string]string {
 		}
 
 		diskStat := make(map[string]string)
-		// l_udev_info := make(map[string]string)
 
 		diskStat["index"] = fmt.Sprint(index)
 		diskStat["device_name"] = deviceName
@@ -121,5 +120,7 @@ func (sip SystemInfoProvider) GetDiskStats() []map[string]string {
 		arrDiskStats = append(arrDiskStats, diskStat)
 	}
 
+	fmt.Println("\n\n\t*****DiskStats - Count of return status ", len(arrDiskStats))
+	log.Debug("DiskStats - Count of return status ", len(arrDiskStats))
 	return arrDiskStats
 }
