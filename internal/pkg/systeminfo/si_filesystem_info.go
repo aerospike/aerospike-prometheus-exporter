@@ -4,10 +4,8 @@ import (
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	"github.com/prometheus/procfs"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/sys/unix"
 )
 
 func GetFileSystemInfo() []SystemInfoStat {
@@ -19,48 +17,23 @@ func parseFileSystemInfo() []SystemInfoStat {
 
 	arrSysInfoStats := []SystemInfoStat{}
 
-	mnts, err := procfs.GetMounts()
-	if err != nil {
-		return arrSysInfoStats
-	}
+	arrFileSystemMountStats := dataprovider.GetSystemProvider().GetFileSystemStats()
 
-	for _, mnt := range mnts {
+	for _, stats := range arrFileSystemMountStats {
 
-		if ignoreFileSystem(mnt.Source) {
-			log.Debug("\t ** FileSystem Stats -- Ignoring mount ", mnt.Source)
-			continue
-		}
+		isreadonly := stats["is_read_only"]
+		source := stats["source"]
+		mountPoint := stats["mount_point"]
+		fsType := stats["mount_point"]
 
-		// local variables
-		isreadonly := 0.0
-		size, free, avail, files, filesFree, isError := 0.0, 0.0, 0.0, 0.0, 0.0, false
-		l_mount_stats := make(map[string]float64)
-
-		// if the disk is read only
-		_, roKeyFound := mnt.OptionalFields["ro"]
-		if roKeyFound {
-			isreadonly = 1.0
-		}
-
-		size, free, avail, files, filesFree, isError = GetMountData(mnt.Source)
-		if isError {
-			log.Debug("Skipping, error during reading stats of mount-point ", mnt.MountPoint, " and mount-source ", mnt.Source)
-			continue
-		}
-
-		l_mount_stats["size_bytes"] = size
-		l_mount_stats["free_bytes"] = free
-		l_mount_stats["avail_byts"] = avail
-		l_mount_stats["files"] = files
-		l_mount_stats["files_free"] = filesFree
-
-		l_sysinfo_stats := constructFileSystemStats(mnt.FSType, mnt.MountPoint, mnt.Source, l_mount_stats)
-
-		// add to return array
-		arrSysInfoStats = append(arrSysInfoStats, l_sysinfo_stats...)
+		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "size_bytes", stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "free_bytes", stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "avail_byts", stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "files", stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "files_free", stats))
 
 		// add disk-info
-		statReadOnly := constructFileSystemReadOnly(mnt.FSType, mnt.MountPoint, mnt.Source, isreadonly)
+		statReadOnly := constructFileSystemReadOnly(fsType, mountPoint, source, isreadonly)
 		arrSysInfoStats = append(arrSysInfoStats, statReadOnly)
 
 	}
@@ -68,25 +41,7 @@ func parseFileSystemInfo() []SystemInfoStat {
 	return arrSysInfoStats
 }
 
-func GetMountData(mntpointsource string) (float64, float64, float64, float64, float64, bool) {
-	buf := new(unix.Statfs_t)
-	err := unix.Statfs(GetRootfsFilePath(mntpointsource), buf)
-	// any kind of error
-	if err != nil {
-		log.Error("Error while fetching FileSystem stats for mount ", mntpointsource, ", hence, return all 0.0 --> error is ", err)
-		return 0.0, 0.0, 0.0, 0.0, 0.0, true
-	}
-
-	size := float64(buf.Blocks) * float64(buf.Bsize)
-	free := float64(buf.Bfree) * float64(buf.Bsize)
-	avail := float64(buf.Bavail) * float64(buf.Bsize)
-	files := float64(buf.Files)
-	filesFree := float64(buf.Ffree)
-
-	return size, free, avail, files, filesFree, false
-}
-
-func constructFileSystemReadOnly(fstype string, mountpoint string, deviceName string, isReadOnly float64) SystemInfoStat {
+func constructFileSystemReadOnly(fstype string, mountpoint string, deviceName string, isReadOnly string) SystemInfoStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
@@ -99,32 +54,28 @@ func constructFileSystemReadOnly(fstype string, mountpoint string, deviceName st
 	sysMetric := NewSystemInfoStat(commons.CTX_FILESYSTEM_STATS, "readonly")
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
-	sysMetric.Value = isReadOnly
+	sysMetric.Value, _ = commons.TryConvert(isReadOnly)
 
 	return sysMetric
 
 }
 
-func constructFileSystemStats(fstype string, mountpoint string, deviceName string, v_stats_info map[string]float64) []SystemInfoStat {
-	// deviceName is same as source
-	arrSysInfoStats := []SystemInfoStat{}
+func constructFileSystemSysInfoStats(fstype string, mountpoint string, deviceName string, statName string, stats map[string]string) SystemInfoStat {
 
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
-	for sk, sv := range v_stats_info {
-		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_FSTYPE, commons.METRIC_LABEL_DEVICE, commons.METRIC_LABEL_MOUNT_POINT}
-		labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
+	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_FSTYPE, commons.METRIC_LABEL_DEVICE, commons.METRIC_LABEL_MOUNT_POINT}
+	labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
 
-		l_metricName := strings.ToLower(sk)
-		sysMetric := NewSystemInfoStat(commons.CTX_FILESYSTEM_STATS, l_metricName)
+	l_metricName := strings.ToLower(statName)
+	sysMetric := NewSystemInfoStat(commons.CTX_FILESYSTEM_STATS, l_metricName)
 
-		sysMetric.Labels = labels
-		sysMetric.LabelValues = labelValues
-		sysMetric.Value = sv
+	sysMetric.Labels = labels
+	sysMetric.LabelValues = labelValues
 
-		arrSysInfoStats = append(arrSysInfoStats, sysMetric)
-	}
+	value, _ := commons.TryConvert(stats[statName])
+	sysMetric.Value = value
 
-	return arrSysInfoStats
+	return sysMetric
 }

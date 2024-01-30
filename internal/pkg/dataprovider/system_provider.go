@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/procfs"
 	"github.com/prometheus/procfs/blockdevice"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
 )
 
 func (sip SystemInfoProvider) GetCPUDetails() ([]map[string]float64, []map[string]float64) {
@@ -131,14 +132,14 @@ func (sip SystemInfoProvider) GetDiskStats() []map[string]string {
 }
 
 func (sip SystemInfoProvider) GetFileFD() []map[string]string {
-	arrSysInfoStats := []map[string]string{}
+	arrFileFdInfoStats := []map[string]string{}
 
 	fileName := GetProcFilePath("sys/fs/file-nr")
 
 	file, err := os.Open(fileName)
 	if err != nil {
 		log.Error("Error while opening file,", fileName, " Error: ", err)
-		return arrSysInfoStats
+		return arrFileFdInfoStats
 	}
 	defer file.Close()
 
@@ -152,11 +153,79 @@ func (sip SystemInfoProvider) GetFileFD() []map[string]string {
 		fileFDStats := make(map[string]string)
 		fileFDStats["index"] = fmt.Sprint(index)
 		fileFDStats["allocated"] = values[0]
-		fileFDStats["maximum"] = values[0]
+		fileFDStats["maximum"] = values[2]
 
 		index++
-		arrSysInfoStats = append(arrSysInfoStats, fileFDStats)
+		arrFileFdInfoStats = append(arrFileFdInfoStats, fileFDStats)
 	}
 
-	return arrSysInfoStats
+	return arrFileFdInfoStats
+}
+
+func (sip SystemInfoProvider) GetFileSystemStats() []map[string]string {
+
+	arrFileSystemMountStats := []map[string]string{}
+
+	mnts, err := procfs.GetMounts()
+	if err != nil {
+		return arrFileSystemMountStats
+	}
+
+	for _, mnt := range mnts {
+
+		if ignoreFileSystem(mnt.Source) {
+			log.Debug("\t ** FileSystem Stats -- Ignoring mount ", mnt.Source)
+			continue
+		}
+
+		// local variables
+		isreadonly := 0.0
+		size, free, avail, files, filesFree, isError := 0.0, 0.0, 0.0, 0.0, 0.0, false
+		mountStats := make(map[string]string)
+
+		// if the disk is read only
+		_, roKeyFound := mnt.OptionalFields["ro"]
+		if roKeyFound {
+			isreadonly = 1.0
+		}
+
+		size, free, avail, files, filesFree, isError = readDiskMountData(mnt.Source)
+		if isError {
+			log.Debug("Skipping, error during reading stats of mount-point ", mnt.MountPoint, " and mount-source ", mnt.Source)
+			continue
+		}
+
+		mountStats["fstype"] = mnt.FSType
+		mountStats["mount_point"] = mnt.MountPoint
+		mountStats["source"] = mnt.Source
+		mountStats["is_read_only"] = fmt.Sprint(isreadonly)
+
+		mountStats["size_bytes"] = fmt.Sprint(size)
+		mountStats["free_bytes"] = fmt.Sprint(free)
+		mountStats["avail_byts"] = fmt.Sprint(avail)
+		mountStats["files"] = fmt.Sprint(files)
+		mountStats["files_free"] = fmt.Sprint(filesFree)
+
+		arrFileSystemMountStats = append(arrFileSystemMountStats, mountStats)
+	}
+
+	return arrFileSystemMountStats
+}
+
+func readDiskMountData(mntpointsource string) (float64, float64, float64, float64, float64, bool) {
+	buf := new(unix.Statfs_t)
+	err := unix.Statfs(GetRootfsFilePath(mntpointsource), buf)
+	// any kind of error
+	if err != nil {
+		log.Error("Error while fetching FileSystem stats for mount ", mntpointsource, ", hence, return all 0.0 --> error is ", err)
+		return 0.0, 0.0, 0.0, 0.0, 0.0, true
+	}
+
+	size := float64(buf.Blocks) * float64(buf.Bsize)
+	free := float64(buf.Bfree) * float64(buf.Bsize)
+	avail := float64(buf.Bavail) * float64(buf.Bsize)
+	files := float64(buf.Files)
+	filesFree := float64(buf.Ffree)
+
+	return size, free, avail, files, filesFree, false
 }

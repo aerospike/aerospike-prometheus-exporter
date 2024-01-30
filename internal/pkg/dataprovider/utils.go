@@ -45,11 +45,11 @@ const (
 )
 
 var (
-	diskIgnorePattern    = regexp.MustCompile(DISK_IGNORE_NAME_LIST)
-	fileIgnorePattern    = regexp.MustCompile(FILE_STAT_IGNORE_LIST)
-	netstatAcceptPattern = regexp.MustCompile(netstatAcceptlist)
-	snmp6PrefixPattern   = regexp.MustCompile(snmp6Prefixlist)
-	vmstatAcceptPattern  = regexp.MustCompile(vmstatAcceptList)
+	regexDiskIgnorePattern    = regexp.MustCompile(DISK_IGNORE_NAME_LIST)
+	regexFileIgnorePattern    = regexp.MustCompile(FILE_STAT_IGNORE_LIST)
+	regexNetstatAcceptPattern = regexp.MustCompile(netstatAcceptlist)
+	regexSnmp6PrefixPattern   = regexp.MustCompile(snmp6Prefixlist)
+	regexVmstatAcceptPattern  = regexp.MustCompile(vmstatAcceptList)
 )
 
 func GetProcFilePath(name string) string {
@@ -81,24 +81,24 @@ func GetRootfsFilePath(name string) string {
 
 // ignoreDisk returns whether the device should be ignoreDisk
 func ignoreDisk(name string) bool {
-	return (diskIgnorePattern != nil && diskIgnorePattern.MatchString(name))
+	return (regexDiskIgnorePattern != nil && regexDiskIgnorePattern.MatchString(name))
 }
 
 // ignoreDisk returns whether the device should be ignoreDisk
 func ignoreFileSystem(name string) bool {
-	return (fileIgnorePattern != nil && fileIgnorePattern.MatchString(name))
+	return (regexFileIgnorePattern != nil && regexFileIgnorePattern.MatchString(name))
 }
 
 func acceptNetstat(name string) bool {
-	return (netstatAcceptPattern != nil && netstatAcceptPattern.MatchString(name))
+	return (regexNetstatAcceptPattern != nil && regexNetstatAcceptPattern.MatchString(name))
 }
 
 func acceptSnmp6(name string) bool {
-	return (snmp6PrefixPattern != nil && snmp6PrefixPattern.MatchString(name))
+	return (regexSnmp6PrefixPattern != nil && regexSnmp6PrefixPattern.MatchString(name))
 }
 
 func acceptVmstat(name string) bool {
-	return (vmstatAcceptPattern != nil && vmstatAcceptPattern.MatchString(name))
+	return (regexVmstatAcceptPattern != nil && regexVmstatAcceptPattern.MatchString(name))
 }
 
 func GetMetricType(pContext commons.ContextType, pRawMetricName string) commons.MetricType {
