@@ -18,16 +18,11 @@ var (
 )
 
 const (
-	netstatAcceptlist = "^(.*_(inerrors|inerrs)|ip_forwarding|ip(6|ext)_(inoctets|outoctets)|icmp6?_(inmsgs|outmsgs)|tcpext_(listen.*|syncookies.*|tcpsynretrans|tcptimeouts|tcpofoqueue)|tcp_(activeopens|insegs|outsegs|outrsts|passiveopens|retranssegs|currestab)|udp6?_(indatagrams|outdatagrams|noports|rcvbuferrors|sndbuferrors))$"
-	snmp6Prefixlist   = "^(ip6.*|icmp6.*|udp6.*)"
-
 	vmstatAcceptList = "^(oom_kill|pgpg|pswp|pg.*fault).*"
 )
 
 var (
-	netstatAcceptPattern = regexp.MustCompile(netstatAcceptlist)
-	snmp6PrefixPattern   = regexp.MustCompile(snmp6Prefixlist)
-	vmstatAcceptPattern  = regexp.MustCompile(vmstatAcceptList)
+	vmstatAcceptPattern = regexp.MustCompile(vmstatAcceptList)
 )
 
 func GetProcFilePath(name string) string {
@@ -56,14 +51,6 @@ func GetRootfsFilePath(name string) string {
 // 	}
 // 	return stripped
 // }
-
-func acceptNetstat(name string) bool {
-	return (netstatAcceptPattern != nil && netstatAcceptPattern.MatchString(name))
-}
-
-func acceptSnmp6(name string) bool {
-	return (snmp6PrefixPattern != nil && snmp6PrefixPattern.MatchString(name))
-}
 
 func acceptVmstat(name string) bool {
 	return (vmstatAcceptPattern != nil && vmstatAcceptPattern.MatchString(name))

@@ -2,9 +2,8 @@ package systeminfo
 
 import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	"github.com/prometheus/procfs"
-	log "github.com/sirupsen/logrus"
 )
 
 func GetNetworkStatsInfo() []SystemInfoStat {
@@ -18,45 +17,43 @@ func GetNetworkStatsInfo() []SystemInfoStat {
 func parseNetworkStats() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
-	fs, err := procfs.NewFS(PROC_PATH)
-	if err != nil {
-		log.Debug("parseNetworkStats Error while reading Net_Dev Stats from ", PROC_PATH, " Error ", err)
-		return arrSysInfoStats
+	arrGroupStats, arrReceiveStats, arrTransferStats := dataprovider.GetSystemProvider().GetNetDevStats()
+
+	// netdev group
+	for _, stats := range arrGroupStats {
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkDevStat("group", stats["device_name"], stats))
 	}
 
-	stats, err := fs.NetDev()
-	if err != nil {
-		log.Debug("Eror while reading procfs.NewFS system, error: ", err)
-		return arrSysInfoStats
+	// netdev receive
+	for _, stats := range arrReceiveStats {
+		deviceName := stats["device_name"]
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_bytes_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_compressed_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_dropped_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_errors_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_fifo_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_frame_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_multicast_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_packets_total", deviceName, stats))
+
 	}
 
-	for k, v := range stats {
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkDevStat("group", k, 0))
-
-		// network receive
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_bytes_total", k, float64(v.RxBytes)))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_compressed_total", k, float64(v.RxCompressed)))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_dropped_total", k, float64(v.RxDropped)))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_errors_total", k, float64(v.RxErrors)))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_fifo_total", k, float64(v.RxFIFO)))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_frame_total", k, float64(v.RxFrame)))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_multicast_total", k, float64(v.RxMulticast)))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("receive_packets_total", k, float64(v.RxPackets)))
-
-		// network transfer
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_bytes_total", k, float64(v.TxBytes)))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_carrier_total", k, float64(v.TxCarrier)))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_collisions_total", k, float64(v.TxCollisions)))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_compressed_total", k, float64(v.TxCompressed)))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_errors_total", k, float64(v.TxErrors)))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_fifo_total", k, float64(v.TxFIFO)))
-		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_packets_total", k, float64(v.TxPackets)))
+	// netdev transfer
+	for _, stats := range arrTransferStats {
+		deviceName := stats["device_name"]
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_bytes_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_carrier_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_collisions_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_compressed_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_errors_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_fifo_total", deviceName, stats))
+		arrSysInfoStats = append(arrSysInfoStats, constructNetworkStat("transfer_packets_total", deviceName, stats))
 	}
 
 	return arrSysInfoStats
 }
 
-func constructNetworkDevStat(netStatKey string, deviceName string, value float64) SystemInfoStat {
+func constructNetworkDevStat(netStatKey string, deviceName string, stats map[string]string) SystemInfoStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
@@ -68,12 +65,12 @@ func constructNetworkDevStat(netStatKey string, deviceName string, value float64
 	sysMetric := NewSystemInfoStat(commons.CTX_NET_DEV_STATS, netStatKey)
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
-	sysMetric.Value = value
+	sysMetric.Value, _ = commons.TryConvert(stats[deviceName])
 
 	return sysMetric
 }
 
-func constructNetworkStat(netStatKey string, deviceName string, value float64) SystemInfoStat {
+func constructNetworkStat(netStatKey string, deviceName string, stats map[string]string) SystemInfoStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
@@ -85,7 +82,7 @@ func constructNetworkStat(netStatKey string, deviceName string, value float64) S
 	sysMetric := NewSystemInfoStat(commons.CTX_NETWORK_STATS, netStatKey)
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
-	sysMetric.Value = value
+	sysMetric.Value, _ = commons.TryConvert(stats[netStatKey])
 
 	return sysMetric
 }

@@ -19,9 +19,7 @@ func parseNetStats() []SystemInfoStat {
 
 	for _, stats := range netStats {
 		for key, _ := range stats {
-			if acceptNetstat(key) {
-				arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, stats))
-			}
+			arrSysInfoStats = append(arrSysInfoStats, constructNetstat(key, stats))
 		}
 	}
 

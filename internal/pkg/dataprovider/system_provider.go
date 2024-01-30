@@ -298,3 +298,62 @@ func (sip SystemInfoProvider) GetNetStatInfo() []map[string]string {
 	log.Debug("NetStatsInfo Stats - Count of return stats ", len(arrSysInfoStats))
 	return arrSysInfoStats
 }
+
+func (sip SystemInfoProvider) GetNetDevStats() ([]map[string]string, []map[string]string, []map[string]string) {
+	arrNetGroupStats := []map[string]string{}
+	arrNetReceiveStats := []map[string]string{}
+	arrNetTransferStats := []map[string]string{}
+
+	fs, err := procfs.NewFS(PROC_PATH)
+	if err != nil {
+		log.Debug("parseNetworkStats Error while reading Net_Dev Stats from ", PROC_PATH, " Error ", err)
+		return arrNetGroupStats, arrNetReceiveStats, arrNetTransferStats
+	}
+
+	stats, err := fs.NetDev()
+	if err != nil {
+		log.Debug("Eror while reading procfs.NewFS system, error: ", err)
+		return arrNetGroupStats, arrNetReceiveStats, arrNetTransferStats
+	}
+
+	for deviceName, stats := range stats {
+
+		groupStats := make(map[string]string)
+		receiveStats := make(map[string]string)
+		transferStats := make(map[string]string)
+
+		// network group
+		groupStats["device_name"] = deviceName
+		groupStats[deviceName] = fmt.Sprint(0)
+
+		// network receive
+		receiveStats["device_name"] = deviceName
+		receiveStats["receive_bytes_total"] = fmt.Sprint(float64(stats.RxBytes))
+		receiveStats["receive_compressed_total"] = fmt.Sprint(float64(stats.RxCompressed))
+		receiveStats["receive_dropped_total"] = fmt.Sprint(float64(stats.RxDropped))
+		receiveStats["receive_errors_total"] = fmt.Sprint(float64(stats.RxErrors))
+		receiveStats["receive_fifo_total"] = fmt.Sprint(float64(stats.RxFIFO))
+		receiveStats["receive_frame_total"] = fmt.Sprint(float64(stats.RxFrame))
+		receiveStats["receive_multicast_total"] = fmt.Sprint(float64(stats.RxMulticast))
+		receiveStats["receive_packets_total"] = fmt.Sprint(float64(stats.RxPackets))
+
+		// network transfer
+		receiveStats["device_name"] = deviceName
+		transferStats["transfer_bytes_total"] = fmt.Sprint(float64(stats.TxBytes))
+		transferStats["transfer_carrier_total"] = fmt.Sprint(float64(stats.TxCarrier))
+		transferStats["transfer_collisions_total"] = fmt.Sprint(float64(stats.TxCollisions))
+		transferStats["transfer_compressed_total"] = fmt.Sprint(float64(stats.TxCompressed))
+		transferStats["transfer_errors_total"] = fmt.Sprint(float64(stats.TxErrors))
+		transferStats["transfer_fifo_total"] = fmt.Sprint(float64(stats.TxFIFO))
+		transferStats["transfer_packets_total"] = fmt.Sprint(float64(stats.TxPackets))
+
+		arrNetGroupStats = append(arrNetGroupStats, groupStats)
+		arrNetReceiveStats = append(arrNetReceiveStats, receiveStats)
+		arrNetTransferStats = append(arrNetTransferStats, transferStats)
+	}
+
+	log.Debug("NetDevStats - GROUP Count of return status ", len(arrNetGroupStats))
+	log.Debug("NetDevStats - RECEIVE Count of return status ", len(arrNetReceiveStats))
+	log.Debug("NetDevStats - TRANSFER Count of return status ", len(arrNetTransferStats))
+	return arrNetGroupStats, arrNetReceiveStats, arrNetTransferStats
+}
