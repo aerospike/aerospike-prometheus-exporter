@@ -1,6 +1,7 @@
 package systeminfo
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -51,6 +52,8 @@ func parseDiskStats() []SystemInfoStat {
 		arrSysInfoStats = append(arrSysInfoStats, constructDiskInfo(deviceName, stats["major_number"], stats["minor_number"], stats["serial"]))
 
 	}
+
+	fmt.Println("SI-DISK-INFO Number of SystemInfoStats return ", len(arrSysInfoStats))
 
 	return arrSysInfoStats
 }
