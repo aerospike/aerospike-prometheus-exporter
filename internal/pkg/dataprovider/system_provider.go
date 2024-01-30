@@ -121,6 +121,7 @@ func (sip SystemInfoProvider) GetDiskStats() []map[string]string {
 	}
 
 	fmt.Println("\n\n\t*****DiskStats - Count of return status ", len(arrDiskStats))
+	fmt.Println("\n\n", arrDiskStats)
 	log.Debug("DiskStats - Count of return status ", len(arrDiskStats))
 	return arrDiskStats
 }
