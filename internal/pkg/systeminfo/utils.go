@@ -18,8 +18,6 @@ var (
 )
 
 const (
-	filestatIgnoreList = "^(overlay|mqueue)$"
-
 	netstatAcceptlist = "^(.*_(inerrors|inerrs)|ip_forwarding|ip(6|ext)_(inoctets|outoctets)|icmp6?_(inmsgs|outmsgs)|tcpext_(listen.*|syncookies.*|tcpsynretrans|tcptimeouts|tcpofoqueue)|tcp_(activeopens|insegs|outsegs|outrsts|passiveopens|retranssegs|currestab)|udp6?_(indatagrams|outdatagrams|noports|rcvbuferrors|sndbuferrors))$"
 	snmp6Prefixlist   = "^(ip6.*|icmp6.*|udp6.*)"
 
@@ -27,7 +25,6 @@ const (
 )
 
 var (
-	fileIgnorePattern    = regexp.MustCompile(filestatIgnoreList)
 	netstatAcceptPattern = regexp.MustCompile(netstatAcceptlist)
 	snmp6PrefixPattern   = regexp.MustCompile(snmp6Prefixlist)
 	vmstatAcceptPattern  = regexp.MustCompile(vmstatAcceptList)
@@ -59,49 +56,6 @@ func GetRootfsFilePath(name string) string {
 // 	}
 // 	return stripped
 // }
-
-// func getUdevDeviceProperties(major, minor uint32) (map[string]string, error) {
-// 	filename := GetUdevDataFilePath(fmt.Sprintf("b%d:%d", major, minor))
-
-// 	data, err := os.Open(filename)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer data.Close()
-
-// 	info := make(map[string]string)
-
-// 	scanner := bufio.NewScanner(data)
-// 	for scanner.Scan() {
-// 		line := scanner.Text()
-
-// 		// We're only interested in device properties.
-// 		if !strings.HasPrefix(line, UDEV_PROP_PREFIX) {
-// 			continue
-// 		}
-
-// 		line = strings.TrimPrefix(line, UDEV_PROP_PREFIX)
-
-// 		if name, value, found := strings.Cut(line, "="); found {
-// 			info[name] = value
-// 		}
-// 	}
-
-// 	return info, nil
-// }
-
-func GetFloatValue(addr *uint64) float64 {
-	if addr != nil {
-		value := float64(*addr)
-		return value
-	}
-	return 0.0
-}
-
-// ignoreDisk returns whether the device should be ignoreDisk
-func ignoreFileSystem(name string) bool {
-	return (fileIgnorePattern != nil && fileIgnorePattern.MatchString(name))
-}
 
 func acceptNetstat(name string) bool {
 	return (netstatAcceptPattern != nil && netstatAcceptPattern.MatchString(name))

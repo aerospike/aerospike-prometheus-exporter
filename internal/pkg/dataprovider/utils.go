@@ -10,6 +10,8 @@ import (
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/prometheus/procfs"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -37,6 +39,8 @@ const (
 
 	// Read/write sectors are "standard UNIX 512-byte sectors" (https://www.kernel.org/doc/Documentation/block/stat.txt)
 	DISK_SECTOR_SIZE_IN_UNIX = 512.0
+
+	ONE_KILO_BYTE = 1024
 
 	// See udevadm(8).
 	UDEV_PROP_PREFIX       = "E:"
@@ -137,4 +141,30 @@ func getUdevDeviceProperties(major, minor uint32) (map[string]string, error) {
 	}
 
 	return info, nil
+}
+
+func readDiskMountData(mntpointsource string) (float64, float64, float64, float64, float64, bool) {
+	buf := new(unix.Statfs_t)
+	err := unix.Statfs(GetRootfsFilePath(mntpointsource), buf)
+	// any kind of error
+	if err != nil {
+		log.Error("Error while fetching FileSystem stats for mount ", mntpointsource, ", hence, return all 0.0 --> error is ", err)
+		return 0.0, 0.0, 0.0, 0.0, 0.0, true
+	}
+
+	size := float64(buf.Blocks) * float64(buf.Bsize)
+	free := float64(buf.Bfree) * float64(buf.Bsize)
+	avail := float64(buf.Bavail) * float64(buf.Bsize)
+	files := float64(buf.Files)
+	filesFree := float64(buf.Ffree)
+
+	return size, free, avail, files, filesFree, false
+}
+
+func GetFloatValue(addr *uint64) float64 {
+	if addr != nil {
+		value := float64(*addr)
+		return value
+	}
+	return 0.0
 }
