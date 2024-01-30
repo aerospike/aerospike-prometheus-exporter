@@ -365,7 +365,7 @@ func (sip SystemInfoProvider) GetNetDevStats() ([]map[string]string, []map[strin
 func (sip SystemInfoProvider) GetVmStats() []map[string]string {
 	arrSysInfoStats := []map[string]string{}
 
-	file, err := os.Open("vmstat")
+	file, err := os.Open(getProcFilePath("vmstat"))
 	if err != nil {
 		log.Error("Error while opening file, 'vmstat' Error: ", err)
 		return arrSysInfoStats
