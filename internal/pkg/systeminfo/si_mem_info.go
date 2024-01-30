@@ -1,7 +1,6 @@
 package systeminfo
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -32,8 +31,6 @@ func GetMemInfo() []SystemInfoStat {
 
 		}
 	}
-
-	fmt.Println(" memory metrics ", arrSysInfoStats)
 
 	return arrSysInfoStats
 }
