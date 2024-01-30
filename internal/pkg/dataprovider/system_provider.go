@@ -384,5 +384,8 @@ func (sip SystemInfoProvider) GetVmStats() []map[string]string {
 		}
 	}
 
+	arrSysInfoStats = append(arrSysInfoStats, vmStats)
+
+	log.Debug("GetVmStats - VMSTATS Count of return status ", len(arrSysInfoStats))
 	return arrSysInfoStats
 }
