@@ -1,6 +1,7 @@
 package systeminfo
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -11,14 +12,14 @@ import (
 func GetMemInfo() []SystemInfoStat {
 	arrSysInfoStats := []SystemInfoStat{}
 
-	clusterName := statprocessors.ClusterName
-	service := statprocessors.Service
+	memStats := dataprovider.GetSystemProvider().GetMemInfoStats()
 
-	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
-	labelValues := []string{clusterName, service}
-
-	memStats := dataprovider.GetMemInfoStats()
 	for _, stats := range memStats {
+		clusterName := statprocessors.ClusterName
+		service := statprocessors.Service
+
+		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
+		labelValues := []string{clusterName, service}
 
 		for k, v := range stats {
 			l_metricName := strings.ToLower(k) + "_bytes"
@@ -31,6 +32,8 @@ func GetMemInfo() []SystemInfoStat {
 
 		}
 	}
+
+	fmt.Println(" memory metrics ", arrSysInfoStats)
 
 	return arrSysInfoStats
 }

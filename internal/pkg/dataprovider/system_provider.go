@@ -211,7 +211,7 @@ func (sip SystemInfoProvider) GetFileSystemStats() []map[string]string {
 	return arrFileSystemMountStats
 }
 
-func GetMemInfoStats() []map[string]string {
+func (sip SystemInfoProvider) GetMemInfoStats() []map[string]string {
 	arrMemInfoStats := []map[string]string{}
 
 	fs, err := procfs.NewFS(PROC_PATH)
