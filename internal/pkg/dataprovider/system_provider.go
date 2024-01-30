@@ -299,7 +299,7 @@ func (sip SystemInfoProvider) GetNetStatInfo() ([]map[string]string, []map[strin
 
 	log.Debug("NetStatsInfo Net - Count of return stats ", len(arrNetStats))
 	log.Debug("NetStatsInfo SNMP - Count of return stats ", len(arrSnmpStats))
-	log.Debug("NetStatsInfo SBMP-6 - Count of return stats ", len(arrSnmp6Stats))
+	log.Debug("NetStatsInfo SNMP-6 - Count of return stats ", len(arrSnmp6Stats))
 	return arrNetStats, arrSnmpStats, arrSnmp6Stats
 }
 
