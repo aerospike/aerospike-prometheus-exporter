@@ -60,18 +60,18 @@ func getAwsCloudDetails() {
 	if !ok {
 		return
 	}
+	cloudInfo["region"] = awsRegion
 
-	awsAvailZoneId, ok = callUrl("GET", BASE_CLOUD_METADATA_URL+"/latest/meta-data/placement/availability-zone-id", tokenHeaders)
-	if !ok {
-		return
-	}
+	// awsAvailZoneId, ok = callUrl("GET", BASE_CLOUD_METADATA_URL+"/latest/meta-data/placement/availability-zone-id", tokenHeaders)
+	// if !ok {
+	// 	return
+	// }
+	cloudInfo["availability_zone_id"] = awsAvailZoneId
+
 	awsAvailZone, ok = callUrl("GET", BASE_CLOUD_METADATA_URL+"/latest/meta-data/placement/availability-zone", tokenHeaders)
 	if !ok {
 		return
 	}
-
-	cloudInfo["region"] = awsRegion
-	cloudInfo["availability_zone_id"] = awsAvailZoneId
 	cloudInfo["availability_zone"] = awsAvailZone
 }
 
@@ -85,14 +85,13 @@ func getAzureCloudDetails() {
 	if !ok {
 		return
 	}
+	cloudInfo["location"] = azureLocation
 
 	azureZone, ok := callUrl("GET", BASE_CLOUD_METADATA_URL+"/metadata/instance/compute/zone?api-version=2021-02-01&format=text", tokenHeaders)
 	if !ok {
 		return
 	}
-
-	cloudInfo["azure_location"] = azureLocation
-	cloudInfo["azure_zone"] = azureZone
+	cloudInfo["zone"] = azureZone
 
 }
 
@@ -107,8 +106,7 @@ func getGoogleCloudDetails() {
 	if !ok {
 		return
 	}
-
-	cloudInfo["gcp_zone"] = gcpZone
+	cloudInfo["zone"] = gcpZone
 
 }
 
