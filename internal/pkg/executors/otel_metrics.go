@@ -2,6 +2,8 @@ package executors
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
@@ -145,6 +147,10 @@ func calcSysInfoStatValueToUse(metricName string, stat systeminfo.SystemInfoStat
 
 func makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, value float64) {
 
+	if strings.Contains(metricName, "uptime") {
+		fmt.Println(" found Uptime metricName is ", metricName)
+	}
+
 	ometric, _ := meter.Float64Counter(
 		metricName,
 		metric.WithDescription(desc),
@@ -169,20 +175,6 @@ func makeOtelGaugeMetric(meter metric.Meter, ctx context.Context, metricName str
 
 	handleErr(err, "makeOtelGaugeMetric() Error while creating object for stat "+metricName)
 
-}
-
-// Utility functions
-func readHeaders() map[string]string {
-	headers := make(map[string]string)
-	// headers["api-key"] = "08c5879e8cc53859d4a5554ec503558ee3ceNRAL"
-	headerPairs := config.Cfg.AeroProm.OtelHeaders
-	if len(headerPairs) > 0 {
-		for k, v := range headerPairs {
-			headers[k] = v
-		}
-	}
-
-	return headers
 }
 
 func handleErr(err error, message string) {

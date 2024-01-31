@@ -202,3 +202,17 @@ func handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabe
 	processSystemInfoStats(meter, ctx, commonLabels, currentSysInfoStats)
 
 }
+
+// Utility functions
+func readHeaders() map[string]string {
+	headers := make(map[string]string)
+	// headers["api-key"] = "08c5879e8cc53859d4a5554ec503558ee3ceNRAL"
+	headerPairs := config.Cfg.AeroProm.OtelHeaders
+	if len(headerPairs) > 0 {
+		for k, v := range headerPairs {
+			headers[k] = v
+		}
+	}
+
+	return headers
+}

@@ -1,6 +1,9 @@
 package statprocessors
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 
 	log "github.com/sirupsen/logrus"
@@ -73,6 +76,10 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string, clusterName s
 			continue
 		}
 		asMetric, exists := sw.nodeMetrics[stat]
+
+		if strings.Contains(stat, "uptime") {
+			fmt.Println("\t\t *** found Uptime metricName is ", stat)
+		}
 
 		if !exists {
 			asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, stat)
