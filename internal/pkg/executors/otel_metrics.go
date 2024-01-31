@@ -2,14 +2,11 @@ package executors
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/systeminfo"
-	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	// "go.opentelemetry.io/otel/label"
@@ -71,7 +68,6 @@ func processAerospikeStats(meter metric.Meter, ctx context.Context, commonLabels
 		// create Otel metric
 		if stat.MType == commons.MetricTypeCounter {
 			value := stat.Value
-			// value = calcAerospikeStatValueToUse(qualifiedName, stat)
 
 			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, value)
 
@@ -79,23 +75,8 @@ func processAerospikeStats(meter metric.Meter, ctx context.Context, commonLabels
 			makeOtelGaugeMetric(meter, ctx, qualifiedName, desc, labels, stat.Value)
 		}
 
-		// Add stat to previous-process-map
-		previousRefreshStats[getMetricMapKey(qualifiedName, stat)] = stat
 	}
 
-}
-
-func calcAerospikeStatValueToUse(metricName string, stat statprocessors.AerospikeStat) float64 {
-	value := stat.Value
-
-	// if previous value exists, then set value as DIFFerence ( current_value , previous_value)
-	prevStatState, ok := previousRefreshStats[getMetricMapKey(metricName, stat)]
-	// only if this is a stat and not a config,
-	if ok && !stat.IsConfig {
-		value = stat.Value - prevStatState.Value
-	}
-
-	return value
 }
 
 func processSystemInfoStats(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, refreshStats []systeminfo.SystemInfoStat) {
@@ -118,7 +99,6 @@ func processSystemInfoStats(meter metric.Meter, ctx context.Context, commonLabel
 		// create Otel metric
 		if stat.MType == commons.MetricTypeCounter {
 			value := stat.Value
-			// value = calcSysInfoStatValueToUse(qualifiedName, stat)
 
 			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, value)
 
@@ -126,30 +106,11 @@ func processSystemInfoStats(meter metric.Meter, ctx context.Context, commonLabel
 			makeOtelGaugeMetric(meter, ctx, qualifiedName, desc, labels, stat.Value)
 		}
 
-		// Add stat to previous-process-map
-		previousSysInfoStats[stat.GetMetricMapKey()] = stat
 	}
 
-}
-
-func calcSysInfoStatValueToUse(metricName string, stat systeminfo.SystemInfoStat) float64 {
-	value := stat.Value
-
-	// if previous value exists, then set value as DIFFerence ( current_value , previous_value)
-	prevStatState, ok := previousRefreshStats[stat.GetMetricMapKey()]
-	// only if this is a stat and not a config, TODO:, how to check if system metric is a config
-	if ok {
-		value = stat.Value - prevStatState.Value
-	}
-
-	return value
 }
 
 func makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, value float64) {
-
-	if strings.Contains(metricName, "uptime") {
-		fmt.Println(" found Uptime metricName is ", metricName)
-	}
 
 	ometric, _ := meter.Float64Counter(
 		metricName,
@@ -175,10 +136,4 @@ func makeOtelGaugeMetric(meter metric.Meter, ctx context.Context, metricName str
 
 	handleErr(err, "makeOtelGaugeMetric() Error while creating object for stat "+metricName)
 
-}
-
-func handleErr(err error, message string) {
-	if err != nil {
-		log.Fatalf("%s: %v", message, err)
-	}
 }

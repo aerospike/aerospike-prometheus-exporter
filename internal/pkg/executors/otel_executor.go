@@ -24,29 +24,11 @@ import (
 type OtelExecutor struct {
 }
 
-// Variables
-
-var (
-	currentRefreshStats  []statprocessors.AerospikeStat
-	previousRefreshStats map[string]statprocessors.AerospikeStat
-
-	// SystemInfo
-	currentSysInfoStats  []systeminfo.SystemInfoStat
-	previousSysInfoStats map[string]systeminfo.SystemInfoStat
-)
-
 // Exporter interface implementation
 func (oe OtelExecutor) Initialize() error {
 
 	// Observe OS Signals
 	commons.HandleSignals()
-
-	// Initialize storage maps
-	currentRefreshStats = []statprocessors.AerospikeStat{}
-	previousRefreshStats = make(map[string]statprocessors.AerospikeStat)
-
-	currentSysInfoStats = []systeminfo.SystemInfoStat{}
-	previousSysInfoStats = make(map[string]systeminfo.SystemInfoStat)
 
 	log.Infof("*** Initializing Otel Exporter.. START ")
 
@@ -110,7 +92,7 @@ func initProvider() func() {
 			otlpmetricgrpc.WithHeaders(headers),
 			otlpmetricgrpc.WithEndpoint(otelAgentAddr),
 			otlpmetricgrpc.WithTemporalitySelector(getTemporalitySelector),
-			otlpmetricgrpc.WithAggregationSelector(getAggregationSelector),
+			// otlpmetricgrpc.WithAggregationSelector(getAggregationSelector),
 		)
 	}
 
@@ -140,18 +122,9 @@ func initProvider() func() {
 
 func getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
 	if instrumentKind == sdkmetric.InstrumentKindCounter {
-		// fmt.Println("*** Input kind is ", instrumentKind, " .. so returning metricdata.CumulativeTemporality==> ", metricdata.CumulativeTemporality)
 		return metricdata.CumulativeTemporality
 	}
 	return metricdata.DeltaTemporality
-}
-
-func getAggregationSelector(instrumentKind sdkmetric.InstrumentKind) sdkmetric.Aggregation {
-	// if instrumentKind == sdkmetric.InstrumentKindCounter {
-	// 	fmt.Println("*** Input kind is ", instrumentKind, " .. so returning metricdata.CumulativeTemporality==> ", metricdata.CumulativeTemporality)
-	// 	return sdkmetric.AggregationLastValue{}
-	// }
-	return sdkmetric.AggregationLastValue{}
 }
 
 func startMetricExecutor() {
@@ -176,8 +149,7 @@ func startMetricExecutor() {
 }
 
 func handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
-	var err error
-	currentRefreshStats, err = statprocessors.Refresh()
+	asRefreshStats, err := statprocessors.Refresh()
 	if err != nil {
 		log.Errorln("Error while refreshing Aerospike Metrics, error: ", err)
 		sendNodeUp(meter, ctx, commonLabels, 0.0)
@@ -187,19 +159,18 @@ func handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabel
 	sendNodeUp(meter, ctx, commonLabels, 1.0)
 
 	// process metrics
-	processAerospikeStats(meter, ctx, commonLabels, currentRefreshStats)
+	processAerospikeStats(meter, ctx, commonLabels, asRefreshStats)
 
 }
 
 func handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
-	var err error
-	currentSysInfoStats, err = systeminfo.Refresh()
+	sysInfoRefreshStats, err := systeminfo.Refresh()
 	if err != nil {
 		log.Errorln("Error while refreshing SystemInfo, error: ", err)
 		return
 	}
 	// process metrics
-	processSystemInfoStats(meter, ctx, commonLabels, currentSysInfoStats)
+	processSystemInfoStats(meter, ctx, commonLabels, sysInfoRefreshStats)
 
 }
 

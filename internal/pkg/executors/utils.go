@@ -1,9 +1,8 @@
 package executors
 
 import (
+	"log"
 	"strings"
-
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 )
 
 var (
@@ -22,12 +21,8 @@ func NormalizeMetric(s string) string {
 	return metricReplacerFunc.Replace(s)
 }
 
-func getMetricMapKey(metricName string, stat statprocessors.AerospikeStat) string {
-	var key = metricName
-
-	for _, v := range stat.LabelValues {
-		key = key + "_" + v
+func handleErr(err error, message string) {
+	if err != nil {
+		log.Fatalf("%s: %v", message, err)
 	}
-
-	return key
 }
