@@ -20,22 +20,22 @@ var (
 
 func CollectCloudDetails() map[string]string {
 
+	cloudProvider := strings.Trim(Cfg.AeroProm.CloudProvider, " ")
+
 	cloudInfo = make(map[string]string)
 	startTime := time.Now()
 
-	cloudInfo["aws_region"] = "us-east1"
-	cloudInfo["aws_availability_zone"] = "us-east-1a"
-
-	// check if base url is accessible, if yes, then continue other cloud check
-	_, ok := callUrl("GET", BASE_CLOUD_METADATA_URL, nil)
-	if !ok {
-		log.Debug("Base URL is not accessible / timedout, hence not accessing other cloud to fetch region, zone, location etc.,")
-		return cloudInfo
+	switch cloudProvider {
+	case "aws":
+		getAwsCloudDetails()
+	case "gcp":
+		getGoogleCloudDetails()
+	case "azure":
+		getAzureCloudDetails()
+	default:
+		log.Debug("Configured 'cloud_provider' ", cloudProvider, " is NOT supported, ignoring")
 	}
 
-	getAwsCloudDetails()
-	getGoogleCloudDetails()
-	getAzureCloudDetails()
 	totalTimeTaken := time.Since(startTime)
 	log.Debug("Total time taken to get Cloud params ", totalTimeTaken)
 
@@ -70,9 +70,9 @@ func getAwsCloudDetails() {
 		return
 	}
 
-	cloudInfo["aws_region"] = awsRegion
-	cloudInfo["aws_availability_zone_id"] = awsAvailZoneId
-	cloudInfo["aws_availability_zone"] = awsAvailZone
+	cloudInfo["region"] = awsRegion
+	cloudInfo["availability_zone_id"] = awsAvailZoneId
+	cloudInfo["availability_zone"] = awsAvailZone
 }
 
 func getAzureCloudDetails() {

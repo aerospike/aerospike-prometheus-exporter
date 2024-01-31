@@ -14,7 +14,7 @@ OTEL = false
 # Applicable to 'root_ca', 'cert_file' and 'key_file' configurations.
 
 # Server certificate
-cert_file = ""
+   cert_file = ""
 
 # Private key associated with server certificate
 key_file = ""
@@ -33,8 +33,8 @@ key_file_passphrase = ""
 # labels to add to the prometheus metrics for e.g. labels={zone="asia-south1-a", platform="google compute engine"}
 labels = {latitude="0",longitude="0"}
 
-# collect cloud region, location, zone etc.,
-fetch_cloud_info = false
+# mention cloud provider (supported: aws, gcp, azure ) so exporter collects few details like region, zone etc.,
+cloud_provider = ""
 
 # prometheus binding port
 bind = ":9145"

@@ -30,8 +30,8 @@ type Config struct {
 		Bind    string `toml:"bind"`
 		Timeout uint8  `toml:"timeout"`
 
-		RefreshSystemStats bool `toml:"refresh_system_stats"`
-		FetchCloudInfo     bool `toml:"fetch_cloud_info"`
+		RefreshSystemStats bool   `toml:"refresh_system_stats"`
+		CloudProvider      string `toml:"cloud_provider"`
 
 		OtelServiceName             string            `toml:"otel_service_name"`
 		OtelEndpoint                string            `toml:"otel_endpoint"`
@@ -177,8 +177,12 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 
 }
 
-func (c *Config) FetchCloudInfo() {
-	if Cfg.AeroProm.FetchCloudInfo {
+func (c *Config) FetchCloudInfo(md toml.MetaData) {
+	if !md.IsDefined("Agent", "cloud_provider") {
+		return
+	}
+
+	if Cfg.AeroProm.CloudProvider != "" && len(strings.Trim(Cfg.AeroProm.CloudProvider, " ")) > 0 {
 		cloudLabels := CollectCloudDetails()
 		log.Debug("Adding Cloud Info to Metric Labels ", cloudLabels)
 
@@ -212,7 +216,7 @@ func InitConfig(configFile string) {
 	setLogLevel(Cfg.AeroProm.LogLevel)
 
 	Cfg.ValidateAndUpdate(md)
-	Cfg.FetchCloudInfo()
+	Cfg.FetchCloudInfo(md)
 }
 
 // Set log file path
