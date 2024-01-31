@@ -47,7 +47,7 @@ func getAwsCloudDetails() {
 		return
 	}
 
-	var token, awsRegion, awsAvailZoneId, awsAvailZone string
+	var token, awsRegion string
 	var tokenHeaders = make(map[string]string)
 	tokenHeaders["X-aws-ec2-metadata-token-ttl-seconds"] = "21600"
 	token, ok := callUrl("PUT", BASE_CLOUD_METADATA_URL+"/latest/api/token", tokenHeaders)
@@ -62,12 +62,14 @@ func getAwsCloudDetails() {
 	}
 	cloudInfo["region"] = awsRegion
 
+	// var awsAvailZoneId string
 	// awsAvailZoneId, ok = callUrl("GET", BASE_CLOUD_METADATA_URL+"/latest/meta-data/placement/availability-zone-id", tokenHeaders)
 	// if !ok {
 	// 	return
 	// }
-	cloudInfo["availability_zone_id"] = awsAvailZoneId
+	// cloudInfo["availability_zone_id"] = awsAvailZoneId
 
+	var awsAvailZone string
 	awsAvailZone, ok = callUrl("GET", BASE_CLOUD_METADATA_URL+"/latest/meta-data/placement/availability-zone", tokenHeaders)
 	if !ok {
 		return
@@ -140,7 +142,9 @@ func callUrl(method string, url string, headers map[string]string) (string, bool
 
 	responseBody := string(esponseBodyBytes)
 
+	// ignore, if response body is having any 404 kind of error, this responsebody starts with <?xml version
 	if strings.Contains(responseBody, "xml version=") {
+		log.Debug("Received unexpected response from server, ignoring, responseBody: ", responseBody)
 		return "", false
 	}
 

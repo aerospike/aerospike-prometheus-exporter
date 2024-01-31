@@ -187,6 +187,9 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 		log.Debug("Adding Cloud Info to Metric Labels ", cloudLabels)
 
 		for k, v := range cloudLabels {
+			if v == "" || len(v) == 0 {
+				v = "null"
+			}
 			Cfg.AeroProm.MetricLabels[k] = v
 		}
 	}
