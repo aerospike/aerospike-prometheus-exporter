@@ -68,7 +68,8 @@ func processAerospikeStats(meter metric.Meter, ctx context.Context, commonLabels
 
 		// create Otel metric
 		if stat.MType == commons.MetricTypeCounter {
-			value := calcAerospikeStatValueToUse(qualifiedName, stat)
+			value := stat.Value
+			// value = calcAerospikeStatValueToUse(qualifiedName, stat)
 
 			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, value)
 
@@ -114,7 +115,8 @@ func processSystemInfoStats(meter metric.Meter, ctx context.Context, commonLabel
 
 		// create Otel metric
 		if stat.MType == commons.MetricTypeCounter {
-			value := calcSysInfoStatValueToUse(qualifiedName, stat)
+			value := stat.Value
+			// value = calcSysInfoStatValueToUse(qualifiedName, stat)
 
 			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, value)
 
