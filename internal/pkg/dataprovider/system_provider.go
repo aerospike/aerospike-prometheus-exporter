@@ -11,10 +11,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (sip SystemInfoProvider) GetCPUDetails() ([]map[string]float64, []map[string]float64) {
+func (sip SystemInfoProvider) GetCPUDetails() ([]map[string]string, []map[string]string) {
 
-	arrGuestCpuStats := []map[string]float64{}
-	arrCpuStats := []map[string]float64{}
+	arrGuestCpuStats := []map[string]string{}
+	arrCpuStats := []map[string]string{}
 
 	fs, err := procfs.NewFS(PROC_PATH)
 	if err != nil {
@@ -30,22 +30,22 @@ func (sip SystemInfoProvider) GetCPUDetails() ([]map[string]float64, []map[strin
 
 	for index, cpu := range stats.CPU {
 		// fmt.Println("parsing CPU stats ", index)
-		guestCpuValues := make(map[string]float64)
-		guestCpuValues["index"] = float64(index)
-		guestCpuValues["user"] = cpu.Guest
-		guestCpuValues["nice"] = cpu.GuestNice
+		guestCpuValues := make(map[string]string)
+		guestCpuValues["index"] = fmt.Sprint(index)
+		guestCpuValues["user"] = fmt.Sprint(cpu.Guest)
+		guestCpuValues["nice"] = fmt.Sprint(cpu.GuestNice)
 
-		cpuValues := make(map[string]float64)
-		cpuValues["index"] = float64(index)
-		cpuValues["user"] = cpu.Guest
-		cpuValues["idle"] = cpu.Idle
-		cpuValues["irq"] = cpu.IRQ
-		cpuValues["iowait"] = cpu.Iowait
-		cpuValues["nice"] = cpu.Nice
-		cpuValues["soft_irq"] = cpu.SoftIRQ
-		cpuValues["steal"] = cpu.Steal
-		cpuValues["system"] = cpu.System
-		cpuValues["user"] = cpu.User
+		cpuValues := make(map[string]string)
+		cpuValues["index"] = fmt.Sprint(index)
+		cpuValues["user"] = fmt.Sprint(cpu.Guest)
+		cpuValues["idle"] = fmt.Sprint(cpu.Idle)
+		cpuValues["irq"] = fmt.Sprint(cpu.IRQ)
+		cpuValues["iowait"] = fmt.Sprint(cpu.Iowait)
+		cpuValues["nice"] = fmt.Sprint(cpu.Nice)
+		cpuValues["soft_irq"] = fmt.Sprint(cpu.SoftIRQ)
+		cpuValues["steal"] = fmt.Sprint(cpu.Steal)
+		cpuValues["system"] = fmt.Sprint(cpu.System)
+		cpuValues["user"] = fmt.Sprint(cpu.User)
 
 		arrGuestCpuStats = append(arrGuestCpuStats, guestCpuValues)
 		arrCpuStats = append(arrCpuStats, cpuValues)

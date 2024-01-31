@@ -21,27 +21,27 @@ func (cip CpuInfoProcessor) parseCpuStats() []SystemInfoStat {
 
 	guestCpuDetails, cpuDetails := dataprovider.GetSystemProvider().GetCPUDetails()
 
-	for _, stat := range guestCpuDetails {
-		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("guest_seconds_total", fmt.Sprint(stat["index"]), "user", stat["user"]))
-		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("guest_seconds_total", fmt.Sprint(stat["index"]), "nice", stat["nice"]))
+	for _, stats := range guestCpuDetails {
+		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("guest_seconds_total", fmt.Sprint(stats["index"]), "user", stats))
+		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("guest_seconds_total", fmt.Sprint(stats["index"]), "nice", stats))
 	}
 
-	for _, stat := range cpuDetails {
+	for _, stats := range cpuDetails {
 		// fmt.Println("parsing CPU stats ", index)
-		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stat["index"]), "idle", stat["idle"]))
-		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stat["index"]), "irq", stat["irq"]))
-		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stat["index"]), "iowait", stat["iowait"]))
-		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stat["index"]), "nice", stat["nice"]))
-		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stat["index"]), "soft_irq", stat["soft_irq"]))
-		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stat["index"]), "steal", stat["steal"]))
-		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stat["index"]), "system", stat["system"]))
-		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stat["index"]), "user", stat["user"]))
+		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stats["index"]), "idle", stats))
+		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stats["index"]), "irq", stats))
+		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stats["index"]), "iowait", stats))
+		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stats["index"]), "nice", stats))
+		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stats["index"]), "soft_irq", stats))
+		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stats["index"]), "steal", stats))
+		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stats["index"]), "system", stats))
+		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stats["index"]), "user", stats))
 	}
 
 	return arrSysInfoStats
 }
 
-func (cip CpuInfoProcessor) constructCpuStats(cpuStatName string, cpuNo string, cpuMode string, value float64) SystemInfoStat {
+func (cip CpuInfoProcessor) constructCpuStats(cpuStatName string, cpuNo string, cpuMode string, stats map[string]string) SystemInfoStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
@@ -54,7 +54,7 @@ func (cip CpuInfoProcessor) constructCpuStats(cpuStatName string, cpuNo string, 
 	sysMetric := NewSystemInfoStat(commons.CTX_CPU_STATS, cpuStatName)
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
-	sysMetric.Value = value
+	sysMetric.Value, _ = commons.TryConvert(stats[cpuMode])
 
 	return sysMetric
 }
