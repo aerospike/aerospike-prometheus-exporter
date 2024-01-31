@@ -2,6 +2,7 @@ package executors
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -100,7 +101,7 @@ func initProvider() func() {
 			ctx,
 			otlpmetricgrpc.WithHeaders(headers),
 			otlpmetricgrpc.WithEndpoint(otelAgentAddr),
-			otlpmetricgrpc.WithTemporalitySelector(temporalityDeltaSelector),
+			otlpmetricgrpc.WithTemporalitySelector(TemporalitySelector),
 		)
 	} else {
 		metricExp, err = otlpmetricgrpc.New(
@@ -108,7 +109,8 @@ func initProvider() func() {
 			otlpmetricgrpc.WithInsecure(),
 			otlpmetricgrpc.WithHeaders(headers),
 			otlpmetricgrpc.WithEndpoint(otelAgentAddr),
-			otlpmetricgrpc.WithTemporalitySelector(temporalityDeltaSelector),
+			otlpmetricgrpc.WithTemporalitySelector(TemporalitySelector),
+			otlpmetricgrpc.WithAggregationSelector(AggregationSelector),
 		)
 	}
 
@@ -136,12 +138,20 @@ func initProvider() func() {
 	}
 }
 
-func temporalityDeltaSelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
+func TemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
 	if instrumentKind == sdkmetric.InstrumentKindCounter {
 		// fmt.Println("*** Input kind is ", instrumentKind, " .. so returning metricdata.CumulativeTemporality==> ", metricdata.CumulativeTemporality)
 		return metricdata.CumulativeTemporality
 	}
 	return metricdata.DeltaTemporality
+}
+
+func AggregationSelector(instrumentKind sdkmetric.InstrumentKind) sdkmetric.Aggregation {
+	if instrumentKind == sdkmetric.InstrumentKindCounter {
+		fmt.Println("*** Input kind is ", instrumentKind, " .. so returning metricdata.CumulativeTemporality==> ", metricdata.CumulativeTemporality)
+		return sdkmetric.AggregationLastValue{}
+	}
+	return sdkmetric.AggregationLastValue{}
 }
 
 func startMetricExecutor() {
