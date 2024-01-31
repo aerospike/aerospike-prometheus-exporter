@@ -101,7 +101,7 @@ func initProvider() func() {
 			otlpmetricgrpc.WithHeaders(headers),
 			otlpmetricgrpc.WithEndpoint(otelAgentAddr),
 			otlpmetricgrpc.WithTemporalitySelector(getTemporalitySelector),
-			otlpmetricgrpc.WithAggregationSelector(getAggregationSelector),
+			// otlpmetricgrpc.WithAggregationSelector(getAggregationSelector),
 		)
 	} else {
 		metricExp, err = otlpmetricgrpc.New(
