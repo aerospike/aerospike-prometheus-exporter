@@ -2,7 +2,6 @@ package executors
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -101,7 +100,8 @@ func initProvider() func() {
 			ctx,
 			otlpmetricgrpc.WithHeaders(headers),
 			otlpmetricgrpc.WithEndpoint(otelAgentAddr),
-			otlpmetricgrpc.WithTemporalitySelector(TemporalitySelector),
+			otlpmetricgrpc.WithTemporalitySelector(getTemporalitySelector),
+			otlpmetricgrpc.WithAggregationSelector(getAggregationSelector),
 		)
 	} else {
 		metricExp, err = otlpmetricgrpc.New(
@@ -109,8 +109,8 @@ func initProvider() func() {
 			otlpmetricgrpc.WithInsecure(),
 			otlpmetricgrpc.WithHeaders(headers),
 			otlpmetricgrpc.WithEndpoint(otelAgentAddr),
-			otlpmetricgrpc.WithTemporalitySelector(TemporalitySelector),
-			otlpmetricgrpc.WithAggregationSelector(AggregationSelector),
+			otlpmetricgrpc.WithTemporalitySelector(getTemporalitySelector),
+			otlpmetricgrpc.WithAggregationSelector(getAggregationSelector),
 		)
 	}
 
@@ -138,7 +138,7 @@ func initProvider() func() {
 	}
 }
 
-func TemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
+func getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
 	if instrumentKind == sdkmetric.InstrumentKindCounter {
 		// fmt.Println("*** Input kind is ", instrumentKind, " .. so returning metricdata.CumulativeTemporality==> ", metricdata.CumulativeTemporality)
 		return metricdata.CumulativeTemporality
@@ -146,11 +146,11 @@ func TemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Tem
 	return metricdata.DeltaTemporality
 }
 
-func AggregationSelector(instrumentKind sdkmetric.InstrumentKind) sdkmetric.Aggregation {
-	if instrumentKind == sdkmetric.InstrumentKindCounter {
-		fmt.Println("*** Input kind is ", instrumentKind, " .. so returning metricdata.CumulativeTemporality==> ", metricdata.CumulativeTemporality)
-		return sdkmetric.AggregationLastValue{}
-	}
+func getAggregationSelector(instrumentKind sdkmetric.InstrumentKind) sdkmetric.Aggregation {
+	// if instrumentKind == sdkmetric.InstrumentKindCounter {
+	// 	fmt.Println("*** Input kind is ", instrumentKind, " .. so returning metricdata.CumulativeTemporality==> ", metricdata.CumulativeTemporality)
+	// 	return sdkmetric.AggregationLastValue{}
+	// }
 	return sdkmetric.AggregationLastValue{}
 }
 
