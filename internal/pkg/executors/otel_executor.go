@@ -55,7 +55,7 @@ func (oe OtelExecutor) Initialize() error {
 func initProvider() func() {
 
 	ctx := context.Background()
-	serviceName := config.Cfg.AeroProm.OtelServiceName
+	serviceName := config.Cfg.AgentOtel.OtelServiceName
 
 	res, err := resource.New(ctx,
 		resource.WithFromEnv(),
@@ -71,13 +71,13 @@ func initProvider() func() {
 
 	handleErr(err, "Failed to create OTel Resource")
 
-	otelAgentAddr := config.Cfg.AeroProm.OtelEndpoint
+	otelAgentAddr := config.Cfg.AgentOtel.OtelEndpoint
 	headers := readHeaders()
 
 	var metricExp *otlpmetricgrpc.Exporter
-	log.Infof("Creating MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.AeroProm.OtelTlsEnabled))
+	log.Infof("Creating MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.AgentOtel.OtelTlsEnabled))
 
-	if config.Cfg.AeroProm.OtelTlsEnabled {
+	if config.Cfg.AgentOtel.OtelTlsEnabled {
 		metricExp, err = otlpmetricgrpc.New(
 			ctx,
 			otlpmetricgrpc.WithHeaders(headers),
@@ -94,6 +94,7 @@ func initProvider() func() {
 			otlpmetricgrpc.WithTemporalitySelector(getTemporalitySelector),
 			// otlpmetricgrpc.WithAggregationSelector(getAggregationSelector),
 		)
+
 	}
 
 	handleErr(err, "Failed to create the collector metric exporter")
@@ -103,14 +104,14 @@ func initProvider() func() {
 		sdkmetric.WithReader(
 			sdkmetric.NewPeriodicReader(
 				metricExp,
-				sdkmetric.WithInterval(time.Duration(config.Cfg.AeroProm.OtelPushInterval)*time.Second),
+				sdkmetric.WithInterval(time.Duration(config.Cfg.AgentOtel.OtelPushInterval)*time.Second),
 			),
 		),
 	)
 	otel.SetMeterProvider(meterProvider)
 
 	return func() {
-		cxt, cancel := context.WithTimeout(ctx, time.Duration(config.Cfg.AeroProm.Timeout)*time.Second)
+		cxt, cancel := context.WithTimeout(ctx, time.Duration(config.Cfg.AeroExporter.Timeout)*time.Second)
 		defer cancel()
 		log.Infof("shuttting down..., flushing metrics to endpoint")
 		// pushes any last exports to the receiver
@@ -129,7 +130,7 @@ func getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.
 
 func startMetricExecutor() {
 
-	meter := otel.Meter(config.Cfg.AeroProm.OtelServiceName + "_Meter")
+	meter := otel.Meter(config.Cfg.AgentOtel.OtelServiceName + "_Meter")
 
 	// defaultCtx := baggage.ContextWithBaggage(context.Background())
 	defaultCtx := context.Background()
@@ -144,7 +145,7 @@ func startMetricExecutor() {
 		handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
 
 		// sleep for config.N seconds
-		time.Sleep(time.Duration(config.Cfg.AeroProm.OtelServerStatFetchInterval) * time.Second)
+		time.Sleep(time.Duration(config.Cfg.AgentOtel.OtelServerStatFetchInterval) * time.Second)
 	}
 }
 
@@ -178,7 +179,7 @@ func handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabe
 func readHeaders() map[string]string {
 	headers := make(map[string]string)
 	// headers["api-key"] = "08c5879e8cc53859d4a5554ec503558ee3ceNRAL"
-	headerPairs := config.Cfg.AeroProm.OtelHeaders
+	headerPairs := config.Cfg.AgentOtel.OtelHeaders
 	if len(headerPairs) > 0 {
 		for k, v := range headerPairs {
 			headers[k] = v

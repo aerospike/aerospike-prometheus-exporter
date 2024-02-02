@@ -37,7 +37,7 @@ func sendNodeUp(meter metric.Meter, ctx context.Context, commonLabels []attribut
 }
 
 func getCommonLabels() []attribute.KeyValue {
-	mlabels := config.Cfg.AeroProm.MetricLabels
+	mlabels := config.Cfg.AeroExporter.MetricLabels
 	attrkv := []attribute.KeyValue{}
 	if len(mlabels) > 0 {
 		for k, v := range mlabels {

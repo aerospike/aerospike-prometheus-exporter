@@ -29,14 +29,14 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 	promReg.MustRegister(pm.promimpl)
 
 	// Get http basic auth username
-	httpBasicAuthUsernameBytes, err := commons.GetSecret(config.Cfg.AeroProm.BasicAuthUsername)
+	httpBasicAuthUsernameBytes, err := commons.GetSecret(config.Cfg.AgentProm.BasicAuthUsername)
 	if err != nil {
 		log.Fatal(err)
 	}
 	httpBasicAuthUsername := string(httpBasicAuthUsernameBytes)
 
 	// Get http basic auth password
-	httpBasicAuthPasswordBytes, err := commons.GetSecret(config.Cfg.AeroProm.BasicAuthPassword)
+	httpBasicAuthPasswordBytes, err := commons.GetSecret(config.Cfg.AgentProm.BasicAuthPassword)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -86,16 +86,16 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 	})
 
 	srv := &http.Server{
-		ReadTimeout:  time.Duration(config.Cfg.AeroProm.Timeout) * time.Second,
-		WriteTimeout: time.Duration(config.Cfg.AeroProm.Timeout) * time.Second,
-		Addr:         config.Cfg.AeroProm.Bind,
+		ReadTimeout:  time.Duration(config.Cfg.AeroExporter.Timeout) * time.Second,
+		WriteTimeout: time.Duration(config.Cfg.AeroExporter.Timeout) * time.Second,
+		Addr:         config.Cfg.AgentProm.Bind,
 		Handler:      mux,
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
-	log.Infof("Listening for Prometheus on: %s", config.Cfg.AeroProm.Bind)
+	log.Infof("Listening for Prometheus on: %s", config.Cfg.AgentProm.Bind)
 
-	if len(config.Cfg.AeroProm.CertFile) > 0 && len(config.Cfg.AeroProm.KeyFile) > 0 {
+	if len(config.Cfg.AgentProm.CertFile) > 0 && len(config.Cfg.AgentProm.KeyFile) > 0 {
 		log.Info("Enabling HTTPS ...")
 		srv.TLSConfig = initExporterTLS()
 		log.Fatalln(srv.ListenAndServeTLS("", ""))
@@ -108,7 +108,7 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 
 // initExporterTLS initializes and returns TLS config to be used to serve metrics over HTTPS
 func initExporterTLS() *tls.Config {
-	serverPool, err := commons.LoadServerCertAndKey(config.Cfg.AeroProm.CertFile, config.Cfg.AeroProm.KeyFile, config.Cfg.AeroProm.KeyFilePassphrase)
+	serverPool, err := commons.LoadServerCertAndKey(config.Cfg.AgentProm.CertFile, config.Cfg.AgentProm.KeyFile, config.Cfg.AgentProm.KeyFilePassphrase)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -122,8 +122,8 @@ func initExporterTLS() *tls.Config {
 	}
 
 	// if root CA provided, client validation is enabled (mutual TLS)
-	if len(config.Cfg.AeroProm.RootCA) > 0 {
-		caPool, err := commons.LoadCACert(config.Cfg.AeroProm.RootCA)
+	if len(config.Cfg.AgentProm.RootCA) > 0 {
+		caPool, err := commons.LoadCACert(config.Cfg.AgentProm.RootCA)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -146,7 +146,7 @@ func makePromMetric(as statprocessors.AerospikeStat, pLabels ...string) (*promet
 		qualifiedName,
 		NormalizeDesc(as.Name),
 		pLabels,
-		config.Cfg.AeroProm.MetricLabels,
+		config.Cfg.AeroExporter.MetricLabels,
 	)
 
 	if as.MType == commons.MetricTypeGauge {
@@ -197,7 +197,7 @@ func makeSystemInfoPromMetric(sm systeminfo.SystemInfoStat, pLabels ...string) (
 		qualifiedName,
 		NormalizeDesc(sm.Name),
 		pLabels,
-		config.Cfg.AeroProm.MetricLabels,
+		config.Cfg.AeroExporter.MetricLabels,
 	)
 
 	if sm.MType == commons.MetricTypeGauge {

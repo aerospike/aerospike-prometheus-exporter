@@ -28,7 +28,7 @@ func Refresh() ([]SystemInfoStat, error) {
 	var stats = []SystemInfoStat{}
 
 	// Refresh System Info stats only when enabled
-	if !config.Cfg.AeroProm.RefreshSystemStats {
+	if !config.Cfg.AeroExporter.RefreshSystemStats {
 		return stats, nil
 	}
 

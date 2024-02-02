@@ -3,6 +3,29 @@
 PROMETHEUS = true
 OTEL = false
 
+# labels to add to the prometheus metrics for e.g. labels={zone="asia-south1-a", platform="google compute engine"}
+labels = {latitude="0",longitude="0"}
+
+# mention cloud provider (supported: aws, gcp, azure ) so exporter collects few details like region, zone etc.,
+cloud_provider = ""
+
+# is exporter running in mock test mode
+# use_mock_datasource = 0
+
+# metrics server timeout in seconds
+timeout = 10
+
+# support system statistics also
+refresh_system_stats = false
+
+[Agent.Prom]
+
+# Exporter logging configuration
+# Log file path (optional, logs to console by default)
+# Level can be info|warning,warn|error,err|debug|trace ('info' by default)
+log_file = ""
+log_level = ""
+
 # Exporter HTTPS (TLS) configuration
 # HTTPS between Prometheus and Exporter
 
@@ -14,7 +37,7 @@ OTEL = false
 # Applicable to 'root_ca', 'cert_file' and 'key_file' configurations.
 
 # Server certificate
-   cert_file = ""
+cert_file = ""
 
 # Private key associated with server certificate
 key_file = ""
@@ -30,47 +53,8 @@ root_ca = ""
 # 5. Passphrase in base64 encoded form                                        - "b64:<base64-encoded-passphrase>"
 key_file_passphrase = ""
 
-# labels to add to the prometheus metrics for e.g. labels={zone="asia-south1-a", platform="google compute engine"}
-labels = {latitude="0",longitude="0"}
-
-# mention cloud provider (supported: aws, gcp, azure ) so exporter collects few details like region, zone etc.,
-cloud_provider = ""
-
 # prometheus binding port
 bind = ":9145"
-
-# is exporter running in mock test mode
-# use_mock_datasource = 0
-
-# metrics server timeout in seconds
-timeout = 10
-
-# OTel service-name
-otel_service_name = "aerospike-server-metrics-service"
-
-# OTel Endpoint
-otel_endpoint = ""
-
-# OTel SSL/TLS, for HTTPS endpoints
-otel_tls_enabled = true
-
-# OTel headers
-otel_headers = {}
-
-# OTel server-stat fetch interval (default 15, not recommended to to reduce this)
-otel_server_stat_fetch_interval = 15
-
-# OTel metric push interval (default 60, not recommended to to reduce this)
-otel_push_interval = 60
-
-# support system statistics also
-refresh_system_stats = false
-
-# Exporter logging configuration
-# Log file path (optional, logs to console by default)
-# Level can be info|warning,warn|error,err|debug|trace ('info' by default)
-log_file = ""
-log_level = ""
 
 # Basic HTTP authentication for '/metrics'.
 # Supports below formats,
@@ -81,6 +65,25 @@ log_level = ""
 # 5. Credential in base64 encoded form                                        - "b64:<base64-encoded-credential>"
 basic_auth_username = ""
 basic_auth_password = ""
+
+[Agent.Otel]
+# OTel service-name
+service_name = "aerospike-server-metrics-service"
+
+# OTel Endpoint
+endpoint = ""
+
+# OTel SSL/TLS, for HTTPS endpoints
+tls_enabled = true
+
+# OTel headers
+headers = {}
+
+# OTel server-stat fetch interval (default 15, not recommended to to reduce this)
+server_stat_fetch_interval = 15
+
+# OTel metric push interval (default 60, not recommended to to reduce this)
+push_interval = 60
 
 [Aerospike]
 db_host = "localhost"

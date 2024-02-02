@@ -14,38 +14,41 @@ var Cfg Config
 
 // Config represents the aerospike-prometheus-exporter configuration
 type Config struct {
-	AeroProm struct {
+	AeroExporter struct {
 		OtelMode       bool `toml:"OTEL"`
 		PrometheusMode bool `toml:"PROMETHEUS"`
 
+		MetricLabels map[string]string `toml:"labels"`
+
+		Timeout uint8 `toml:"timeout"`
+
+		RefreshSystemStats bool   `toml:"refresh_system_stats"`
+		CloudProvider      string `toml:"cloud_provider"`
+
+		LogFile           string `toml:"log_file"`
+		LogLevel          string `toml:"log_level"`
+		UseMockDatasource bool   `toml:"use_mock_datasource"`
+	} `toml:"Agent"`
+
+	AgentProm struct {
+		Bind              string `toml:"bind"`
 		CertFile          string `toml:"cert_file"`
 		KeyFile           string `toml:"key_file"`
 		RootCA            string `toml:"root_ca"`
 		KeyFilePassphrase string `toml:"key_file_passphrase"`
 
-		MetricLabels map[string]string `toml:"labels"`
+		BasicAuthUsername string `toml:"basic_auth_username"`
+		BasicAuthPassword string `toml:"basic_auth_password"`
+	} `toml:"Agent.Prom"`
 
-		UseMockDatasource bool `toml:"use_mock_datasource"`
-
-		Bind    string `toml:"bind"`
-		Timeout uint8  `toml:"timeout"`
-
-		RefreshSystemStats bool   `toml:"refresh_system_stats"`
-		CloudProvider      string `toml:"cloud_provider"`
-
+	AgentOtel struct {
 		OtelServiceName             string            `toml:"otel_service_name"`
 		OtelEndpoint                string            `toml:"otel_endpoint"`
 		OtelTlsEnabled              bool              `toml:"otel_tls_enabled"`
 		OtelHeaders                 map[string]string `toml:"otel_headers"`
 		OtelPushInterval            uint8             `toml:"otel_push_interval"`
 		OtelServerStatFetchInterval uint8             `toml:"otel_server_stat_fetch_interval"`
-
-		LogFile  string `toml:"log_file"`
-		LogLevel string `toml:"log_level"`
-
-		BasicAuthUsername string `toml:"basic_auth_username"`
-		BasicAuthPassword string `toml:"basic_auth_password"`
-	} `toml:"Agent"`
+	} `toml:"Agent.Otel"`
 
 	Aerospike struct {
 		Host string `toml:"db_host"`
@@ -141,12 +144,12 @@ type Config struct {
 // Validate and update exporter configuration
 func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 
-	if c.AeroProm.Bind == "" {
-		c.AeroProm.Bind = ":9145"
+	if c.AgentProm.Bind == "" {
+		c.AgentProm.Bind = ":9145"
 	}
 
-	if c.AeroProm.Timeout == 0 {
-		c.AeroProm.Timeout = 5
+	if c.AeroExporter.Timeout == 0 {
+		c.AeroExporter.Timeout = 5
 	}
 
 	if c.Aerospike.AuthMode == "" {
@@ -157,22 +160,22 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		c.Aerospike.Timeout = 5
 	}
 
-	if md.IsDefined("Agent", "use_mock_datasource") && c.AeroProm.UseMockDatasource {
-		c.AeroProm.UseMockDatasource = true
+	if md.IsDefined("Agent", "use_mock_datasource") && c.AeroExporter.UseMockDatasource {
+		c.AeroExporter.UseMockDatasource = true
 	} else {
-		c.AeroProm.UseMockDatasource = false
+		c.AeroExporter.UseMockDatasource = false
 	}
 
-	if len(c.AeroProm.OtelServiceName) == 0 {
-		c.AeroProm.OtelServiceName = "aerospike-server-metrics-service"
+	if len(c.AgentOtel.OtelServiceName) == 0 {
+		c.AgentOtel.OtelServiceName = "aerospike-server-metrics-service"
 	}
 
-	if c.AeroProm.OtelPushInterval == 0 {
-		c.AeroProm.OtelPushInterval = 60
+	if c.AgentOtel.OtelPushInterval == 0 {
+		c.AgentOtel.OtelPushInterval = 60
 	}
 
-	if c.AeroProm.OtelServerStatFetchInterval == 0 {
-		c.AeroProm.OtelPushInterval = 15
+	if c.AgentOtel.OtelServerStatFetchInterval == 0 {
+		c.AgentOtel.OtelPushInterval = 15
 	}
 
 }
@@ -182,7 +185,7 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 		return
 	}
 
-	if Cfg.AeroProm.CloudProvider != "" && len(strings.Trim(Cfg.AeroProm.CloudProvider, " ")) > 0 {
+	if Cfg.AeroExporter.CloudProvider != "" && len(strings.Trim(Cfg.AeroExporter.CloudProvider, " ")) > 0 {
 		cloudLabels := CollectCloudDetails()
 		log.Debug("Adding Cloud Info to Metric Labels ", cloudLabels)
 
@@ -190,7 +193,7 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 			if v == "" || len(v) == 0 {
 				v = "null"
 			}
-			Cfg.AeroProm.MetricLabels[k] = v
+			Cfg.AeroExporter.MetricLabels[k] = v
 		}
 	}
 }
@@ -213,10 +216,10 @@ func InitConfig(configFile string) {
 
 	initAllowlistAndBlocklistConfigs(md)
 
-	Cfg.LogFile = setLogFile(Cfg.AeroProm.LogFile)
+	Cfg.LogFile = setLogFile(Cfg.AeroExporter.LogFile)
 
 	aslog.Logger.SetLogger(log.StandardLogger())
-	setLogLevel(Cfg.AeroProm.LogLevel)
+	setLogLevel(Cfg.AeroExporter.LogLevel)
 
 	Cfg.ValidateAndUpdate(md)
 	Cfg.FetchCloudInfo(md)
