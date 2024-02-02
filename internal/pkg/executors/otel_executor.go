@@ -42,11 +42,10 @@ func (oe OtelExecutor) Initialize() error {
 		log.Debugf("OTel Executor got EXIT signal from OS")
 		shutdown()
 	}()
+	log.Infof("Otel sending thread started, sending data to : %s", config.Cfg.Agent.Otel.OtelEndpoint)
 
 	// start push executor
 	startMetricExecutor()
-
-	log.Infof("Otel sending thread started, sending data to : %s", config.Cfg.Agent.Otel.OtelEndpoint)
 
 	return nil
 }
