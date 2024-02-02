@@ -66,7 +66,8 @@ bind = ":9145"
 basic_auth_username = ""
 basic_auth_password = ""
 
-[Agent.Otel]
+[OTEL]
+
 # OTel service-name
 service_name = "aerospike-server-metrics-service"
 
