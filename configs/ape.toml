@@ -20,71 +20,71 @@ refresh_system_stats = false
 
 [Agent.PROM]
 
-# Exporter logging configuration
-# Log file path (optional, logs to console by default)
-# Level can be info|warning,warn|error,err|debug|trace ('info' by default)
-log_file = ""
-log_level = ""
+   # Exporter logging configuration
+   # Log file path (optional, logs to console by default)
+   # Level can be info|warning,warn|error,err|debug|trace ('info' by default)
+   log_file = ""
+   log_level = ""
 
-# Exporter HTTPS (TLS) configuration
-# HTTPS between Prometheus and Exporter
+   # Exporter HTTPS (TLS) configuration
+   # HTTPS between Prometheus and Exporter
 
-# TLS certificates.
-# Supports below formats,
-# 1. Certificate file path                                      - "file:<file-path>"
-# 2. Environment variable containing base64 encoded certificate - "env-b64:<environment-variable-that-contains-base64-encoded-certificate>"
-# 3. Base64 encoded certificate                                 - "b64:<base64-encoded-certificate>"
-# Applicable to 'root_ca', 'cert_file' and 'key_file' configurations.
+   # TLS certificates.
+   # Supports below formats,
+   # 1. Certificate file path                                      - "file:<file-path>"
+   # 2. Environment variable containing base64 encoded certificate - "env-b64:<environment-variable-that-contains-base64-encoded-certificate>"
+   # 3. Base64 encoded certificate                                 - "b64:<base64-encoded-certificate>"
+   # Applicable to 'root_ca', 'cert_file' and 'key_file' configurations.
 
-# Server certificate
-cert_file = ""
+   # Server certificate
+   cert_file = ""
 
-# Private key associated with server certificate
-key_file = ""
+   # Private key associated with server certificate
+   key_file = ""
 
-# Root CA to validate client certificates (for mutual TLS)
-root_ca = ""
+   # Root CA to validate client certificates (for mutual TLS)
+   root_ca = ""
 
-# Passphrase for encrypted key_file. Supports below formats,
-# 1. Passphrase directly                                                      - "<passphrase>"
-# 2. Passphrase via file                                                      - "file:<file-that-contains-passphrase>"
-# 3. Passphrase via environment variable                                      - "env:<environment-variable-that-holds-passphrase>"
-# 4. Passphrase via environment variable containing base64 encoded passphrase - "env-b64:<environment-variable-that-contains-base64-encoded-passphrase>"
-# 5. Passphrase in base64 encoded form                                        - "b64:<base64-encoded-passphrase>"
-key_file_passphrase = ""
+   # Passphrase for encrypted key_file. Supports below formats,
+   # 1. Passphrase directly                                                      - "<passphrase>"
+   # 2. Passphrase via file                                                      - "file:<file-that-contains-passphrase>"
+   # 3. Passphrase via environment variable                                      - "env:<environment-variable-that-holds-passphrase>"
+   # 4. Passphrase via environment variable containing base64 encoded passphrase - "env-b64:<environment-variable-that-contains-base64-encoded-passphrase>"
+   # 5. Passphrase in base64 encoded form                                        - "b64:<base64-encoded-passphrase>"
+   key_file_passphrase = ""
 
-# prometheus binding port
-bind = ":9145"
+   # prometheus binding port
+   bind = ":9145"
 
-# Basic HTTP authentication for '/metrics'.
-# Supports below formats,
-# 1. Credential directly                                                      - "<credential>"
-# 2. Credential via file                                                      - "file:<file-that-contains-credential>"
-# 3. Credential via environment variable                                      - "env:<environment-variable-that-contains-credential>"
-# 4. Credential via environment variable containing base64 encoded credential - "env-b64:<environment-variable-that-contains-base64-encoded-credential>"
-# 5. Credential in base64 encoded form                                        - "b64:<base64-encoded-credential>"
-basic_auth_username = ""
-basic_auth_password = ""
+   # Basic HTTP authentication for '/metrics'.
+   # Supports below formats,
+   # 1. Credential directly                                                      - "<credential>"
+   # 2. Credential via file                                                      - "file:<file-that-contains-credential>"
+   # 3. Credential via environment variable                                      - "env:<environment-variable-that-contains-credential>"
+   # 4. Credential via environment variable containing base64 encoded credential - "env-b64:<environment-variable-that-contains-base64-encoded-credential>"
+   # 5. Credential in base64 encoded form                                        - "b64:<base64-encoded-credential>"
+   basic_auth_username = ""
+   basic_auth_password = ""
 
 [Agent.OpenTelemetry]
 
-# OTel service-name
-service_name = "aerospike-server-metrics-service"
+      # OTel service-name
+      service_name = "aerospike-server-metrics-service"
 
-# OTel Endpoint
-endpoint = ""
+      # OTel Endpoint
+      endpoint = ""
 
-# OTel SSL/TLS, for HTTPS endpoints
-tls_enabled = true
+      # OTel SSL/TLS, for HTTPS endpoints
+      tls_enabled = true
 
-# OTel headers
-headers = {}
+      # OTel headers
+      headers = {}
 
-# OTel server-stat fetch interval (default 15, not recommended to to reduce this)
-server_stat_fetch_interval = 15
+      # OTel server-stat fetch interval (default 15, not recommended to to reduce this)
+      server_stat_fetch_interval = 15
 
-# OTel metric push interval (default 60, not recommended to to reduce this)
-push_interval = 60
+      # OTel metric push interval (default 60, not recommended to to reduce this)
+      push_interval = 60
 
 [Aerospike]
 db_host = "localhost"
