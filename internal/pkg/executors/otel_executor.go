@@ -46,6 +46,8 @@ func (oe OtelExecutor) Initialize() error {
 	// start push executor
 	startMetricExecutor()
 
+	log.Infof("Otel sending thread started, sending data to : %s", config.Cfg.Agent.Otel.OtelEndpoint)
+
 	return nil
 }
 
