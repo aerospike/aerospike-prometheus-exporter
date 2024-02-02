@@ -20,7 +20,7 @@ var sys_info_provider = &SystemInfoProvider{}
 
 func GetProvider() DataProvider {
 
-	if config.Cfg.AeroExporter.UseMockDatasource {
+	if config.Cfg.Agent.UseMockDatasource {
 		// initialize, internally it will check if already initialized
 		dp_mock_server.Initialize()
 

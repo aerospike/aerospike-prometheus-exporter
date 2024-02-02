@@ -28,7 +28,7 @@ func NewPrometheusImpl() (o *PrometheusImpl) {
 		"aerospike_node_up",
 		"Aerospike node active status",
 		[]string{"cluster_name", "service", "build"},
-		config.Cfg.AeroExporter.MetricLabels,
+		config.Cfg.Agent.MetricLabels,
 	)
 
 	o = &PrometheusImpl{

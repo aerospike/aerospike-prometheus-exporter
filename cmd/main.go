@@ -32,10 +32,10 @@ func main() {
 	config.InitConfig(*configFile)
 	config.InitGaugeStats(*gaugeStatsFile)
 
-	if config.Cfg.AeroExporter.PrometheusEnabled {
+	if config.Cfg.Agent.PrometheusEnabled {
 		startExecutor("prometheus")
 	}
-	if config.Cfg.AeroExporter.OtelEnabled {
+	if config.Cfg.Agent.OtelEnabled {
 		startExecutor("otel")
 	}
 

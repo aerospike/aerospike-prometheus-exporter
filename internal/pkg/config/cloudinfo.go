@@ -20,7 +20,7 @@ var (
 
 func CollectCloudDetails() map[string]string {
 
-	cloudProvider := strings.Trim(Cfg.AeroExporter.CloudProvider, " ")
+	cloudProvider := strings.Trim(Cfg.Agent.CloudProvider, " ")
 
 	cloudInfo = make(map[string]string)
 	startTime := time.Now()

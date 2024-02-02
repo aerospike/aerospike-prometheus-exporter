@@ -14,7 +14,7 @@ var Cfg Config
 
 // Config represents the aerospike-prometheus-exporter configuration
 type Config struct {
-	AeroExporter struct {
+	Agent struct {
 		OtelEnabled       bool `toml:"OPEN_TELEMETRY"`
 		PrometheusEnabled bool `toml:"PROMETHEUS"`
 
@@ -29,7 +29,7 @@ type Config struct {
 		LogLevel          string `toml:"log_level"`
 		UseMockDatasource bool   `toml:"use_mock_datasource"`
 
-		AgentProm struct {
+		Prom struct {
 			Bind              string `toml:"bind"`
 			CertFile          string `toml:"cert_file"`
 			KeyFile           string `toml:"key_file"`
@@ -40,7 +40,7 @@ type Config struct {
 			BasicAuthPassword string `toml:"basic_auth_password"`
 		} `toml:"Prom"`
 
-		AgentOtel struct {
+		Otel struct {
 			OtelServiceName             string            `toml:"service_name"`
 			OtelEndpoint                string            `toml:"endpoint"`
 			OtelTlsEnabled              bool              `toml:"endpoint_tls_enabled"`
@@ -144,12 +144,12 @@ type Config struct {
 // Validate and update exporter configuration
 func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 
-	if c.AeroExporter.AgentProm.Bind == "" {
-		c.AeroExporter.AgentProm.Bind = ":9145"
+	if c.Agent.Prom.Bind == "" {
+		c.Agent.Prom.Bind = ":9145"
 	}
 
-	if c.AeroExporter.Timeout == 0 {
-		c.AeroExporter.Timeout = 5
+	if c.Agent.Timeout == 0 {
+		c.Agent.Timeout = 5
 	}
 
 	if c.Aerospike.AuthMode == "" {
@@ -160,22 +160,22 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		c.Aerospike.Timeout = 5
 	}
 
-	if md.IsDefined("Agent", "use_mock_datasource") && c.AeroExporter.UseMockDatasource {
-		c.AeroExporter.UseMockDatasource = true
+	if md.IsDefined("Agent", "use_mock_datasource") && c.Agent.UseMockDatasource {
+		c.Agent.UseMockDatasource = true
 	} else {
-		c.AeroExporter.UseMockDatasource = false
+		c.Agent.UseMockDatasource = false
 	}
 
-	if len(c.AeroExporter.AgentOtel.OtelServiceName) == 0 {
-		c.AeroExporter.AgentOtel.OtelServiceName = "aerospike-server-metrics-service"
+	if len(c.Agent.Otel.OtelServiceName) == 0 {
+		c.Agent.Otel.OtelServiceName = "aerospike-server-metrics-service"
 	}
 
-	if c.AeroExporter.AgentOtel.OtelPushInterval == 0 {
-		c.AeroExporter.AgentOtel.OtelPushInterval = 60
+	if c.Agent.Otel.OtelPushInterval == 0 {
+		c.Agent.Otel.OtelPushInterval = 60
 	}
 
-	if c.AeroExporter.AgentOtel.OtelServerStatFetchInterval == 0 {
-		c.AeroExporter.AgentOtel.OtelPushInterval = 15
+	if c.Agent.Otel.OtelServerStatFetchInterval == 0 {
+		c.Agent.Otel.OtelPushInterval = 15
 	}
 
 }
@@ -185,7 +185,7 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 		return
 	}
 
-	if Cfg.AeroExporter.CloudProvider != "" && len(strings.Trim(Cfg.AeroExporter.CloudProvider, " ")) > 0 {
+	if Cfg.Agent.CloudProvider != "" && len(strings.Trim(Cfg.Agent.CloudProvider, " ")) > 0 {
 		cloudLabels := CollectCloudDetails()
 		log.Debug("Adding Cloud Info to Metric Labels ", cloudLabels)
 
@@ -193,7 +193,7 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 			if v == "" || len(v) == 0 {
 				v = "null"
 			}
-			Cfg.AeroExporter.MetricLabels[k] = v
+			Cfg.Agent.MetricLabels[k] = v
 		}
 	}
 }
@@ -216,10 +216,10 @@ func InitConfig(configFile string) {
 
 	initAllowlistAndBlocklistConfigs(md)
 
-	Cfg.LogFile = setLogFile(Cfg.AeroExporter.LogFile)
+	Cfg.LogFile = setLogFile(Cfg.Agent.LogFile)
 
 	aslog.Logger.SetLogger(log.StandardLogger())
-	setLogLevel(Cfg.AeroExporter.LogLevel)
+	setLogLevel(Cfg.Agent.LogLevel)
 
 	Cfg.ValidateAndUpdate(md)
 	Cfg.FetchCloudInfo(md)
