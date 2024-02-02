@@ -15,8 +15,8 @@ var Cfg Config
 // Config represents the aerospike-prometheus-exporter configuration
 type Config struct {
 	AeroExporter struct {
-		OtelMode       bool `toml:"OTEL"`
-		PrometheusMode bool `toml:"PROMETHEUS"`
+		OtelEnabled       bool `toml:"OPEN_TELEMETRY"`
+		PrometheusEnabled bool `toml:"PROMETHEUS"`
 
 		MetricLabels map[string]string `toml:"labels"`
 
@@ -39,7 +39,7 @@ type Config struct {
 
 		BasicAuthUsername string `toml:"basic_auth_username"`
 		BasicAuthPassword string `toml:"basic_auth_password"`
-	} `toml:"Agent.Prom"`
+	} `toml:"Agent.PROM"`
 
 	AgentOtel struct {
 		OtelServiceName             string            `toml:"service_name"`
@@ -48,7 +48,7 @@ type Config struct {
 		OtelHeaders                 map[string]string `toml:"headers"`
 		OtelPushInterval            uint8             `toml:"push_interval"`
 		OtelServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
-	} `toml:"Agent.OpenTel"`
+	} `toml:"Agent.OTEL"`
 
 	Aerospike struct {
 		Host string `toml:"db_host"`
