@@ -39,12 +39,12 @@ type Config struct {
 
 		BasicAuthUsername string `toml:"basic_auth_username"`
 		BasicAuthPassword string `toml:"basic_auth_password"`
-	} `toml:"Agent.PROM"`
+	} `toml:"Agent.Prom"`
 
 	AgentOtel struct {
 		OtelServiceName             string            `toml:"service_name"`
 		OtelEndpoint                string            `toml:"endpoint"`
-		OtelTlsEnabled              bool              `toml:"tls_enabled"`
+		OtelTlsEnabled              bool              `toml:"endpoint_tls_enabled"`
 		OtelHeaders                 map[string]string `toml:"headers"`
 		OtelPushInterval            uint8             `toml:"push_interval"`
 		OtelServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
