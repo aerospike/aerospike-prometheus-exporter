@@ -48,7 +48,7 @@ type Config struct {
 		OtelHeaders                 map[string]string `toml:"headers"`
 		OtelPushInterval            uint8             `toml:"push_interval"`
 		OtelServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
-	} `toml:"OTEL"`
+	} `toml:"Agent.Otel"`
 
 	Aerospike struct {
 		Host string `toml:"db_host"`
