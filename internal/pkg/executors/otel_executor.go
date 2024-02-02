@@ -55,7 +55,7 @@ func (oe OtelExecutor) Initialize() error {
 func initProvider() func() {
 
 	ctx := context.Background()
-	serviceName := config.Cfg.AgentOtel.OtelServiceName
+	serviceName := config.Cfg.AeroExporter.AgentOtel.OtelServiceName
 
 	res, err := resource.New(ctx,
 		resource.WithFromEnv(),
@@ -71,18 +71,18 @@ func initProvider() func() {
 
 	handleErr(err, "Failed to create OTel Resource")
 
-	otelAgentAddr := config.Cfg.AgentOtel.OtelEndpoint
+	otelAgentAddr := config.Cfg.AeroExporter.AgentOtel.OtelEndpoint
 	headers := readHeaders()
 
 	log.Debug("** OTel endpoint ", otelAgentAddr)
 	log.Debug("** OTel header count ", len(headers))
 	log.Debug("** OTel service name ", serviceName)
-	log.Debug("** OTel TLS flag enabled? ", config.Cfg.AgentOtel.OtelTlsEnabled)
+	log.Debug("** OTel TLS flag enabled? ", config.Cfg.AeroExporter.AgentOtel.OtelTlsEnabled)
 
 	var metricExp *otlpmetricgrpc.Exporter
-	log.Infof("Creating MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.AgentOtel.OtelTlsEnabled))
+	log.Infof("Creating MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.AeroExporter.AgentOtel.OtelTlsEnabled))
 
-	if config.Cfg.AgentOtel.OtelTlsEnabled {
+	if config.Cfg.AeroExporter.AgentOtel.OtelTlsEnabled {
 		metricExp, err = otlpmetricgrpc.New(
 			ctx,
 			otlpmetricgrpc.WithHeaders(headers),
@@ -109,7 +109,7 @@ func initProvider() func() {
 		sdkmetric.WithReader(
 			sdkmetric.NewPeriodicReader(
 				metricExp,
-				sdkmetric.WithInterval(time.Duration(config.Cfg.AgentOtel.OtelPushInterval)*time.Second),
+				sdkmetric.WithInterval(time.Duration(config.Cfg.AeroExporter.AgentOtel.OtelPushInterval)*time.Second),
 			),
 		),
 	)
@@ -135,7 +135,7 @@ func getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.
 
 func startMetricExecutor() {
 
-	meter := otel.Meter(config.Cfg.AgentOtel.OtelServiceName + "_Meter")
+	meter := otel.Meter(config.Cfg.AeroExporter.AgentOtel.OtelServiceName + "_Meter")
 
 	// defaultCtx := baggage.ContextWithBaggage(context.Background())
 	defaultCtx := context.Background()
@@ -150,7 +150,7 @@ func startMetricExecutor() {
 		handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
 
 		// sleep for config.N seconds
-		time.Sleep(time.Duration(config.Cfg.AgentOtel.OtelServerStatFetchInterval) * time.Second)
+		time.Sleep(time.Duration(config.Cfg.AeroExporter.AgentOtel.OtelServerStatFetchInterval) * time.Second)
 	}
 }
 
@@ -184,7 +184,7 @@ func handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabe
 func readHeaders() map[string]string {
 	headers := make(map[string]string)
 	// headers["api-key"] = "08c5879e8cc53859d4a5554ec503558ee3ceNRAL"
-	headerPairs := config.Cfg.AgentOtel.OtelHeaders
+	headerPairs := config.Cfg.AeroExporter.AgentOtel.OtelHeaders
 	if len(headerPairs) > 0 {
 		for k, v := range headerPairs {
 			headers[k] = v

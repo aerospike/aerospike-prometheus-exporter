@@ -28,27 +28,27 @@ type Config struct {
 		LogFile           string `toml:"log_file"`
 		LogLevel          string `toml:"log_level"`
 		UseMockDatasource bool   `toml:"use_mock_datasource"`
+
+		AgentProm struct {
+			Bind              string `toml:"bind"`
+			CertFile          string `toml:"cert_file"`
+			KeyFile           string `toml:"key_file"`
+			RootCA            string `toml:"root_ca"`
+			KeyFilePassphrase string `toml:"key_file_passphrase"`
+
+			BasicAuthUsername string `toml:"basic_auth_username"`
+			BasicAuthPassword string `toml:"basic_auth_password"`
+		} `toml:"Prom"`
+
+		AgentOtel struct {
+			OtelServiceName             string            `toml:"service_name"`
+			OtelEndpoint                string            `toml:"endpoint"`
+			OtelTlsEnabled              bool              `toml:"endpoint_tls_enabled"`
+			OtelHeaders                 map[string]string `toml:"headers"`
+			OtelPushInterval            uint8             `toml:"push_interval"`
+			OtelServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
+		} `toml:"OpenTelemetry"`
 	} `toml:"Agent"`
-
-	AgentProm struct {
-		Bind              string `toml:"bind"`
-		CertFile          string `toml:"cert_file"`
-		KeyFile           string `toml:"key_file"`
-		RootCA            string `toml:"root_ca"`
-		KeyFilePassphrase string `toml:"key_file_passphrase"`
-
-		BasicAuthUsername string `toml:"basic_auth_username"`
-		BasicAuthPassword string `toml:"basic_auth_password"`
-	} `toml:"Agent.Prom"`
-
-	AgentOtel struct {
-		OtelServiceName             string            `toml:"service_name"`
-		OtelEndpoint                string            `toml:"endpoint"`
-		OtelTlsEnabled              bool              `toml:"endpoint_tls_enabled"`
-		OtelHeaders                 map[string]string `toml:"headers"`
-		OtelPushInterval            uint8             `toml:"push_interval"`
-		OtelServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
-	} `toml:"Agent.OpenTelemetry"`
 
 	Aerospike struct {
 		Host string `toml:"db_host"`
@@ -144,8 +144,8 @@ type Config struct {
 // Validate and update exporter configuration
 func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 
-	if c.AgentProm.Bind == "" {
-		c.AgentProm.Bind = ":9145"
+	if c.AeroExporter.AgentProm.Bind == "" {
+		c.AeroExporter.AgentProm.Bind = ":9145"
 	}
 
 	if c.AeroExporter.Timeout == 0 {
@@ -166,16 +166,16 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		c.AeroExporter.UseMockDatasource = false
 	}
 
-	if len(c.AgentOtel.OtelServiceName) == 0 {
-		c.AgentOtel.OtelServiceName = "aerospike-server-metrics-service"
+	if len(c.AeroExporter.AgentOtel.OtelServiceName) == 0 {
+		c.AeroExporter.AgentOtel.OtelServiceName = "aerospike-server-metrics-service"
 	}
 
-	if c.AgentOtel.OtelPushInterval == 0 {
-		c.AgentOtel.OtelPushInterval = 60
+	if c.AeroExporter.AgentOtel.OtelPushInterval == 0 {
+		c.AeroExporter.AgentOtel.OtelPushInterval = 60
 	}
 
-	if c.AgentOtel.OtelServerStatFetchInterval == 0 {
-		c.AgentOtel.OtelPushInterval = 15
+	if c.AeroExporter.AgentOtel.OtelServerStatFetchInterval == 0 {
+		c.AeroExporter.AgentOtel.OtelPushInterval = 15
 	}
 
 }
