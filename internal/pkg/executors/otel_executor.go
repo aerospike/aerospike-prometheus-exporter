@@ -74,6 +74,10 @@ func initProvider() func() {
 	otelAgentAddr := config.Cfg.AgentOtel.OtelEndpoint
 	headers := readHeaders()
 
+	log.Debug("** OTel endpoint ", otelAgentAddr)
+	log.Debug("** OTel header count ", len(headers))
+	log.Debug("** OTel service name ", serviceName)
+
 	var metricExp *otlpmetricgrpc.Exporter
 	log.Infof("Creating MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.AgentOtel.OtelTlsEnabled))
 
