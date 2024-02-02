@@ -42,7 +42,12 @@ type Config struct {
 	} `toml:"Agent.Prom"`
 
 	AgentOtel struct {
-		OtelServiceName string `toml:"service_name"`
+		OtelServiceName             string            `toml:"service_name"`
+		OtelEndpoint                string            `toml:"endpoint"`
+		OtelTlsEnabled              bool              `toml:"tls_enabled"`
+		OtelHeaders                 map[string]string `toml:"headers"`
+		OtelPushInterval            uint8             `toml:"push_interval"`
+		OtelServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
 	} `toml:"Agent.Otel"`
 
 	Aerospike struct {
