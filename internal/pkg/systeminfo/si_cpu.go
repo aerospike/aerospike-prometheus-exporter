@@ -58,21 +58,3 @@ func (cip CpuInfoProcessor) constructCpuStats(cpuStatName string, cpuNo string, 
 
 	return sysMetric
 }
-
-// func (cip CpuInfoProcessor) constructCpuStats(cpuStatName string, cpuNo string, cpuMode string, stats map[string]string) SystemInfoStat {
-// 	clusterName := statprocessors.ClusterName
-// 	service := statprocessors.Service
-
-// 	labels := []string{}
-// 	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
-// 	labels = append(labels, commons.METRIC_LABEL_CPU, commons.METRIC_LABEL_CPU_MODE)
-
-// 	labelValues := []string{clusterName, service, fmt.Sprint(cpuNo), cpuMode}
-
-// 	sysMetric := NewSystemInfoStat(commons.CTX_CPU_STATS, cpuStatName)
-// 	sysMetric.Labels = labels
-// 	sysMetric.LabelValues = labelValues
-// 	sysMetric.Value, _ = commons.TryConvert(stats[cpuMode])
-
-// 	return sysMetric
-// }

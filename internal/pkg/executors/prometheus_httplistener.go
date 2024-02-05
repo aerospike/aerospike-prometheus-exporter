@@ -11,7 +11,6 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/systeminfo"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -173,36 +172,36 @@ func PushToPrometheus(asMetric statprocessors.AerospikeStat, ch chan<- prometheu
 	}
 }
 
-// This is a common utility, used by all the statprocessors to push metric to prometheus
-func PushSystemInfoMetricToPrometheus(sysMetric systeminfo.SystemInfoStat, ch chan<- prometheus.Metric) {
+// // This is a common utility, used by all the statprocessors to push metric to prometheus
+// func PushSystemInfoMetricToPrometheus(sysMetric systeminfo.SystemInfoStat, ch chan<- prometheus.Metric) {
 
-	if sysMetric.IsAllowed {
-		// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
-		defer func() {
-			if r := recover(); r != nil {
-				log.Tracef("%s recovered from panic while handling stat %s", string(sysMetric.Context), sysMetric.Name)
-			}
-		}()
+// 	if sysMetric.IsAllowed {
+// 		// handle any panic from prometheus, this may occur when prom encounters a config/stat with special characters
+// 		defer func() {
+// 			if r := recover(); r != nil {
+// 				log.Tracef("%s recovered from panic while handling stat %s", string(sysMetric.Context), sysMetric.Name)
+// 			}
+// 		}()
 
-		desc, valueType := makeSystemInfoPromMetric(sysMetric, sysMetric.Labels...)
-		ch <- prometheus.MustNewConstMetric(desc, valueType, sysMetric.Value, sysMetric.LabelValues...)
+// 		desc, valueType := makeSystemInfoPromMetric(sysMetric, sysMetric.Labels...)
+// 		ch <- prometheus.MustNewConstMetric(desc, valueType, sysMetric.Value, sysMetric.LabelValues...)
 
-	}
-}
+// 	}
+// }
 
-func makeSystemInfoPromMetric(sm systeminfo.SystemInfoStat, pLabels ...string) (*prometheus.Desc, prometheus.ValueType) {
+// func makeSystemInfoPromMetric(sm systeminfo.SystemInfoStat, pLabels ...string) (*prometheus.Desc, prometheus.ValueType) {
 
-	qualifiedName := sm.QualifyMetricContext() + "_" + NormalizeMetric(sm.Name)
-	promDesc := prometheus.NewDesc(
-		qualifiedName,
-		NormalizeDesc(sm.Name),
-		pLabels,
-		config.Cfg.Agent.MetricLabels,
-	)
+// 	qualifiedName := sm.QualifyMetricContext() + "_" + NormalizeMetric(sm.Name)
+// 	promDesc := prometheus.NewDesc(
+// 		qualifiedName,
+// 		NormalizeDesc(sm.Name),
+// 		pLabels,
+// 		config.Cfg.Agent.MetricLabels,
+// 	)
 
-	if sm.MType == commons.MetricTypeGauge {
-		return promDesc, prometheus.GaugeValue
-	}
+// 	if sm.MType == commons.MetricTypeGauge {
+// 		return promDesc, prometheus.GaugeValue
+// 	}
 
-	return promDesc, prometheus.CounterValue
-}
+// 	return promDesc, prometheus.CounterValue
+// }

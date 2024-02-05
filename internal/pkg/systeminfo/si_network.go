@@ -89,37 +89,3 @@ func (nip NetworkInfoProcessor) constructNetworkStat(netStatKey string, deviceNa
 
 	return sysMetric
 }
-
-// func (nip NetworkInfoProcessor) constructNetworkDevStat(netStatKey string, deviceName string, stats map[string]string) SystemInfoStat {
-// 	clusterName := statprocessors.ClusterName
-// 	service := statprocessors.Service
-
-// 	labels := []string{}
-// 	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE)
-
-// 	labelValues := []string{clusterName, service, deviceName}
-
-// 	sysMetric := NewSystemInfoStat(commons.CTX_NET_DEV_STATS, netStatKey)
-// 	sysMetric.Labels = labels
-// 	sysMetric.LabelValues = labelValues
-// 	sysMetric.Value, _ = commons.TryConvert(stats[deviceName])
-
-// 	return sysMetric
-// }
-
-// func (nip NetworkInfoProcessor) constructNetworkStat(netStatKey string, deviceName string, stats map[string]string) SystemInfoStat {
-// 	clusterName := statprocessors.ClusterName
-// 	service := statprocessors.Service
-
-// 	labels := []string{}
-// 	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE)
-
-// 	labelValues := []string{clusterName, service, deviceName}
-
-// 	sysMetric := NewSystemInfoStat(commons.CTX_NETWORK_STATS, netStatKey)
-// 	sysMetric.Labels = labels
-// 	sysMetric.LabelValues = labelValues
-// 	sysMetric.Value, _ = commons.TryConvert(stats[netStatKey])
-
-// 	return sysMetric
-// }

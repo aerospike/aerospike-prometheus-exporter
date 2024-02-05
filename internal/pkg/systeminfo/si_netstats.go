@@ -60,20 +60,3 @@ func (nsip NetStatInfoProcessor) constructNetstat(netStatKey string, stats map[s
 
 	return sysMetric
 }
-
-// func (nsip NetStatInfoProcessor) constructNetstat(netStatKey string, stats map[string]string) SystemInfoStat {
-// 	clusterName := statprocessors.ClusterName
-// 	service := statprocessors.Service
-
-// 	labels := []string{}
-// 	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
-
-// 	labelValues := []string{clusterName, service}
-
-// 	sysMetric := NewSystemInfoStat(commons.CTX_NET_STATS, netStatKey)
-// 	sysMetric.Labels = labels
-// 	sysMetric.LabelValues = labelValues
-// 	sysMetric.Value, _ = commons.TryConvert(stats[netStatKey])
-
-// 	return sysMetric
-// }

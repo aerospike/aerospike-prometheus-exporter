@@ -6,7 +6,6 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/systeminfo"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	// "go.opentelemetry.io/otel/label"
@@ -79,36 +78,36 @@ func processAerospikeStats(meter metric.Meter, ctx context.Context, commonLabels
 
 }
 
-func processSystemInfoStats(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, refreshStats []systeminfo.SystemInfoStat) {
+// func processSystemInfoStats(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, refreshStats []systeminfo.SystemInfoStat) {
 
-	// create the required metered objectes
-	for _, stat := range refreshStats {
+// 	// create the required metered objectes
+// 	for _, stat := range refreshStats {
 
-		qualifiedName := stat.QualifyMetricContext() + "_" + NormalizeMetric(stat.Name)
-		desc := NormalizeMetric("description_" + stat.Name)
+// 		qualifiedName := stat.QualifyMetricContext() + "_" + NormalizeMetric(stat.Name)
+// 		desc := NormalizeMetric("description_" + stat.Name)
 
-		labels := []attribute.KeyValue{}
-		// label name to value mapped using index
-		for idx, label := range stat.Labels {
-			labels = append(labels, attribute.String(label, stat.LabelValues[idx]))
-		}
+// 		labels := []attribute.KeyValue{}
+// 		// label name to value mapped using index
+// 		for idx, label := range stat.Labels {
+// 			labels = append(labels, attribute.String(label, stat.LabelValues[idx]))
+// 		}
 
-		// append common labels
-		labels = append(labels, commonLabels...)
+// 		// append common labels
+// 		labels = append(labels, commonLabels...)
 
-		// create Otel metric
-		if stat.MType == commons.MetricTypeCounter {
-			value := stat.Value
+// 		// create Otel metric
+// 		if stat.MType == commons.MetricTypeCounter {
+// 			value := stat.Value
 
-			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, value)
+// 			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, value)
 
-		} else if stat.MType == commons.MetricTypeGauge {
-			makeOtelGaugeMetric(meter, ctx, qualifiedName, desc, labels, stat.Value)
-		}
+// 		} else if stat.MType == commons.MetricTypeGauge {
+// 			makeOtelGaugeMetric(meter, ctx, qualifiedName, desc, labels, stat.Value)
+// 		}
 
-	}
+// 	}
 
-}
+// }
 
 func makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, value float64) {
 

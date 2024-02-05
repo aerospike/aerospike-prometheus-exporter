@@ -135,8 +135,14 @@ func getUdevDeviceProperties(major, minor uint32) (map[string]string, error) {
 }
 
 func readDiskMountData(mntpointsource string) (float64, float64, float64, float64, float64, bool) {
+	_, err := os.Stat(mntpointsource)
+	if err != nil {
+		// if mount point does not exist
+		return 0.0, 0.0, 0.0, 0.0, 0.0, true
+	}
+
 	buf := new(unix.Statfs_t)
-	err := unix.Statfs(getRootfsFilePath(mntpointsource), buf)
+	err = unix.Statfs(getRootfsFilePath(mntpointsource), buf)
 	// any kind of error
 	if err != nil {
 		log.Error("Error while fetching FileSystem stats for mount ", mntpointsource, ", hence, return all 0.0 --> error is ", err)

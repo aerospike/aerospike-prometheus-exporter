@@ -46,20 +46,3 @@ func (ffdip FileFDInfoProcessor) constructFileFDstat(key string, value float64) 
 
 	return sysMetric
 }
-
-// func (ffdip FileFDInfoProcessor) constructFileFDstat(key string, value float64) SystemInfoStat {
-// 	clusterName := statprocessors.ClusterName
-// 	service := statprocessors.Service
-
-// 	labels := []string{}
-// 	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
-
-// 	labelValues := []string{clusterName, service}
-
-// 	sysMetric := NewSystemInfoStat(commons.CTX_FILEFD_STATS, key)
-// 	sysMetric.Labels = labels
-// 	sysMetric.LabelValues = labelValues
-// 	sysMetric.Value = value
-
-// 	return sysMetric
-// }
