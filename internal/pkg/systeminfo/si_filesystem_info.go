@@ -11,14 +11,14 @@ import (
 type FileSystemInfoProcessor struct {
 }
 
-func (fsip FileSystemInfoProcessor) Refresh() ([]SystemInfoStat, error) {
+func (fsip FileSystemInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
 	arrSysInfoStats := fsip.parseFileSystemInfo()
 	return arrSysInfoStats, nil
 }
 
-func (fsip FileSystemInfoProcessor) parseFileSystemInfo() []SystemInfoStat {
+func (fsip FileSystemInfoProcessor) parseFileSystemInfo() []statprocessors.AerospikeStat {
 
-	arrSysInfoStats := []SystemInfoStat{}
+	arrSysInfoStats := []statprocessors.AerospikeStat{}
 
 	arrFileSystemMountStats := dataprovider.GetSystemProvider().GetFileSystemStats()
 
@@ -44,7 +44,7 @@ func (fsip FileSystemInfoProcessor) parseFileSystemInfo() []SystemInfoStat {
 	return arrSysInfoStats
 }
 
-func (fsip FileSystemInfoProcessor) constructFileSystemReadOnly(fstype string, mountpoint string, deviceName string, isReadOnly string) SystemInfoStat {
+func (fsip FileSystemInfoProcessor) constructFileSystemReadOnly(fstype string, mountpoint string, deviceName string, isReadOnly string) statprocessors.AerospikeStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
@@ -54,7 +54,7 @@ func (fsip FileSystemInfoProcessor) constructFileSystemReadOnly(fstype string, m
 	labels = append(labels, commons.METRIC_LABEL_FSTYPE, commons.METRIC_LABEL_DEVICE, commons.METRIC_LABEL_MOUNT_POINT)
 	labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
 
-	sysMetric := NewSystemInfoStat(commons.CTX_FILESYSTEM_STATS, "readonly")
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILESYSTEM_STATS, "readonly")
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value, _ = commons.TryConvert(isReadOnly)
@@ -63,7 +63,7 @@ func (fsip FileSystemInfoProcessor) constructFileSystemReadOnly(fstype string, m
 
 }
 
-func (fsip FileSystemInfoProcessor) constructFileSystemSysInfoStats(fstype string, mountpoint string, deviceName string, statName string, stats map[string]string) SystemInfoStat {
+func (fsip FileSystemInfoProcessor) constructFileSystemSysInfoStats(fstype string, mountpoint string, deviceName string, statName string, stats map[string]string) statprocessors.AerospikeStat {
 
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
@@ -72,7 +72,7 @@ func (fsip FileSystemInfoProcessor) constructFileSystemSysInfoStats(fstype strin
 	labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
 
 	l_metricName := strings.ToLower(statName)
-	sysMetric := NewSystemInfoStat(commons.CTX_FILESYSTEM_STATS, l_metricName)
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILESYSTEM_STATS, l_metricName)
 
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
@@ -82,3 +82,42 @@ func (fsip FileSystemInfoProcessor) constructFileSystemSysInfoStats(fstype strin
 
 	return sysMetric
 }
+
+// func (fsip FileSystemInfoProcessor) constructFileSystemReadOnly(fstype string, mountpoint string, deviceName string, isReadOnly string) SystemInfoStat {
+// 	clusterName := statprocessors.ClusterName
+// 	service := statprocessors.Service
+
+// 	// add disk_info
+// 	labels := []string{}
+// 	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
+// 	labels = append(labels, commons.METRIC_LABEL_FSTYPE, commons.METRIC_LABEL_DEVICE, commons.METRIC_LABEL_MOUNT_POINT)
+// 	labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
+
+// 	sysMetric := NewSystemInfoStat(commons.CTX_FILESYSTEM_STATS, "readonly")
+// 	sysMetric.Labels = labels
+// 	sysMetric.LabelValues = labelValues
+// 	sysMetric.Value, _ = commons.TryConvert(isReadOnly)
+
+// 	return sysMetric
+
+// }
+
+// func (fsip FileSystemInfoProcessor) constructFileSystemSysInfoStats(fstype string, mountpoint string, deviceName string, statName string, stats map[string]string) SystemInfoStat {
+
+// 	clusterName := statprocessors.ClusterName
+// 	service := statprocessors.Service
+
+// 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_FSTYPE, commons.METRIC_LABEL_DEVICE, commons.METRIC_LABEL_MOUNT_POINT}
+// 	labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
+
+// 	l_metricName := strings.ToLower(statName)
+// 	sysMetric := NewSystemInfoStat(commons.CTX_FILESYSTEM_STATS, l_metricName)
+
+// 	sysMetric.Labels = labels
+// 	sysMetric.LabelValues = labelValues
+
+// 	value, _ := commons.TryConvert(stats[statName])
+// 	sysMetric.Value = value
+
+// 	return sysMetric
+// }

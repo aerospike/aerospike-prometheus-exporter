@@ -11,15 +11,15 @@ import (
 type DiskInfoProcessor struct {
 }
 
-func (dip DiskInfoProcessor) Refresh() ([]SystemInfoStat, error) {
+func (dip DiskInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
 
 	arrSysInfoStats := dip.parseDiskStats()
 
 	return arrSysInfoStats, nil
 }
 
-func (dip DiskInfoProcessor) parseDiskStats() []SystemInfoStat {
-	arrSysInfoStats := []SystemInfoStat{}
+func (dip DiskInfoProcessor) parseDiskStats() []statprocessors.AerospikeStat {
+	arrSysInfoStats := []statprocessors.AerospikeStat{}
 
 	diskStats := dataprovider.GetSystemProvider().GetDiskStats()
 
@@ -51,7 +51,7 @@ func (dip DiskInfoProcessor) parseDiskStats() []SystemInfoStat {
 	return arrSysInfoStats
 }
 
-func (dip DiskInfoProcessor) constructDiskInfo(deviceName string, major string, minor string, serial string) SystemInfoStat {
+func (dip DiskInfoProcessor) constructDiskInfo(deviceName string, major string, minor string, serial string) statprocessors.AerospikeStat {
 	// 	[]string{"device", "major", "minor", "path", "wwn", "model", "serial", "revision"},
 	// (stats.MajorNumber),(stats.MinorNumber), info[udevIDPath], info[udevIDWWN], info[udevIDModel], serial, info[udevIDRevision],
 	clusterName := statprocessors.ClusterName
@@ -64,7 +64,7 @@ func (dip DiskInfoProcessor) constructDiskInfo(deviceName string, major string, 
 
 	labelValues := []string{clusterName, service, deviceName, major, minor, serial}
 
-	sysMetric := NewSystemInfoStat(commons.CTX_DISK_STATS, "info")
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_DISK_STATS, "info")
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value = 1
@@ -73,7 +73,7 @@ func (dip DiskInfoProcessor) constructDiskInfo(deviceName string, major string, 
 
 }
 
-func (dip DiskInfoProcessor) constructDiskinfoSystemStat(deviceName string, statName string, diskStats map[string]string) SystemInfoStat {
+func (dip DiskInfoProcessor) constructDiskinfoSystemStat(deviceName string, statName string, diskStats map[string]string) statprocessors.AerospikeStat {
 
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
@@ -82,7 +82,7 @@ func (dip DiskInfoProcessor) constructDiskinfoSystemStat(deviceName string, stat
 	labelValues := []string{clusterName, service, deviceName}
 
 	l_metricName := strings.ToLower(statName)
-	sysMetric := NewSystemInfoStat(commons.CTX_DISK_STATS, l_metricName)
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_DISK_STATS, l_metricName)
 
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
@@ -91,3 +91,44 @@ func (dip DiskInfoProcessor) constructDiskinfoSystemStat(deviceName string, stat
 
 	return sysMetric
 }
+
+// func (dip DiskInfoProcessor) constructDiskInfo(deviceName string, major string, minor string, serial string) SystemInfoStat {
+// 	// 	[]string{"device", "major", "minor", "path", "wwn", "model", "serial", "revision"},
+// 	// (stats.MajorNumber),(stats.MinorNumber), info[udevIDPath], info[udevIDWWN], info[udevIDModel], serial, info[udevIDRevision],
+// 	clusterName := statprocessors.ClusterName
+// 	service := statprocessors.Service
+
+// 	// add disk_info
+// 	labels := []string{}
+// 	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE)
+// 	labels = append(labels, commons.METRIC_LABEL_MAJOR, commons.METRIC_LABEL_MINOR, commons.METRIC_LABEL_SERIAL)
+
+// 	labelValues := []string{clusterName, service, deviceName, major, minor, serial}
+
+// 	sysMetric := NewSystemInfoStat(commons.CTX_DISK_STATS, "info")
+// 	sysMetric.Labels = labels
+// 	sysMetric.LabelValues = labelValues
+// 	sysMetric.Value = 1
+
+// 	return sysMetric
+
+// }
+
+// func (dip DiskInfoProcessor) constructDiskinfoSystemStat(deviceName string, statName string, diskStats map[string]string) SystemInfoStat {
+
+// 	clusterName := statprocessors.ClusterName
+// 	service := statprocessors.Service
+
+// 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE}
+// 	labelValues := []string{clusterName, service, deviceName}
+
+// 	l_metricName := strings.ToLower(statName)
+// 	sysMetric := NewSystemInfoStat(commons.CTX_DISK_STATS, l_metricName)
+
+// 	sysMetric.Labels = labels
+// 	sysMetric.LabelValues = labelValues
+// 	value, _ := commons.TryConvert(diskStats[statName])
+// 	sysMetric.Value = value
+
+// 	return sysMetric
+// }

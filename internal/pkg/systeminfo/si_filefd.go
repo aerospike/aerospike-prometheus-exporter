@@ -9,13 +9,13 @@ import (
 type FileFDInfoProcessor struct {
 }
 
-func (ffdip FileFDInfoProcessor) Refresh() ([]SystemInfoStat, error) {
+func (ffdip FileFDInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
 	arrSysInfoStats := ffdip.parseFilefdStats()
 	return arrSysInfoStats, nil
 }
 
-func (ffdip FileFDInfoProcessor) parseFilefdStats() []SystemInfoStat {
-	arrSysInfoStats := []SystemInfoStat{}
+func (ffdip FileFDInfoProcessor) parseFilefdStats() []statprocessors.AerospikeStat {
+	arrSysInfoStats := []statprocessors.AerospikeStat{}
 
 	fileFDStats := dataprovider.GetSystemProvider().GetFileFD()
 
@@ -30,7 +30,7 @@ func (ffdip FileFDInfoProcessor) parseFilefdStats() []SystemInfoStat {
 	return arrSysInfoStats
 }
 
-func (ffdip FileFDInfoProcessor) constructFileFDstat(key string, value float64) SystemInfoStat {
+func (ffdip FileFDInfoProcessor) constructFileFDstat(key string, value float64) statprocessors.AerospikeStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
@@ -39,10 +39,27 @@ func (ffdip FileFDInfoProcessor) constructFileFDstat(key string, value float64) 
 
 	labelValues := []string{clusterName, service}
 
-	sysMetric := NewSystemInfoStat(commons.CTX_FILEFD_STATS, key)
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILEFD_STATS, key)
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value = value
 
 	return sysMetric
 }
+
+// func (ffdip FileFDInfoProcessor) constructFileFDstat(key string, value float64) SystemInfoStat {
+// 	clusterName := statprocessors.ClusterName
+// 	service := statprocessors.Service
+
+// 	labels := []string{}
+// 	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
+
+// 	labelValues := []string{clusterName, service}
+
+// 	sysMetric := NewSystemInfoStat(commons.CTX_FILEFD_STATS, key)
+// 	sysMetric.Labels = labels
+// 	sysMetric.LabelValues = labelValues
+// 	sysMetric.Value = value
+
+// 	return sysMetric
+// }

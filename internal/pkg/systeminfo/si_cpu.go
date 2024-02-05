@@ -11,13 +11,13 @@ import (
 type CpuInfoProcessor struct {
 }
 
-func (cip CpuInfoProcessor) Refresh() ([]SystemInfoStat, error) {
+func (cip CpuInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
 	arrSysInfoStats := cip.parseCpuStats()
 	return arrSysInfoStats, nil
 }
 
-func (cip CpuInfoProcessor) parseCpuStats() []SystemInfoStat {
-	arrSysInfoStats := []SystemInfoStat{}
+func (cip CpuInfoProcessor) parseCpuStats() []statprocessors.AerospikeStat {
+	arrSysInfoStats := []statprocessors.AerospikeStat{}
 
 	guestCpuDetails, cpuDetails := dataprovider.GetSystemProvider().GetCPUDetails()
 
@@ -41,7 +41,7 @@ func (cip CpuInfoProcessor) parseCpuStats() []SystemInfoStat {
 	return arrSysInfoStats
 }
 
-func (cip CpuInfoProcessor) constructCpuStats(cpuStatName string, cpuNo string, cpuMode string, stats map[string]string) SystemInfoStat {
+func (cip CpuInfoProcessor) constructCpuStats(cpuStatName string, cpuNo string, cpuMode string, stats map[string]string) statprocessors.AerospikeStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
@@ -51,10 +51,28 @@ func (cip CpuInfoProcessor) constructCpuStats(cpuStatName string, cpuNo string, 
 
 	labelValues := []string{clusterName, service, fmt.Sprint(cpuNo), cpuMode}
 
-	sysMetric := NewSystemInfoStat(commons.CTX_CPU_STATS, cpuStatName)
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_CPU_STATS, cpuStatName)
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value, _ = commons.TryConvert(stats[cpuMode])
 
 	return sysMetric
 }
+
+// func (cip CpuInfoProcessor) constructCpuStats(cpuStatName string, cpuNo string, cpuMode string, stats map[string]string) SystemInfoStat {
+// 	clusterName := statprocessors.ClusterName
+// 	service := statprocessors.Service
+
+// 	labels := []string{}
+// 	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
+// 	labels = append(labels, commons.METRIC_LABEL_CPU, commons.METRIC_LABEL_CPU_MODE)
+
+// 	labelValues := []string{clusterName, service, fmt.Sprint(cpuNo), cpuMode}
+
+// 	sysMetric := NewSystemInfoStat(commons.CTX_CPU_STATS, cpuStatName)
+// 	sysMetric.Labels = labels
+// 	sysMetric.LabelValues = labelValues
+// 	sysMetric.Value, _ = commons.TryConvert(stats[cpuMode])
+
+// 	return sysMetric
+// }

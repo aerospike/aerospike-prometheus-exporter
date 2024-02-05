@@ -11,8 +11,8 @@ import (
 type MemInfoProcessor struct {
 }
 
-func (mip MemInfoProcessor) Refresh() ([]SystemInfoStat, error) {
-	arrSysInfoStats := []SystemInfoStat{}
+func (mip MemInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
+	arrSysInfoStats := []statprocessors.AerospikeStat{}
 
 	memStats := dataprovider.GetSystemProvider().GetMemInfoStats()
 
@@ -25,7 +25,7 @@ func (mip MemInfoProcessor) Refresh() ([]SystemInfoStat, error) {
 
 		for k, v := range stats {
 			l_metricName := strings.ToLower(k) + "_bytes"
-			sysMetric := NewSystemInfoStat(commons.CTX_MEMORY_STATS, l_metricName)
+			sysMetric := statprocessors.NewAerospikeStat(commons.CTX_MEMORY_STATS, l_metricName)
 			sysMetric.Labels = labels
 			sysMetric.LabelValues = labelValues
 			sysMetric.Value, _ = commons.TryConvert(v)

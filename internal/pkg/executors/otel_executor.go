@@ -177,7 +177,8 @@ func handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabe
 		return
 	}
 	// process metrics
-	processSystemInfoStats(meter, ctx, commonLabels, sysInfoRefreshStats)
+	processAerospikeStats(meter, ctx, commonLabels, sysInfoRefreshStats)
+	// processSystemInfoStats(meter, ctx, commonLabels, sysInfoRefreshStats)
 
 }
 

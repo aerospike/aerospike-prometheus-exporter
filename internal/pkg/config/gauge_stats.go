@@ -22,6 +22,9 @@ type GaugeStats struct {
 	Sindex    []string `toml:"sindex_gauge_stats"`
 	Xdr       []string `toml:"xdr_gauge_stats"`
 
+	// System Info Gauges
+	SysInfo []string `toml:"system_info_gauge_stats"`
+
 	// why below maps?
 	// all gauge stats are added and mapped as true after reading from toml file
 	NamespaceStats map[string]bool
@@ -29,6 +32,9 @@ type GaugeStats struct {
 	SetsStats      map[string]bool
 	SindexStats    map[string]bool
 	XdrStats       map[string]bool
+
+	// System Info Gauges
+	SysInfoStats map[string]bool
 }
 
 // Initialize exporter configuration
@@ -59,6 +65,10 @@ func InitGaugeStats(pGaugeStatsFile string) {
 	GaugeStatHandler.Sindex = nil
 	GaugeStatHandler.Sets = nil
 	GaugeStatHandler.Xdr = nil
+
+	// System Info
+	GaugeStatHandler.SysInfoStats = GaugeStatHandler.createMapFromArray(GaugeStatHandler.SysInfo)
+	GaugeStatHandler.SysInfo = nil
 
 	log.Debugln("# of Gauge Keys defined at Gauge Stat level are: ", len(md.Keys()))
 }

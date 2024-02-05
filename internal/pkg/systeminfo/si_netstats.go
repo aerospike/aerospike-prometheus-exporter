@@ -9,14 +9,14 @@ import (
 type NetStatInfoProcessor struct {
 }
 
-func (nsip NetStatInfoProcessor) Refresh() ([]SystemInfoStat, error) {
+func (nsip NetStatInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
 
 	arrSysInfoStats := nsip.parseNetStats()
 	return arrSysInfoStats, nil
 }
 
-func (nsip NetStatInfoProcessor) parseNetStats() []SystemInfoStat {
-	arrSysInfoStats := []SystemInfoStat{}
+func (nsip NetStatInfoProcessor) parseNetStats() []statprocessors.AerospikeStat {
+	arrSysInfoStats := []statprocessors.AerospikeStat{}
 
 	netStats, snmpStats, snmp6Stats := dataprovider.GetSystemProvider().GetNetStatInfo()
 
@@ -44,7 +44,7 @@ func (nsip NetStatInfoProcessor) parseNetStats() []SystemInfoStat {
 	return arrSysInfoStats
 }
 
-func (nsip NetStatInfoProcessor) constructNetstat(netStatKey string, stats map[string]string) SystemInfoStat {
+func (nsip NetStatInfoProcessor) constructNetstat(netStatKey string, stats map[string]string) statprocessors.AerospikeStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
@@ -53,10 +53,27 @@ func (nsip NetStatInfoProcessor) constructNetstat(netStatKey string, stats map[s
 
 	labelValues := []string{clusterName, service}
 
-	sysMetric := NewSystemInfoStat(commons.CTX_NET_STATS, netStatKey)
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_NET_STATS, netStatKey)
 	sysMetric.Labels = labels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value, _ = commons.TryConvert(stats[netStatKey])
 
 	return sysMetric
 }
+
+// func (nsip NetStatInfoProcessor) constructNetstat(netStatKey string, stats map[string]string) SystemInfoStat {
+// 	clusterName := statprocessors.ClusterName
+// 	service := statprocessors.Service
+
+// 	labels := []string{}
+// 	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
+
+// 	labelValues := []string{clusterName, service}
+
+// 	sysMetric := NewSystemInfoStat(commons.CTX_NET_STATS, netStatKey)
+// 	sysMetric.Labels = labels
+// 	sysMetric.LabelValues = labelValues
+// 	sysMetric.Value, _ = commons.TryConvert(stats[netStatKey])
+
+// 	return sysMetric
+// }

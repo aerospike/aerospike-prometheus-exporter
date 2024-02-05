@@ -79,8 +79,9 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	// push the fetched metrics to prometheus
-	for _, sm := range system_metrics {
-		PushSystemInfoMetricToPrometheus(sm, ch)
+	for _, wm := range system_metrics {
+		PushToPrometheus(wm, ch)
+		// PushSystemInfoMetricToPrometheus(sm, ch)
 	}
 
 }
