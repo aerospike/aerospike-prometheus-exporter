@@ -32,15 +32,15 @@ const (
 )
 
 const (
-	CTX_MEMORY_STATS     ContextType = "memory_stats"
-	CTX_DISK_STATS       ContextType = "disk_stats"
-	CTX_FILESYSTEM_STATS ContextType = "filesystem_stats"
-	CTX_CPU_STATS        ContextType = "cpu"
-	CTX_NET_STATS        ContextType = "netstat"
-	CTX_NET_DEV_STATS    ContextType = "net_dev"
-	CTX_NETWORK_STATS    ContextType = "network"
-	CTX_FILEFD_STATS     ContextType = "filefd"
-	CTX_VM_STATS         ContextType = "vmstat"
+	CTX_MEMORY_STATS     ContextType = "sysinfo_memory_stats"
+	CTX_DISK_STATS       ContextType = "sysinfo_disk_stats"
+	CTX_FILESYSTEM_STATS ContextType = "sysinfo_filesystem_stats"
+	CTX_CPU_STATS        ContextType = "sysinfo_cpu"
+	CTX_NET_STATS        ContextType = "sysinfo_netstat"
+	CTX_NET_DEV_STATS    ContextType = "sysinfo_net_dev"
+	CTX_NETWORK_STATS    ContextType = "sysinfo_network"
+	CTX_FILEFD_STATS     ContextType = "sysinfo_filefd"
+	CTX_VM_STATS         ContextType = "sysinfo_vmstat"
 )
 const (
 	METRIC_LABEL_DEVICE      = "device"
