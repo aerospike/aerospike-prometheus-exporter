@@ -12,28 +12,20 @@ type DiskInfoProcessor struct {
 }
 
 var (
-	metricDiskInfoLabels = []string{}
-	diskInfoLabels       = []string{}
+	metricDiskInfoLabels []string
+	diskInfoLabels       []string
 )
 
 func (dip DiskInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
+	arrSysInfoStats := []statprocessors.AerospikeStat{}
+	diskStats := dataprovider.GetSystemProvider().GetDiskStats()
 
 	// metric: diskinfo
-	metricDiskInfoLabels = append(metricDiskInfoLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE)
+	metricDiskInfoLabels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE}
 	metricDiskInfoLabels = append(metricDiskInfoLabels, commons.METRIC_LABEL_MAJOR, commons.METRIC_LABEL_MINOR, commons.METRIC_LABEL_SERIAL)
 
 	// other disk metrics
 	diskInfoLabels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE}
-
-	arrSysInfoStats := dip.parseDiskStats()
-
-	return arrSysInfoStats, nil
-}
-
-func (dip DiskInfoProcessor) parseDiskStats() []statprocessors.AerospikeStat {
-	arrSysInfoStats := []statprocessors.AerospikeStat{}
-
-	diskStats := dataprovider.GetSystemProvider().GetDiskStats()
 
 	for _, stats := range diskStats {
 		deviceName := stats["device_name"]
@@ -60,7 +52,7 @@ func (dip DiskInfoProcessor) parseDiskStats() []statprocessors.AerospikeStat {
 
 	}
 
-	return arrSysInfoStats
+	return arrSysInfoStats, nil
 }
 
 func (dip DiskInfoProcessor) constructDiskInfo(deviceName string, major string, minor string, serial string) statprocessors.AerospikeStat {

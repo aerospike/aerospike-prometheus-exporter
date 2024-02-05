@@ -9,14 +9,14 @@ import (
 type VmstatInfoProcessor struct {
 }
 
+var (
+	vmStatLabels []string
+)
+
 func (vip VmstatInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
 
-	arrSysInfoStats := vip.parseVmStats()
-	return arrSysInfoStats, nil
-}
-
-func (vip VmstatInfoProcessor) parseVmStats() []statprocessors.AerospikeStat {
 	arrSysInfoStats := []statprocessors.AerospikeStat{}
+	vmStatLabels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
 
 	arrVmStats := dataprovider.GetSystemProvider().GetVmStats()
 
@@ -26,22 +26,19 @@ func (vip VmstatInfoProcessor) parseVmStats() []statprocessors.AerospikeStat {
 		}
 	}
 
-	return arrSysInfoStats
+	return arrSysInfoStats, nil
 }
 
-func (vip VmstatInfoProcessor) constructVmstat(metricName string, stats map[string]string) statprocessors.AerospikeStat {
+func (vip VmstatInfoProcessor) constructVmstat(statName string, stats map[string]string) statprocessors.AerospikeStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
-	labels := []string{}
-	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
-
 	labelValues := []string{clusterName, service}
 
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_VM_STATS, metricName)
-	sysMetric.Labels = labels
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_VM_STATS, statName)
+	sysMetric.Labels = vmStatLabels
 	sysMetric.LabelValues = labelValues
-	sysMetric.Value, _ = commons.TryConvert(stats[metricName])
+	sysMetric.Value, _ = commons.TryConvert(stats[statName])
 
 	return sysMetric
 }

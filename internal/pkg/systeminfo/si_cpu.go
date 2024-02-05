@@ -11,15 +11,16 @@ import (
 type CpuInfoProcessor struct {
 }
 
+var (
+	cpuStatLabels []string
+)
+
 func (cip CpuInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
-	arrSysInfoStats := cip.parseCpuStats()
-	return arrSysInfoStats, nil
-}
-
-func (cip CpuInfoProcessor) parseCpuStats() []statprocessors.AerospikeStat {
 	arrSysInfoStats := []statprocessors.AerospikeStat{}
-
 	guestCpuDetails, cpuDetails := dataprovider.GetSystemProvider().GetCPUDetails()
+
+	cpuStatLabels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
+	cpuStatLabels = append(cpuStatLabels, commons.METRIC_LABEL_CPU, commons.METRIC_LABEL_CPU_MODE)
 
 	for _, stats := range guestCpuDetails {
 		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("guest_seconds_total", fmt.Sprint(stats["index"]), "user", stats))
@@ -37,21 +38,17 @@ func (cip CpuInfoProcessor) parseCpuStats() []statprocessors.AerospikeStat {
 		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stats["index"]), "user", stats))
 	}
 
-	return arrSysInfoStats
+	return arrSysInfoStats, nil
 }
 
 func (cip CpuInfoProcessor) constructCpuStats(cpuStatName string, cpuNo string, cpuMode string, stats map[string]string) statprocessors.AerospikeStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
-	labels := []string{}
-	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
-	labels = append(labels, commons.METRIC_LABEL_CPU, commons.METRIC_LABEL_CPU_MODE)
-
 	labelValues := []string{clusterName, service, fmt.Sprint(cpuNo), cpuMode}
 
 	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_CPU_STATS, cpuStatName)
-	sysMetric.Labels = labels
+	sysMetric.Labels = cpuStatLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value, _ = commons.TryConvert(stats[cpuMode])
 

@@ -9,14 +9,15 @@ import (
 type NetStatInfoProcessor struct {
 }
 
+var (
+	netStatInfoLabels []string
+)
+
 func (nsip NetStatInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
-
-	arrSysInfoStats := nsip.parseNetStats()
-	return arrSysInfoStats, nil
-}
-
-func (nsip NetStatInfoProcessor) parseNetStats() []statprocessors.AerospikeStat {
 	arrSysInfoStats := []statprocessors.AerospikeStat{}
+
+	netStatInfoLabels = []string{}
+	netStatInfoLabels = append(netStatInfoLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
 
 	netStats, snmpStats, snmp6Stats := dataprovider.GetSystemProvider().GetNetStatInfo()
 
@@ -41,22 +42,19 @@ func (nsip NetStatInfoProcessor) parseNetStats() []statprocessors.AerospikeStat 
 		}
 	}
 
-	return arrSysInfoStats
+	return arrSysInfoStats, nil
 }
 
-func (nsip NetStatInfoProcessor) constructNetstat(netStatKey string, stats map[string]string) statprocessors.AerospikeStat {
+func (nsip NetStatInfoProcessor) constructNetstat(statName string, stats map[string]string) statprocessors.AerospikeStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
-	labels := []string{}
-	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
-
 	labelValues := []string{clusterName, service}
 
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_NET_STATS, netStatKey)
-	sysMetric.Labels = labels
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_NET_STATS, statName)
+	sysMetric.Labels = netStatInfoLabels
 	sysMetric.LabelValues = labelValues
-	sysMetric.Value, _ = commons.TryConvert(stats[netStatKey])
+	sysMetric.Value, _ = commons.TryConvert(stats[statName])
 
 	return sysMetric
 }

@@ -11,17 +11,22 @@ import (
 type FileSystemInfoProcessor struct {
 }
 
+var (
+	fsReadOnlyLabels []string
+	fsInfoLabels     []string
+)
+
 func (fsip FileSystemInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
-	arrSysInfoStats := fsip.parseFileSystemInfo()
-	return arrSysInfoStats, nil
-}
-
-func (fsip FileSystemInfoProcessor) parseFileSystemInfo() []statprocessors.AerospikeStat {
-
-	arrSysInfoStats := []statprocessors.AerospikeStat{}
-
 	arrFileSystemMountStats := dataprovider.GetSystemProvider().GetFileSystemStats()
 
+	// global labels
+	fsReadOnlyLabels = []string{}
+	fsReadOnlyLabels = append(fsReadOnlyLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
+	fsReadOnlyLabels = append(fsReadOnlyLabels, commons.METRIC_LABEL_FSTYPE, commons.METRIC_LABEL_DEVICE, commons.METRIC_LABEL_MOUNT_POINT)
+
+	fsInfoLabels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_FSTYPE, commons.METRIC_LABEL_DEVICE, commons.METRIC_LABEL_MOUNT_POINT}
+
+	arrSysInfoStats := []statprocessors.AerospikeStat{}
 	for _, stats := range arrFileSystemMountStats {
 
 		isreadonly := stats["is_read_only"]
@@ -38,10 +43,9 @@ func (fsip FileSystemInfoProcessor) parseFileSystemInfo() []statprocessors.Aeros
 		// add disk-info
 		statReadOnly := fsip.constructFileSystemReadOnly(fsType, mountPoint, source, isreadonly)
 		arrSysInfoStats = append(arrSysInfoStats, statReadOnly)
-
 	}
 
-	return arrSysInfoStats
+	return arrSysInfoStats, nil
 }
 
 func (fsip FileSystemInfoProcessor) constructFileSystemReadOnly(fstype string, mountpoint string, deviceName string, isReadOnly string) statprocessors.AerospikeStat {
@@ -49,13 +53,10 @@ func (fsip FileSystemInfoProcessor) constructFileSystemReadOnly(fstype string, m
 	service := statprocessors.Service
 
 	// add disk_info
-	labels := []string{}
-	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
-	labels = append(labels, commons.METRIC_LABEL_FSTYPE, commons.METRIC_LABEL_DEVICE, commons.METRIC_LABEL_MOUNT_POINT)
 	labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
 
 	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILESYSTEM_STATS, "readonly")
-	sysMetric.Labels = labels
+	sysMetric.Labels = fsReadOnlyLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value, _ = commons.TryConvert(isReadOnly)
 
@@ -68,13 +69,12 @@ func (fsip FileSystemInfoProcessor) constructFileSystemSysInfoStats(fstype strin
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
-	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_FSTYPE, commons.METRIC_LABEL_DEVICE, commons.METRIC_LABEL_MOUNT_POINT}
 	labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
 
 	l_metricName := strings.ToLower(statName)
 	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILESYSTEM_STATS, l_metricName)
 
-	sysMetric.Labels = labels
+	sysMetric.Labels = fsInfoLabels
 	sysMetric.LabelValues = labelValues
 
 	value, _ := commons.TryConvert(stats[statName])

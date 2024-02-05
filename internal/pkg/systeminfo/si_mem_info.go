@@ -16,17 +16,17 @@ func (mip MemInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
 
 	memStats := dataprovider.GetSystemProvider().GetMemInfoStats()
 
+	memInfoLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
 	for _, stats := range memStats {
 		clusterName := statprocessors.ClusterName
 		service := statprocessors.Service
 
-		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
 		labelValues := []string{clusterName, service}
 
 		for k, v := range stats {
 			l_metricName := strings.ToLower(k) + "_bytes"
 			sysMetric := statprocessors.NewAerospikeStat(commons.CTX_MEMORY_STATS, l_metricName)
-			sysMetric.Labels = labels
+			sysMetric.Labels = memInfoLabels
 			sysMetric.LabelValues = labelValues
 			sysMetric.Value, _ = commons.TryConvert(v)
 

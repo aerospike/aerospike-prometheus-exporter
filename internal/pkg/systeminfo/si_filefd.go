@@ -9,16 +9,16 @@ import (
 type FileFDInfoProcessor struct {
 }
 
-func (ffdip FileFDInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
-	arrSysInfoStats := ffdip.parseFilefdStats()
-	return arrSysInfoStats, nil
-}
+var (
+	fileStatLabels []string
+)
 
-func (ffdip FileFDInfoProcessor) parseFilefdStats() []statprocessors.AerospikeStat {
+func (ffdip FileFDInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
 	arrSysInfoStats := []statprocessors.AerospikeStat{}
 
-	fileFDStats := dataprovider.GetSystemProvider().GetFileFD()
+	fileStatLabels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
 
+	fileFDStats := dataprovider.GetSystemProvider().GetFileFD()
 	for _, stats := range fileFDStats {
 
 		allocated, _ := commons.TryConvert(stats["allocated"])
@@ -27,20 +27,17 @@ func (ffdip FileFDInfoProcessor) parseFilefdStats() []statprocessors.AerospikeSt
 		arrSysInfoStats = append(arrSysInfoStats, ffdip.constructFileFDstat("maximum", maximum))
 	}
 
-	return arrSysInfoStats
+	return arrSysInfoStats, nil
 }
 
-func (ffdip FileFDInfoProcessor) constructFileFDstat(key string, value float64) statprocessors.AerospikeStat {
+func (ffdip FileFDInfoProcessor) constructFileFDstat(statName string, value float64) statprocessors.AerospikeStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
-	labels := []string{}
-	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
-
 	labelValues := []string{clusterName, service}
 
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILEFD_STATS, key)
-	sysMetric.Labels = labels
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILEFD_STATS, statName)
+	sysMetric.Labels = fileStatLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value = value
 

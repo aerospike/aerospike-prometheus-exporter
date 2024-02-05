@@ -9,14 +9,17 @@ import (
 type NetworkInfoProcessor struct {
 }
 
+var (
+	netDevStatLabels []string
+	networkLabels    []string
+)
+
 func (nip NetworkInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
 
-	arrSysInfoStats := nip.parseNetworkStats()
-	return arrSysInfoStats, nil
-}
-
-func (nip NetworkInfoProcessor) parseNetworkStats() []statprocessors.AerospikeStat {
 	arrSysInfoStats := []statprocessors.AerospikeStat{}
+
+	netDevStatLabels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE}
+	networkLabels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE}
 
 	arrGroupStats, arrReceiveStats, arrTransferStats := dataprovider.GetSystemProvider().GetNetDevStats()
 
@@ -53,39 +56,33 @@ func (nip NetworkInfoProcessor) parseNetworkStats() []statprocessors.AerospikeSt
 		arrSysInfoStats = append(arrSysInfoStats, nip.constructNetworkStat("transfer_packets_total", deviceName, stats))
 	}
 
-	return arrSysInfoStats
+	return arrSysInfoStats, nil
 }
 
-func (nip NetworkInfoProcessor) constructNetworkDevStat(netStatKey string, deviceName string, stats map[string]string) statprocessors.AerospikeStat {
+func (nip NetworkInfoProcessor) constructNetworkDevStat(statName string, deviceName string, stats map[string]string) statprocessors.AerospikeStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
-	labels := []string{}
-	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE)
-
 	labelValues := []string{clusterName, service, deviceName}
 
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_NET_DEV_STATS, netStatKey)
-	sysMetric.Labels = labels
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_NET_DEV_STATS, statName)
+	sysMetric.Labels = netDevStatLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value, _ = commons.TryConvert(stats[deviceName])
 
 	return sysMetric
 }
 
-func (nip NetworkInfoProcessor) constructNetworkStat(netStatKey string, deviceName string, stats map[string]string) statprocessors.AerospikeStat {
+func (nip NetworkInfoProcessor) constructNetworkStat(statName string, deviceName string, stats map[string]string) statprocessors.AerospikeStat {
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
-	labels := []string{}
-	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE)
-
 	labelValues := []string{clusterName, service, deviceName}
 
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_NETWORK_STATS, netStatKey)
-	sysMetric.Labels = labels
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_NETWORK_STATS, statName)
+	sysMetric.Labels = networkLabels
 	sysMetric.LabelValues = labelValues
-	sysMetric.Value, _ = commons.TryConvert(stats[netStatKey])
+	sysMetric.Value, _ = commons.TryConvert(stats[statName])
 
 	return sysMetric
 }
