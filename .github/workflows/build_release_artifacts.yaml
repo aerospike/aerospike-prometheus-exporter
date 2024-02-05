@@ -112,3 +112,66 @@ jobs:
              echo
              ls -lst pkg/target/*
              
+    tar_job:
+      runs-on: ubuntu-latest    
+      steps:
+        - uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
+
+        - uses: actions-ecosystem/action-get-latest-tag@v1
+          id: get-latest-tag
+
+        - uses: actions/setup-ruby@v1
+          with:
+             ruby-version: '3.x'
+        - run: gem install fpm --no-document
+
+        - name: Set up Go
+          uses: actions/setup-go@v3
+          with:
+             go-version: 1.20.2
+    
+        - name: go mod tidy
+          run: |
+              dpkg-architecture -q DEB_BUILD_ARCH
+              (git describe --tags --always --abbrev=0 | cut -c 1-)
+              go mod tidy
+          
+        - name: Build tar files
+          id: build-tar-artifact
+          run: |
+              echo "Current working directory ".$PWD
+              echo
+              echo "Build Directory is ".$BUILD_DIR
+              make tar GOOS=linux GOARCH=amd64 ARCH=x86_64
+              make tar GOOS=linux GOARCH=arm64 ARCH=aarch64
+
+        - name: gzip tar files
+          run: |
+            cd pkg/target   
+            ls -lrt *.tar
+            echo "GZipping tar files"
+            gzip aerospike-prometheus-exporter*.tar 
+            echo "gzipped files"
+            ls -lrt *.gz
+
+        - name: Upload Release Asset
+          env:
+            GH_TOKEN: ${{ github.token }}
+            TAG_NAME: "${{ steps.get-latest-tag.outputs.tag }}"
+          run: |
+             # echo "tag_name $TAG_NAME"
+             echo
+             
+             files=$(find pkg/target -type f -name "aerospike-prome*" -printf "$(realpath -s %p) ")
+         
+             for file in $files; do
+               echo "uploading file === $file to release-tag $TAG_NAME"
+               gh release upload "$TAG_NAME" "$file"
+             done   
+
+             echo
+             echo "lising of files ... "
+             echo
+             ls -lst pkg/target/*
