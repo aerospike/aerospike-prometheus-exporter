@@ -11,7 +11,19 @@ import (
 type DiskInfoProcessor struct {
 }
 
+var (
+	metricDiskInfoLabels = []string{}
+	diskInfoLabels       = []string{}
+)
+
 func (dip DiskInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
+
+	// metric: diskinfo
+	metricDiskInfoLabels = append(metricDiskInfoLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE)
+	metricDiskInfoLabels = append(metricDiskInfoLabels, commons.METRIC_LABEL_MAJOR, commons.METRIC_LABEL_MINOR, commons.METRIC_LABEL_SERIAL)
+
+	// other disk metrics
+	diskInfoLabels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE}
 
 	arrSysInfoStats := dip.parseDiskStats()
 
@@ -57,15 +69,10 @@ func (dip DiskInfoProcessor) constructDiskInfo(deviceName string, major string, 
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
-	// add disk_info
-	labels := []string{}
-	labels = append(labels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE)
-	labels = append(labels, commons.METRIC_LABEL_MAJOR, commons.METRIC_LABEL_MINOR, commons.METRIC_LABEL_SERIAL)
-
 	labelValues := []string{clusterName, service, deviceName, major, minor, serial}
 
 	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_DISK_STATS, "info")
-	sysMetric.Labels = labels
+	sysMetric.Labels = metricDiskInfoLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value = 1
 
@@ -78,13 +85,12 @@ func (dip DiskInfoProcessor) constructDiskinfoSystemStat(deviceName string, stat
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 
-	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE}
 	labelValues := []string{clusterName, service, deviceName}
 
 	l_metricName := strings.ToLower(statName)
 	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_DISK_STATS, l_metricName)
 
-	sysMetric.Labels = labels
+	sysMetric.Labels = diskInfoLabels
 	sysMetric.LabelValues = labelValues
 	value, _ := commons.TryConvert(diskStats[statName])
 	sysMetric.Value = value

@@ -27,7 +27,6 @@ func (cip CpuInfoProcessor) parseCpuStats() []statprocessors.AerospikeStat {
 	}
 
 	for _, stats := range cpuDetails {
-		// fmt.Println("parsing CPU stats ", index)
 		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stats["index"]), "idle", stats))
 		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stats["index"]), "irq", stats))
 		arrSysInfoStats = append(arrSysInfoStats, cip.constructCpuStats("seconds_total", fmt.Sprint(stats["index"]), "iowait", stats))

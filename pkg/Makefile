@@ -89,6 +89,9 @@ fips-rpm: fipsparam rpm
 
 .PHONY: rpm
 rpm: prep
+	$(eval ARCH := $(shell uname -m))
+	$(eval DISTRO_VERSION := $(shell echo $(DISTRO_VERSION) | cut -d'.' -f1)) # Only major version for RPM
+
 	fpm --force \
 		--config-files /etc/aerospike-prometheus-exporter \
 		--input-type dir \
@@ -133,8 +136,8 @@ prep:
 	install -d $(BUILD_DIR)/usr/bin
 	install -d $(BUILD_DIR)/etc/aerospike-prometheus-exporter
 	install -pm 755 $(TOP_DIR)/aerospike-prometheus-exporter $(BUILD_DIR)/usr/bin/aerospike-prometheus-exporter
-	install -pm 644 $(TOP_DIR)/ape.toml $(BUILD_DIR)/etc/aerospike-prometheus-exporter/ape.toml
-	install -pm 644 $(TOP_DIR)/gauge_stats_list.toml $(BUILD_DIR)/etc/aerospike-prometheus-exporter/gauge_stats_list.toml
+	install -pm 644 $(TOP_DIR)/configs/ape.toml $(BUILD_DIR)/etc/aerospike-prometheus-exporter/ape.toml
+	install -pm 644 $(TOP_DIR)/configs/gauge_stats_list.toml $(BUILD_DIR)/etc/aerospike-prometheus-exporter/gauge_stats_list.toml
 
 .PHONY: clean
 clean:

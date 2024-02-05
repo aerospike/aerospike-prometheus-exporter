@@ -1,10 +1,12 @@
 # This workflow will build a golang project
+# This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Go
+name: Build exporter deb,rpm and tgz artifacts 
 
 on: 
   push:
+    # branches: [master]
     # TODO this combination logic of branch + tag is not working.
     tags:
        - v*
@@ -15,78 +17,83 @@ permissions:
   contents: write
 
 jobs:
-
-  build:
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: actions/checkout@v3
-      with:
-          fetch-depth: 0
-          
-    - name: environment variables
-      id: vars
-      run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT    
       
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: 1.20.2
+    job_build:
+      strategy:
+        fail-fast: false
+        matrix:
+          arch: ["amd64","arm64"]
+          container: ["ubuntu:20.04","ubuntu:22.04","redhat:8","redhat:9","amazonlinux:2023","debian:11","debian:12"]
+          include:
+            - container: "ubuntu:22.04"
+              name: "Ubuntu22.04"
+              cmd: "make deb"
+              ext: "deb"
+            - container: "ubuntu:20.04"
+              name: "Ubuntu20.04"
+              cmd: "make deb"
+              ext: "deb"
+            - container: "redhat:8"
+              cmd: "make rpm"
+              ext: "rpm"
+            - container: "redhat:9"
+              cmd: "make rpm"
+              ext: "rpm"
+            - container: "amazonlinux:2023" 
+              cmd: "make rpm"
+              ext: "rpm"
+            - container: "debian:11"
+              cmd: "make deb"
+              ext: "deb"
+            - container: "debian:12"
+              cmd: "make deb"
+              ext: "deb"
+              
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
+        - name: Set up QEMU
+          uses: docker/setup-qemu-action@v2
+          with:
+              platforms: linux/${{ matrix.arch }}
 
-    - name: go mod tidy
-      run: |
-         dpkg-architecture -q DEB_BUILD_ARCH
-         (git describe --tags --always --abbrev=0 | cut -c 1-)
-         go mod tidy
-         
-    - uses: actions/setup-ruby@v1
-      with:
-        ruby-version: '3.x'
-    - run: gem install fpm --no-document
-    
-    - name: make exporter
-      run: |
-         echo "GIT_TAG ${{ steps.vars.outputs.tag }}"
-         
-         make exporter
-         
-    - name: make deb
-      run: |
-         make deb
+        - uses: actions-ecosystem/action-get-latest-tag@v1
+          id: get-latest-tag
+                  
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v2
 
-    - name: make package-linux-arm64
-      run: make package-linux-arm64
+        - name: Login to JFrog
+          uses: docker/login-action@v2
+          with:
+            registry: aerospike.jfrog.io
+            username: ${{ secrets.JFROG_ARTIFACTORY_USER }}
+            password: ${{ secrets.JFROG_ARTIFACTORY_TOKEN }}
+      
+        - name: Build OS and Platform specific artifact
+          id: build-artifact
+          run: |
+              docker run -v ${{ github.workspace }}:/src/ -w /src/ --platform linux/${{ matrix.arch }} aerospike.jfrog.io/devops-containers-prod-local/fpm-${{ matrix.container }} ${{ matrix.cmd }}
 
-    - name: make package-linux-amd64
-      run: make package-linux-amd64
+        - name: Upload Release Asset
+          env:
+            GH_TOKEN: ${{ github.token }}
+            TAG_NAME: "${{ steps.get-latest-tag.outputs.tag }}"
+          run: |
+             # echo "tag_name $TAG_NAME"
+             echo
+             
+             files=$(find pkg/target -type f -name "aerospike-prome*" -printf "$(realpath -s %p) ")
+         
+             for file in $files; do
+               echo "uploading file === $file to release-tag $TAG_NAME"
+               gh release upload "$TAG_NAME" "$file"
+             done   
 
-    # - name: gzip tar files
-    #   run: |
-    #      cd pkg/target   
-    #      ls -lrt *.tar
-    #      echo "GZipping tar files"
-    #      gzip aerospike-prometheus-exporter*.tar 
-    #      echo "gzipped files"
-    #      ls -lrt *.gz
-
-    - name: install hub utility (as workaround)
-      run: |
-          sudo apt update && sudo apt install -y git wget
-          url="$(sudo wget -qO- https://api.github.com/repos/github/hub/releases/latest | tr '"' '\n' | grep '.*/download/.*/hub-linux-amd64-.*.tgz')"
-          sudo wget -qO- "$url" | sudo tar -xzvf- -C /usr/bin --strip-components=2 --wildcards "*/bin/hub"
-        
-    - name: Upload Release Asset
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_NAME: "Aerospike Prometheus Exporter"
-          TAG_NAME: "${{ steps.vars.outputs.tag }}"
-      run: |
-         echo "tag_name $TAG_NAME"
-         
-         files=$(find pkg/target -type f -name "aerospike-prom*" -printf "$(realpath -s %p) ")
-         
-         for file in $files; do
-           echo "uploading file === $file"
-           # TODO: move this to gh instead of hub
-           hub release edit -a $file -m "$RELEASE_NAME $TAG_NAME" "$TAG_NAME"
-         done
-         
+             echo
+             echo "lising of files ... "
+             echo
+             ls -lst pkg/target/*
+             

@@ -1,5 +1,7 @@
 package commons
 
+import "github.com/prometheus/procfs"
+
 const (
 	CTX_USERS      ContextType = "users"
 	CTX_NAMESPACE  ContextType = "namespace"
@@ -51,4 +53,13 @@ const (
 	METRIC_LABEL_FSTYPE      = "fstype"
 	METRIC_LABEL_CPU         = "cpu"
 	METRIC_LABEL_CPU_MODE    = "mode"
+)
+
+var (
+	PROC_PATH         = procfs.DefaultMountPoint
+	SYS_PATH          = "/sys"
+	ROOTFS_PATH       = "/"
+	UDEV_DATA_PATH    = "/run/udev/data"
+	NET_STAT_PATH     = "net/netstat"
+	NET_DEV_STAT_PATH = "/proc/net/dev"
 )

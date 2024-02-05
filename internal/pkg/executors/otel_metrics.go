@@ -78,37 +78,6 @@ func processAerospikeStats(meter metric.Meter, ctx context.Context, commonLabels
 
 }
 
-// func processSystemInfoStats(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, refreshStats []systeminfo.SystemInfoStat) {
-
-// 	// create the required metered objectes
-// 	for _, stat := range refreshStats {
-
-// 		qualifiedName := stat.QualifyMetricContext() + "_" + NormalizeMetric(stat.Name)
-// 		desc := NormalizeMetric("description_" + stat.Name)
-
-// 		labels := []attribute.KeyValue{}
-// 		// label name to value mapped using index
-// 		for idx, label := range stat.Labels {
-// 			labels = append(labels, attribute.String(label, stat.LabelValues[idx]))
-// 		}
-
-// 		// append common labels
-// 		labels = append(labels, commonLabels...)
-
-// 		// create Otel metric
-// 		if stat.MType == commons.MetricTypeCounter {
-// 			value := stat.Value
-
-// 			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, value)
-
-// 		} else if stat.MType == commons.MetricTypeGauge {
-// 			makeOtelGaugeMetric(meter, ctx, qualifiedName, desc, labels, stat.Value)
-// 		}
-
-// 	}
-
-// }
-
 func makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, value float64) {
 
 	ometric, _ := meter.Float64Counter(
