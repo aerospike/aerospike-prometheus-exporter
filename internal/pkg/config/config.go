@@ -29,16 +29,14 @@ type Config struct {
 		LogLevel          string `toml:"log_level"`
 		UseMockDatasource bool   `toml:"use_mock_datasource"`
 
-		Prom struct {
-			Bind              string `toml:"bind"`
-			CertFile          string `toml:"cert_file"`
-			KeyFile           string `toml:"key_file"`
-			RootCA            string `toml:"root_ca"`
-			KeyFilePassphrase string `toml:"key_file_passphrase"`
+		Bind              string `toml:"bind"`
+		CertFile          string `toml:"cert_file"`
+		KeyFile           string `toml:"key_file"`
+		RootCA            string `toml:"root_ca"`
+		KeyFilePassphrase string `toml:"key_file_passphrase"`
 
-			BasicAuthUsername string `toml:"basic_auth_username"`
-			BasicAuthPassword string `toml:"basic_auth_password"`
-		} `toml:"Prom"`
+		BasicAuthUsername string `toml:"basic_auth_username"`
+		BasicAuthPassword string `toml:"basic_auth_password"`
 
 		Otel struct {
 			OtelServiceName             string            `toml:"service_name"`
@@ -144,8 +142,8 @@ type Config struct {
 // Validate and update exporter configuration
 func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 
-	if c.Agent.Prom.Bind == "" {
-		c.Agent.Prom.Bind = ":9145"
+	if c.Agent.Bind == "" {
+		c.Agent.Bind = ":9145"
 	}
 
 	if c.Agent.Timeout == 0 {

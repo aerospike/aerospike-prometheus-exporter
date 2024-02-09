@@ -71,8 +71,8 @@ func (fsip FileSystemInfoProcessor) constructFileSystemSysInfoStats(fstype strin
 
 	labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
 
-	l_metricName := strings.ToLower(statName)
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILESYSTEM_STATS, l_metricName)
+	metricName := strings.ToLower(statName)
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILESYSTEM_STATS, metricName)
 
 	sysMetric.Labels = fsInfoLabels
 	sysMetric.LabelValues = labelValues

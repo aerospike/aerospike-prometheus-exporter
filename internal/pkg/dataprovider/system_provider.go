@@ -28,6 +28,8 @@ func (sip SystemInfoProvider) GetCPUDetails() ([]map[string]string, []map[string
 		return arrGuestCpuStats, arrCpuStats
 	}
 
+	// stats.CPUTotal.
+
 	for index, cpu := range stats.CPU {
 		// fmt.Println("parsing CPU stats ", index)
 		guestCpuValues := make(map[string]string)

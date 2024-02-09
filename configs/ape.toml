@@ -24,8 +24,6 @@
       log_file = ""
       log_level = ""
 
-[Agent.Prom]
-
       # Exporter HTTPS (TLS) configuration
       # HTTPS between Prometheus and Exporter
 
