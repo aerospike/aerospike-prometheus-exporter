@@ -21,6 +21,11 @@ func RefreshSystemInfo() ([]AerospikeStat, error) {
 	arrSysInfoStats = append(arrSysInfoStats, getNetStatInfo()...)
 	arrSysInfoStats = append(arrSysInfoStats, getNetworkInfo()...)
 
+	// TODO: Review and remove after finalizing the metrics to share
+	arrSysInfoStats = append(arrSysInfoStats, getDiskInfo()...)
+	arrSysInfoStats = append(arrSysInfoStats, getFileSystemInfo()...)
+	arrSysInfoStats = append(arrSysInfoStats, getVmStatsInfo()...)
+
 	return arrSysInfoStats, nil
 }
 
@@ -195,4 +200,177 @@ func getNetworkInfo() []AerospikeStat {
 	}
 
 	return arrSysInfoStats
+}
+
+// disk, filesystem and vmstat - TODO: clean-up
+
+func getDiskInfo() []AerospikeStat {
+	arrSysInfoStats := []AerospikeStat{}
+	diskStats := dataprovider.GetSystemProvider().GetDiskStats()
+
+	// metric: diskinfo
+	metricDiskInfoLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE}
+	metricDiskInfoLabels = append(metricDiskInfoLabels, commons.METRIC_LABEL_MAJOR, commons.METRIC_LABEL_MINOR, commons.METRIC_LABEL_SERIAL)
+
+	// other disk metrics
+	diskInfoLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE}
+
+	for _, stats := range diskStats {
+		deviceName := stats["device_name"]
+
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "reads_completed_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "reads_merged_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "read_bytes_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "read_time_seconds_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "writes_completed_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "writes_merged_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "writes_bytes_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "write_time_seconds_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "io_now", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "io_time_seconds_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "io_time_weighted_seconds_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "discards_completed_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "discards_merged_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "discarded_sectors_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "discard_time_seconds_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "flush_requests_total", stats, diskInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskinfoSystemStat(deviceName, "flush_requests_time_seconds_total", stats, diskInfoLabels))
+
+		arrSysInfoStats = append(arrSysInfoStats, constructDiskInfo(deviceName, stats["major_number"], stats["minor_number"], stats["serial"], metricDiskInfoLabels))
+
+	}
+
+	return arrSysInfoStats
+}
+
+func constructDiskInfo(deviceName string, major string, minor string, serial string, metricDiskInfoLabels []string) AerospikeStat {
+	// 	[]string{"device", "major", "minor", "path", "wwn", "model", "serial", "revision"},
+	// (stats.MajorNumber),(stats.MinorNumber), info[udevIDPath], info[udevIDWWN], info[udevIDModel], serial, info[udevIDRevision],
+	clusterName := ClusterName
+	service := Service
+
+	labelValues := []string{clusterName, service, deviceName, major, minor, serial}
+
+	sysMetric := NewAerospikeStat(commons.CTX_DISK_STATS, "info", "info")
+	sysMetric.Labels = metricDiskInfoLabels
+	sysMetric.LabelValues = labelValues
+	sysMetric.Value = 1
+
+	return sysMetric
+
+}
+
+func constructDiskinfoSystemStat(deviceName string, statName string, diskStats map[string]string, diskInfoLabels []string) AerospikeStat {
+
+	clusterName := ClusterName
+	service := Service
+
+	labelValues := []string{clusterName, service, deviceName}
+
+	metricName := strings.ToLower(statName)
+	sysMetric := NewAerospikeStat(commons.CTX_DISK_STATS, metricName, metricName)
+
+	sysMetric.Labels = diskInfoLabels
+	sysMetric.LabelValues = labelValues
+	value, _ := commons.TryConvert(diskStats[statName])
+	sysMetric.Value = value
+
+	return sysMetric
+}
+
+func getFileSystemInfo() []AerospikeStat {
+	arrFileSystemMountStats := dataprovider.GetSystemProvider().GetFileSystemStats()
+
+	// global labels
+	fsReadOnlyLabels := []string{}
+	fsReadOnlyLabels = append(fsReadOnlyLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
+	fsReadOnlyLabels = append(fsReadOnlyLabels, commons.METRIC_LABEL_FSTYPE, commons.METRIC_LABEL_DEVICE, commons.METRIC_LABEL_MOUNT_POINT)
+
+	fsInfoLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_FSTYPE, commons.METRIC_LABEL_DEVICE, commons.METRIC_LABEL_MOUNT_POINT}
+
+	arrSysInfoStats := []AerospikeStat{}
+	for _, stats := range arrFileSystemMountStats {
+
+		isreadonly := stats["is_read_only"]
+		source := stats["source"]
+		mountPoint := stats["mount_point"]
+		fsType := stats["mount_point"]
+
+		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "size_bytes", stats, fsInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "free_bytes", stats, fsInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "avail_byts", stats, fsInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "files", stats, fsInfoLabels))
+		arrSysInfoStats = append(arrSysInfoStats, constructFileSystemSysInfoStats(fsType, mountPoint, source, "files_free", stats, fsInfoLabels))
+
+		// add disk-info
+		statReadOnly := constructFileSystemReadOnly(fsType, mountPoint, source, isreadonly, fsReadOnlyLabels)
+		arrSysInfoStats = append(arrSysInfoStats, statReadOnly)
+	}
+
+	return arrSysInfoStats
+}
+
+func constructFileSystemReadOnly(fstype string, mountpoint string, deviceName string, isReadOnly string, fsReadOnlyLabels []string) AerospikeStat {
+	clusterName := ClusterName
+	service := Service
+
+	// add disk_info
+	labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
+
+	sysMetric := NewAerospikeStat(commons.CTX_FILESYSTEM_STATS, "readonly", "readonly")
+	sysMetric.Labels = fsReadOnlyLabels
+	sysMetric.LabelValues = labelValues
+	sysMetric.Value, _ = commons.TryConvert(isReadOnly)
+
+	return sysMetric
+
+}
+
+func constructFileSystemSysInfoStats(fstype string, mountpoint string, deviceName string, statName string, stats map[string]string, fsInfoLabels []string) AerospikeStat {
+
+	clusterName := ClusterName
+	service := Service
+
+	labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
+
+	metricName := strings.ToLower(statName)
+	sysMetric := NewAerospikeStat(commons.CTX_FILESYSTEM_STATS, metricName, metricName)
+
+	sysMetric.Labels = fsInfoLabels
+	sysMetric.LabelValues = labelValues
+
+	value, _ := commons.TryConvert(stats[statName])
+	sysMetric.Value = value
+
+	return sysMetric
+}
+
+func getVmStatsInfo() []AerospikeStat {
+
+	arrSysInfoStats := []AerospikeStat{}
+	vmStatLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
+
+	arrVmStats := dataprovider.GetSystemProvider().GetVmStats()
+
+	for _, vmStats := range arrVmStats {
+		for key, _ := range vmStats {
+			arrSysInfoStats = append(arrSysInfoStats, constructVmstat(key, vmStatLabels, vmStats))
+		}
+	}
+
+	return arrSysInfoStats
+}
+
+func constructVmstat(statName string, vmStatLabels []string, stats map[string]string) AerospikeStat {
+	clusterName := ClusterName
+	service := Service
+
+	labelValues := []string{clusterName, service}
+
+	sysMetric := NewAerospikeStat(commons.CTX_VM_STATS, statName, statName)
+	sysMetric.Labels = vmStatLabels
+	sysMetric.LabelValues = labelValues
+	sysMetric.Value, _ = commons.TryConvert(stats[statName])
+
+	return sysMetric
 }
