@@ -169,7 +169,7 @@ func (sip SystemInfoProvider) GetFileSystemStats() []map[string]string {
 
 		size, free, avail, files, filesFree, isError = readDiskMountData(mnt.Source)
 		if isError {
-			log.Debug("Skipping, error during reading stats of mount-point ", mnt.MountPoint, " and mount-source ", mnt.Source)
+			log.Error("Skipping, error during reading stats of mount-point ", mnt.MountPoint, " and mount-source ", mnt.Source)
 			continue
 		}
 
