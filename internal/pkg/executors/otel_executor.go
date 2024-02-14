@@ -8,7 +8,6 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/systeminfo"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -171,7 +170,7 @@ func handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabel
 }
 
 func handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
-	sysInfoRefreshStats, err := systeminfo.Refresh()
+	sysInfoRefreshStats, err := statprocessors.RefreshSystemInfo()
 	if err != nil {
 		log.Errorln("Error while refreshing SystemInfo, error: ", err)
 		return

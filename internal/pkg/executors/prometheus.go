@@ -7,7 +7,6 @@ import (
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/systeminfo"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -71,7 +70,7 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	// System Metrics - Memory, Disk and Filesystem - push the fetched metrics to prometheus
-	system_metrics, err := systeminfo.Refresh()
+	system_metrics, err := statprocessors.RefreshSystemInfo()
 	if err != nil {
 		log.Errorln("Error while refreshing SystemInfo Stats, error: ", err)
 	}
