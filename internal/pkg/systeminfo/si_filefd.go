@@ -36,7 +36,7 @@ func (ffdip FileFDInfoProcessor) constructFileFDstat(statName string, value floa
 
 	labelValues := []string{clusterName, service}
 
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILEFD_STATS, statName)
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILEFD_STATS, statName, statName)
 	sysMetric.Labels = fileStatLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value = value

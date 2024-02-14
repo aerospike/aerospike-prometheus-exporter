@@ -47,7 +47,7 @@ func (cip CpuInfoProcessor) constructCpuStats(cpuStatName string, cpuNo string, 
 
 	labelValues := []string{clusterName, service, fmt.Sprint(cpuNo), cpuMode}
 
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_CPU_STATS, cpuStatName)
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_CPU_STATS, cpuStatName, cpuStatName)
 	sysMetric.Labels = cpuStatLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value, _ = commons.TryConvert(stats[cpuMode])

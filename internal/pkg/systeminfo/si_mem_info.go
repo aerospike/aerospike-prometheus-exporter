@@ -24,8 +24,8 @@ func (mip MemInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
 		labelValues := []string{clusterName, service}
 
 		for k, v := range stats {
-			l_metricName := strings.ToLower(k) + "_bytes"
-			sysMetric := statprocessors.NewAerospikeStat(commons.CTX_MEMORY_STATS, l_metricName)
+			metricName := strings.ToLower(k) + "_bytes"
+			sysMetric := statprocessors.NewAerospikeStat(commons.CTX_MEMORY_STATS, metricName, metricName)
 			sysMetric.Labels = memInfoLabels
 			sysMetric.LabelValues = labelValues
 			sysMetric.Value, _ = commons.TryConvert(v)

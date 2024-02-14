@@ -35,7 +35,7 @@ func (vip VmstatInfoProcessor) constructVmstat(statName string, stats map[string
 
 	labelValues := []string{clusterName, service}
 
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_VM_STATS, statName)
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_VM_STATS, statName, statName)
 	sysMetric.Labels = vmStatLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value, _ = commons.TryConvert(stats[statName])

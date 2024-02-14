@@ -116,13 +116,17 @@ func loopPatterns(pRawStatName string, pPatternList []string) bool {
 		if len(statPattern) > 0 {
 
 			ge := glob.MustCompile(statPattern)
-
+			tmp := pRawStatName
 			if ge.Match(pRawStatName) {
+				tmp = tmp + " pattern is " + statPattern + " is Allowed loopPatterns is TRUE "
+				fmt.Println(tmp)
+
 				return true
 			}
 		}
 	}
 
+	fmt.Println("pRawStatName: ", pRawStatName, " isAllowed loopPatterns is FALSE ")
 	return false
 }
 

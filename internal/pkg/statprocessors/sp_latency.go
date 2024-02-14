@@ -152,7 +152,9 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 				labelValues := []string{ClusterName, Service, namespaceName, labelValue}
 				pv := opLatencyStats.(LatencyStatsMap)["bucketValues"].([]float64)[i]
 
-				asMetric := NewAerospikeStat(commons.CTX_LATENCIES, operation+"_"+opLatencyStats.(LatencyStatsMap)["timeUnit"].(string)+"_bucket")
+				statName := operation + "_" + opLatencyStats.(LatencyStatsMap)["timeUnit"].(string) + "_bucket"
+
+				asMetric := NewAerospikeStat(commons.CTX_LATENCIES, statName, statName)
 				asMetric.updateValues(pv, labels, labelValues)
 				latencyMetricsToSend = append(latencyMetricsToSend, asMetric)
 
@@ -162,7 +164,9 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 					labelValues := []string{ClusterName, Service, namespaceName}
 					pv := opLatencyStats.(LatencyStatsMap)["bucketValues"].([]float64)[i]
 
-					asMetric := NewAerospikeStat(commons.CTX_LATENCIES, operation+"_"+opLatencyStats.(LatencyStatsMap)["timeUnit"].(string)+"_count")
+					statName := operation + "_" + opLatencyStats.(LatencyStatsMap)["timeUnit"].(string) + "_count"
+
+					asMetric := NewAerospikeStat(commons.CTX_LATENCIES, statName, statName)
 					asMetric.updateValues(pv, labels, labelValues)
 					latencyMetricsToSend = append(latencyMetricsToSend, asMetric)
 

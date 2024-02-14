@@ -21,6 +21,8 @@ type AerospikeStat struct {
 	Value       float64
 	Labels      []string
 	LabelValues []string
+
+	// ServerStatName string
 }
 
 /**
@@ -32,10 +34,14 @@ func (as *AerospikeStat) QualifyMetricContext() string {
 
 /*
 Utility, constructs a new AerospikeStat object with required checks like is-allowed, metric-type
-*/
-func NewAerospikeStat(pContext commons.ContextType, pStatName string) AerospikeStat {
+we are sending both stat-name sent by server and massaged stat-name to this, so allowed-regex is applied on original-server-stat-name
+very few stat-names will be message and are different from server-stat-name,
 
-	isAllowed := isMetricAllowed(pContext, pStatName)
+	like, storage-engine.file[1].defrag_q, storage-engine.stripe[0].defrag_writes
+*/
+func NewAerospikeStat(pContext commons.ContextType, pStatName string, pServerStatname string) AerospikeStat {
+
+	isAllowed := isMetricAllowed(pContext, pServerStatname)
 	mType := GetMetricType(pContext, pStatName)
 
 	isConfig := false
@@ -44,6 +50,7 @@ func NewAerospikeStat(pContext commons.ContextType, pStatName string) AerospikeS
 	}
 
 	return AerospikeStat{pContext, pStatName, mType, isAllowed, isConfig, 0.0, nil, nil}
+	// return AerospikeStat{pContext, pStatName, mType, isAllowed, isConfig, 0.0, nil, nil, pServerStatname}
 }
 
 func (as *AerospikeStat) updateValues(value float64, labels []string, labelValues []string) {

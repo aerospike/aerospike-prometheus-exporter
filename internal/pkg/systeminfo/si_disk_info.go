@@ -63,7 +63,7 @@ func (dip DiskInfoProcessor) constructDiskInfo(deviceName string, major string, 
 
 	labelValues := []string{clusterName, service, deviceName, major, minor, serial}
 
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_DISK_STATS, "info")
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_DISK_STATS, "info", "info")
 	sysMetric.Labels = metricDiskInfoLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value = 1
@@ -79,8 +79,8 @@ func (dip DiskInfoProcessor) constructDiskinfoSystemStat(deviceName string, stat
 
 	labelValues := []string{clusterName, service, deviceName}
 
-	l_metricName := strings.ToLower(statName)
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_DISK_STATS, l_metricName)
+	metricName := strings.ToLower(statName)
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_DISK_STATS, metricName, metricName)
 
 	sysMetric.Labels = diskInfoLabels
 	sysMetric.LabelValues = labelValues

@@ -55,7 +55,7 @@ func (fsip FileSystemInfoProcessor) constructFileSystemReadOnly(fstype string, m
 	// add disk_info
 	labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
 
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILESYSTEM_STATS, "readonly")
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILESYSTEM_STATS, "readonly", "readonly")
 	sysMetric.Labels = fsReadOnlyLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value, _ = commons.TryConvert(isReadOnly)
@@ -72,7 +72,7 @@ func (fsip FileSystemInfoProcessor) constructFileSystemSysInfoStats(fstype strin
 	labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
 
 	metricName := strings.ToLower(statName)
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILESYSTEM_STATS, metricName)
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_FILESYSTEM_STATS, metricName, metricName)
 
 	sysMetric.Labels = fsInfoLabels
 	sysMetric.LabelValues = labelValues

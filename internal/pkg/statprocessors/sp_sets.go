@@ -53,7 +53,7 @@ func (sw *SetsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 			asMetric, exists := sw.setMetrics[stat]
 
 			if !exists {
-				asMetric = NewAerospikeStat(commons.CTX_SETS, stat)
+				asMetric = NewAerospikeStat(commons.CTX_SETS, stat, stat)
 				sw.setMetrics[stat] = asMetric
 			}
 

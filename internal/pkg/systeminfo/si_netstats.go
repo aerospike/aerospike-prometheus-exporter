@@ -51,7 +51,7 @@ func (nsip NetStatInfoProcessor) constructNetstat(statName string, stats map[str
 
 	labelValues := []string{clusterName, service}
 
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_NET_STATS, statName)
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_NET_STATS, statName, statName)
 	sysMetric.Labels = netStatInfoLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value, _ = commons.TryConvert(stats[statName])

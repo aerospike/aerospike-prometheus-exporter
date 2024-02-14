@@ -65,7 +65,7 @@ func (nip NetworkInfoProcessor) constructNetworkDevStat(statName string, deviceN
 
 	labelValues := []string{clusterName, service, deviceName}
 
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_NET_DEV_STATS, statName)
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_NET_DEV_STATS, statName, statName)
 	sysMetric.Labels = netDevStatLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value, _ = commons.TryConvert(stats[deviceName])
@@ -79,7 +79,7 @@ func (nip NetworkInfoProcessor) constructNetworkStat(statName string, deviceName
 
 	labelValues := []string{clusterName, service, deviceName}
 
-	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_NETWORK_STATS, statName)
+	sysMetric := statprocessors.NewAerospikeStat(commons.CTX_NETWORK_STATS, statName, statName)
 	sysMetric.Labels = networkLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value, _ = commons.TryConvert(stats[statName])
