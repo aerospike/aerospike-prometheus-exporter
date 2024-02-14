@@ -36,8 +36,7 @@ func (as *AerospikeStat) QualifyMetricContext() string {
 Utility, constructs a new AerospikeStat object with required checks like is-allowed, metric-type
 we are sending both stat-name sent by server and massaged stat-name to this, so allowed-regex is applied on original-server-stat-name
 very few stat-names will be message and are different from server-stat-name,
-
-	like, storage-engine.file[1].defrag_q, storage-engine.stripe[0].defrag_writes
+like, storage-engine.file[1].defrag_q, storage-engine.stripe[0].defrag_writes
 */
 func NewAerospikeStat(pContext commons.ContextType, pStatName string, pServerStatname string) AerospikeStat {
 

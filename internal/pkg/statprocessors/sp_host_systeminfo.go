@@ -9,9 +9,6 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 )
 
-type SysInfoProcessor struct {
-}
-
 func RefreshSystemInfo() ([]AerospikeStat, error) {
 	arrSysInfoStats := []AerospikeStat{}
 
@@ -257,7 +254,6 @@ func constructDiskInfo(deviceName string, major string, minor string, serial str
 	sysMetric.Value = 1
 
 	return sysMetric
-
 }
 
 func constructDiskinfoSystemStat(deviceName string, statName string, diskStats map[string]string, diskInfoLabels []string) AerospikeStat {

@@ -29,9 +29,7 @@ const (
 
 	// netstatAcceptlist = "^(.*_(inerrors|inerrs)|ip_forwarding|ip(6|ext)_(inoctets|outoctets)|icmp6?_(inmsgs|outmsgs)|tcpext_(listen.*|syncookies.*|tcpsynretrans|tcptimeouts|tcpofoqueue)|tcp_(activeopens|insegs|outsegs|outrsts|passiveopens|retranssegs|currestab)|udp6?_(indatagrams|outdatagrams|noports|rcvbuferrors|sndbuferrors))$"
 	netstatAcceptlist = "tcp_(activeopens|retranssegs|currestab)"
-	snmp6Prefixlist   = "^(ip6.*|icmp6.*|udp6.*)"
-
-	vmstatAcceptList = "^(oom_kill|pgpg|pswp|pg.*fault).*"
+	vmstatAcceptList  = "^(oom_kill|pgpg|pswp|pg.*fault).*"
 )
 
 const (
@@ -52,16 +50,11 @@ var (
 	regexDiskIgnorePattern    = regexp.MustCompile(DISK_IGNORE_NAME_LIST)
 	regexFileIgnorePattern    = regexp.MustCompile(FILE_STAT_IGNORE_LIST)
 	regexNetstatAcceptPattern = regexp.MustCompile(netstatAcceptlist)
-	regexSnmp6PrefixPattern   = regexp.MustCompile(snmp6Prefixlist)
 	regexVmstatAcceptPattern  = regexp.MustCompile(vmstatAcceptList)
 )
 
 func getProcFilePath(name string) string {
 	return filepath.Join(PROC_PATH, name)
-}
-
-func getSysFilePath(name string) string {
-	return filepath.Join(SYS_PATH, name)
 }
 
 func getUdevDataFilePath(name string) string {
@@ -71,17 +64,6 @@ func getUdevDataFilePath(name string) string {
 func getRootfsFilePath(name string) string {
 	return filepath.Join(ROOTFS_PATH, name)
 }
-
-// func rootfsStripPrefix(path string) string {
-// 	if *rootfsPath == "/" {
-// 		return path
-// 	}
-// 	stripped := strings.TrimPrefix(path, *rootfsPath)
-// 	if stripped == "" {
-// 		return "/"
-// 	}
-// 	return stripped
-// }
 
 // ignoreDisk returns whether the device should be ignoreDisk
 func ignoreDisk(name string) bool {
@@ -95,10 +77,6 @@ func ignoreFileSystem(name string) bool {
 
 func acceptNetstat(name string) bool {
 	return (regexNetstatAcceptPattern != nil && regexNetstatAcceptPattern.MatchString(name))
-}
-
-func acceptSnmp6(name string) bool {
-	return (regexSnmp6PrefixPattern != nil && regexSnmp6PrefixPattern.MatchString(name))
 }
 
 func acceptVmstat(name string) bool {
@@ -192,42 +170,6 @@ func parseNetStats(fileName string) map[string]string {
 			// fmt.Println("key ", key, " acceptNetstat(key): ", acceptNetstat(key), " valueParts[i] ", valueParts[i])
 			if acceptNetstat(key) {
 				arrSysInfoStats[key] = values[i]
-			}
-		}
-	}
-
-	return arrSysInfoStats
-}
-
-func parseSNMP6Stats(fileName string) map[string]string {
-	arrSysInfoStats := map[string]string{}
-
-	file, err := os.Open(fileName)
-	if err != nil {
-		log.Error("Error while opening file,", fileName, " Error: ", err)
-		return arrSysInfoStats
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		snmp6Stat := strings.Fields(scanner.Text())
-		if len(snmp6Stat) < 2 {
-			continue
-		}
-		// statProtocolName will have IP6 as prefix
-		statProtocolName := strings.ToLower(snmp6Stat[0])
-		value := snmp6Stat[1]
-
-		if acceptSnmp6(statProtocolName) {
-			ele := strings.Split(statProtocolName, "6")
-			// snmp6 metric format: ip6inreceives
-			protocol := ele[0]
-			stat := ele[1]
-
-			key := protocol + "6_" + stat
-			if acceptNetstat(key) {
-				arrSysInfoStats[key] = value
 			}
 		}
 	}
