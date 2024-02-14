@@ -221,8 +221,8 @@ func (sip SystemInfoProvider) GetNetStatInfo() ([]map[string]string, []map[strin
 	arrSnmp6Stats := []map[string]string{}
 
 	arrNetStats = append(arrNetStats, parseNetStats(getProcFilePath("net/netstat")))
-	// arrSnmpStats = append(arrSnmpStats, parseNetStats(getProcFilePath("net/snmp")))
-	// arrSnmp6Stats = append(arrSnmp6Stats, parseSNMP6Stats(getProcFilePath("net/snmp6")))
+	arrSnmpStats = append(arrSnmpStats, parseNetStats(getProcFilePath("net/snmp")))
+	arrSnmp6Stats = append(arrSnmp6Stats, parseSNMP6Stats(getProcFilePath("net/snmp6")))
 
 	log.Debug("NetStatsInfo Net - Count of return stats ", len(arrNetStats))
 	log.Debug("NetStatsInfo SNMP - Count of return stats ", len(arrSnmpStats))
