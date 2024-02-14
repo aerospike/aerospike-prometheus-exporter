@@ -4,6 +4,7 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
+	log "github.com/sirupsen/logrus"
 )
 
 type NetStatInfoProcessor struct {
@@ -22,11 +23,18 @@ func (nsip NetStatInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, erro
 	service := statprocessors.Service
 	labelValues := []string{clusterName, service}
 
-	for statName, value := range snmpStats {
+	for statName, statValue := range snmpStats {
+
+		value, err := commons.TryConvert(statValue)
+		if err != nil {
+			log.Error("Error while converting value of stat: ", statName, " and converted value is ", statValue)
+			continue
+		}
+
 		sysMetric := statprocessors.NewAerospikeStat(commons.CTX_NET_STATS, statName, statName)
 		sysMetric.Labels = netStatInfoLabels
 		sysMetric.LabelValues = labelValues
-		sysMetric.Value, _ = commons.TryConvert(value)
+		sysMetric.Value = value
 
 		arrSysInfoStats = append(arrSysInfoStats, sysMetric)
 	}
