@@ -176,62 +176,62 @@ func GetMetricType(pContext commons.ContextType, pRawMetricName string) commons.
 	return commons.MetricTypeCounter
 }
 
-// Filter metrics
-// Runs the raw metrics through allowlist first and the resulting metrics through blocklist
-func GetFilteredMetrics(rawMetrics map[string]commons.MetricType, allowlist []string, allowlistEnabled bool, blocklist []string) map[string]commons.MetricType {
-	filteredMetrics := filterAllowedMetrics(rawMetrics, allowlist, allowlistEnabled)
-	filterBlockedMetrics(filteredMetrics, blocklist)
+// // Filter metrics
+// // Runs the raw metrics through allowlist first and the resulting metrics through blocklist
+// func GetFilteredMetrics(rawMetrics map[string]commons.MetricType, allowlist []string, allowlistEnabled bool, blocklist []string) map[string]commons.MetricType {
+// 	filteredMetrics := filterAllowedMetrics(rawMetrics, allowlist, allowlistEnabled)
+// 	filterBlockedMetrics(filteredMetrics, blocklist)
 
-	return filteredMetrics
-}
+// 	return filteredMetrics
+// }
 
-// Filter metrics based on configured allowlist.
-func filterAllowedMetrics(rawMetrics map[string]commons.MetricType, allowlist []string, allowlistEnabled bool) map[string]commons.MetricType {
-	if !allowlistEnabled {
-		return rawMetrics
-	}
+// // Filter metrics based on configured allowlist.
+// func filterAllowedMetrics(rawMetrics map[string]commons.MetricType, allowlist []string, allowlistEnabled bool) map[string]commons.MetricType {
+// 	if !allowlistEnabled {
+// 		return rawMetrics
+// 	}
 
-	filteredMetrics := make(map[string]commons.MetricType)
+// 	filteredMetrics := make(map[string]commons.MetricType)
 
-	for _, stat := range allowlist {
-		if GlobbingPattern.MatchString(stat) {
-			ge := glob.MustCompile(stat)
+// 	for _, stat := range allowlist {
+// 		if GlobbingPattern.MatchString(stat) {
+// 			ge := glob.MustCompile(stat)
 
-			for k, v := range rawMetrics {
-				if ge.Match(k) {
-					filteredMetrics[k] = v
-				}
-			}
-		} else {
-			if val, ok := rawMetrics[stat]; ok {
-				filteredMetrics[stat] = val
-			}
-		}
-	}
+// 			for k, v := range rawMetrics {
+// 				if ge.Match(k) {
+// 					filteredMetrics[k] = v
+// 				}
+// 			}
+// 		} else {
+// 			if val, ok := rawMetrics[stat]; ok {
+// 				filteredMetrics[stat] = val
+// 			}
+// 		}
+// 	}
 
-	return filteredMetrics
-}
+// 	return filteredMetrics
+// }
 
-// Filter metrics based on configured blocklist.
-func filterBlockedMetrics(filteredMetrics map[string]commons.MetricType, blocklist []string) {
-	if len(blocklist) == 0 {
-		return
-	}
+// // Filter metrics based on configured blocklist.
+// func filterBlockedMetrics(filteredMetrics map[string]commons.MetricType, blocklist []string) {
+// 	if len(blocklist) == 0 {
+// 		return
+// 	}
 
-	for _, stat := range blocklist {
-		if GlobbingPattern.MatchString(stat) {
-			ge := glob.MustCompile(stat)
+// 	for _, stat := range blocklist {
+// 		if GlobbingPattern.MatchString(stat) {
+// 			ge := glob.MustCompile(stat)
 
-			for k := range filteredMetrics {
-				if ge.Match(k) {
-					delete(filteredMetrics, k)
-				}
-			}
-		} else {
-			delete(filteredMetrics, stat)
-		}
-	}
-}
+// 			for k := range filteredMetrics {
+// 				if ge.Match(k) {
+// 					delete(filteredMetrics, k)
+// 				}
+// 			}
+// 		} else {
+// 			delete(filteredMetrics, stat)
+// 		}
+// 	}
+// }
 
 func BuildVersionGreaterThanOrEqual(rawMetrics map[string]string, ref string) (bool, error) {
 	if len(rawMetrics["build"]) == 0 {
