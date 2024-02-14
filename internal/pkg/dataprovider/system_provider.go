@@ -215,19 +215,12 @@ func (sip SystemInfoProvider) GetMemInfoStats() map[string]string {
 	return memStats
 }
 
-func (sip SystemInfoProvider) GetNetStatInfo() ([]map[string]string, []map[string]string, []map[string]string) {
-	arrNetStats := []map[string]string{}
-	arrSnmpStats := []map[string]string{}
-	arrSnmp6Stats := []map[string]string{}
+func (sip SystemInfoProvider) GetNetStatInfo() map[string]string {
 
-	arrNetStats = append(arrNetStats, parseNetStats(getProcFilePath("net/netstat")))
-	arrSnmpStats = append(arrSnmpStats, parseNetStats(getProcFilePath("net/snmp")))
-	arrSnmp6Stats = append(arrSnmp6Stats, parseSNMP6Stats(getProcFilePath("net/snmp6")))
+	arrSnmpStats := parseNetStats(getProcFilePath("net/snmp"))
 
-	log.Debug("NetStatsInfo Net - Count of return stats ", len(arrNetStats))
 	log.Debug("NetStatsInfo SNMP - Count of return stats ", len(arrSnmpStats))
-	log.Debug("NetStatsInfo SNMP-6 - Count of return stats ", len(arrSnmp6Stats))
-	return arrNetStats, arrSnmpStats, arrSnmp6Stats
+	return arrSnmpStats
 }
 
 func (sip SystemInfoProvider) GetNetDevStats() ([]map[string]string, []map[string]string, []map[string]string) {

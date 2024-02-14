@@ -9,15 +9,11 @@ import (
 type CpuInfoProcessor struct {
 }
 
-var (
-	cpuStatLabels []string
-)
-
 func (cip CpuInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
 	arrSysInfoStats := []statprocessors.AerospikeStat{}
 	cpuDetails := dataprovider.GetSystemProvider().GetCPUDetails()
 
-	cpuStatLabels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
+	cpuStatLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
 	cpuStatLabels = append(cpuStatLabels, commons.METRIC_LABEL_CPU_MODE)
 
 	clusterName := statprocessors.ClusterName

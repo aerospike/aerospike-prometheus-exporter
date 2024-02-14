@@ -9,17 +9,13 @@ import (
 type FileFDInfoProcessor struct {
 }
 
-var (
-	fileStatLabels []string
-)
-
 func (ffdip FileFDInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
 	arrSysInfoStats := []statprocessors.AerospikeStat{}
 	clusterName := statprocessors.ClusterName
 	service := statprocessors.Service
 	labelValues := []string{clusterName, service}
 
-	fileStatLabels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
+	fileStatLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
 
 	fileFDStats := dataprovider.GetSystemProvider().GetFileFD()
 
