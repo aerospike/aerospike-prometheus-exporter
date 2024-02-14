@@ -26,7 +26,7 @@ func (cip CpuInfoProcessor) Refresh() ([]statprocessors.AerospikeStat, error) {
 	for statName, statValue := range cpuDetails {
 		labelValues := []string{clusterName, service, statName}
 
-		sysMetric := statprocessors.NewAerospikeStat(commons.CTX_CPU_STATS, statName, statName)
+		sysMetric := statprocessors.NewAerospikeStat(commons.CTX_CPU_STATS, "cpu_seconds_total", statName)
 		sysMetric.Labels = cpuStatLabels
 		sysMetric.LabelValues = labelValues
 		sysMetric.Value, _ = commons.TryConvert(statValue)
