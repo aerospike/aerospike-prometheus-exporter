@@ -225,7 +225,7 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 			asMetric, exists := nw.namespaceStats[constructedStatname]
 
 			if !exists {
-				allowed := isMetricAllowed(commons.CTX_NETWORK_STATS, stat)
+				allowed := isMetricAllowed(commons.CTX_NAMESPACE, stat)
 				asMetric = NewAerospikeStat(commons.CTX_NAMESPACE, constructedStatname, allowed)
 				nw.namespaceStats[constructedStatname] = asMetric
 			}
