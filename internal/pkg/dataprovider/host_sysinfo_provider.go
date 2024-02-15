@@ -34,6 +34,7 @@ func (sip SystemInfoProvider) GetCPUDetails() map[string]string {
 
 	cpuStats["non_idle"] = fmt.Sprint(nonIdleCpuTotals)
 	cpuStats["idle"] = fmt.Sprint(idleCpuTotal)
+	cpuStats["total_cores"] = fmt.Sprint(len(stats.CPU))
 
 	log.Debug("non_idle ", nonIdleCpuTotals)
 	log.Debug("idle ", idleCpuTotal)

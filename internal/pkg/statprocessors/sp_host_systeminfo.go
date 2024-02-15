@@ -36,6 +36,36 @@ func getCpuInfo() []AerospikeStat {
 	clusterName := ClusterName
 	service := Service
 
+	// cpuStats["non_idle"] = fmt.Sprint(nonIdleCpuTotals)
+	// cpuStats["idle"] = fmt.Sprint(idleCpuTotal)
+
+	nonIdleTotal, err := commons.TryConvert(cpuDetails["non_idle"])
+	if err != nil {
+		log.Error("Error while converting value of float non_idle, and converted value is ", cpuDetails["non_idle"])
+		return arrSysInfoStats
+	}
+	idleTotal, err := commons.TryConvert(cpuDetails["idle"])
+	if err != nil {
+		log.Error("Error while converting value of float idle, and converted value is ", cpuDetails["idle"])
+		return arrSysInfoStats
+	}
+
+	if idleTotal <= 0 {
+		return arrSysInfoStats
+	}
+
+	// calculate CPU utilization
+	cpuUtilization := (nonIdleTotal / (nonIdleTotal + idleTotal)) * 100
+	labelValues := []string{clusterName, service}
+
+	allowed := isMetricAllowed(commons.CTX_SYSINFO_CPU_STATS, "cpu_utilzation")
+	sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_CPU_STATS, "cpu_utilzation", allowed)
+	sysMetric.Labels = cpuStatLabels
+	sysMetric.LabelValues = labelValues
+	sysMetric.Value = cpuUtilization
+
+	arrSysInfoStats = append(arrSysInfoStats, sysMetric)
+
 	for statName, statValue := range cpuDetails {
 		labelValues := []string{clusterName, service, statName}
 		value, err := commons.TryConvert(statValue)
@@ -44,8 +74,8 @@ func getCpuInfo() []AerospikeStat {
 			continue
 		}
 
-		allowed := isMetricAllowed(commons.CTX_CPU_STATS, statName)
-		sysMetric := NewAerospikeStat(commons.CTX_CPU_STATS, "cpu_seconds_total", allowed)
+		allowed := isMetricAllowed(commons.CTX_SYSINFO_CPU_STATS, "cpu_seconds_total")
+		sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_CPU_STATS, "cpu_seconds_total", allowed)
 		sysMetric.Labels = cpuStatLabels
 		sysMetric.LabelValues = labelValues
 		sysMetric.Value = value
@@ -75,8 +105,8 @@ func getFDInfo() []AerospikeStat {
 		return arrSysInfoStats
 	}
 
-	allowed := isMetricAllowed(commons.CTX_FILEFD_STATS, statName)
-	sysMetric := NewAerospikeStat(commons.CTX_FILEFD_STATS, statName, allowed)
+	allowed := isMetricAllowed(commons.CTX_SYSINFO_FILEFD_STATS, statName)
+	sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_FILEFD_STATS, statName, allowed)
 	sysMetric.Labels = fileStatLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value = value
@@ -104,8 +134,8 @@ func getMemInfo() []AerospikeStat {
 		labelValues := []string{clusterName, service}
 
 		metricName := strings.ToLower(statName) + "_bytes"
-		allowed := isMetricAllowed(commons.CTX_MEMORY_STATS, statName)
-		sysMetric := NewAerospikeStat(commons.CTX_MEMORY_STATS, metricName, allowed)
+		allowed := isMetricAllowed(commons.CTX_SYSINFO_MEMORY_STATS, statName)
+		sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_MEMORY_STATS, metricName, allowed)
 		sysMetric.Labels = memInfoLabels
 		sysMetric.LabelValues = labelValues
 		sysMetric.Value = value
@@ -137,8 +167,8 @@ func getNetStatInfo() []AerospikeStat {
 			continue
 		}
 
-		allowed := isMetricAllowed(commons.CTX_NET_STATS, statName)
-		sysMetric := NewAerospikeStat(commons.CTX_NET_STATS, statName, allowed)
+		allowed := isMetricAllowed(commons.CTX_SYSINFO_NET_STATS, statName)
+		sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_NET_STATS, statName, allowed)
 		sysMetric.Labels = netStatInfoLabels
 		sysMetric.LabelValues = labelValues
 		sysMetric.Value = value
@@ -171,8 +201,8 @@ func getNetworkInfo() []AerospikeStat {
 
 		labelValues := []string{clusterName, service, deviceName}
 
-		allowed := isMetricAllowed(commons.CTX_NETWORK_STATS, statName)
-		sysMetric := NewAerospikeStat(commons.CTX_NETWORK_STATS, statName, allowed)
+		allowed := isMetricAllowed(commons.CTX_SYSINFO_NETWORK_STATS, statName)
+		sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_NETWORK_STATS, statName, allowed)
 		sysMetric.Labels = networkLabels
 		sysMetric.LabelValues = labelValues
 		sysMetric.Value = value
@@ -192,8 +222,8 @@ func getNetworkInfo() []AerospikeStat {
 		}
 
 		labelValues := []string{clusterName, service, deviceName}
-		allowed := isMetricAllowed(commons.CTX_NETWORK_STATS, statName)
-		sysMetric := NewAerospikeStat(commons.CTX_NETWORK_STATS, statName, allowed)
+		allowed := isMetricAllowed(commons.CTX_SYSINFO_NETWORK_STATS, statName)
+		sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_NETWORK_STATS, statName, allowed)
 		sysMetric.Labels = networkLabels
 		sysMetric.LabelValues = labelValues
 		sysMetric.Value = value
@@ -253,9 +283,9 @@ func constructDiskInfo(deviceName string, major string, minor string, serial str
 
 	labelValues := []string{clusterName, service, deviceName, major, minor, serial}
 
-	allowed := isMetricAllowed(commons.CTX_DISK_STATS, "info")
+	allowed := isMetricAllowed(commons.CTX_SYSINFO_DISK_STATS, "info")
 
-	sysMetric := NewAerospikeStat(commons.CTX_DISK_STATS, "info", allowed)
+	sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_DISK_STATS, "info", allowed)
 	sysMetric.Labels = metricDiskInfoLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value = 1
@@ -271,8 +301,8 @@ func constructDiskinfoSystemStat(deviceName string, statName string, diskStats m
 	labelValues := []string{clusterName, service, deviceName}
 
 	metricName := strings.ToLower(statName)
-	allowed := isMetricAllowed(commons.CTX_DISK_STATS, statName)
-	sysMetric := NewAerospikeStat(commons.CTX_DISK_STATS, metricName, allowed)
+	allowed := isMetricAllowed(commons.CTX_SYSINFO_DISK_STATS, statName)
+	sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_DISK_STATS, metricName, allowed)
 
 	sysMetric.Labels = diskInfoLabels
 	sysMetric.LabelValues = labelValues
@@ -321,8 +351,8 @@ func constructFileSystemReadOnly(fstype string, mountpoint string, deviceName st
 	// add disk_info
 	labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
 
-	allowed := isMetricAllowed(commons.CTX_FILESYSTEM_STATS, "readonly")
-	sysMetric := NewAerospikeStat(commons.CTX_FILESYSTEM_STATS, "readonly", allowed)
+	allowed := isMetricAllowed(commons.CTX_SYSINFO_FILESYSTEM_STATS, "readonly")
+	sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_FILESYSTEM_STATS, "readonly", allowed)
 	sysMetric.Labels = fsReadOnlyLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value, _ = commons.TryConvert(isReadOnly)
@@ -339,8 +369,8 @@ func constructFileSystemSysInfoStats(fstype string, mountpoint string, deviceNam
 	labelValues := []string{clusterName, service, fstype, deviceName, mountpoint}
 
 	metricName := strings.ToLower(statName)
-	allowed := isMetricAllowed(commons.CTX_FILESYSTEM_STATS, statName)
-	sysMetric := NewAerospikeStat(commons.CTX_FILESYSTEM_STATS, metricName, allowed)
+	allowed := isMetricAllowed(commons.CTX_SYSINFO_FILESYSTEM_STATS, statName)
+	sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_FILESYSTEM_STATS, metricName, allowed)
 
 	sysMetric.Labels = fsInfoLabels
 	sysMetric.LabelValues = labelValues
@@ -373,8 +403,8 @@ func constructVmstat(statName string, vmStatLabels []string, stats map[string]st
 
 	labelValues := []string{clusterName, service}
 
-	allowed := isMetricAllowed(commons.CTX_VM_STATS, statName)
-	sysMetric := NewAerospikeStat(commons.CTX_VM_STATS, statName, allowed)
+	allowed := isMetricAllowed(commons.CTX_SYSINFO_VM_STATS, statName)
+	sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_VM_STATS, statName, allowed)
 	sysMetric.Labels = vmStatLabels
 	sysMetric.LabelValues = labelValues
 	sysMetric.Value, _ = commons.TryConvert(stats[statName])
