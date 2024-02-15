@@ -75,7 +75,8 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string, clusterName s
 		asMetric, exists := sw.nodeMetrics[stat]
 
 		if !exists {
-			asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, stat, stat)
+			allowed := isMetricAllowed(commons.CTX_NODE_STATS, stat)
+			asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, stat, allowed)
 			sw.nodeMetrics[stat] = asMetric
 		}
 

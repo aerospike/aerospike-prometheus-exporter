@@ -88,8 +88,9 @@ func (sip SystemInfoProvider) GetDiskStats() []map[string]string {
 		udevDeviceProps, err := getUdevDeviceProperties(stats.MajorNumber, stats.MinorNumber)
 
 		if err != nil {
-			log.Debug("msg", "Failed to parse udev info", "err", err)
+			log.Error("msg", "Failed to parse udev info", "err", err)
 		}
+		fmt.Println("GetDiskStats() getUdevDeviceProperties() device_name ", deviceName, "\n\t", udevDeviceProps)
 
 		// a serial number printed on the disk label.
 		serial, ok := udevDeviceProps[UDEV_SCSI_IDENT_SERIAL]

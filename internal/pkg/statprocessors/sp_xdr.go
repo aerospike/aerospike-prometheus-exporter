@@ -123,7 +123,8 @@ func (xw *XdrStatsProcessor) handleRefresh(infoKeyToProcess string, xdrRawMetric
 		dynamicStatname := metricPrefix + stat
 
 		if !exists {
-			asMetric = NewAerospikeStat(commons.CTX_XDR, dynamicStatname, stat)
+			allowed := isMetricAllowed(commons.CTX_USERS, stat)
+			asMetric = NewAerospikeStat(commons.CTX_XDR, dynamicStatname, allowed)
 			xw.xdrMetrics[stat] = asMetric
 		}
 

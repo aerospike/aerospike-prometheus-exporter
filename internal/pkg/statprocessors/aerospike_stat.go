@@ -38,9 +38,9 @@ we are sending both stat-name sent by server and massaged stat-name to this, so 
 very few stat-names will be message and are different from server-stat-name,
 like, storage-engine.file[1].defrag_q, storage-engine.stripe[0].defrag_writes
 */
-func NewAerospikeStat(pContext commons.ContextType, pStatName string, pServerStatname string) AerospikeStat {
+func NewAerospikeStat(pContext commons.ContextType, pStatName string, allowed bool) AerospikeStat {
 
-	isAllowed := isMetricAllowed(pContext, pServerStatname)
+	// isAllowed := isMetricAllowed(pContext, pServerStatname)
 	mType := GetMetricType(pContext, pStatName)
 
 	isConfig := false
@@ -48,7 +48,7 @@ func NewAerospikeStat(pContext commons.ContextType, pStatName string, pServerSta
 		isConfig = true
 	}
 
-	return AerospikeStat{pContext, pStatName, mType, isAllowed, isConfig, 0.0, nil, nil}
+	return AerospikeStat{pContext, pStatName, mType, allowed, isConfig, 0.0, nil, nil}
 	// return AerospikeStat{pContext, pStatName, mType, isAllowed, isConfig, 0.0, nil, nil, pServerStatname}
 }
 

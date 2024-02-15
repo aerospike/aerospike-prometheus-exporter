@@ -84,7 +84,8 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 				asMetric, exists := siw.sindexMetrics[stat]
 
 				if !exists {
-					asMetric = NewAerospikeStat(commons.CTX_SINDEX, stat, stat)
+					allowed := isMetricAllowed(commons.CTX_SINDEX, stat)
+					asMetric = NewAerospikeStat(commons.CTX_SINDEX, stat, allowed)
 					siw.sindexMetrics[stat] = asMetric
 				}
 
