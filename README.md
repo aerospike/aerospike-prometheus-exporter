@@ -12,7 +12,7 @@ We appreciate feedback from community members on the [issues](https://github.com
 
 #### Pre Requisites
 
-- Install Go v1.17+
+- Install Go v1.20+
 
 #### Steps
 
@@ -256,7 +256,6 @@ make release-docker-multi-arch
         OPEN_TELEMETRY = true
 
     [Agen.OpenTelemetry]
-
     ```
 
 - Use allowlist and blocklist to filter out required metrics (optional). The allowlist and blocklist supports standard wildcards (globbing patterns which include - `? (question mark)`, `* (asterisk)`, `[ ] (square brackets)`, `{ } (curly brackets)`, `[!]` and `\ (backslash)`) for bulk metrics filtering. For example,

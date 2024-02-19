@@ -62,6 +62,7 @@
       basic_auth_password = ""
 
 [Agent.OpenTelemetry]
+      # NOTE: currently supports only gRPC endpoints
 
       # OTel service-name
       service_name = "aerospike-server-metrics-service"

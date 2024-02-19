@@ -64,7 +64,8 @@
         basic_auth_password = "${BASIC_AUTH_PASSWORD}"
 
 [Agent.OpenTelemetry]
-
+        # NOTE: currently supports only gRPC endpoints
+        
         # OTel service-name
         service_name = "${AGENT_OTEL_APP_SERVICE_NAME}"
 
