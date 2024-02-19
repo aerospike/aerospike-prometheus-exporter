@@ -7,7 +7,7 @@
       labels = {latitude="0",longitude="0"}
 
       # mention cloud provider (supported: aws, gcp, azure ) so exporter collects few details like region, zone etc.,
-      cloud_provider = false
+      cloud_provider = ""
 
       # metrics server timeout in seconds
       timeout = 10

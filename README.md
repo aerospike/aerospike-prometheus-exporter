@@ -235,11 +235,12 @@ make release-docker-multi-arch
     labels={zone="asia-south1-a", platform="google compute engine"}
     ```
 
-- Update exporter's cloud_provider to get few cloud details - region, availability-zone or location .
+- Update exporter's cloud_provider to get few cloud details - region, availability-zone or location.
     ```toml
     [Agent]
 
-    cloud_provider = true
+    # supported cloud provider values are - AWS, Azure and GCP
+    cloud_provider = aws
     ```
 
 - Update exporter's refresh_system_stats to get few system metrics like open-filefd, memory, network recv/trans packets etc.,
