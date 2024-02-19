@@ -7,10 +7,7 @@
       labels = {latitude="0",longitude="0"}
 
       # mention cloud provider (supported: aws, gcp, azure ) so exporter collects few details like region, zone etc.,
-      cloud_provider = ""
-
-      # is exporter running in mock test mode
-      # use_mock_datasource = 0
+      cloud_provider = false
 
       # metrics server timeout in seconds
       timeout = 10
@@ -175,9 +172,6 @@
       # Note globbing patterns (wildcard) are not supported for this User configuration.
       # user_metrics_users_allowlist = []
       # user_metrics_users_blocklist = []
-
-      # job_metrics_allowlist = []
-      # job_metrics_blocklist = []
 
       # sindex_metrics_allowlist = []
       # sindex_metrics_blocklist = []

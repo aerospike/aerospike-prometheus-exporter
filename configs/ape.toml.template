@@ -9,9 +9,6 @@
     # mention cloud provider (aws, gcp, azure ) so exporter collects few details like region, zone etc.,
     cloud_provider = ${AGENT_CLOUD_PROVIDER}
 
-    # is exporter running in mock test mode
-    use_mock_datasource = ${USE_MOCK_DATASOURCE}
-
     # metrics server timeout in seconds
     timeout = ${AGENT_TIMEOUT}
 
