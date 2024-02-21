@@ -239,6 +239,18 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 				LatencyBenchmarks[nsName+"-"+stat] = stat
 			}
 		}
+
+		// below code section is to ensure ns+latencies combination is handled during LatencyWatcher
+		//
+		// check and if latency benchmarks stat - is it enabled (bool true==1 and false==0 after conversion)
+		if isStatLatencyHistRelated(stat) {
+			delete(LatencyBenchmarks, nsName+"-"+stat)
+
+			if pv == 1 {
+				LatencyBenchmarks[nsName+"-"+stat] = stat
+			}
+		}
+
 	}
 	// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
 	LatencyBenchmarks[nsName+"-latency-hist-re-repl"] = "{" + nsName + "}-re-repl"
