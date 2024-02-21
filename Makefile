@@ -6,7 +6,7 @@ include Makefile.vars
 .PHONY: exporter
 exporter:
 	@echo $(GO_FIPS)
-	$(GO_ENV_VARS) GOEXPERIMENT=$(GO_FIPS) go build -ldflags="-X 'main.version=$(VERSION)'" -o aerospike-prometheus-exporter .
+	$(GO_ENV_VARS) GOEXPERIMENT=$(GO_FIPS) go build -ldflags="-X 'main.version=$(VERSION)'" -o aerospike-prometheus-exporter ./cmd
 
 .PHONY: fipsparam
 fipsparam: 
@@ -31,7 +31,8 @@ lint:
 
 .PHONY: test
 test: ## Run all the test-cases defined in this folder.
-	go test -v ./...	
+	## for verbose mode use go test -v ./...	
+	go test ./...	
 
 # Builds RPM, DEB and TAR packages
 # Requires FPM package manager

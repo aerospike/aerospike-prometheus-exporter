@@ -12,7 +12,7 @@ We appreciate feedback from community members on the [issues](https://github.com
 
 #### Pre Requisites
 
-- Install Go v1.17+
+- Install Go v1.20+
 
 #### Steps
 
@@ -235,20 +235,45 @@ make release-docker-multi-arch
     labels={zone="asia-south1-a", platform="google compute engine"}
     ```
 
+- Update exporter's cloud_provider to get few cloud details - region, availability-zone or location.
+    ```toml
+    [Agent]
+
+    # supported cloud provider values are - AWS, Azure and GCP
+    cloud_provider = aws
+    ```
+
+- Update exporter's refresh_system_stats to get few system metrics like open-filefd, memory, network recv/trans packets etc.,
+    ```toml
+    [Agent]
+
+    refresh_system_stats = true
+    ```
+
+- Update exporter's OTel configuration to send metrics to a gRPC end-point (NOTE: only gRPC endpoint is supported for now)
+    ```toml
+    [Agent]
+        OPEN_TELEMETRY = true
+
+    [Agen.OpenTelemetry]
+    ```
+
 - Use allowlist and blocklist to filter out required metrics (optional). The allowlist and blocklist supports standard wildcards (globbing patterns which include - `? (question mark)`, `* (asterisk)`, `[ ] (square brackets)`, `{ } (curly brackets)`, `[!]` and `\ (backslash)`) for bulk metrics filtering. For example,
     ```toml
     [Aerospike]
 
-    # Metrics Allowlist - If specified, only these metrics will be scraped. An empty list will exclude all metrics.
+    # Metrics Allowlist - If specified, only these metrics will be scraped. An empty list will include all metrics.
     # Commenting out the below allowlist configs will disable metrics filtering (i.e. all metrics will be scraped).
 
     # Namespace metrics allowlist
     namespace_metrics_allowlist=[
     "client_read_[a-z]*",
     "stop_writes",
-    "storage-engine.file.defrag_q",
+    "storage-engine.file*",
+    "storage-engine.file\\[*\\].*",
+    "storage-engine.file*defrag_q",
     "client_write_success",
-    "memory_*_bytes",
+    "*memory-pct",
     "objects",
     "*_available_pct"
     ]
@@ -273,18 +298,6 @@ make release-docker-multi-arch
     "latency_ms",
     "throughput",
     "lap_us"
-    ]
-
-    # Job (scans/queries) metrics allowlist
-    job_metrics_allowlist = [
-    "rps",
-    "active-threads",
-    "job-progress",
-    "run-time",
-    "recs-throttled",
-    "recs-succeeded",
-    "recs-failed",
-    "net-io-bytes"
     ]
 
     # Secondary index metrics allowlist
@@ -316,9 +329,6 @@ make release-docker-multi-arch
 
     # XDR metrics blocklist (only for Aerospike versions 5.0 and above)
     # xdr_metrics_blocklist=[]
-
-    # Job (scans/queries) metrics blocklist
-    # job_metrics_blocklist = []
 
     # Secondary index metrics blocklist
     # sindex_metrics_blocklist = []
