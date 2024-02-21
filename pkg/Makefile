@@ -127,7 +127,7 @@ tar: prep
 		--license $(LICENSE) \
 		--url $(URL) \
 		--vendor $(VENDOR) \
-		--package $(TARGET_DIR)/$(PKG_FILENAME)_$(VERSION)$(DISTRO_SHORT)$(DISTRO_VERSION)_$(ARCH).tgz
+		--package $(TARGET_DIR)/$(PKG_FILENAME)_$(VERSION)$(DISTRO_SHORT)$(DISTRO_VERSION)_$(ARCH).tar
 
 .PHONY: prep
 prep:
@@ -136,8 +136,8 @@ prep:
 	install -d $(BUILD_DIR)/usr/bin
 	install -d $(BUILD_DIR)/etc/aerospike-prometheus-exporter
 	install -pm 755 $(TOP_DIR)/aerospike-prometheus-exporter $(BUILD_DIR)/usr/bin/aerospike-prometheus-exporter
-	install -pm 644 $(TOP_DIR)/ape.toml $(BUILD_DIR)/etc/aerospike-prometheus-exporter/ape.toml
-	install -pm 644 $(TOP_DIR)/gauge_stats_list.toml $(BUILD_DIR)/etc/aerospike-prometheus-exporter/gauge_stats_list.toml
+	install -pm 644 $(TOP_DIR)/configs/ape.toml $(BUILD_DIR)/etc/aerospike-prometheus-exporter/ape.toml
+	install -pm 644 $(TOP_DIR)/configs/gauge_stats_list.toml $(BUILD_DIR)/etc/aerospike-prometheus-exporter/gauge_stats_list.toml
 
 .PHONY: clean
 clean:
