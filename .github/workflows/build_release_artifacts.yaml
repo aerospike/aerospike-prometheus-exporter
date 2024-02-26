@@ -77,21 +77,6 @@ jobs:
           run: |
               docker run -v ${{ github.workspace }}:/src/ -w /src/ --platform linux/${{ matrix.arch }} aerospike.jfrog.io/devops-containers-prod-local/fpm-${{ matrix.container }} ${{ matrix.cmd }}
 
-        - name: Build tar files
-          id: build-tar-artifact
-          run: |
-              make tar GOOS=linux GOARCH=amd64 ARCH=x86_64
-              make tar GOOS=linux GOARCH=arm64 ARCH=aarch64
-
-        - name: gzip tar files
-          run: |
-            cd pkg/target   
-            ls -lrt *.tar
-            echo "GZipping tar files"
-            gzip aerospike-prometheus-exporter*.tar 
-            echo "gzipped files"
-            ls -lrt *.gz
-
         - name: Upload Release Asset
           env:
             GH_TOKEN: ${{ github.token }}
