@@ -15,8 +15,8 @@ var Cfg Config
 // Config represents the aerospike-prometheus-exporter configuration
 type Config struct {
 	Agent struct {
-		OtelEnabled       bool `toml:"OPEN_TELEMETRY"`
-		PrometheusEnabled bool `toml:"PROMETHEUS"`
+		OtelEnabled       bool `toml:"enable_open_telemetry"`
+		PrometheusEnabled bool `toml:"enable_prometheus"`
 
 		MetricLabels map[string]string `toml:"labels"`
 
@@ -176,7 +176,7 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		c.Agent.Otel.OtelPushInterval = 15
 	}
 
-	if !md.IsDefined("Agent", "PROMETHEUS") {
+	if !md.IsDefined("Agent", "enable_prometheus") {
 		log.Infof("Defaulting to Prometheus Exporting mode")
 		c.Agent.PrometheusEnabled = true
 	}
