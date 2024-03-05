@@ -7,7 +7,7 @@
     labels = {${METRIC_LABELS}}
 
     # mention cloud provider (aws, gcp, azure ) so exporter collects few details like region, zone etc.,
-    cloud_provider = ${AGENT_CLOUD_PROVIDER}
+    cloud_provider = "${AGENT_CLOUD_PROVIDER}"
 
     # metrics server timeout in seconds
     timeout = ${AGENT_TIMEOUT}
