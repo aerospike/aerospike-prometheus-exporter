@@ -176,6 +176,10 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		c.Agent.Otel.OtelPushInterval = 15
 	}
 
+	if !md.IsDefined("Agent", "PROMETHEUS") {
+		log.Infof("Defaulting to Prometheus Exporting mode")
+		c.Agent.PrometheusEnabled = true
+	}
 }
 
 func (c *Config) FetchCloudInfo(md toml.MetaData) {
