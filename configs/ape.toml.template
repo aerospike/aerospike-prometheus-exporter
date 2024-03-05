@@ -1,7 +1,7 @@
 [Agent]
     # Metrics Serving modes
-    PROMETHEUS = ${AGENT_PROMETHEUS}
-    OPEN_TELEMETRY = ${AGENT_OPEN_TELEMETRY}
+    enable_prometheus = ${AGENT_PROMETHEUS}
+    enable_open_telemetry = ${AGENT_OPEN_TELEMETRY}
 
     # labels to add to the prometheus metrics for e.g. labels={zone="asia-south1-a", platform="google compute engine"}
     labels = {${METRIC_LABELS}}
