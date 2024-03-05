@@ -4,7 +4,11 @@ on:
   push:
     tags:
       - v*
-
+  workflow_dispatch:
+    inputs:
+      docker_tag: 
+         description: Docker Tag
+         required: false
 jobs:
   build-container:
     runs-on: ubuntu-latest
@@ -25,5 +29,11 @@ jobs:
         echo "DOCKER_TAG=$(echo $GITHUB_REF_NAME | cut -c 2-)" >> $GITHUB_ENV
     - name: Build and push
       run: |
-        echo ${{ env.DOCKER_TAG }}
-        make VERSION=${{ env.DOCKER_TAG }} release-docker-multi-arch
+        if [  "${{ github.event.inputs.docker_tag }}" == "" ]; then
+            echo "Creating Docker Images with given Docker Tag  with GITHUB_REF_NAME - ".${{ env.DOCKER_TAG }}
+            make VERSION=${{ env.DOCKER_TAG }} release-docker-multi-arch
+        else
+            echo "Creating Docker Images with Input Docker Tag value ".${{ github.event.inputs.docker_tag }}
+            make VERSION=${{  github.event.inputs.docker_tag }} release-docker-multi-arch
+        fi        
+            
