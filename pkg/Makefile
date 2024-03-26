@@ -127,7 +127,7 @@ tar: prep
 		--license $(LICENSE) \
 		--url $(URL) \
 		--vendor $(VENDOR) \
-		--package $(TARGET_DIR)/$(PKG_FILENAME)_$(VERSION)$(DISTRO_SHORT)$(DISTRO_VERSION)_$(ARCH).tar
+		--package $(TARGET_DIR)/$(PKG_FILENAME)_$(VERSION)_$(ARCH).tar
 
 .PHONY: prep
 prep:
