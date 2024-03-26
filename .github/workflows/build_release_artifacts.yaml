@@ -139,8 +139,14 @@ jobs:
             echo "GZipping tar files"
             gzip aerospike-prometheus-exporter*.tar 
             echo "gzipped files"
-            ls -lrt *.gz
-
+            ls -lrt *.tar.gz
+            # find in current folder i.e. pkg/target all files to move as tgz
+            files=$(find . -type f -name "aerospike-prome*" -printf "$(realpath -s %p) ")
+            for file in $files; do
+               echo "gzipping file === $file "
+               mv "$file" "${file%.tar.gz}.tgz"
+            done  
+            ls -lrt *.tgz
         - name: Upload Release Asset
           env:
             GH_TOKEN: ${{ github.token }}
