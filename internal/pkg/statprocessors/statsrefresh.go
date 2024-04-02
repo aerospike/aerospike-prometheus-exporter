@@ -2,6 +2,7 @@ package statprocessors
 
 import (
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	log "github.com/sirupsen/logrus"
 )
@@ -68,6 +69,9 @@ func Refresh() ([]AerospikeStat, error) {
 
 	// set global values
 	ClusterName, Service, Build = rawMetrics[Infokey_ClusterName], rawMetrics[Infokey_Service], rawMetrics[Infokey_Build]
+	if config.Cfg.Agent.IsKubernetes {
+		Service = config.Cfg.Agent.HostName
+	}
 
 	// sanitize the utf8 strings before sending them to watchers
 	for k, v := range rawMetrics {

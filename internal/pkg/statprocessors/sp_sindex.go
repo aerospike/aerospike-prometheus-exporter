@@ -72,8 +72,8 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 			sindexName := sindexInfoKeySplit[1]
 			log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
 
-			clusterName := rawMetrics[Infokey_ClusterName]
-			service := rawMetrics[Infokey_Service]
+			clusterName := ClusterName
+			service := Service
 
 			stats := commons.ParseStats(rawMetrics[sindex], ";")
 			for stat, value := range stats {

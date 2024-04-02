@@ -149,7 +149,7 @@ func (uw *UserStatsProcessor) refreshUserStats(infoKeys []string, rawMetrics map
 
 func internalCreateLocalAerospikeStat(rawMetrics map[string]string, pStatName string, username string) (AerospikeStat, []string, []string) {
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER}
-	labelValues := []string{rawMetrics[Infokey_ClusterName], rawMetrics[Infokey_Service], username}
+	labelValues := []string{ClusterName, Service, username}
 	allowed := isMetricAllowed(commons.CTX_USERS, pStatName)
 	asMetric := NewAerospikeStat(commons.CTX_USERS, pStatName, allowed)
 

@@ -42,8 +42,8 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	log.Tracef("node-configs:%s", nodeConfigs)
 	log.Tracef("node-stats:%s", nodeStats)
 
-	clusterName := rawMetrics[Infokey_ClusterName]
-	service := rawMetrics[Infokey_Service]
+	clusterName := ClusterName
+	service := Service
 
 	// we are sending configs and stats in same refresh call, as both are being sent to prom, instead of doing prom-push in 2 functions
 	// handle configs

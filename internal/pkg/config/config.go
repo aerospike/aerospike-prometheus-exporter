@@ -46,6 +46,9 @@ type Config struct {
 			OtelPushInterval            uint8             `toml:"push_interval"`
 			OtelServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
 		} `toml:"OpenTelemetry"`
+
+		IsKubernetes bool
+		HostName     string
 	} `toml:"Agent"`
 
 	Aerospike struct {
@@ -200,6 +203,27 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 	}
 }
 
+func (c *Config) FetchKubernetesInfo(md toml.MetaData) {
+	// envKubeConfig := os.Getenv("KUBECONFIG")
+	envKubeServiceHost := os.Getenv("KUBERNETES_SERVICE_HOST")
+	envKubeServicePort := os.Getenv("KUBERNETES_SERVICE_PORT")
+
+	log.Info("Checking is Running in Kubernetes environment ? - Kubernetes Host: ", envKubeServiceHost, " and Kubernetes Port: ", envKubeServicePort)
+	Cfg.Agent.IsKubernetes = false
+	if envKubeServiceHost != "" && len(strings.TrimSpace(envKubeServiceHost)) > 0 {
+		Cfg.Agent.IsKubernetes = true
+
+		// get host-name
+		var err error
+		Cfg.Agent.HostName, err = os.Hostname()
+		if err != nil {
+			log.Errorln(err)
+			return
+		}
+
+	}
+}
+
 // Initialize exporter configuration
 func InitConfig(configFile string) {
 	// to print everything out regarding reading the config in app init
@@ -225,6 +249,8 @@ func InitConfig(configFile string) {
 
 	Cfg.ValidateAndUpdate(md)
 	Cfg.FetchCloudInfo(md)
+
+	Cfg.FetchKubernetesInfo(md)
 }
 
 // Set log file path

@@ -41,8 +41,8 @@ func (sw *SetsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	var allMetricsToSend = []AerospikeStat{}
 
 	for i := range setStats {
-		clusterName := rawMetrics[Infokey_ClusterName]
-		service := rawMetrics[Infokey_Service]
+		clusterName := ClusterName
+		service := Service
 
 		stats := commons.ParseStats(setStats[i], ":")
 		for stat, value := range stats {

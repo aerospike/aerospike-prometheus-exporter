@@ -129,12 +129,12 @@ func (xw *XdrStatsProcessor) handleRefresh(infoKeyToProcess string, xdrRawMetric
 		}
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DC_NAME}
-		labelValues := []string{clusterName, service, dcName}
+		labelValues := []string{ClusterName, Service, dcName}
 
 		// if namespace exists, add it to the label and label-values array
 		if len(ns) > 0 {
 			labels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DC_NAME, commons.METRIC_LABEL_NS}
-			labelValues = []string{clusterName, service, dcName, ns}
+			labelValues = []string{ClusterName, Service, dcName, ns}
 		}
 
 		// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
