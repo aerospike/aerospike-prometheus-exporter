@@ -42,17 +42,14 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	log.Tracef("node-configs:%s", nodeConfigs)
 	log.Tracef("node-stats:%s", nodeStats)
 
-	clusterName := ClusterName
-	service := Service
-
 	// we are sending configs and stats in same refresh call, as both are being sent to prom, instead of doing prom-push in 2 functions
 	// handle configs
 	var allMetricsToSend = []AerospikeStat{}
 
-	lCfgMetricsToSend := sw.handleRefresh(nodeConfigs, clusterName, service)
+	lCfgMetricsToSend := sw.handleRefresh(nodeConfigs)
 
 	// handle stats
-	lStatMetricsToSend := sw.handleRefresh(nodeStats, clusterName, service)
+	lStatMetricsToSend := sw.handleRefresh(nodeStats)
 
 	// merge both array into single
 	allMetricsToSend = append(allMetricsToSend, lCfgMetricsToSend...)
@@ -61,7 +58,7 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	return allMetricsToSend, nil
 }
 
-func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string, clusterName string, service string) []AerospikeStat {
+func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string) []AerospikeStat {
 
 	stats := commons.ParseStats(nodeRawMetrics, ";")
 
@@ -81,7 +78,7 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string, clusterName s
 		}
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
-		labelValues := []string{clusterName, service}
+		labelValues := []string{ClusterName, Service}
 
 		// pushToPrometheus(asMetric, pv, labels, labelsValues)
 		asMetric.updateValues(pv, labels, labelValues)

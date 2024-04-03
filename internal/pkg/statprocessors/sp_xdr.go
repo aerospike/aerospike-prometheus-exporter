@@ -61,9 +61,6 @@ func (xw *XdrStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]st
 		xw.xdrMetrics = make(map[string]AerospikeStat)
 	}
 
-	clusterName := rawMetrics[Infokey_ClusterName]
-	service := rawMetrics[Infokey_Service]
-
 	var allMetricsToSend = []AerospikeStat{}
 
 	for _, key := range infoKeys {
@@ -71,7 +68,7 @@ func (xw *XdrStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]st
 		xdrRawMetrics := rawMetrics[key]
 		// find and construct metric name
 		dcName, ns, metricPrefix := xw.constructMetricNamePrefix(key)
-		tmpXdrMetricsToSend := xw.handleRefresh(key, xdrRawMetrics, clusterName, service, dcName, ns, metricPrefix)
+		tmpXdrMetricsToSend := xw.handleRefresh(key, xdrRawMetrics, dcName, ns, metricPrefix)
 
 		allMetricsToSend = append(allMetricsToSend, tmpXdrMetricsToSend...)
 	}
@@ -108,7 +105,7 @@ func (xw *XdrStatsProcessor) constructMetricNamePrefix(infoKeyToProcess string) 
 }
 
 func (xw *XdrStatsProcessor) handleRefresh(infoKeyToProcess string, xdrRawMetrics string,
-	clusterName string, service string, dcName string, ns string, metricPrefix string) []AerospikeStat {
+	dcName string, ns string, metricPrefix string) []AerospikeStat {
 	log.Tracef("xdr-%s:%s", infoKeyToProcess, xdrRawMetrics)
 
 	stats := commons.ParseStats(xdrRawMetrics, ";")

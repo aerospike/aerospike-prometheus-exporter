@@ -41,9 +41,6 @@ func (sw *SetsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	var allMetricsToSend = []AerospikeStat{}
 
 	for i := range setStats {
-		clusterName := ClusterName
-		service := Service
-
 		stats := commons.ParseStats(setStats[i], ":")
 		for stat, value := range stats {
 			pv, err := commons.TryConvert(value)
@@ -59,7 +56,7 @@ func (sw *SetsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 			}
 
 			labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_SET}
-			labelValues := []string{clusterName, service, stats["ns"], stats["set"]}
+			labelValues := []string{ClusterName, Service, stats["ns"], stats["set"]}
 
 			// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
 			asMetric.updateValues(pv, labels, labelValues)
