@@ -18,15 +18,13 @@ func sendNodeUp(meter metric.Meter, ctx context.Context, commonLabels []attribut
 		metric.WithDescription("Aerospike node active status"),
 	)
 
-	service := statprocessors.Service
 	if config.Cfg.Agent.IsKubernetes {
-		statprocessors.Service = config.Cfg.Agent.HostName
-		service = config.Cfg.Agent.HostName
+		statprocessors.Service = config.Cfg.Agent.KubernetesPodName
 	}
 
 	labels := []attribute.KeyValue{
 		attribute.String("cluster_name", statprocessors.ClusterName),
-		attribute.String("service", service),
+		attribute.String("service", statprocessors.Service),
 		attribute.String("build", statprocessors.Build),
 	}
 

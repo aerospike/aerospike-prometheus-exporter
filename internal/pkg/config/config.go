@@ -47,8 +47,8 @@ type Config struct {
 			OtelServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
 		} `toml:"OpenTelemetry"`
 
-		IsKubernetes bool
-		HostName     string
+		IsKubernetes      bool
+		KubernetesPodName string
 	} `toml:"Agent"`
 
 	Aerospike struct {
@@ -204,18 +204,18 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 }
 
 func (c *Config) FetchKubernetesInfo(md toml.MetaData) {
-	// envKubeConfig := os.Getenv("KUBECONFIG")
+	// use kubectl to fetch required Kubernetes context and find the required Kubenetes environment variables
 	envKubeServiceHost := os.Getenv("KUBERNETES_SERVICE_HOST")
-	envKubeServicePort := os.Getenv("KUBERNETES_SERVICE_PORT")
 
-	log.Info("Checking is Running in Kubernetes environment ? - Kubernetes Host: ", envKubeServiceHost, " and Kubernetes Port: ", envKubeServicePort)
 	Cfg.Agent.IsKubernetes = false
+
 	if envKubeServiceHost != "" && len(strings.TrimSpace(envKubeServiceHost)) > 0 {
 		Cfg.Agent.IsKubernetes = true
+		log.Info("Exporter is running in Kubernetes")
 
 		// get host-name
 		var err error
-		Cfg.Agent.HostName, err = os.Hostname()
+		Cfg.Agent.KubernetesPodName, err = os.Hostname()
 		if err != nil {
 			log.Errorln(err)
 			return

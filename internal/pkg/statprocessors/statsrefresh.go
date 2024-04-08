@@ -70,7 +70,7 @@ func Refresh() ([]AerospikeStat, error) {
 	// set global values
 	ClusterName, Service, Build = rawMetrics[Infokey_ClusterName], rawMetrics[Infokey_Service], rawMetrics[Infokey_Build]
 	if config.Cfg.Agent.IsKubernetes {
-		Service = config.Cfg.Agent.HostName
+		Service = config.Cfg.Agent.KubernetesPodName
 	}
 
 	// sanitize the utf8 strings before sending them to watchers

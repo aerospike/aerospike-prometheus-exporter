@@ -64,12 +64,10 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	// if kubernetes then send host-name/pod-name else send server-ip as-isnh
-	service := statprocessors.Service
 	if config.Cfg.Agent.IsKubernetes {
-		service = config.Cfg.Agent.HostName
-		statprocessors.Service = config.Cfg.Agent.HostName
+		statprocessors.Service = config.Cfg.Agent.KubernetesPodName
 	}
-	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, statprocessors.ClusterName, service, statprocessors.Build)
+	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, statprocessors.ClusterName, statprocessors.Service, statprocessors.Build)
 
 	for _, wm := range refreshed_metrics {
 		PushToPrometheus(wm, ch)
