@@ -61,9 +61,6 @@ func (xw *XdrStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]st
 		xw.xdrMetrics = make(map[string]AerospikeStat)
 	}
 
-	clusterName := rawMetrics[Infokey_ClusterName]
-	service := rawMetrics[Infokey_Service]
-
 	var allMetricsToSend = []AerospikeStat{}
 
 	for _, key := range infoKeys {
@@ -71,7 +68,7 @@ func (xw *XdrStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]st
 		xdrRawMetrics := rawMetrics[key]
 		// find and construct metric name
 		dcName, ns, metricPrefix := xw.constructMetricNamePrefix(key)
-		tmpXdrMetricsToSend := xw.handleRefresh(key, xdrRawMetrics, clusterName, service, dcName, ns, metricPrefix)
+		tmpXdrMetricsToSend := xw.handleRefresh(key, xdrRawMetrics, dcName, ns, metricPrefix)
 
 		allMetricsToSend = append(allMetricsToSend, tmpXdrMetricsToSend...)
 	}
@@ -108,7 +105,7 @@ func (xw *XdrStatsProcessor) constructMetricNamePrefix(infoKeyToProcess string) 
 }
 
 func (xw *XdrStatsProcessor) handleRefresh(infoKeyToProcess string, xdrRawMetrics string,
-	clusterName string, service string, dcName string, ns string, metricPrefix string) []AerospikeStat {
+	dcName string, ns string, metricPrefix string) []AerospikeStat {
 	log.Tracef("xdr-%s:%s", infoKeyToProcess, xdrRawMetrics)
 
 	stats := commons.ParseStats(xdrRawMetrics, ";")
@@ -129,12 +126,12 @@ func (xw *XdrStatsProcessor) handleRefresh(infoKeyToProcess string, xdrRawMetric
 		}
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DC_NAME}
-		labelValues := []string{clusterName, service, dcName}
+		labelValues := []string{ClusterName, Service, dcName}
 
 		// if namespace exists, add it to the label and label-values array
 		if len(ns) > 0 {
 			labels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DC_NAME, commons.METRIC_LABEL_NS}
-			labelValues = []string{clusterName, service, dcName, ns}
+			labelValues = []string{ClusterName, Service, dcName, ns}
 		}
 
 		// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)

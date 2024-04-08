@@ -121,8 +121,6 @@ func getNetworkInfo() []AerospikeStat {
 	arrReceiveStats, arrTransferStats := dataprovider.GetSystemProvider().GetNetDevStats()
 
 	// netdev receive
-	clusterName := ClusterName
-	service := Service
 	for _, stats := range arrReceiveStats {
 		deviceName := stats["device_name"]
 		statName := "receive_bytes_total"
@@ -132,7 +130,7 @@ func getNetworkInfo() []AerospikeStat {
 			continue
 		}
 
-		labelValues := []string{clusterName, service, deviceName}
+		labelValues := []string{ClusterName, Service, deviceName}
 
 		allowed := isMetricAllowed(commons.CTX_SYSINFO_NETWORK_STATS, statName)
 		sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_NETWORK_STATS, statName, allowed)
@@ -154,7 +152,7 @@ func getNetworkInfo() []AerospikeStat {
 			continue
 		}
 
-		labelValues := []string{clusterName, service, deviceName}
+		labelValues := []string{ClusterName, Service, deviceName}
 		allowed := isMetricAllowed(commons.CTX_SYSINFO_NETWORK_STATS, statName)
 		sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_NETWORK_STATS, statName, allowed)
 		sysMetric.Labels = networkLabels

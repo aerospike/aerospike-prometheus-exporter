@@ -72,9 +72,6 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 			sindexName := sindexInfoKeySplit[1]
 			log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
 
-			clusterName := rawMetrics[Infokey_ClusterName]
-			service := rawMetrics[Infokey_Service]
-
 			stats := commons.ParseStats(rawMetrics[sindex], ";")
 			for stat, value := range stats {
 				pv, err := commons.TryConvert(value)
@@ -90,7 +87,7 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 				}
 
 				labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_SINDEX}
-				labelValues := []string{clusterName, service, nsName, sindexName}
+				labelValues := []string{ClusterName, Service, nsName, sindexName}
 
 				asMetric.updateValues(pv, labels, labelValues)
 				allMetricsToSend = append(allMetricsToSend, asMetric)
