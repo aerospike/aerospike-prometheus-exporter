@@ -1,10 +1,22 @@
 package statprocessors
 
 import (
+	"fmt"
+	"time"
+
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	log "github.com/sirupsen/logrus"
+)
+
+var (
+
+	// time interval to fetch index-pressure
+	serverPeersFetchInterval = 0.5
+
+	// Time when  Server Peers were last-fetched
+	serverPeersPreviousFetchTime = time.Now()
 )
 
 // public and utility functions
@@ -46,6 +58,9 @@ func Refresh() ([]AerospikeStat, error) {
 		if serverPool != nil && clientPool != nil {
 			Infokey_Service = INFOKEY_SERVICE_TLS_STD
 			log.Debugf("TLS Mode is enabled, setting infokey-service as  'service-tls-std' for further fetching from server.")
+
+			// Set the PeersCommand to be executed
+			peersCommand = PEERS_TLS_STD
 		}
 	}
 
@@ -60,6 +75,12 @@ func Refresh() ([]AerospikeStat, error) {
 			statprocessorInfoKeys[i] = keys
 		}
 	}
+
+	if canFetchServerPeers() {
+		infoKeys = append(infoKeys, peersCommand)
+	}
+
+	fmt.Println(" Command to fetch Peers ---> ", peersCommand)
 
 	// info request for second set of info keys, this retrieves all the stats from server
 	rawMetrics, err := dataprovider.GetProvider().RequestInfo(infoKeys)
@@ -91,4 +112,20 @@ func Refresh() ([]AerospikeStat, error) {
 	log.Debugf("Refreshing node was successful")
 
 	return allMetricsToSend, nil
+}
+
+// utility will check if the given value is flash and sets the flag
+func canFetchServerPeers() bool {
+
+	//TODO: write logic
+
+	// difference between current-time and last-fetch, if its > defined-value, then true
+	timeDiff := time.Since(serverPeersPreviousFetchTime)
+
+	// if index-type=false or sindex-type=flash is returned by server
+	//    and every N seconds - where N is mentioned "indexPressureFetchIntervalInSeconds"
+	isTimeOk := timeDiff.Minutes() >= serverPeersFetchInterval
+
+	return isTimeOk
+
 }

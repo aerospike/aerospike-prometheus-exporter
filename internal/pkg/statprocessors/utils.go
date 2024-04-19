@@ -15,6 +15,9 @@ import (
 const (
 	INFOKEY_SERVICE_CLEAR_STD = "service-clear-std"
 	INFOKEY_SERVICE_TLS_STD   = "service-tls-std"
+
+	PEERS_CLEAR_STD = "peers-clear-std"
+	PEERS_TLS_STD   = "peers-tls-std"
 )
 
 // Default info commands
@@ -22,6 +25,8 @@ var (
 	Infokey_ClusterName = "cluster-name"
 	Infokey_Service     = INFOKEY_SERVICE_CLEAR_STD
 	Infokey_Build       = "build"
+
+	peersCommand = PEERS_CLEAR_STD
 )
 
 var (
