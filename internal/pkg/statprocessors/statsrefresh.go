@@ -1,7 +1,6 @@
 package statprocessors
 
 import (
-	"fmt"
 	"time"
 
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -50,8 +49,6 @@ func Refresh() ([]AerospikeStat, error) {
 		return nil, err
 	}
 
-	// fetch second second set of info keys
-	// check and load this only once, to avoid multiple file-reads, so this Infokey assignment will happen only once during restart
 	if Infokey_Service != INFOKEY_SERVICE_TLS_STD {
 		serverPool, clientPool := commons.LoadServerOrClientCertificates()
 		// we need to have atleast one certificate configured and read successfully
@@ -60,10 +57,11 @@ func Refresh() ([]AerospikeStat, error) {
 			log.Debugf("TLS Mode is enabled, setting infokey-service as  'service-tls-std' for further fetching from server.")
 
 			// Set the PeersCommand to be executed
-			peersCommand = PEERS_TLS_STD
+			Infokey_PeersCommand = PEERS_TLS_STD
 		}
 	}
 
+	// fetch second second set of info keys
 	infoKeys = []string{Infokey_ClusterName, Infokey_Service, Infokey_Build}
 	statprocessorInfoKeys := make([][]string, len(allStatsprocessorList))
 
@@ -75,12 +73,6 @@ func Refresh() ([]AerospikeStat, error) {
 			statprocessorInfoKeys[i] = keys
 		}
 	}
-
-	if canFetchServerPeers() {
-		infoKeys = append(infoKeys, peersCommand)
-	}
-
-	fmt.Println(" Command to fetch Peers ---> ", peersCommand)
 
 	// info request for second set of info keys, this retrieves all the stats from server
 	rawMetrics, err := dataprovider.GetProvider().RequestInfo(infoKeys)
@@ -94,8 +86,8 @@ func Refresh() ([]AerospikeStat, error) {
 		Service = config.Cfg.Agent.KubernetesPodName
 	}
 
-	// parse peers-command output
-	parseServerPeersMetrics(rawMetrics)
+	// set the PeersInfo global value
+	PeersInfo = rawMetrics[Infokey_PeersCommand]
 
 	// sanitize the utf8 strings before sending them to watchers
 	for k, v := range rawMetrics {
@@ -115,24 +107,4 @@ func Refresh() ([]AerospikeStat, error) {
 	log.Debugf("Refreshing node was successful")
 
 	return allMetricsToSend, nil
-}
-
-// utility will check if we can fetch the node-peers
-func canFetchServerPeers() bool {
-
-	//TODO: write logic
-
-	// difference between current-time and last-fetch, if its > defined-value, then true
-	timeDiff := time.Since(serverPeersPreviousFetchTime)
-
-	// if index-type=false or sindex-type=flash is returned by server
-	//    and every N seconds - where N is mentioned "indexPressureFetchIntervalInSeconds"
-	isTimeOk := timeDiff.Minutes() >= serverPeersFetchInterval
-
-	return isTimeOk
-
-}
-
-func parseServerPeersMetrics(rawMetrics map[string]string) {
-	fmt.Println(rawMetrics[peersCommand])
 }

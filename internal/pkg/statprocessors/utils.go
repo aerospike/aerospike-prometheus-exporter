@@ -26,7 +26,7 @@ var (
 	Infokey_Service     = INFOKEY_SERVICE_CLEAR_STD
 	Infokey_Build       = "build"
 
-	peersCommand = PEERS_CLEAR_STD
+	Infokey_PeersCommand = PEERS_CLEAR_STD
 )
 
 var (

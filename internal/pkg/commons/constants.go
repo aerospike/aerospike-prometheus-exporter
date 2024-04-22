@@ -3,6 +3,7 @@ package commons
 import "github.com/prometheus/procfs"
 
 const (
+	CTX_GLOBAL     ContextType = "global"
 	CTX_USERS      ContextType = "users"
 	CTX_NAMESPACE  ContextType = "namespace"
 	CTX_NODE_STATS ContextType = "node_stats"
@@ -24,6 +25,12 @@ const (
 	METRIC_LABEL_SINDEX         = "sindex"
 	METRIC_LABEL_STORAGE_ENGINE = "storage_engine"
 	METRIC_LABEL_USER           = "user"
+
+	METRIC_LABEL_GEN           = "generation"
+	METRIC_LABEL_PORT          = "ort"
+	METRIC_LABEL_NODE_ID       = "node_id"
+	METRIC_LABEL_TLS_NAME      = "tls_name"
+	METRIC_LABEL_ENDPOINT_LIST = "endpoint_list"
 )
 
 // constants used to identify type of metrics

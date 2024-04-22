@@ -3,6 +3,7 @@ package statprocessors
 var (
 	// Node service endpoint, cluster name and build version
 	Service, ClusterName, Build string
+	PeersInfo                   string
 )
 
 var LatencyBenchmarks = make(map[string]string)
@@ -15,6 +16,7 @@ type StatProcessor interface {
 
 // stat-processors are created only once per process
 var statprocessors = []StatProcessor{
+	&GlobalStatsProcessor{},
 	&NamespaceStatsProcessor{},
 	&NodeStatsProcessor{},
 	&SetsStatsProcessor{},
