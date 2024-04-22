@@ -94,6 +94,9 @@ func Refresh() ([]AerospikeStat, error) {
 		Service = config.Cfg.Agent.KubernetesPodName
 	}
 
+	// parse peers-command output
+	parseServerPeersMetrics(rawMetrics)
+
 	// sanitize the utf8 strings before sending them to watchers
 	for k, v := range rawMetrics {
 		rawMetrics[k] = commons.SanitizeUTF8(v)
@@ -114,7 +117,7 @@ func Refresh() ([]AerospikeStat, error) {
 	return allMetricsToSend, nil
 }
 
-// utility will check if the given value is flash and sets the flag
+// utility will check if we can fetch the node-peers
 func canFetchServerPeers() bool {
 
 	//TODO: write logic
@@ -128,4 +131,8 @@ func canFetchServerPeers() bool {
 
 	return isTimeOk
 
+}
+
+func parseServerPeersMetrics(rawMetrics map[string]string) {
+	fmt.Println(rawMetrics[peersCommand])
 }
