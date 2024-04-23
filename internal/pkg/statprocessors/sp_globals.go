@@ -2,6 +2,7 @@ package statprocessors
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -77,9 +78,20 @@ func parseServerPeersMetrics(rawMetrics map[string]string) ([]AerospikeStat, err
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE,
 			commons.METRIC_LABEL_GEN, commons.METRIC_LABEL_PORT,
-			commons.METRIC_LABEL_NODE_ID, commons.METRIC_LABEL_TLS_NAME, commons.METRIC_LABEL_ENDPOINT_LIST}
+			commons.METRIC_LABEL_NODE_ID, commons.METRIC_LABEL_TLS_NAME}
+
+		// append the labels array with 10 ENDPOINTS labels, this is to accommodate the IP address of all the peers/neighbours
+		// each IP address consits 15 chars max, hence 10x15= 150 + 9 (commas) i.e. 159 chars
+
+		for i := 1; i <= 5; i++ {
+			labels = append(labels, commons.METRIC_LABEL_ENDPOINT_LIST_PREFIX+strconv.Itoa(i))
+		}
 
 		var nodeId, peerTcp, peerIps string
+		lablelValuesCounter := 1
+		endpointLabelIndex := 0
+		peerIpsLabelValues := []string{"na", "na", "na", "na", "na"}
+
 		for _, ele := range peerNodeInfos {
 			peerInfo := strings.Split(ele[1:len(ele)], ",")
 
@@ -96,16 +108,27 @@ func parseServerPeersMetrics(rawMetrics map[string]string) ([]AerospikeStat, err
 
 			peerIps = peerIps + localPeerIps + ","
 
+			lablelValuesCounter++
+			if lablelValuesCounter > 0 {
+				lablelValuesCounter = 0
+				peerIpsLabelValues[endpointLabelIndex] = peerIps[0 : len(peerIps)-1]
+				peerIps = ""
+				endpointLabelIndex++
+			}
 		}
 
 		// remove last comma
-		peerIps = peerIps[0 : len(peerIps)-1]
-		labelValues := []string{ClusterName, Service, peersGenVersion, peersPort, nodeId, peerTcp, peerIps}
+		// peerIps = peerIps[0 : len(peerIps)-1]
+		labelValues := []string{ClusterName, Service, peersGenVersion, peersPort, nodeId, peerTcp}
+		labelValues = append(labelValues, peerIpsLabelValues...)
+
 		asMetric := NewAerospikeStat(commons.CTX_GLOBAL, "peers_details", true)
 
 		asMetric.updateValues(1, labels, labelValues)
 		allMetricsToSend = append(allMetricsToSend, asMetric)
 
+		fmt.Println("\t**** ", labels)
+		fmt.Println("\t**** ", labelValues)
 		fmt.Println(peersGenVersion, peersPort, nodeId, peerTcp, peerIps)
 
 	}
