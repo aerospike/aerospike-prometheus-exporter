@@ -63,11 +63,15 @@ func parseServerPeersMetrics(rawMetrics map[string]string) ([]AerospikeStat, err
 	fmt.Println("peerNodesData ==> ", peerNodesData)
 	var allMetricsToSend = []AerospikeStat{}
 
-	// 4,3000,[[BB9060011AC4202,,[172.17.0.6]],[BB90F0011AC4202,,[172.17.0.15]]]
+	// 4,3000,[[BB9060011AC4202,,[172.17.0.6,172.17.0.A]],[BB90F0011AC4202,,[172.17.0.15]]]
 	if len(strings.Trim(peerNodesData, " ")) > 0 {
 		peerNodesData = strings.Trim(peerNodesData, " ")
 
 		peersVersionAndPort := peerNodesData[0 : strings.Index(peerNodesData, "[")-1]
+		if len(strings.Trim(peerNodesData, " ")) == 0 {
+			return allMetricsToSend, nil
+		}
+
 		peerNodesData = peerNodesData[strings.Index(peerNodesData, "["):]
 		peerNodesData = peerNodesData[1 : len(peerNodesData)-2]
 
