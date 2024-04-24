@@ -30,7 +30,7 @@ const (
 	METRIC_LABEL_PORT                 = "port"
 	METRIC_LABEL_NODE_ID              = "node_id"
 	METRIC_LABEL_TLS_NAME             = "tls_name"
-	METRIC_LABEL_ENDPOINT_LIST_PREFIX = "endpoints_"
+	METRIC_LABEL_ENDPOINT_LIST_PREFIX = "peers_"
 )
 
 // constants used to identify type of metrics

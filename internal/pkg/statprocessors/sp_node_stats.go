@@ -61,6 +61,9 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string) []AerospikeStat {
 
 	stats := commons.ParseStats(nodeRawMetrics, ";")
+	if len(NodeId) == 0 {
+		NodeId = stats["node-id"]
+	}
 
 	var refreshMetricsToSend = []AerospikeStat{}
 

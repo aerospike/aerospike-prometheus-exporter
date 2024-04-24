@@ -3,7 +3,7 @@ package statprocessors
 var (
 	// Node service endpoint, cluster name and build version
 	Service, ClusterName, Build string
-	PeersInfo                   string
+	PeersInfo, NodeId           string
 )
 
 var LatencyBenchmarks = make(map[string]string)

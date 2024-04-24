@@ -1,21 +1,10 @@
 package statprocessors
 
 import (
-	"time"
-
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	log "github.com/sirupsen/logrus"
-)
-
-var (
-
-	// time interval to fetch index-pressure
-	serverPeersFetchInterval = 0.5
-
-	// Time when  Server Peers were last-fetched
-	serverPeersPreviousFetchTime = time.Now()
 )
 
 // public and utility functions
