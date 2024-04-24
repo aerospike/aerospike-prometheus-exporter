@@ -13,7 +13,7 @@ var (
 	MAX_PEERS_PER_LABEL = 32
 
 	// time interval to fetch index-pressure
-	serverPeersFetchInterval = 1.0
+	serverPeersFetchInterval = 0.1
 
 	// Time when  Server Peers were last-fetched
 	serverPeersPreviousFetchTime = time.Now()
@@ -71,12 +71,12 @@ func parseServerPeersMetrics(rawMetrics map[string]string) ([]AerospikeStat, err
 		peerNodesData = strings.Trim(peerNodesData, " ")
 
 		peersVersionAndPort := peerNodesData[0 : strings.Index(peerNodesData, "[")-1]
-		// If no nodes, skip
-		if len(strings.Trim(peerNodesData, " ")) == 0 {
-			return allMetricsToSend, nil
-		}
 
 		peerNodesData = peerNodesData[strings.Index(peerNodesData, "["):]
+		// If no nodes, skip
+		if peerNodesData == "[]" || len(strings.Trim(peerNodesData, " ")) == 0 {
+			return allMetricsToSend, nil
+		}
 		peerNodesData = peerNodesData[1 : len(peerNodesData)-2]
 
 		peersGenVersion := strings.Split(peersVersionAndPort, ",")[0]
