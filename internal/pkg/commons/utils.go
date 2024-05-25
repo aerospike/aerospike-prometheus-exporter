@@ -332,7 +332,7 @@ func HandleSignals() {
 	}()
 }
 
-func GetConfiguredCipherSuiteConstants() ([]uint16, bool) {
+func GetConfiguredCipherSuiteIds() ([]uint16, bool) {
 	// Load the map during first call,
 	if len(gCipherSuites) == 0 {
 		gCipherSuites = make(map[string]uint16)
@@ -343,7 +343,7 @@ func GetConfiguredCipherSuiteConstants() ([]uint16, bool) {
 
 	ciphers := []uint16{}
 
-	return ciphers, false
+	return ciphers, true
 }
 
 func LoadCipherSuiteList() {
