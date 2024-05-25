@@ -2,9 +2,7 @@ package executors
 
 import (
 	"crypto/tls"
-	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -114,16 +112,13 @@ func initExporterTLS() *tls.Config {
 		log.Fatal(err)
 	}
 
-	cipherSuites, ok := commons.GetConfiguredCipherSuiteIds()
-	if !ok {
-		fmt.Println("ERROR while GetConfiguredCipherSuiteIds, quitting")
-		os.Exit(0)
-	}
+	cipherSuites := commons.GetConfiguredCipherSuiteIds()
 
 	// Golang docs -- https://pkg.go.dev/crypto/tls#section-documentation
 	tlsConfig := &tls.Config{
-		Certificates:     serverPool,
-		MinVersion:       tls.VersionTLS12,
+		Certificates: serverPool,
+		MinVersion:   tls.VersionTLS12,
+		// MaxVersion:       tls.VersionTLS12,
 		CurvePreferences: []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
 		// CipherSuites:             []uint16{},
 		CipherSuites:             cipherSuites,

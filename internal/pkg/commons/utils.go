@@ -332,21 +332,35 @@ func HandleSignals() {
 	}()
 }
 
-func GetConfiguredCipherSuiteIds() ([]uint16, bool) {
+func GetConfiguredCipherSuiteIds() []uint16 {
 	// Load the map during first call,
 	if len(gCipherSuites) == 0 {
 		gCipherSuites = make(map[string]uint16)
-		LoadCipherSuiteList()
+		LoadCipherSuitesList()
 
 		fmt.Println("\n\n Loaded CipherSuites -- ", gCipherSuites)
 	}
 
 	ciphers := []uint16{}
 
-	return ciphers, true
+	fmt.Println("Configured Cipher Suite Names : ", config.Cfg.Agent.TlsCipherSuites)
+	if len(config.Cfg.Agent.TlsCipherSuites) > 0 {
+		arrConfiguredCipherSuits := strings.Split(config.Cfg.Agent.TlsCipherSuites, ",")
+		for _, cssName := range arrConfiguredCipherSuits {
+			id, ok := gCipherSuites[strings.ToUpper(strings.Trim(cssName, " "))]
+			if !ok {
+				fmt.Println("Unrecognized TLS CipherSuite, ignoring : ", cssName)
+			} else {
+				ciphers = append(ciphers, id)
+			}
+		}
+	}
+	fmt.Println("Configured Cipher Suite uint-ids : ", ciphers)
+
+	return ciphers
 }
 
-func LoadCipherSuiteList() {
+func LoadCipherSuitesList() {
 	// supported secure cipher suites
 	for _, suite := range tls.CipherSuites() {
 		gCipherSuites[suite.Name] = suite.ID
