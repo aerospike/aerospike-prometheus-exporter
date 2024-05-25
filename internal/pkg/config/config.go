@@ -29,11 +29,12 @@ type Config struct {
 		LogLevel          string `toml:"log_level"`
 		UseMockDatasource bool   `toml:"use_mock_datasource"`
 
-		Bind              string `toml:"bind"`
-		CertFile          string `toml:"cert_file"`
-		KeyFile           string `toml:"key_file"`
-		RootCA            string `toml:"root_ca"`
-		KeyFilePassphrase string `toml:"key_file_passphrase"`
+		Bind                   string `toml:"bind"`
+		CertFile               string `toml:"cert_file"`
+		KeyFile                string `toml:"key_file"`
+		RootCA                 string `toml:"root_ca"`
+		KeyFilePassphrase      string `toml:"key_file_passphrase"`
+		TlsCipherSuitesToHonor string `toml:"tls_cipher_suites_to_honor"`
 
 		BasicAuthUsername string `toml:"basic_auth_username"`
 		BasicAuthPassword string `toml:"basic_auth_password"`

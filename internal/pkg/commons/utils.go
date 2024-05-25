@@ -22,6 +22,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var (
+	gCipherSuites map[string]uint16
+)
+
 // Utility functions
 func ParseStats(s, sep string) map[string]string {
 	stats := make(map[string]string, strings.Count(s, sep)+1)
@@ -326,4 +330,30 @@ func HandleSignals() {
 			os.Exit(0)
 		}
 	}()
+}
+
+func GetConfiguredCipherSuiteConstants() ([]uint16, bool) {
+	// Load the map during first call,
+	if len(gCipherSuites) == 0 {
+		gCipherSuites = make(map[string]uint16)
+		LoadCipherSuiteList()
+
+		fmt.Println("\n\n Loaded CipherSuites -- ", gCipherSuites)
+	}
+
+	ciphers := []uint16{}
+
+	return ciphers, false
+}
+
+func LoadCipherSuiteList() {
+	// supported secure cipher suites
+	for _, suite := range tls.CipherSuites() {
+		gCipherSuites[suite.Name] = suite.ID
+	}
+
+	// // un-supported TLS 1.2 cipher suites
+	// for _, suite := range tls.InsecureCipherSuites() {
+	// gCipherSuites[suite.Name] = suite.ID
+	// }
 }

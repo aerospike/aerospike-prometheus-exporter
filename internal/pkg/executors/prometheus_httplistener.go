@@ -112,13 +112,18 @@ func initExporterTLS() *tls.Config {
 		log.Fatal(err)
 	}
 
+	// Golang docs -- https://pkg.go.dev/crypto/tls#section-documentation
 	tlsConfig := &tls.Config{
-		Certificates:             serverPool,
-		MinVersion:               tls.VersionTLS12,
-		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+		Certificates:     serverPool,
+		MinVersion:       tls.VersionTLS12,
+		CurvePreferences: []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+		// CipherSuites:             []uint16{},
+		CipherSuites:             []uint16{},
 		PreferServerCipherSuites: true,
 		InsecureSkipVerify:       false,
 	}
+
+	// tls.CipherSuiteName()
 
 	// if root CA provided, client validation is enabled (mutual TLS)
 	if len(config.Cfg.Agent.RootCA) > 0 {

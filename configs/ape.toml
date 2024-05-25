@@ -40,6 +40,9 @@
       # Root CA to validate client certificates (for mutual TLS)
       root_ca = ""
 
+      # TLS Cipher suites to honor
+      tls_cipher_suites_to_honor = ""
+
       # Passphrase for encrypted key_file. Supports below formats,
       # 1. Passphrase directly                                                      - "<passphrase>"
       # 2. Passphrase via file                                                      - "file:<file-that-contains-passphrase>"
