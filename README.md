@@ -359,7 +359,7 @@ make release-docker-multi-arch
     # Golang - refer documentation https://pkg.go.dev/crypto/tls#pkg-constants of golang CipherSuites for TLS >=1.2 (both supported and un-supported)
     # OpenSSL - https://www.openssl.org/docs/man1.1.1/man1/ciphers.html
     # OpenSSL IANA mapping sheet - https://testssl.sh/openssl-iana.mapping.html
-    # a comma separated LS Cipher suites to use, example: TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384
+    # a comma separated TLS Cipher suites to use, example: TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384
     # NOTE: we need to specify the cipher string as per Golang as mentioned in above example
     tls_cipher_suites = ""
 
