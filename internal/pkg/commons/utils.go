@@ -22,10 +22,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	gCipherSuites map[string]uint16
-)
-
 // Utility functions
 func ParseStats(s, sep string) map[string]string {
 	stats := make(map[string]string, strings.Count(s, sep)+1)
@@ -334,40 +330,41 @@ func HandleSignals() {
 
 func GetConfiguredCipherSuiteIds() []uint16 {
 	// Load the map during first call,
-	if len(gCipherSuites) == 0 {
-		gCipherSuites = make(map[string]uint16)
-		LoadCipherSuitesList()
-
-		fmt.Println("\n\n Loaded CipherSuites -- ", gCipherSuites)
-	}
+	lCipherSuites := LoadCipherSuitesList()
+	log.Trace("Supported CipherSuites ", lCipherSuites)
 
 	ciphers := []uint16{}
 
-	fmt.Println("Configured Cipher Suite Names : ", config.Cfg.Agent.TlsCipherSuites)
+	log.Trace("Configured Cipher Suite Names : ", config.Cfg.Agent.TlsCipherSuites)
 	if len(config.Cfg.Agent.TlsCipherSuites) > 0 {
 		arrConfiguredCipherSuits := strings.Split(config.Cfg.Agent.TlsCipherSuites, ",")
 		for _, cssName := range arrConfiguredCipherSuits {
-			id, ok := gCipherSuites[strings.ToUpper(strings.Trim(cssName, " "))]
-			if !ok {
-				fmt.Println("Unrecognized TLS CipherSuite, ignoring : ", cssName)
-			} else {
-				ciphers = append(ciphers, id)
+			cssName = strings.Trim(cssName, " ")
+			if len(cssName) > 0 {
+				id, ok := lCipherSuites[strings.ToUpper(cssName)]
+				if !ok {
+					log.Error("Unrecognized TLS CipherSuite, ignoring : ", cssName)
+				} else {
+					ciphers = append(ciphers, id)
+				}
 			}
 		}
 	}
-	fmt.Println("Configured Cipher Suite uint-ids : ", ciphers)
 
 	return ciphers
 }
 
-func LoadCipherSuitesList() {
+func LoadCipherSuitesList() map[string]uint16 {
+	lCipherSuites := make(map[string]uint16)
 	// supported secure cipher suites
 	for _, suite := range tls.CipherSuites() {
-		gCipherSuites[suite.Name] = suite.ID
+		lCipherSuites[suite.Name] = suite.ID
 	}
 
 	// // un-supported TLS 1.2 cipher suites
 	// for _, suite := range tls.InsecureCipherSuites() {
-	// gCipherSuites[suite.Name] = suite.ID
+	// lCipherSuites[suite.Name] = suite.ID
 	// }
+
+	return lCipherSuites
 }
