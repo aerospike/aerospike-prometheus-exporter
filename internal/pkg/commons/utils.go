@@ -330,31 +330,38 @@ func HandleSignals() {
 
 func GetConfiguredCipherSuiteIds() []uint16 {
 	// Load the map during first call,
-	lCipherSuites := LoadCipherSuitesList()
+	lCipherSuites := loadCipherSuitesList()
 	log.Trace("Supported CipherSuites ", lCipherSuites)
 
 	ciphers := []uint16{}
 
+	if len(strings.Trim(config.Cfg.Agent.TlsCipherSuites, " ")) > 0 {
+		return ciphers
+	}
+
 	log.Trace("Configured Cipher Suite Names : ", config.Cfg.Agent.TlsCipherSuites)
-	if len(config.Cfg.Agent.TlsCipherSuites) > 0 {
-		arrConfiguredCipherSuits := strings.Split(config.Cfg.Agent.TlsCipherSuites, ",")
-		for _, cssName := range arrConfiguredCipherSuits {
-			cssName = strings.Trim(cssName, " ")
-			if len(cssName) > 0 {
-				id, ok := lCipherSuites[strings.ToUpper(cssName)]
-				if !ok {
-					log.Error("Unrecognized TLS CipherSuite, ignoring : ", cssName)
-				} else {
-					ciphers = append(ciphers, id)
-				}
-			}
+	arrConfiguredCipherSuits := strings.Split(config.Cfg.Agent.TlsCipherSuites, ",")
+
+	for _, cssName := range arrConfiguredCipherSuits {
+		cssName = strings.Trim(cssName, " ")
+
+		if len(cssName) > 0 {
+			continue
 		}
+
+		id, ok := lCipherSuites[strings.ToUpper(cssName)]
+		if !ok {
+			log.Error("Unrecognized TLS CipherSuite, ignoring : ", cssName)
+		} else {
+			ciphers = append(ciphers, id)
+		}
+
 	}
 
 	return ciphers
 }
 
-func LoadCipherSuitesList() map[string]uint16 {
+func loadCipherSuitesList() map[string]uint16 {
 	lCipherSuites := make(map[string]uint16)
 	// supported secure cipher suites
 	for _, suite := range tls.CipherSuites() {
