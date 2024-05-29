@@ -112,8 +112,6 @@ func initExporterTLS() *tls.Config {
 		log.Fatal(err)
 	}
 
-	cipherSuites := commons.GetConfiguredCipherSuiteIds()
-
 	// Golang docs -- https://pkg.go.dev/crypto/tls#section-documentation
 	tlsConfig := &tls.Config{
 		Certificates: serverPool,
@@ -121,7 +119,7 @@ func initExporterTLS() *tls.Config {
 		// MaxVersion:       tls.VersionTLS12,
 		CurvePreferences: []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
 		// CipherSuites:             []uint16{},
-		CipherSuites:             cipherSuites,
+		CipherSuites:             commons.GetConfiguredCipherSuiteIds(),
 		PreferServerCipherSuites: true,
 		InsecureSkipVerify:       false,
 	}

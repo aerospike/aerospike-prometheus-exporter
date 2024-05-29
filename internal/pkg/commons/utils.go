@@ -328,50 +328,48 @@ func HandleSignals() {
 	}()
 }
 
+// Utility method fetch the support Cipher in the Golang/OS combination
+//
+//	from configures ciphers in ape.toml, filters the matched and valid-ciphers
+//	Ciphers are configurable only upto TLS 1.2 version
 func GetConfiguredCipherSuiteIds() []uint16 {
-	// Load the map during first call,
-	lCipherSuites := loadCipherSuitesList()
-	log.Trace("Supported CipherSuites ", lCipherSuites)
+	supportedCipherSuites := loadCipherSuitesList()
+	log.Trace("Supported CipherSuites ", supportedCipherSuites)
 
-	ciphers := []uint16{}
+	cipherSuiteIds := []uint16{}
 
 	if len(strings.Trim(config.Cfg.Agent.TlsCipherSuites, " ")) > 0 {
-		return ciphers
+		return cipherSuiteIds
 	}
 
 	log.Trace("Configured Cipher Suite Names : ", config.Cfg.Agent.TlsCipherSuites)
-	arrConfiguredCipherSuits := strings.Split(config.Cfg.Agent.TlsCipherSuites, ",")
+	configuredCipherSuites := strings.Split(config.Cfg.Agent.TlsCipherSuites, ",")
 
-	for _, cssName := range arrConfiguredCipherSuits {
-		cssName = strings.Trim(cssName, " ")
+	for _, cipherName := range configuredCipherSuites {
+		cipherName = strings.Trim(cipherName, " ")
 
-		if len(cssName) > 0 {
+		if len(cipherName) == 0 {
 			continue
 		}
 
-		id, ok := lCipherSuites[strings.ToUpper(cssName)]
+		id, ok := supportedCipherSuites[strings.ToUpper(cipherName)]
 		if !ok {
-			log.Error("Unrecognized TLS CipherSuite, ignoring : ", cssName)
+			log.Error("Unrecognized TLS Cipher Name, ignoring : ", cipherName)
 		} else {
-			ciphers = append(ciphers, id)
+			cipherSuiteIds = append(cipherSuiteIds, id)
 		}
 
 	}
 
-	return ciphers
+	return cipherSuiteIds
 }
 
 func loadCipherSuitesList() map[string]uint16 {
-	lCipherSuites := make(map[string]uint16)
+	supportedCipherSuites := make(map[string]uint16)
 	// supported secure cipher suites
 	for _, suite := range tls.CipherSuites() {
-		lCipherSuites[suite.Name] = suite.ID
+		supportedCipherSuites[suite.Name] = suite.ID
 	}
 
-	// // un-supported TLS 1.2 cipher suites
-	// for _, suite := range tls.InsecureCipherSuites() {
-	// lCipherSuites[suite.Name] = suite.ID
-	// }
-
-	return lCipherSuites
+	return supportedCipherSuites
 }

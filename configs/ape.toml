@@ -40,10 +40,9 @@
       # Root CA to validate client certificates (for mutual TLS)
       root_ca = ""
 
-      # a comma separated LS Cipher suites to use, example: TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384
-      # Golang - refer documentation of golang CipherSuites for TLS >=1.2 (both supported and un-supported)
-      # OpenSSL - https://www.openssl.org/docs/man1.1.1/man1/ciphers.html
-      # OpenSSL IANA mapping sheet - https://testssl.sh/openssl-iana.mapping.html
+      # a comma separated TLS Cipher suites to use, example: TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384
+      # Golang - refer documentation https://pkg.go.dev/crypto/tls#pkg-constants of golang CipherSuites for TLS >=1.2 (both supported and Insecure)
+      # NOTE: Cipher configuration is support only till TLS1.2 verison and not possible in TLS1.3
       tls_cipher_suites = ""
 
       # Passphrase for encrypted key_file. Supports below formats,
