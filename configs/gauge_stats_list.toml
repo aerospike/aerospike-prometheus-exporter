@@ -244,6 +244,7 @@ namespace_gauge_stats =[
 	"data_used_pct",
 	"index_mounts_used_pct",
 	"index_used_bytes",
+	"indexes_memory_used_pct",
 	"set_index_used_bytes",
 	"sindex_mounts_used_pct",
 	"sindex_used_bytes",
