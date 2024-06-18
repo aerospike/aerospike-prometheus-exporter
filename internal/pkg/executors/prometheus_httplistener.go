@@ -122,8 +122,6 @@ func initExporterTLS() *tls.Config {
 		InsecureSkipVerify:       false,
 	}
 
-	// tls.CipherSuiteName()
-
 	// if root CA provided, client validation is enabled (mutual TLS)
 	if len(config.Cfg.Agent.RootCA) > 0 {
 		caPool, err := commons.LoadCACert(config.Cfg.Agent.RootCA)
