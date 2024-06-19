@@ -34,6 +34,7 @@ type Config struct {
 		KeyFile           string `toml:"key_file"`
 		RootCA            string `toml:"root_ca"`
 		KeyFilePassphrase string `toml:"key_file_passphrase"`
+		TlsCipherSuites   string `toml:"tls_cipher_suites"`
 
 		BasicAuthUsername string `toml:"basic_auth_username"`
 		BasicAuthPassword string `toml:"basic_auth_password"`

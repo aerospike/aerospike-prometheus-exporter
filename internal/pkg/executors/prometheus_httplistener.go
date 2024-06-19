@@ -112,10 +112,12 @@ func initExporterTLS() *tls.Config {
 		log.Fatal(err)
 	}
 
+	// Golang docs -- https://pkg.go.dev/crypto/tls#section-documentation
 	tlsConfig := &tls.Config{
 		Certificates:             serverPool,
 		MinVersion:               tls.VersionTLS12,
 		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+		CipherSuites:             commons.GetConfiguredCipherSuiteIds(),
 		PreferServerCipherSuites: true,
 		InsecureSkipVerify:       false,
 	}

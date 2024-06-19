@@ -327,3 +327,49 @@ func HandleSignals() {
 		}
 	}()
 }
+
+// Utility method fetch the support Cipher in the Golang/OS combination
+//
+//	from configures ciphers in ape.toml, filters the matched and valid-ciphers
+//	Ciphers are configurable only upto TLS 1.2 version
+func GetConfiguredCipherSuiteIds() []uint16 {
+	supportedCipherSuites := loadCipherSuitesList()
+	log.Trace("Supported CipherSuites ", supportedCipherSuites)
+
+	cipherSuiteIds := []uint16{}
+
+	if len(strings.Trim(config.Cfg.Agent.TlsCipherSuites, " ")) > 0 {
+		return cipherSuiteIds
+	}
+
+	log.Trace("Configured Cipher Suite Names : ", config.Cfg.Agent.TlsCipherSuites)
+	configuredCipherSuites := strings.Split(config.Cfg.Agent.TlsCipherSuites, ",")
+
+	for _, cipherName := range configuredCipherSuites {
+		cipherName = strings.Trim(cipherName, " ")
+
+		if len(cipherName) == 0 {
+			continue
+		}
+
+		id, ok := supportedCipherSuites[strings.ToUpper(cipherName)]
+		if !ok {
+			log.Error("Unrecognized TLS Cipher Name, ignoring : ", cipherName)
+		} else {
+			cipherSuiteIds = append(cipherSuiteIds, id)
+		}
+
+	}
+
+	return cipherSuiteIds
+}
+
+func loadCipherSuitesList() map[string]uint16 {
+	supportedCipherSuites := make(map[string]uint16)
+	// supported secure cipher suites
+	for _, suite := range tls.CipherSuites() {
+		supportedCipherSuites[suite.Name] = suite.ID
+	}
+
+	return supportedCipherSuites
+}
