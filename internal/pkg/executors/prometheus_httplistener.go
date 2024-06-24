@@ -142,7 +142,7 @@ func initExporterTLS() *tls.Config {
 
 func makePromMetric(as statprocessors.AerospikeStat, pLabels ...string) (*prometheus.Desc, prometheus.ValueType) {
 
-	qualifiedName := as.QualifyMetricContext() + "_" + NormalizeMetric(as.Name)
+	qualifiedName := as.QualifyMetricContext() + statprocessors.AEROSPIKE_STAT_SEPERATOR + NormalizeMetric(as.Name)
 	promDesc := prometheus.NewDesc(
 		qualifiedName,
 		NormalizeDesc(as.Name),

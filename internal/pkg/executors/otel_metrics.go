@@ -56,7 +56,7 @@ func processAerospikeStats(meter metric.Meter, ctx context.Context, commonLabels
 	// create the required metered objectes
 	for _, stat := range refreshStats {
 
-		qualifiedName := stat.QualifyMetricContext() + "_" + NormalizeMetric(stat.Name)
+		qualifiedName := stat.QualifyMetricContext() + statprocessors.AEROSPIKE_STAT_SEPERATOR + NormalizeMetric(stat.Name)
 		desc := NormalizeMetric("description_" + stat.Name)
 
 		labels := []attribute.KeyValue{}
