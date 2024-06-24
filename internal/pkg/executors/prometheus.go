@@ -24,7 +24,7 @@ var (
 
 func NewPrometheusImpl() (o *PrometheusImpl) {
 	nodeActiveDesc = prometheus.NewDesc(
-		"aerospike"+statprocessors.AEROSPIKE_STAT_SEP_UNDERSCORE+"node_up",
+		"aerospike"+statprocessors.AEROSPIKE_STAT_SEP_UNDERSCORE+"node"+statprocessors.AEROSPIKE_STAT_SEP_UNDERSCORE+"up",
 		"Aerospike node active status",
 		[]string{"cluster_name", "service", "build"},
 		config.Cfg.Agent.MetricLabels,

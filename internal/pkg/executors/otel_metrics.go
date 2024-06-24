@@ -14,7 +14,7 @@ import (
 func sendNodeUp(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, value float64) {
 
 	nodeActiveDesc, _ := meter.Float64ObservableGauge(
-		"aerospike"+statprocessors.AEROSPIKE_STAT_SEP_PERIOD+"node.up",
+		"aerospike"+statprocessors.AEROSPIKE_STAT_SEP_PERIOD+"node"+statprocessors.AEROSPIKE_STAT_SEP_PERIOD+"up",
 		metric.WithDescription("Aerospike node active status"),
 	)
 
@@ -36,7 +36,7 @@ func sendNodeUp(meter metric.Meter, ctx context.Context, commonLabels []attribut
 		return nil
 	}, nodeActiveDesc)
 
-	handleErr(err, "sendNodeUp() Error while creating object for stat 'aerospike_node_up' ")
+	handleErr(err, "sendNodeUp() Error while creating object for stat 'aerospike.node.up' ")
 }
 
 func getCommonLabels() []attribute.KeyValue {
