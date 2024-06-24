@@ -8,7 +8,8 @@ import (
 
 // this is used as a prefix to qualify a metric while pushing to Prometheus or something
 var PREFIX_AEROSPIKE = "aerospike"
-var AEROSPIKE_STAT_SEPERATOR = "_"
+var AEROSPIKE_STAT_SEP_UNDERSCORE = "_"
+var AEROSPIKE_STAT_SEP_PERIOD = "."
 
 type AerospikeStat struct {
 	// type of metric, name and allow/disallow
@@ -29,8 +30,8 @@ type AerospikeStat struct {
 /**
  * prefixs a Context with Aerospike qualifier
  */
-func (as *AerospikeStat) QualifyMetricContext() string {
-	return PREFIX_AEROSPIKE + AEROSPIKE_STAT_SEPERATOR + string(as.Context)
+func (as *AerospikeStat) QualifyMetricContext(sep string) string {
+	return PREFIX_AEROSPIKE + sep + string(as.Context)
 }
 
 /*

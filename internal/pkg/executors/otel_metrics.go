@@ -14,7 +14,7 @@ import (
 func sendNodeUp(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, value float64) {
 
 	nodeActiveDesc, _ := meter.Float64ObservableGauge(
-		"aerospike_node_up",
+		"aerospike.node.up",
 		metric.WithDescription("Aerospike node active status"),
 	)
 
@@ -56,7 +56,7 @@ func processAerospikeStats(meter metric.Meter, ctx context.Context, commonLabels
 	// create the required metered objectes
 	for _, stat := range refreshStats {
 
-		qualifiedName := stat.QualifyMetricContext() + statprocessors.AEROSPIKE_STAT_SEPERATOR + NormalizeMetric(stat.Name)
+		qualifiedName := stat.QualifyMetricContext(statprocessors.AEROSPIKE_STAT_SEP_PERIOD) + statprocessors.AEROSPIKE_STAT_SEP_PERIOD + NormalizeMetric(stat.Name)
 		desc := NormalizeMetric("description_" + stat.Name)
 
 		labels := []attribute.KeyValue{}
