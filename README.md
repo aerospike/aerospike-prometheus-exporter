@@ -156,7 +156,7 @@ make release-docker-multi-arch
 
 ## Aerospike Prometheus Exporter Configuration
 
-- Aerospike Prometheus Exporter requires a configuration file to run. Check [default configuration file](ape.toml).
+- Aerospike Prometheus Exporter requires a configuration file to run. Check [default configuration file](configs/ape.toml).
     ```bash
     mkdir -p /etc/aerospike-prometheus-exporter
     curl https://raw.githubusercontent.com/aerospike/aerospike-prometheus-exporter/master/ape.toml -o /etc/aerospike-prometheus-exporter/ape.toml
