@@ -159,7 +159,7 @@ make release-docker-multi-arch
 - Aerospike Prometheus Exporter requires a configuration file to run. Check [default configuration file](configs/ape.toml).
     ```bash
     mkdir -p /etc/aerospike-prometheus-exporter
-    curl https://raw.githubusercontent.com/aerospike/aerospike-prometheus-exporter/master/ape.toml -o /etc/aerospike-prometheus-exporter/ape.toml
+    curl https://raw.githubusercontent.com/aerospike/aerospike-prometheus-exporter/master/configs/ape.toml -o /etc/aerospike-prometheus-exporter/ape.toml
     ```
 
 - Edit `/etc/aerospike-prometheus-exporter/ape.toml` to add `db_host` (default `localhost`) and `db_port` (default `3000`) to point to an Aerospike server IP and port.
