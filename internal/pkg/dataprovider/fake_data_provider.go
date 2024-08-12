@@ -4,7 +4,7 @@ package dataprovider
 import (
 	"sync"
 
-	aerospike "github.com/aerospike/aerospike-client-go/v6"
+	aerospike "github.com/aerospike/aerospike-client-go/v7"
 )
 
 type FakeDataProvider struct {
