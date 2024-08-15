@@ -257,7 +257,7 @@ namespace_gauge_stats =[
 system_info_gauge_stats = [
 	"allocated",
 	"shmem_bytes",
-	"cached_bytes",
+	"swap_cached_bytes",
 	"tcp_activeopens",
 	"tcp_currestab",
 	"tcp_retranssegs",
