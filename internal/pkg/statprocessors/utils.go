@@ -145,7 +145,6 @@ func isGauge(pContextType commons.ContextType, pStat string) bool {
 
 	// any sysinfo_ check if it exists in gauge_stats_list.toml
 	if strings.Contains(strings.ToLower(string(pContextType)), "sysinfo_") {
-		fmt.Println("\t *** given stat ", pStat, " is a sysinfo... checking against gauge list. ", config.GaugeStatHandler.SysInfoStats[pStat])
 		return config.GaugeStatHandler.SysInfoStats[pStat]
 	}
 
