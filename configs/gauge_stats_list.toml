@@ -255,9 +255,9 @@ namespace_gauge_stats =[
 # System Info Gauge metrics list
 #
 system_info_gauge_stats = [
-	"filefd_allocated",
-	"stats_shmem_bytes",
-	"swap_cached_bytes",
+	"allocated",
+	"shmem_bytes",
+	"cached_bytes",
 	"tcp_activeopens",
 	"tcp_currestab",
 	"tcp_retranssegs",
