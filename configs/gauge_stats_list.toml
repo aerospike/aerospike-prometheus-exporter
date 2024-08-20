@@ -260,7 +260,4 @@ system_info_gauge_stats = [
 	"swap_cached_bytes",
 	"tcp_activeopens",
 	"tcp_currestab",
-	"tcp_retranssegs",
-	"receive_bytes_total",
-	"transfer_bytes_total",
 ]
