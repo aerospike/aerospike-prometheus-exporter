@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	aero "github.com/aerospike/aerospike-client-go/v6"
-	"github.com/aerospike/aerospike-client-go/v6/types"
+	aero "github.com/aerospike/aerospike-client-go/v7"
+	"github.com/aerospike/aerospike-client-go/v7/types"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/sirupsen/logrus"
@@ -157,7 +157,9 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 		// Info request
 		rawMetrics, err = asConnection.RequestInfo(infoKeys...)
 		if err != nil {
-			logrus.Debug("Error while requestInfo ( infoKeys...) : ", err)
+			logrus.Debug("Error while requestInfo ( infoKeys...), closing connection : Error is: ", err, " and infoKeys: ", infoKeys)
+			asConnection.Close()
+			//TODO: do we need to assign nil to asConnection? i.e. asConnection = nil
 			continue
 		}
 
