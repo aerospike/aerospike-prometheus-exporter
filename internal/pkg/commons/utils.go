@@ -281,6 +281,7 @@ func readFromFile(filePath string) ([]byte, error) {
 	}
 
 	data := bytes.TrimSuffix(dataBytes, []byte("\n"))
+	data = bytes.ReplaceAll(data, []byte("\r"), []byte(""))
 
 	return data, nil
 }
