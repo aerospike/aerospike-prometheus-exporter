@@ -52,20 +52,23 @@ func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]stri
 	//
 	// Hashmap content format := namespace-<histogram-key> = <0/1>
 	for latencyHistName := range LatencyBenchmarks {
-		histTokens := strings.Split(latencyHistName, "~")
+		nsName := strings.Split(latencyHistName, "~")[0]
+		stat := LatencyBenchmarks[latencyHistName]
 
 		histCommand := "latencies:hist="
 
-		// service-enable-benchmarks-fabric or ns-enable-benchmarks-ops-sub or service-enable-hist-info
-		if histTokens[0] != "service" {
-			histCommand = histCommand + "{" + histTokens[0] + "}-"
+		// service-enable-benchmarks-fabric or ns-enable-benchmarks-ops-sub or service-enable-hist-info or service-enable-hist-proxy
+		if nsName != "service" {
+			histCommand = histCommand + "{" + nsName + "}-"
+		}
+		if strings.Contains(stat, "enable-") {
+			stat = strings.ReplaceAll(stat, "enable-", "")
+		}
+		if strings.Contains(stat, "hist-") {
+			stat = strings.ReplaceAll(stat, "hist-", "")
 		}
 
-		if strings.Contains(latencyHistName, "enable-benchmarks-") {
-			histCommand = histCommand + strings.Join(histTokens[2:], "-")
-		} else {
-			histCommand = histCommand + strings.Join(histTokens[3:], "-")
-		}
+		histCommand = histCommand + stat
 
 		commands = append(commands, histCommand)
 	}
