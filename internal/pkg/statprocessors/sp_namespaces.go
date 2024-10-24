@@ -1,7 +1,6 @@
 package statprocessors
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -235,8 +234,6 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 		if isStatLatencyHistRelated(stat) {
 			// remove old value as microbenchmark may get enabled / disable on-the-fly at server so we cannot rely on value
 			delete(LatencyBenchmarks, nsName+"~"+stat)
-
-			fmt.Println("\t ===> ", nsName, " === stat ", stat)
 
 			if pv == 1 {
 				LatencyBenchmarks[nsName+"~"+stat] = stat
