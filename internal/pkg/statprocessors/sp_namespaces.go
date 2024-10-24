@@ -244,10 +244,10 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 		//
 		// check and if latency benchmarks stat - is it enabled (bool true==1 and false==0 after conversion)
 		if isStatLatencyHistRelated(stat) {
-			delete(LatencyBenchmarks, nsName+"-"+stat)
+			delete(LatencyBenchmarks, nsName+"~"+stat)
 
 			if pv == 1 {
-				LatencyBenchmarks[nsName+"-"+stat] = stat
+				LatencyBenchmarks[nsName+"~"+stat] = stat
 			}
 		}
 

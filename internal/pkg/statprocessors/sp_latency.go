@@ -52,7 +52,7 @@ func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]stri
 	//
 	// Hashmap content format := namespace-<histogram-key> = <0/1>
 	for latencyHistName := range LatencyBenchmarks {
-		histTokens := strings.Split(latencyHistName, "-")
+		histTokens := strings.Split(latencyHistName, "~")
 
 		histCommand := "latencies:hist="
 
@@ -70,7 +70,7 @@ func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]stri
 		commands = append(commands, histCommand)
 	}
 
-	log.Tracef("latency-passtwokeys:%s", commands)
+	log.Tracef("latency-getLatenciesCommands:%s", commands)
 
 	return commands
 }
