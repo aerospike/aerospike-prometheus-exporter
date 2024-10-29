@@ -51,26 +51,23 @@ func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]stri
 	// re-repl is auto-enabled, but not coming as part of latencies: list, hence we are adding it explicitly
 	//
 	// Hashmap content format := namespace-<histogram-key> = <0/1>
-	for latencyHistName := range LatencyBenchmarks {
-		nsName := strings.Split(latencyHistName, "~")[0]
-		stat := LatencyBenchmarks[latencyHistName]
+	for nsName, nsLatencies := range NamespaceLatencyBenchmarks {
 
-		histCommand := "latencies:hist="
+		for stat := range nsLatencies {
+			histCommand := "latencies:hist="
 
-		// service-enable-benchmarks-fabric or ns-enable-benchmarks-ops-sub or service-enable-hist-info or service-enable-hist-proxy
-		if nsName != "service" {
+			// service-enable-benchmarks-fabric or ns-enable-benchmarks-ops-sub or service-enable-hist-info or service-enable-hist-proxy
 			histCommand = histCommand + "{" + nsName + "}-"
-		}
-		if strings.Contains(stat, "enable-") {
-			stat = strings.ReplaceAll(stat, "enable-", "")
-		}
-		if strings.Contains(stat, "hist-") {
-			stat = strings.ReplaceAll(stat, "hist-", "")
-		}
+			if strings.Contains(stat, "enable-") {
+				stat = strings.ReplaceAll(stat, "enable-", "")
+			}
+			if strings.Contains(stat, "hist-") {
+				stat = strings.ReplaceAll(stat, "hist-", "")
+			}
 
-		histCommand = histCommand + stat
-
-		commands = append(commands, histCommand)
+			histCommand = histCommand + stat
+			commands = append(commands, histCommand)
+		}
 	}
 
 	log.Tracef("latency-getLatenciesCommands:%s", commands)

@@ -5,7 +5,8 @@ var (
 	Service, ClusterName, Build string
 )
 
-var LatencyBenchmarks = make(map[string]string)
+var NodeLatencyBenchmarks = make(map[string]string)
+var NamespaceLatencyBenchmarks = make(map[string]map[string]string)
 
 type StatProcessor interface {
 	PassOneKeys() []string

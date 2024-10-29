@@ -88,10 +88,10 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string) []AerospikeSt
 		if isStatLatencyHistRelated(stat) {
 
 			// remove old value as microbenchmark may get enabled / disable on-the-fly at server so we cannot rely on value
-			delete(LatencyBenchmarks, "service~"+stat)
+			delete(NodeLatencyBenchmarks, stat)
 
 			if pv == 1 {
-				LatencyBenchmarks["service~"+stat] = stat
+				NodeLatencyBenchmarks[stat] = stat
 			}
 		}
 	}
