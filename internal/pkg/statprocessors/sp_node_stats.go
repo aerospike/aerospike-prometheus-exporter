@@ -1,6 +1,8 @@
 package statprocessors
 
 import (
+	"strings"
+
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 
 	log "github.com/sirupsen/logrus"
@@ -91,7 +93,15 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string) []AerospikeSt
 			delete(NodeLatencyBenchmarks, stat)
 
 			if pv == 1 {
-				NodeLatencyBenchmarks[stat] = stat
+				latencyOption := stat
+				if strings.Contains(latencyOption, "enable-") {
+					latencyOption = strings.ReplaceAll(latencyOption, "enable-", "")
+				}
+				if strings.Contains(latencyOption, "hist-") {
+					latencyOption = strings.ReplaceAll(latencyOption, "hist-", "")
+				}
+
+				NodeLatencyBenchmarks[stat] = latencyOption
 			}
 		}
 	}

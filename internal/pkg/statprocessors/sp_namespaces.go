@@ -233,16 +233,23 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 		// check and if latency benchmarks stat - is it enabled (bool true==1 and false==0 after conversion)
 		if isStatLatencyHistRelated(stat) {
 			// remove old value as microbenchmark may get enabled / disable on-the-fly at server so we cannot rely on value
-			delete(NamespaceLatencyBenchmarks[nsName], stat)
+			delete(NamespaceLatencyBenchmarks, nsName+"_"+stat)
 
 			if pv == 1 {
-				NamespaceLatencyBenchmarks[nsName][stat] = stat
+				latencyOption := "{" + nsName + "}-" + stat
+				if strings.Contains(latencyOption, "enable-") {
+					latencyOption = strings.ReplaceAll(latencyOption, "enable-", "")
+				}
+				if strings.Contains(latencyOption, "hist-") {
+					latencyOption = strings.ReplaceAll(latencyOption, "hist-", "")
+				}
+				NamespaceLatencyBenchmarks[nsName+"_"+stat] = latencyOption
 			}
 		}
 
 	}
 	// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
-	NamespaceLatencyBenchmarks[nsName]["re-repl"] = "re-repl"
+	NamespaceLatencyBenchmarks[nsName+"_re-repl"] = "{" + nsName + "}-" + "re-repl"
 
 	return nsMetricsToSend
 }

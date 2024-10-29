@@ -6,7 +6,9 @@ var (
 )
 
 var NodeLatencyBenchmarks = make(map[string]string)
-var NamespaceLatencyBenchmarks = make(map[string]map[string]string)
+var NamespaceLatencyBenchmarks = make(map[string]string)
+
+// var NamespaceLatencyBenchmarks = make(map[string]map[string]string)
 
 type StatProcessor interface {
 	PassOneKeys() []string

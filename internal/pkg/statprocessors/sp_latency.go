@@ -1,7 +1,6 @@
 package statprocessors
 
 import (
-	"fmt"
 	"strings"
 
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -51,26 +50,24 @@ func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]stri
 	// below latency-command are added to the auto-enabled list, i.e. latencies: command
 	// re-repl is auto-enabled, but not coming as part of latencies: list, hence we are adding it explicitly
 	//
-	// Hashmap content format := namespace-<histogram-key> = <0/1>
-	for nsName, nsLatencies := range NamespaceLatencyBenchmarks {
+	// Hashmap content format := namespace_enable_<latency>=latency-command
+	// some latencies are configured and fetch for each namespace.
+	// command will be like latencies:hist={NAMESPACE}-proxy / latencies:hist={NAMESPACE}-benchmarks-read
+	//
+	for _, latencyCommand := range NamespaceLatencyBenchmarks {
+		// ns-enable-benchmarks-ops-sub or ns-enable-hist-proxy
+		histCommand := "latencies:hist=" + latencyCommand
+		log.Tracef("namespace histCommand - asinfo <-h IP> -v %s", histCommand)
+		commands = append(commands, histCommand)
+	}
 
-		for stat := range nsLatencies {
-			histCommand := "latencies:hist="
-
-			// service-enable-benchmarks-fabric or ns-enable-benchmarks-ops-sub or service-enable-hist-info or service-enable-hist-proxy
-			histCommand = histCommand + "{" + nsName + "}-"
-			if strings.Contains(stat, "enable-") {
-				stat = strings.ReplaceAll(stat, "enable-", "")
-			}
-			if strings.Contains(stat, "hist-") {
-				stat = strings.ReplaceAll(stat, "hist-", "")
-			}
-
-			fmt.Println("\t ** histCommand - asinfo -h 172.17.0.5 -v ", histCommand)
-
-			histCommand = histCommand + stat
-			commands = append(commands, histCommand)
-		}
+	// some latencies are configured at service level which will come for each node
+	// command will be like latencies:hist=info
+	for _, latencyCommand := range NodeLatencyBenchmarks {
+		// enable-benchmarks-fabric or enable-hist-info
+		histCommand := "latencies:hist=" + latencyCommand
+		log.Tracef("node histCommand - asinfo <-h IP>  -v %s", histCommand)
+		commands = append(commands, histCommand)
 	}
 
 	log.Tracef("latency-getLatenciesCommands:%s", commands)
@@ -129,7 +126,6 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 
 	// log.Tracef("latency-stats:%+v", latencyStats)
 	log.Tracef("latencies-stats:%+v:%+v", singleLatencyKey, rawMetrics[singleLatencyKey])
-
 	var latencyMetricsToSend = []AerospikeStat{}
 
 	for namespaceName, nsLatencyStats := range latencyStats {
