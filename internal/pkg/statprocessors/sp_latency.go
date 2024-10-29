@@ -1,6 +1,7 @@
 package statprocessors
 
 import (
+	"fmt"
 	"strings"
 
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -64,6 +65,8 @@ func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]stri
 			if strings.Contains(stat, "hist-") {
 				stat = strings.ReplaceAll(stat, "hist-", "")
 			}
+
+			fmt.Println("\t ** histCommand - asinfo -h 172.17.0.5 -v ", histCommand)
 
 			histCommand = histCommand + stat
 			commands = append(commands, histCommand)
