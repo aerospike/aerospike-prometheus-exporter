@@ -50,14 +50,17 @@ func (nw *NamespaceStatsProcessor) PassOneKeys() []string {
 
 func (nw *NamespaceStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string {
 	s := rawMetrics[KEY_NS_METADATA]
-	list := strings.Split(s, ";")
+	nsList := strings.Split(s, ";")
 
 	log.Tracef("namespaces:%s", s)
 
 	var infoKeys []string
-	for _, k := range list {
+	for _, ns := range nsList {
 		// infoKey ==> namespace/test, namespace/bar
-		infoKeys = append(infoKeys, KEY_NS_NAMESPACE+"/"+k)
+		infoKeys = append(infoKeys, KEY_NS_NAMESPACE+"/"+ns)
+		if NamespaceLatencyBenchmarks[ns] == nil {
+			NamespaceLatencyBenchmarks[ns] = make(map[string]string)
+		}
 	}
 
 	if nw.canSendIndexPressureInfoKey() {
@@ -228,28 +231,28 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 			nsMetricsToSend = append(nsMetricsToSend, asMetric)
 		}
 
-		// below code section is to ensure ns+latencies combination is handled during LatencyWatcher
-		//
-		// check and if latency benchmarks stat - is it enabled (bool true==1 and false==0 after conversion)
+		// below code section is to ensure latencies combination is handled during LatencyWatcher
 		if isStatLatencyHistRelated(stat) {
-			// remove old value as microbenchmark may get enabled / disable on-the-fly at server so we cannot rely on value
-			delete(NamespaceLatencyBenchmarks, nsName+"_"+stat)
-
+			// pv==1 means histogram is enabled
 			if pv == 1 {
-				latencyOption := "{" + nsName + "}-" + stat
-				if strings.Contains(latencyOption, "enable-") {
-					latencyOption = strings.ReplaceAll(latencyOption, "enable-", "")
+				latencySubcommand := "{" + nsName + "}-" + stat
+				if strings.Contains(latencySubcommand, "enable-") {
+					latencySubcommand = strings.ReplaceAll(latencySubcommand, "enable-", "")
 				}
-				if strings.Contains(latencyOption, "hist-") {
-					latencyOption = strings.ReplaceAll(latencyOption, "hist-", "")
+				// some histogram command has 'hist-' prefix but the latency command does not expect hist- when issue the command
+				if strings.Contains(latencySubcommand, "hist-") {
+					latencySubcommand = strings.ReplaceAll(latencySubcommand, "hist-", "")
 				}
-				NamespaceLatencyBenchmarks[nsName+"_"+stat] = latencyOption
+				NamespaceLatencyBenchmarks[nsName][stat] = latencySubcommand
+			} else {
+				// pv==0 means histogram is disabled
+				delete(NamespaceLatencyBenchmarks[nsName], stat)
 			}
 		}
 
 	}
 	// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
-	NamespaceLatencyBenchmarks[nsName+"_re-repl"] = "{" + nsName + "}-" + "re-repl"
+	NamespaceLatencyBenchmarks[nsName]["re-repl"] = "{" + nsName + "}-" + "re-repl"
 
 	return nsMetricsToSend
 }

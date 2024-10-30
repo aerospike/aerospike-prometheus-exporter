@@ -89,19 +89,21 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string) []AerospikeSt
 		// check and if latency benchmarks stat, is it enabled (bool true==1 and false==0 after conversion)
 		if isStatLatencyHistRelated(stat) {
 
-			// remove old value as microbenchmark may get enabled / disable on-the-fly at server so we cannot rely on value
-			delete(NodeLatencyBenchmarks, stat)
-
+			// pv==1 means histogram is enabled
 			if pv == 1 {
-				latencyOption := stat
-				if strings.Contains(latencyOption, "enable-") {
-					latencyOption = strings.ReplaceAll(latencyOption, "enable-", "")
+				latencySubcommand := stat
+				if strings.Contains(latencySubcommand, "enable-") {
+					latencySubcommand = strings.ReplaceAll(latencySubcommand, "enable-", "")
 				}
-				if strings.Contains(latencyOption, "hist-") {
-					latencyOption = strings.ReplaceAll(latencyOption, "hist-", "")
+				// some histogram command has 'hist-' prefix but the latency command does not expect hist- when issue the command
+				if strings.Contains(latencySubcommand, "hist-") {
+					latencySubcommand = strings.ReplaceAll(latencySubcommand, "hist-", "")
 				}
 
-				NodeLatencyBenchmarks[stat] = latencyOption
+				ServiceLatencyBenchmarks[stat] = latencySubcommand
+			} else {
+				// pv==0 means histogram is disabled
+				delete(ServiceLatencyBenchmarks, stat)
 			}
 		}
 	}

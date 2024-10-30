@@ -49,24 +49,19 @@ func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]stri
 
 	// below latency-command are added to the auto-enabled list, i.e. latencies: command
 	// re-repl is auto-enabled, but not coming as part of latencies: list, hence we are adding it explicitly
-	//
-	// Hashmap content format := namespace_enable_<latency>=latency-command
-	// some latencies are configured and fetch for each namespace.
-	// command will be like latencies:hist={NAMESPACE}-proxy / latencies:hist={NAMESPACE}-benchmarks-read
-	//
-	for _, latencyCommand := range NamespaceLatencyBenchmarks {
-		// ns-enable-benchmarks-ops-sub or ns-enable-hist-proxy
-		histCommand := "latencies:hist=" + latencyCommand
-		log.Tracef("namespace histCommand - asinfo <-h IP> -v %s", histCommand)
-		commands = append(commands, histCommand)
+	// command will be like
+	//      latencies:hist={NAMESPACE}-proxy / latencies:hist={NAMESPACE}-benchmarks-read
+	//      latencies:hist=info
+
+	for nsName := range NamespaceLatencyBenchmarks {
+		for _, latencyCommand := range NamespaceLatencyBenchmarks[nsName] {
+			histCommand := "latencies:hist=" + latencyCommand
+			commands = append(commands, histCommand)
+		}
 	}
 
-	// some latencies are configured at service level which will come for each node
-	// command will be like latencies:hist=info
-	for _, latencyCommand := range NodeLatencyBenchmarks {
-		// enable-benchmarks-fabric or enable-hist-info
+	for _, latencyCommand := range ServiceLatencyBenchmarks {
 		histCommand := "latencies:hist=" + latencyCommand
-		log.Tracef("node histCommand - asinfo <-h IP>  -v %s", histCommand)
 		commands = append(commands, histCommand)
 	}
 
