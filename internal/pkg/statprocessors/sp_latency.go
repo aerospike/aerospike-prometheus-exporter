@@ -49,28 +49,23 @@ func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]stri
 
 	// below latency-command are added to the auto-enabled list, i.e. latencies: command
 	// re-repl is auto-enabled, but not coming as part of latencies: list, hence we are adding it explicitly
-	//
-	// Hashmap content format := namespace-<histogram-key> = <0/1>
-	for latencyHistName := range LatencyBenchmarks {
-		histTokens := strings.Split(latencyHistName, "-")
+	// command will be like
+	//      latencies:hist={NAMESPACE}-proxy / latencies:hist={NAMESPACE}-benchmarks-read
+	//      latencies:hist=info
 
-		histCommand := "latencies:hist="
-
-		// service-enable-benchmarks-fabric or ns-enable-benchmarks-ops-sub or service-enable-hist-info
-		if histTokens[0] != "service" {
-			histCommand = histCommand + "{" + histTokens[0] + "}-"
+	for nsName := range NamespaceLatencyBenchmarks {
+		for _, latencyCommand := range NamespaceLatencyBenchmarks[nsName] {
+			histCommand := "latencies:hist=" + latencyCommand
+			commands = append(commands, histCommand)
 		}
+	}
 
-		if strings.Contains(latencyHistName, "enable-benchmarks-") {
-			histCommand = histCommand + strings.Join(histTokens[2:], "-")
-		} else {
-			histCommand = histCommand + strings.Join(histTokens[3:], "-")
-		}
-
+	for _, latencyCommand := range ServiceLatencyBenchmarks {
+		histCommand := "latencies:hist=" + latencyCommand
 		commands = append(commands, histCommand)
 	}
 
-	log.Tracef("latency-passtwokeys:%s", commands)
+	log.Tracef("latency-getLatenciesCommands:%s", commands)
 
 	return commands
 }
@@ -126,7 +121,6 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 
 	// log.Tracef("latency-stats:%+v", latencyStats)
 	log.Tracef("latencies-stats:%+v:%+v", singleLatencyKey, rawMetrics[singleLatencyKey])
-
 	var latencyMetricsToSend = []AerospikeStat{}
 
 	for namespaceName, nsLatencyStats := range latencyStats {
