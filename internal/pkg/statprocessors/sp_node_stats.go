@@ -95,7 +95,7 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string) []AerospikeSt
 				if strings.Contains(latencySubcommand, "enable-") {
 					latencySubcommand = strings.ReplaceAll(latencySubcommand, "enable-", "")
 				}
-				// some histogram command has 'hist-' prefix but the latency command does not expect hist- when issue the command
+				// some histogram stats has 'hist-' in the config, but the latency command does not expect hist- when issue the command
 				if strings.Contains(latencySubcommand, "hist-") {
 					latencySubcommand = strings.ReplaceAll(latencySubcommand, "hist-", "")
 				}
