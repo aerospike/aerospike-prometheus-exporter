@@ -84,6 +84,10 @@ func sets_runTestcase(t *testing.T) {
 	assert.Nil(t, err, "Error while setsWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while setsWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
+	statprocessors.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
+	statprocessors.Build = arrRawMetrics[statprocessors.Infokey_Build]
+	statprocessors.Service = arrRawMetrics[statprocessors.Infokey_Service]
+
 	// check the output with setsWatcher
 	setsMetrics, err := setsWatcher.Refresh(passTwoOutputs, arrRawMetrics)
 	assert.Nil(t, err, "Error while setsWatcher.Refresh with passTwoOutputs ")

@@ -84,6 +84,10 @@ func latency_runTestcase(t *testing.T) {
 	assert.Nil(t, err, "Error while latencyWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while latencyWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
+	statprocessors.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
+	statprocessors.Build = arrRawMetrics[statprocessors.Infokey_Build]
+	statprocessors.Service = arrRawMetrics[statprocessors.Infokey_Service]
+
 	// check the output with setsWatcher
 	latencyMetrics, err := latencyWatcher.Refresh(passTwoOutputs, arrRawMetrics)
 	assert.Nil(t, err, "Error while latencyWatcher.Refresh with passTwoOutputs ")
