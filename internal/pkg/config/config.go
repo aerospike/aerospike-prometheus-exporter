@@ -157,6 +157,7 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 	if c.Aerospike.AuthMode == "" {
 		c.Aerospike.AuthMode = "internal"
 	}
+	c.Aerospike.AuthMode = strings.ToLower(strings.TrimSpace(c.Aerospike.AuthMode))
 
 	if c.Aerospike.Timeout == 0 {
 		c.Aerospike.Timeout = 5

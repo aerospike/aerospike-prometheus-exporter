@@ -89,6 +89,10 @@ func sindex_runTestcase(t *testing.T) {
 	assert.Nil(t, err, "Error while sindexMetrics.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while sindexMetrics.PassTwokeys, RawMetrics is EMPTY ")
 
+	statprocessors.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
+	statprocessors.Build = arrRawMetrics[statprocessors.Infokey_Build]
+	statprocessors.Service = arrRawMetrics[statprocessors.Infokey_Service]
+
 	// check the output with sindexWatcher
 	sindexMetrics, err := sindexWatcher.Refresh(passTwoOutputs, arrRawMetrics)
 	assert.Nil(t, err, "Error while sindexMetrics.Refresh with passTwoOutputs ")
