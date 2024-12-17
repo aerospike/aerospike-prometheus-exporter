@@ -1,6 +1,8 @@
 package statprocessors
 
 import (
+	"strings"
+
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 
 	log "github.com/sirupsen/logrus"
@@ -87,11 +89,21 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string) []AerospikeSt
 		// check and if latency benchmarks stat, is it enabled (bool true==1 and false==0 after conversion)
 		if isStatLatencyHistRelated(stat) {
 
-			// remove old value as microbenchmark may get enabled / disable on-the-fly at server so we cannot rely on value
-			delete(LatencyBenchmarks, "service-"+stat)
-
+			// pv==1 means histogram is enabled
 			if pv == 1 {
-				LatencyBenchmarks["service-"+stat] = stat
+				latencySubcommand := stat
+				if strings.Contains(latencySubcommand, "enable-") {
+					latencySubcommand = strings.ReplaceAll(latencySubcommand, "enable-", "")
+				}
+				// some histogram stats has 'hist-' in the config, but the latency command does not expect hist- when issue the command
+				if strings.Contains(latencySubcommand, "hist-") {
+					latencySubcommand = strings.ReplaceAll(latencySubcommand, "hist-", "")
+				}
+
+				ServiceLatencyBenchmarks[stat] = latencySubcommand
+			} else {
+				// pv==0 means histogram is disabled
+				delete(ServiceLatencyBenchmarks, stat)
 			}
 		}
 	}

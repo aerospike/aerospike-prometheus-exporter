@@ -31,7 +31,8 @@ func (uw *UserStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string
 func (uw *UserStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 
 	// check if security configurations are enabled
-	if config.Cfg.Aerospike.User == "" && config.Cfg.Aerospike.Password == "" {
+	if config.Cfg.Aerospike.AuthMode != "pki" &&
+		(config.Cfg.Aerospike.User == "" && config.Cfg.Aerospike.Password == "") {
 		return nil, nil
 	}
 

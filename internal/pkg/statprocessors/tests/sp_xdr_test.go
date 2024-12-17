@@ -90,6 +90,10 @@ func xdr_runTestcase(t *testing.T) {
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
 	arrRawMetrics, err := dataprovider.GetProvider().RequestInfo(passTwoOutputs)
 
+	statprocessors.ClusterName = passOneOutput[statprocessors.Infokey_ClusterName]
+	statprocessors.Build = passOneOutput[statprocessors.Infokey_Build]
+	statprocessors.Service = passOneOutput[statprocessors.Infokey_Service]
+
 	assert.Nil(t, err, "Error while XdrWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while XdrWatcher.PassTwokeys, RawMetrics is EMPTY ")
 

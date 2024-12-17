@@ -84,6 +84,10 @@ func node_runTestcase(t *testing.T) {
 	assert.Nil(t, err, "Error while NodeStatsWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while NamespaceWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
+	statprocessors.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
+	statprocessors.Build = arrRawMetrics[statprocessors.Infokey_Build]
+	statprocessors.Service = arrRawMetrics[statprocessors.Infokey_Service]
+
 	// check the output with NodeStatsWatcher
 	nodeMetrics, err := nodeWatcher.Refresh(passTwoOutputs, arrRawMetrics)
 	assert.Nil(t, err, "Error while NodeStatsWatcher.Refresh with passTwoOutputs ")

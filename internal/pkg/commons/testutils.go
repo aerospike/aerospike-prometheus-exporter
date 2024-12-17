@@ -14,6 +14,7 @@ Constants, common variables and helper functions
 const (
 	TESTS_DEFAULT_CONFIG_FILE     = "tests_data/default_ape.toml"
 	TESTS_USERS_CONFIG_FILE       = "tests_data/users_ape.toml"
+	TESTS_USERS_PKI_CONFIG_FILE   = "tests_data/users_pki_ape.toml"
 	TESTS_MOCK_CONFIG_FILE        = "tests_data/mock_ape.toml"
 	TESTS_DEFAULT_GAUGE_LIST_FILE = "configs/gauge_stats_list.toml"
 )

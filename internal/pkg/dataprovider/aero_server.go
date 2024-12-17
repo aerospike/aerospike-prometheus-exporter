@@ -68,9 +68,7 @@ func initializeAndConnectAerospikeServer() (*aero.Connection, error) {
 	clientPolicy.User = string(username)
 	clientPolicy.Password = string(password)
 
-	authMode := strings.ToLower(strings.TrimSpace(config.Cfg.Aerospike.AuthMode))
-
-	switch authMode {
+	switch config.Cfg.Aerospike.AuthMode {
 	case "internal", "":
 		clientPolicy.AuthMode = aero.AuthModeInternal
 	case "external":
