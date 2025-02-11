@@ -181,6 +181,8 @@ namespace_gauge_stats =[
 	"migrate_tx_partitions_initial",
 	"migrate_tx_partitions_lead_remaining",
 	"migrate_tx_partitions_remaining",
+	"mrt_monitors_active",
+	"mrt_provisionals",
 	"n_nodes_quiesced",
 	"non_expirable_objects",
 	"non_replica_objects",
