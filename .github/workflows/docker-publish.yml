@@ -27,6 +27,20 @@ jobs:
     - name: Set env
       run: |
         echo "DOCKER_TAG=$(echo $GITHUB_REF_NAME | cut -c 2-)" >> $GITHUB_ENV
+    - name: Set up Snyk CLI
+      uses: snyk/actions/setup@master
+
+    - name: Authenticate Snyk
+      run: snyk auth ${{ secrets.SNYK_TOKEN }}
+
+    - name: Run Vulnerability Scan
+      run: |
+         make vulnerability-scan
+
+    - name: Run Container Vulnerability Scan
+      run: |
+         make vulnerability-scan-container
+
     - name: Build and push
       run: |
         if [  "${{ github.event.inputs.docker_tag }}" == "" ]; then
