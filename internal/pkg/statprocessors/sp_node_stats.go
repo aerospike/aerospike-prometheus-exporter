@@ -1,7 +1,6 @@
 package statprocessors
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -19,37 +18,16 @@ type NodeStatsProcessor struct {
 }
 
 func (sw *NodeStatsProcessor) PassOneKeys() []string {
-	log.Tracef("node-passonekeys:logs")
+	log.Tracef("node-passonekeys:nil")
 
-	return []string{"logs"}
+	return nil
 }
 
 func (sw *NodeStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string {
 	// we need to fetch both configs and stat
+	log.Tracef("node-passtwokeys:%s", []string{KEY_SERVICE_CONFIG, KEY_SERVICE_STATISTICS})
 
-	// if Logs are configure/present, send individual synk log commands
-	pass_two_keys := []string{KEY_SERVICE_CONFIG, KEY_SERVICE_STATISTICS}
-	sync_cmds := sw.parseLogSyncDetails(rawMetrics)
-	pass_two_keys = append(pass_two_keys, sync_cmds...)
-
-	log.Tracef("node-passtwokeys:%s", pass_two_keys)
-
-	return pass_two_keys
-}
-
-func (sw *NodeStatsProcessor) parseLogSyncDetails(rawMetrics map[string]string) []string {
-	synkLogCmds := []string{}
-
-	sync_logs_info := rawMetrics["logs"]
-	sync_logs := strings.Split(sync_logs_info, ";")
-
-	// 0:stderr;1:/var/log/aerospike/aerospike.log
-	for _, sync_info := range sync_logs {
-		sync_id := strings.Split(sync_info, ":")
-		synkLogCmds = append(synkLogCmds, "log/"+sync_id[0])
-	}
-
-	return synkLogCmds
+	return []string{KEY_SERVICE_CONFIG, KEY_SERVICE_STATISTICS}
 }
 
 // All (allowed/blocked) node stats. Based on the config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsBlocklist.
@@ -61,24 +39,23 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 		sw.nodeMetrics = make(map[string]AerospikeStat)
 	}
 
-	log.Tracef("node-configs:%s", rawMetrics[KEY_SERVICE_CONFIG])
-	log.Tracef("node-stats:%s", rawMetrics[KEY_SERVICE_STATISTICS])
+	nodeConfigs := rawMetrics[KEY_SERVICE_CONFIG]
+	nodeStats := rawMetrics[KEY_SERVICE_STATISTICS]
+	log.Tracef("node-configs:%s", nodeConfigs)
+	log.Tracef("node-stats:%s", nodeStats)
 
 	// we are sending configs and stats in same refresh call, as both are being sent to prom, instead of doing prom-push in 2 functions
 	// handle configs
 	var allMetricsToSend = []AerospikeStat{}
 
-	lCfgMetricsToSend := sw.handleRefresh(rawMetrics[KEY_SERVICE_CONFIG])
+	lCfgMetricsToSend := sw.handleRefresh(nodeConfigs)
 
 	// handle stats
-	lStatMetricsToSend := sw.handleRefresh(rawMetrics[KEY_SERVICE_STATISTICS])
+	lStatMetricsToSend := sw.handleRefresh(nodeStats)
 
 	// merge both array into single
 	allMetricsToSend = append(allMetricsToSend, lCfgMetricsToSend...)
 	allMetricsToSend = append(allMetricsToSend, lStatMetricsToSend...)
-
-	// parse logs sync
-	allMetricsToSend = append(allMetricsToSend, sw.handleLogSyncStats(rawMetrics)...)
 
 	return allMetricsToSend, nil
 }
@@ -132,44 +109,4 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string) []AerospikeSt
 	}
 
 	return refreshMetricsToSend
-}
-
-func (sw *NodeStatsProcessor) handleLogSyncStats(rawMetrics map[string]string) []AerospikeStat {
-
-	var refreshMetricsToSend = []AerospikeStat{}
-
-	for key, value := range rawMetrics {
-		if strings.Contains(key, "log/") {
-			stat := ""
-			if strings.Contains(value, ":DEBUG") {
-				stat = "log_debug"
-				refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSyncMetric(stat))
-			} else if strings.Contains(value, ":DETAIL") {
-				stat = "log_detail"
-				refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSyncMetric(stat))
-			}
-		}
-	}
-
-	fmt.Println(refreshMetricsToSend)
-
-	return refreshMetricsToSend
-}
-
-func (sw *NodeStatsProcessor) createLogSyncMetric(statName string) AerospikeStat {
-	asMetric, exists := sw.nodeMetrics[statName]
-
-	if !exists {
-		allowed := isMetricAllowed(commons.CTX_NODE_STATS, statName)
-		asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, statName, allowed)
-		sw.nodeMetrics[statName] = asMetric
-	}
-
-	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
-	labelValues := []string{ClusterName, Service}
-
-	asMetric.updateValues(1.0, labels, labelValues)
-
-	return asMetric
-
 }
