@@ -12,6 +12,7 @@ import (
 const (
 	KEY_SERVICE_CONFIG     = "get-config:context=service"
 	KEY_SERVICE_STATISTICS = "statistics"
+	KEY_SERVICE_LOGS       = "logs"
 )
 
 type NodeStatsProcessor struct {
@@ -21,35 +22,34 @@ type NodeStatsProcessor struct {
 func (sw *NodeStatsProcessor) PassOneKeys() []string {
 	log.Tracef("node-passonekeys:logs")
 
-	return []string{"logs"}
+	return []string{KEY_SERVICE_LOGS}
 }
 
 func (sw *NodeStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string {
 	// we need to fetch both configs and stat
 
-	// if Logs are configure/present, send individual synk log commands
+	// if Logs are configure/present, send individual sink log commands
 	pass_two_keys := []string{KEY_SERVICE_CONFIG, KEY_SERVICE_STATISTICS}
-	sync_cmds := sw.parseLogSyncDetails(rawMetrics)
-	pass_two_keys = append(pass_two_keys, sync_cmds...)
+	Sink_cmds := sw.parseLogSinkDetails(rawMetrics)
+	pass_two_keys = append(pass_two_keys, Sink_cmds...)
 
 	log.Tracef("node-passtwokeys:%s", pass_two_keys)
 
 	return pass_two_keys
 }
 
-func (sw *NodeStatsProcessor) parseLogSyncDetails(rawMetrics map[string]string) []string {
-	synkLogCmds := []string{}
+func (sw *NodeStatsProcessor) parseLogSinkDetails(rawMetrics map[string]string) []string {
+	sinkLogCmds := []string{}
 
-	sync_logs_info := rawMetrics["logs"]
-	sync_logs := strings.Split(sync_logs_info, ";")
+	sink_logs := strings.Split(rawMetrics[KEY_SERVICE_LOGS], ";")
 
 	// 0:stderr;1:/var/log/aerospike/aerospike.log
-	for _, sync_info := range sync_logs {
-		sync_id := strings.Split(sync_info, ":")
-		synkLogCmds = append(synkLogCmds, "log/"+sync_id[0])
+	for _, Sink_info := range sink_logs {
+		sink_id := strings.Split(Sink_info, ":")
+		sinkLogCmds = append(sinkLogCmds, "log/"+sink_id[0])
 	}
 
-	return synkLogCmds
+	return sinkLogCmds
 }
 
 // All (allowed/blocked) node stats. Based on the config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsBlocklist.
@@ -77,8 +77,8 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	allMetricsToSend = append(allMetricsToSend, lCfgMetricsToSend...)
 	allMetricsToSend = append(allMetricsToSend, lStatMetricsToSend...)
 
-	// parse logs sync
-	allMetricsToSend = append(allMetricsToSend, sw.handleLogSyncStats(rawMetrics)...)
+	// parse logs Sink
+	allMetricsToSend = append(allMetricsToSend, sw.handleLogSinkStats(rawMetrics)...)
 
 	return allMetricsToSend, nil
 }
@@ -134,33 +134,38 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string) []AerospikeSt
 	return refreshMetricsToSend
 }
 
-func (sw *NodeStatsProcessor) handleLogSyncStats(rawMetrics map[string]string) []AerospikeStat {
+func (sw *NodeStatsProcessor) handleLogSinkStats(rawMetrics map[string]string) []AerospikeStat {
 
 	var refreshMetricsToSend = []AerospikeStat{}
 
+	debug_value := 0.0
+	detail_value := 0.0
 	for key, value := range rawMetrics {
 		if strings.Contains(key, "log/") {
-			stat := ""
+
 			if strings.Contains(value, ":DEBUG") {
-				stat = "log_debug"
-				refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSyncMetric(stat))
-			} else if strings.Contains(value, ":DETAIL") {
-				stat = "log_detail"
-				refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSyncMetric(stat))
+				debug_value = 1.0
+			}
+
+			if strings.Contains(value, ":DETAIL") {
+				detail_value = 1.0
 			}
 		}
 	}
+	refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSinkMetric("pseudo_log_debug", debug_value))
+	refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSinkMetric("pseudo_log_detail", detail_value))
+	fmt.Println(" debug_value : ", debug_value, "\t detail_value: ", detail_value)
 
 	fmt.Println(refreshMetricsToSend)
 
 	return refreshMetricsToSend
 }
 
-func (sw *NodeStatsProcessor) createLogSyncMetric(statName string) AerospikeStat {
+func (sw *NodeStatsProcessor) createLogSinkMetric(statName string, statValue float64) AerospikeStat {
 	asMetric, exists := sw.nodeMetrics[statName]
 
+	allowed := isMetricAllowed(commons.CTX_NODE_STATS, statName)
 	if !exists {
-		allowed := isMetricAllowed(commons.CTX_NODE_STATS, statName)
 		asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, statName, allowed)
 		sw.nodeMetrics[statName] = asMetric
 	}
@@ -168,7 +173,7 @@ func (sw *NodeStatsProcessor) createLogSyncMetric(statName string) AerospikeStat
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
 	labelValues := []string{ClusterName, Service}
 
-	asMetric.updateValues(1.0, labels, labelValues)
+	asMetric.updateValues(statValue, labels, labelValues)
 
 	return asMetric
 
