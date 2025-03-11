@@ -1,10 +1,16 @@
 # Aerospike Prometheus Exporter
 
-This repo contains Aerospike's monitoring agent for Prometheus. The exporter is part of the [Aerospike Monitoring Stack](https://www.aerospike.com/docs/tools/monitorstack/index.html).
+This repo contains Aerospike's monitoring agent for Prometheus. The exporter is part of the [Aerospike Monitoring Stack](https://www.aerospike.com/docs/tools/monitorstack/index.html). 
 
 The Aerospike Prometheus Exporter is now **generally available** (GA).
 If you're an enterprise customer feel free to reach out to support with any questions.
 We appreciate feedback from community members on the [issues](https://github.com/aerospike/aerospike-prometheus-exporter/issues).
+
+Aerospike agent exports various stats, config from Aerospike Server as metrics in OpenMetrics format, 
+For more details about Aerospike Server Metrics reference see [Aerospike System Metrics reference](https://aerospike.com/docs/reference/metrics).
+
+**NOTE:** Some of the metrics are pseudo metrics. A pseudo metric is neither a configuration nor a statistic in the server but is exposed as a metric by the agent. For more details, refer to the [Pseudo Metrics](#pseudo-metrics) section.
+
 
 ## Build Instructions
 
@@ -422,3 +428,11 @@ make release-docker-multi-arch
     # Default: 0 (export all threshold buckets).
     latency_buckets_count=0
     ```
+
+## Pseudo Metrics
+
+| S.No | Name  | Description  |
+|------|-------|-------------|
+| 1    | aerospike_node_up | This metric is returned by the exporter when it is up and running, regardless of whether it can connect to the Aerospike Server. |
+| 2    | aerospike_node_stats_pseudo_log_debug | Indicates whether DEBUG logging is enabled for a node in an Aerospike Cluster. `1` means ENABLED, `0` means DISABLED. |
+| 3    | aerospike_node_stats_pseudo_log_detail | Indicates whether DETAIL logging is enabled for a node in an Aerospike Cluster. `1` means ENABLED, `0` means DISABLED. |
