@@ -1,7 +1,6 @@
 package statprocessors
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -154,9 +153,6 @@ func (sw *NodeStatsProcessor) handleLogSinkStats(rawMetrics map[string]string) [
 	}
 	refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSinkMetric("pseudo_log_debug", debug_value))
 	refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSinkMetric("pseudo_log_detail", detail_value))
-	fmt.Println(" debug_value : ", debug_value, "\t detail_value: ", detail_value)
-
-	fmt.Println(refreshMetricsToSend)
 
 	return refreshMetricsToSend
 }
