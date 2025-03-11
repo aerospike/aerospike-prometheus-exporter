@@ -185,6 +185,11 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		log.Infof("Defaulting to Prometheus Exporting mode")
 		c.Agent.PrometheusEnabled = true
 	}
+
+	// validate Aerospike root-ca and cert-file configs
+	if len(Cfg.Aerospike.RootCA) == 0 && len(Cfg.Aerospike.CertFile) != 0 {
+		log.Fatalf("root_ca (Server Pool ) in Aerospike section cannot be null when Client Cert file is configured")
+	}
 }
 
 func (c *Config) FetchCloudInfo(md toml.MetaData) {
