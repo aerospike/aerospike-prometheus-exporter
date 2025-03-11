@@ -43,7 +43,7 @@ func Refresh() ([]AerospikeStat, error) {
 	if Infokey_Service != INFOKEY_SERVICE_TLS_STD {
 		serverPool, clientPool := commons.LoadServerOrClientCertificates()
 		// we need to have atleast one certificate configured and read successfully
-		if serverPool != nil && clientPool != nil {
+		if serverPool != nil || clientPool != nil {
 			Infokey_Service = INFOKEY_SERVICE_TLS_STD
 			log.Debugf("TLS Mode is enabled, setting infokey-service as  'service-tls-std' for further fetching from server.")
 		}
