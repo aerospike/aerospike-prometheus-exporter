@@ -28,24 +28,25 @@ func (sw *NodeStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string
 	// we need to fetch both configs and stat
 
 	// if Logs are configure/present, send individual sink log commands
-	pass_two_keys := []string{KEY_SERVICE_CONFIG, KEY_SERVICE_STATISTICS}
-	Sink_cmds := sw.parseLogSinkDetails(rawMetrics)
-	pass_two_keys = append(pass_two_keys, Sink_cmds...)
+	sinkCmds := sw.parseLogSinkDetails(rawMetrics)
 
-	log.Tracef("node-passtwokeys:%s", pass_two_keys)
+	passTwoKeys := []string{KEY_SERVICE_CONFIG, KEY_SERVICE_STATISTICS}
+	passTwoKeys = append(passTwoKeys, sinkCmds...)
 
-	return pass_two_keys
+	log.Tracef("node-passtwokeys:%s", passTwoKeys)
+
+	return passTwoKeys
 }
 
 func (sw *NodeStatsProcessor) parseLogSinkDetails(rawMetrics map[string]string) []string {
 	sinkLogCmds := []string{}
 
-	sink_logs := strings.Split(rawMetrics[KEY_SERVICE_LOGS], ";")
+	sinkLogs := strings.Split(rawMetrics[KEY_SERVICE_LOGS], ";")
 
 	// 0:stderr;1:/var/log/aerospike/aerospike.log
-	for _, Sink_info := range sink_logs {
-		sink_id := strings.Split(Sink_info, ":")
-		sinkLogCmds = append(sinkLogCmds, "log/"+sink_id[0])
+	for _, sinkInfo := range sinkLogs {
+		sinkId := strings.Split(sinkInfo, ":")
+		sinkLogCmds = append(sinkLogCmds, "log/"+sinkId[0])
 	}
 
 	return sinkLogCmds
