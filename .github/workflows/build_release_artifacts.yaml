@@ -18,64 +18,36 @@ permissions:
 
 jobs:
       
-    job_build:
-      strategy:
-        fail-fast: false
-        matrix:
-          arch: ["amd64","arm64"]
-          container: ["ubuntu:20.04","ubuntu:22.04","redhat:8","redhat:9","amazonlinux:2023","debian:11","debian:12"]
-          include:
-            - container: "ubuntu:22.04"
-              name: "Ubuntu22.04"
-              cmd: "make deb"
-              ext: "deb"
-            - container: "ubuntu:20.04"
-              name: "Ubuntu20.04"
-              cmd: "make deb"
-              ext: "deb"
-            - container: "redhat:8"
-              cmd: "make rpm"
-              ext: "rpm"
-            - container: "redhat:9"
-              cmd: "make rpm"
-              ext: "rpm"
-            - container: "amazonlinux:2023" 
-              cmd: "make rpm"
-              ext: "rpm"
-            - container: "debian:11"
-              cmd: "make deb"
-              ext: "deb"
-            - container: "debian:12"
-              cmd: "make deb"
-              ext: "deb"
-              
+    # this job generates deb and rpm for amd64/x86 arch
+    amd64_job:
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v3
           with:
             fetch-depth: 0
-        - name: Set up QEMU
-          uses: docker/setup-qemu-action@v2
-          with:
-              platforms: linux/${{ matrix.arch }}
-
         - uses: actions-ecosystem/action-get-latest-tag@v1
           id: get-latest-tag
-                  
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@v2
 
-        - name: Login to JFrog
-          uses: docker/login-action@v2
-          with:
-            registry: aerospike.jfrog.io
-            username: ${{ secrets.JFROG_ARTIFACTORY_USER }}
-            password: ${{ secrets.JFROG_ARTIFACTORY_TOKEN }}
-      
-        - name: Build OS and Platform specific artifact
-          id: build-artifact
+        - name: Set up Snyk CLI
+          uses: snyk/actions/setup@master
+    
+        - name: Authenticate Snyk
+          run: snyk auth ${{ secrets.SNYK_TOKEN }}
+
+        - name: Install Dependencies for FPM
           run: |
-              docker run -v ${{ github.workspace }}:/src/ -w /src/ --platform linux/${{ matrix.arch }} aerospike.jfrog.io/devops-containers-prod-local/fpm-${{ matrix.container }} ${{ matrix.cmd }}
+            sudo apt-get update
+            sudo apt-get install -y ruby ruby-dev build-essential rpm
+  
+        - name: Install FPM and Verify version
+          run: |
+            sudo gem install --no-document fpm
+            fpm --version
+            
+        - name: Build amd64 / x86 specific artifact
+          id: build-x86-artifact
+          run: |
+            make package-linux-amd64
 
         - name: Upload Release Asset
           env:
@@ -92,11 +64,52 @@ jobs:
                gh release upload "$TAG_NAME" "$file"
              done   
 
+    # this job generates deb and rpm for arm64 arch
+    arm64_job:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
+        - uses: actions-ecosystem/action-get-latest-tag@v1
+          id: get-latest-tag
+
+        - name: Set up Snyk CLI
+          uses: snyk/actions/setup@master
+    
+        - name: Authenticate Snyk
+          run: snyk auth ${{ secrets.SNYK_TOKEN }}
+
+        - name: Install Dependencies for FPM
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y ruby ruby-dev build-essential rpm
+  
+        - name: Install FPM and Verify version
+          run: |
+            sudo gem install --no-document fpm
+            fpm --version
+            
+        - name: Build arm64v8 specific artifact
+          id: build-arm64-artifact
+          run: |
+            make package-linux-arm64
+
+        - name: Upload Release Asset
+          env:
+            GH_TOKEN: ${{ github.token }}
+            TAG_NAME: "${{ steps.get-latest-tag.outputs.tag }}"
+          run: |
+             # echo "tag_name $TAG_NAME"
              echo
-             echo "lising of files ... "
-             echo
-             ls -lst pkg/target/*
              
+             files=$(find pkg/target -type f -name "aerospike-prome*" -printf "$(realpath -s %p) ")
+         
+             for file in $files; do
+               echo "uploading file === $file to release-tag $TAG_NAME"
+               gh release upload "$TAG_NAME" "$file"
+             done   
+
     tar_job:
       runs-on: ubuntu-latest    
       steps:
@@ -107,10 +120,15 @@ jobs:
         - uses: actions-ecosystem/action-get-latest-tag@v1
           id: get-latest-tag
 
-        - uses: actions/setup-ruby@v1
-          with:
-             ruby-version: '3.x'
-        - run: gem install fpm --no-document
+        - name: Install Dependencies for FPM
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y ruby ruby-dev build-essential rpm
+  
+        - name: Install FPM and Verify version
+          run: |
+            sudo gem install --no-document fpm
+            fpm --version
 
         - name: Set up Go
           uses: actions/setup-go@v3
@@ -161,8 +179,3 @@ jobs:
                echo "uploading file === $file to release-tag $TAG_NAME"
                gh release upload "$TAG_NAME" "$file"
              done   
-
-             echo
-             echo "lising of files ... "
-             echo
-             ls -lst pkg/target/*
