@@ -69,12 +69,12 @@ clean:
 # vulnerability scan
 .PHONY: vulnerability-scan
 vulnerability-scan:
-	snyk test --all-projects
+	snyk test --all-projects --policy-path=$(ROOT_DIR)/.snyk --severity-threshold=high
 
 # snyk container 
 .PHONY: vulnerability-scan-container
 vulnerability-scan-container: vulnerability-scan create-docker-multi-arch
-	snyk container test aerospike/aerospike-prometheus-exporter:latest --policy-path=./.snyk
+	snyk container test aerospike/aerospike-prometheus-exporter:latest --policy-path=$(ROOT_DIR)/.snyk --file=Dockerfile --severity-threshold=high
 
 # Builds exporter docker image
 # Requires docker
