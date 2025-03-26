@@ -98,8 +98,9 @@ func initAerospikeTLS() *tls.Config {
 	// load the server / client certificates
 	serverPool, clientPool = commons.LoadServerOrClientCertificates()
 
-	if serverPool != nil && clientPool != nil {
-		// we either have server pool or client pool of certificates
+	if serverPool != nil || clientPool != nil {
+		// we either have server pool only (oneway-tls) or both serverPool and clientPoll (mTLS)
+		// only clientPool without serverPool is invalid config.
 		tlsConfig := &tls.Config{
 			Certificates:             clientPool,
 			RootCAs:                  serverPool,
