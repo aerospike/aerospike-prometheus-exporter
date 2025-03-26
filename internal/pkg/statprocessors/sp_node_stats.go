@@ -1,6 +1,8 @@
 package statprocessors
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -15,7 +17,8 @@ const (
 )
 
 type NodeStatsProcessor struct {
-	nodeMetrics map[string]AerospikeStat
+	nodeMetrics  map[string]AerospikeStat
+	logSinkcount int
 }
 
 func (sw *NodeStatsProcessor) PassOneKeys() []string {
@@ -39,17 +42,21 @@ func (sw *NodeStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string
 }
 
 func (sw *NodeStatsProcessor) parseLogSinkDetails(rawMetrics map[string]string) []string {
-	sinkLogCmds := []string{}
+	logSinkCmds := []string{}
 
-	sinkLogs := strings.Split(rawMetrics[KEY_SERVICE_LOGS], ";")
+	logSinks := strings.Split(rawMetrics[KEY_SERVICE_LOGS], ";")
+
+	// reset the logSinkCount to 0 always, if server restarts by changing debug level, no need to fetch
+	sw.logSinkcount = 0
 
 	// 0:stderr;1:/var/log/aerospike/aerospike.log
-	for _, sinkInfo := range sinkLogs {
+	for _, sinkInfo := range logSinks {
 		sinkId := strings.Split(sinkInfo, ":")
-		sinkLogCmds = append(sinkLogCmds, "log/"+sinkId[0])
+		logSinkCmds = append(logSinkCmds, "log/"+sinkId[0])
+		sw.logSinkcount++
 	}
 
-	return sinkLogCmds
+	return logSinkCmds
 }
 
 // All (allowed/blocked) node stats. Based on the config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsBlocklist.
@@ -138,22 +145,27 @@ func (sw *NodeStatsProcessor) handleLogSinkStats(rawMetrics map[string]string) [
 
 	var refreshMetricsToSend = []AerospikeStat{}
 
-	debug_value := 0.0
-	detail_value := 0.0
-	for key, value := range rawMetrics {
-		if strings.Contains(key, "log/") {
+	debugValue := 0.0
+	detailValue := 0.0
 
-			if strings.Contains(value, ":DEBUG") {
-				debug_value = 1.0
-			}
+	// log-sink-ids will be from 0..(n-1)
+	for idx := 0; idx < sw.logSinkcount; idx++ {
+		logSinkKey := "log/" + strconv.Itoa(idx)
+		value := rawMetrics[logSinkKey]
 
-			if strings.Contains(value, ":DETAIL") {
-				detail_value = 1.0
-			}
+		fmt.Println("====> sink-key and value ", logSinkKey, "\t", value)
+
+		if strings.Contains(value, ":DEBUG") {
+			debugValue = 1.0
+		}
+
+		if strings.Contains(value, ":DETAIL") {
+			detailValue = 1.0
 		}
 	}
-	refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSinkMetric("pseudo_log_debug", debug_value))
-	refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSinkMetric("pseudo_log_detail", detail_value))
+
+	refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSinkMetric("pseudo_log_debug", debugValue))
+	refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSinkMetric("pseudo_log_detail", detailValue))
 
 	return refreshMetricsToSend
 }
