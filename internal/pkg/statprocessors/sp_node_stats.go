@@ -1,7 +1,6 @@
 package statprocessors
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -18,7 +17,7 @@ const (
 
 type NodeStatsProcessor struct {
 	nodeMetrics  map[string]AerospikeStat
-	logSinkcount int
+	logSinkCount int
 }
 
 func (sw *NodeStatsProcessor) PassOneKeys() []string {
@@ -47,13 +46,13 @@ func (sw *NodeStatsProcessor) parseLogSinkDetails(rawMetrics map[string]string) 
 	logSinks := strings.Split(rawMetrics[KEY_SERVICE_LOGS], ";")
 
 	// reset the logSinkCount to 0 always, if server restarts by changing debug level, no need to fetch
-	sw.logSinkcount = 0
+	sw.logSinkCount = 0
 
 	// 0:stderr;1:/var/log/aerospike/aerospike.log
-	for _, sinkInfo := range logSinks {
-		sinkId := strings.Split(sinkInfo, ":")
-		logSinkCmds = append(logSinkCmds, "log/"+sinkId[0])
-		sw.logSinkcount++
+	for _, logSink := range logSinks {
+		logSinkId := strings.Split(logSink, ":")
+		logSinkCmds = append(logSinkCmds, "log/"+logSinkId[0])
+		sw.logSinkCount++
 	}
 
 	return logSinkCmds
@@ -149,11 +148,9 @@ func (sw *NodeStatsProcessor) handleLogSinkStats(rawMetrics map[string]string) [
 	detailValue := 0.0
 
 	// log-sink-ids will be from 0..(n-1)
-	for idx := 0; idx < sw.logSinkcount; idx++ {
+	for idx := 0; idx < sw.logSinkCount; idx++ {
 		logSinkKey := "log/" + strconv.Itoa(idx)
 		value := rawMetrics[logSinkKey]
-
-		fmt.Println("====> sink-key and value ", logSinkKey, "\t", value)
 
 		if strings.Contains(value, ":DEBUG") {
 			debugValue = 1.0
