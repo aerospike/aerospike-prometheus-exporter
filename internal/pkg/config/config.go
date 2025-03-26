@@ -186,10 +186,20 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		c.Agent.PrometheusEnabled = true
 	}
 
+	// key-file and cert-file either exist or not-exist together
+	if len(Cfg.Aerospike.KeyFile) == 0 && len(Cfg.Aerospike.CertFile) != 0 {
+		log.Fatalf("In Aerospike section, key_file is not present")
+	}
+
+	if len(Cfg.Aerospike.KeyFile) != 0 && len(Cfg.Aerospike.CertFile) == 0 {
+		log.Fatalf("In Aerospike section, cert_file is not present")
+	}
+
 	// validate Aerospike root-ca and cert-file configs
 	if len(Cfg.Aerospike.RootCA) == 0 && len(Cfg.Aerospike.CertFile) != 0 {
-		log.Fatalf("root_ca in Aerospike section cannot be null when cert_file is configured")
+		log.Fatalf("In Aerospike section, root_ca cannot be null when cert_file and key_file are configured")
 	}
+
 }
 
 func (c *Config) FetchCloudInfo(md toml.MetaData) {
