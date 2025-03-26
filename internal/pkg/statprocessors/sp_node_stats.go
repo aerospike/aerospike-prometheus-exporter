@@ -173,8 +173,8 @@ func (sw *NodeStatsProcessor) handleLogSinkStats(rawMetrics map[string]string) [
 func (sw *NodeStatsProcessor) createLogSinkMetric(statName string, statValue float64) AerospikeStat {
 	asMetric, exists := sw.nodeMetrics[statName]
 
-	allowed := isMetricAllowed(commons.CTX_NODE_STATS, statName)
 	if !exists {
+		allowed := isMetricAllowed(commons.CTX_NODE_STATS, statName)
 		asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, statName, allowed)
 		sw.nodeMetrics[statName] = asMetric
 	}
