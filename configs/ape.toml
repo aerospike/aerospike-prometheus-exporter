@@ -152,8 +152,9 @@
       # Metrics Blocklist - If specified, these metrics will be NOT be scraped. An empty list will include all metrics.
       # Commenting out the below blocklist configs will disable metrics filtering (i.e. no metrics will be blocked/filtered).
 
-      # globbing pattern (wildcard) are allowd for allowlist and blocklist
+      # globbing pattern (wildcard) are allowed for allowlist and blocklist
       # for example "batch_index_*_buffers"
+      # to block all namespace metrics "*"
 
       # Namespace metrics allowlist, to control which Namespace metrics should be collected.
       # namespace_metrics_allowlist = []

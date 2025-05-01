@@ -325,8 +325,8 @@ make release-docker-multi-arch
     "client_read_success"
     ]
 
-    # Set metrics blocklist
-    # set_metrics_blocklist=[]
+    # Set metrics blocklist, blocks all set metrics
+    set_metrics_blocklist=["*"]
 
     # Node metrics blocklist
     node_metrics_blocklist=[
