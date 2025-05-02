@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -211,9 +210,8 @@ func fetchUsersRoles() (bool, []*aero.UserRoles, error) {
 				break
 			}
 
-			err = fmt.Errorf(aeroErr.Error())
-			if err != nil {
-				logrus.Warnf("Error while querying users: %s", err)
+			if len(aeroErr.Error()) > 0 {
+				logrus.Warnf("Error while querying users: %s", aeroErr.Error())
 				continue
 			}
 		}
