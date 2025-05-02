@@ -2,12 +2,12 @@
 # This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Build exporter artifacts
+name: Build exporter deb,rpm and tgz artifacts
 
 on:
   push:
     tags:
-      - 'v*'
+      - v*
 
 permissions:
   id-token: write
@@ -66,6 +66,7 @@ jobs:
           cd pkg/target
           gzip aerospike-prometheus-exporter*.tar
           for f in *.tar.gz; do
+            echo "Renaming $f"
             mv "$f" "${f%.tar.gz}.tgz"
           done
 
