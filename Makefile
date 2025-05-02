@@ -73,7 +73,7 @@ vulnerability-scan:
 
 # snyk container 
 .PHONY: vulnerability-scan-container
-vulnerability-scan-container: vulnerability-scan create-docker-multi-arch
+vulnerability-scan-container: vulnerability-scan docker-multi-arch
 	snyk container test aerospike/aerospike-prometheus-exporter:latest --policy-path=$(ROOT_DIR)/.snyk --file=Dockerfile --severity-threshold=high
 
 # Builds exporter docker image
@@ -88,8 +88,8 @@ docker:
 release-docker-multi-arch: vulnerability-scan-container
 	docker buildx build --build-arg VERSION=$(VERSION) --platform $(DOCKER_MULTI_ARCH_PLATFORMS) --push . -t aerospike/aerospike-prometheus-exporter:latest -t aerospike/aerospike-prometheus-exporter:$(VERSION)
 
-.PHONY: create-docker-multi-arch
-create-docker-multi-arch:
+.PHONY: docker-multi-arch
+docker-multi-arch:
 	docker buildx build --build-arg VERSION=$(VERSION) --platform linux/amd64 --load . -t aerospike/aerospike-prometheus-exporter:latest
 
 .PHONY: package-linux-arm64
