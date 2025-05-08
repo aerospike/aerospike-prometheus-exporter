@@ -81,7 +81,7 @@ deb: prep
 		--url $(URL) \
 		--vendor $(VENDOR) \
 		--architecture $(DEB_PKG_ARCH) \
-		--package $(TARGET_DIR)/$(PKG_FILENAME)_$(VERSION)-1.$(DEB_PKG_ARCH).deb
+		--package $(TARGET_DIR)/$(PKG_FILENAME)_$(VERSION)-1_$(DEB_PKG_ARCH).deb
 
 .PHONY: fips-rpm
 fips-rpm: fipsparam rpm 
