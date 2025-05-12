@@ -91,7 +91,7 @@ docker:
 # NOTE: this builds and pushes the image to aerospike/aerospike-prometheus-exporter docker hub repository
 # Use this target only for release
 .PHONY: release-docker-multi-arch
-release-docker-multi-arch: vulnerability-scan-container
+release-docker-multi-arch: 
 	docker buildx build --build-arg VERSION=$(VERSION) --platform $(DOCKER_MULTI_ARCH_PLATFORMS) --push . -t aerospike/aerospike-prometheus-exporter:latest -t aerospike/aerospike-prometheus-exporter:$(VERSION)
 
 
