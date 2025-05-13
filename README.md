@@ -6,6 +6,12 @@ The Aerospike Prometheus Exporter is now **generally available** (GA).
 If you're an enterprise customer feel free to reach out to support with any questions.
 We appreciate feedback from community members on the [issues](https://github.com/aerospike/aerospike-prometheus-exporter/issues).
 
+Aerospike agent exports various stats, config from Aerospike Server as metrics in OpenMetrics format,
+For more details about Aerospike Server Config refer [Aerospike System Config reference](https://aerospike.com/docs/server/reference/configuration) and for Aerospike Server Metrics refer [Aerospike System Metrics reference](https://aerospike.com/docs/reference/metrics).
+
+**NOTE:** Some of the metrics are pseudo metrics. A pseudo metric is neither a configuration nor a statistic in the server but is exposed as a metric by the agent. For more details, refer to the [Pseudo Metrics](#pseudo-metrics) section.
+
+
 ## Build Instructions
 
 ### Aerospike Prometheus Exporter Binary
@@ -278,13 +284,14 @@ make release-docker-multi-arch
     "*_available_pct"
     ]
 
-    # Set metrics allowlist
+    # Set metrics allowlist, An empty list will include all metrics.
+    # below example, only 2 metrics mentioned will be scraped
     set_metrics_allowlist=[
     "objects",
     "tombstones"
     ]
 
-    # Node metrics allowlist
+    # Node metrics allowlist, An empty list will include all metrics.
     node_metrics_allowlist=[
     "uptime",
     "cluster_size",
@@ -300,7 +307,7 @@ make release-docker-multi-arch
     "lap_us"
     ]
 
-    # Secondary index metrics allowlist
+    # Secondary index metrics allowlist, An empty list will include all metrics.
     sindex_metrics_allowlist = [
     "entries",
     "ibtr_memory_used",
@@ -313,24 +320,28 @@ make release-docker-multi-arch
 
     # Metrics Blocklist - If specified, these metrics will be NOT be scraped.
 
-    # Namespace metrics blocklist
+    # Namespace metrics blocklist, An empty list means all metrics are allowed.
+    # to exclude or stop all metrics, use "*"
     namespace_metrics_blocklist=[
     "memory_used_sindex_bytes",
     "client_read_success"
     ]
 
-    # Set metrics blocklist
-    # set_metrics_blocklist=[]
+    # Set metrics blocklist, blocks all set metrics, An empty list means all metrics are allowed.
+    # to exclude or stop all metrics, use ["*"]
+    set_metrics_blocklist=["*"]
 
     # Node metrics blocklist
     node_metrics_blocklist=[
     "batch_index_*_buffers"
     ]
 
-    # XDR metrics blocklist (only for Aerospike versions 5.0 and above)
+    # XDR metrics blocklist (only for Aerospike versions 5.0 and above), An empty list means all metrics are allowed.
+    # to exclude or stop all metrics, use ["*"]
     # xdr_metrics_blocklist=[]
 
-    # Secondary index metrics blocklist
+    # Secondary index metrics blocklist, An empty list means all metrics are allowed.
+    # to exclude or stop all metrics, use ["*"]
     # sindex_metrics_blocklist = []
     ```
 
@@ -422,3 +433,11 @@ make release-docker-multi-arch
     # Default: 0 (export all threshold buckets).
     latency_buckets_count=0
     ```
+
+## Pseudo Metrics
+
+| S.No | Name  | Description  |
+|------|-------|-------------|
+| 1    | aerospike_node_up | This metric is returned by the exporter when it is up and running, regardless of whether it can connect to the Aerospike Server. |
+| 2    | aerospike_node_stats_pseudo_log_debug | Indicates whether DEBUG logging is enabled for a node in an Aerospike Cluster. `1` means ENABLED, `0` means DISABLED. |
+| 3    | aerospike_node_stats_pseudo_log_detail | Indicates whether DETAIL logging is enabled for a node in an Aerospike Cluster. `1` means ENABLED, `0` means DISABLED. |

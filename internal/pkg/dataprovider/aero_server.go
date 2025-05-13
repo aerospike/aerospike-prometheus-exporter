@@ -4,13 +4,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"fmt"
 	"log"
 	"strings"
 	"time"
 
-	aero "github.com/aerospike/aerospike-client-go/v7"
-	"github.com/aerospike/aerospike-client-go/v7/types"
+	aero "github.com/aerospike/aerospike-client-go/v8"
+	"github.com/aerospike/aerospike-client-go/v8/types"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/sirupsen/logrus"
@@ -98,8 +97,9 @@ func initAerospikeTLS() *tls.Config {
 	// load the server / client certificates
 	serverPool, clientPool = commons.LoadServerOrClientCertificates()
 
-	if serverPool != nil && clientPool != nil {
-		// we either have server pool or client pool of certificates
+	if serverPool != nil || clientPool != nil {
+		// we either have server pool only (oneway-tls) or both serverPool and clientPoll (mTLS)
+		// only clientPool without serverPool is invalid config.
 		tlsConfig := &tls.Config{
 			Certificates:             clientPool,
 			RootCAs:                  serverPool,
@@ -210,9 +210,8 @@ func fetchUsersRoles() (bool, []*aero.UserRoles, error) {
 				break
 			}
 
-			err = fmt.Errorf(aeroErr.Error())
-			if err != nil {
-				logrus.Warnf("Error while querying users: %s", err)
+			if len(aeroErr.Error()) > 0 {
+				logrus.Warnf("Error while querying users: %s", aeroErr.Error())
 				continue
 			}
 		}

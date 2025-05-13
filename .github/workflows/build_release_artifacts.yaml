@@ -2,14 +2,12 @@
 # This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Build exporter deb,rpm and tgz artifacts 
+name: Build exporter deb,rpm and tgz artifacts
 
-on: 
+on:
   push:
-    # branches: [master]
-    # TODO this combination logic of branch + tag is not working.
     tags:
-       - v*
+      - v*
 
 permissions:
   id-token: write
@@ -17,152 +15,69 @@ permissions:
   contents: write
 
 jobs:
-      
-    job_build:
-      strategy:
-        fail-fast: false
-        matrix:
-          arch: ["amd64","arm64"]
-          container: ["ubuntu:20.04","ubuntu:22.04","redhat:8","redhat:9","amazonlinux:2023","debian:11","debian:12"]
-          include:
-            - container: "ubuntu:22.04"
-              name: "Ubuntu22.04"
-              cmd: "make deb"
-              ext: "deb"
-            - container: "ubuntu:20.04"
-              name: "Ubuntu20.04"
-              cmd: "make deb"
-              ext: "deb"
-            - container: "redhat:8"
-              cmd: "make rpm"
-              ext: "rpm"
-            - container: "redhat:9"
-              cmd: "make rpm"
-              ext: "rpm"
-            - container: "amazonlinux:2023" 
-              cmd: "make rpm"
-              ext: "rpm"
-            - container: "debian:11"
-              cmd: "make deb"
-              ext: "deb"
-            - container: "debian:12"
-              cmd: "make deb"
-              ext: "deb"
-              
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v3
-          with:
-            fetch-depth: 0
-        - name: Set up QEMU
-          uses: docker/setup-qemu-action@v2
-          with:
-              platforms: linux/${{ matrix.arch }}
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            make_target: package-linux-amd64
+            goarch: amd64
+            tar_arch: x86_64
+          - arch: arm64
+            make_target: package-linux-arm64
+            goarch: arm64
+            tar_arch: aarch64
 
-        - uses: actions-ecosystem/action-get-latest-tag@v1
-          id: get-latest-tag
-                  
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@v2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-        - name: Login to JFrog
-          uses: docker/login-action@v2
-          with:
-            registry: aerospike.jfrog.io
-            username: ${{ secrets.JFROG_ARTIFACTORY_USER }}
-            password: ${{ secrets.JFROG_ARTIFACTORY_TOKEN }}
-      
-        - name: Build OS and Platform specific artifact
-          id: build-artifact
-          run: |
-              docker run -v ${{ github.workspace }}:/src/ -w /src/ --platform linux/${{ matrix.arch }} aerospike.jfrog.io/devops-containers-prod-local/fpm-${{ matrix.container }} ${{ matrix.cmd }}
+      - name: Get latest tag
+        uses: actions-ecosystem/action-get-latest-tag@v1
+        id: get-latest-tag
 
-        - name: Upload Release Asset
-          env:
-            GH_TOKEN: ${{ github.token }}
-            TAG_NAME: "${{ steps.get-latest-tag.outputs.tag }}"
-          run: |
-             # echo "tag_name $TAG_NAME"
-             echo
-             
-             files=$(find pkg/target -type f -name "aerospike-prome*" -printf "$(realpath -s %p) ")
-         
-             for file in $files; do
-               echo "uploading file === $file to release-tag $TAG_NAME"
-               gh release upload "$TAG_NAME" "$file"
-             done   
+      - name: Set up Snyk CLI
+        uses: snyk/actions/setup@master
 
-             echo
-             echo "lising of files ... "
-             echo
-             ls -lst pkg/target/*
-             
-    tar_job:
-      runs-on: ubuntu-latest    
-      steps:
-        - uses: actions/checkout@v3
-          with:
-            fetch-depth: 0
+      - name: Authenticate Snyk
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
 
-        - uses: actions-ecosystem/action-get-latest-tag@v1
-          id: get-latest-tag
+      - name: Install FPM deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev build-essential rpm
 
-        - uses: actions/setup-ruby@v1
-          with:
-             ruby-version: '3.x'
-        - run: gem install fpm --no-document
+      - name: Install FPM
+        run: |
+          sudo gem install --no-document fpm
+          fpm --version
 
-        - name: Set up Go
-          uses: actions/setup-go@v3
-          with:
-             go-version: 1.20.2
-    
-        - name: go mod tidy
-          run: |
-              dpkg-architecture -q DEB_BUILD_ARCH
-              (git describe --tags --always --abbrev=0 | cut -c 1-)
-              go mod tidy
+      - name: Build deb/rpm for ${{ matrix.arch }}
+        run: make ${{ matrix.make_target }}
+
+      - name: Build tar for ${{ matrix.arch }}
+        run: make tar GOOS=linux GOARCH=${{ matrix.goarch }} ARCH=${{ matrix.tar_arch }}
+
+      - name: Gzip tar to .tgz
+        run: |
+          cd pkg/target
+          gzip aerospike-prometheus-exporter*.tar
+          for f in *.tar.gz; do
+            echo "Renaming $f"
+            mv "$f" "${f%.tar.gz}.tgz"
+          done
+
+      - name: Upload all artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ steps.get-latest-tag.outputs.tag }}
+        run: |
+          files=$(find pkg/target -type f -name "aerospike-prome*" -printf "%p ")
+          for file in $files; do
+            echo "Uploading $file to release $TAG_NAME"
+            gh release upload "$TAG_NAME" "$file"
+          done
           
-        - name: Build tar files
-          id: build-tar-artifact
-          run: |
-              echo "Current working directory ".$PWD
-              echo
-              echo "Build Directory is ".$BUILD_DIR
-              make tar GOOS=linux GOARCH=amd64 ARCH=x86_64
-              make tar GOOS=linux GOARCH=arm64 ARCH=aarch64
-
-        - name: gzip tar files
-          run: |
-            cd pkg/target   
-            ls -lrt *.tar
-            echo "GZipping tar files"
-            gzip aerospike-prometheus-exporter*.tar 
-            echo "gzipped files"
-            ls -lrt *.tar.gz
-            # find in current folder i.e. pkg/target all files to move as tgz
-            files=$(find . -type f -name "aerospike-prome*" -printf "$(realpath -s %p) ")
-            for file in $files; do
-               echo "gzipping file === $file "
-               mv "$file" "${file%.tar.gz}.tgz"
-            done  
-            ls -lrt *.tgz
-        - name: Upload Release Asset
-          env:
-            GH_TOKEN: ${{ github.token }}
-            TAG_NAME: "${{ steps.get-latest-tag.outputs.tag }}"
-          run: |
-             # echo "tag_name $TAG_NAME"
-             echo
-             
-             files=$(find pkg/target -type f -name "aerospike-prome*" -printf "$(realpath -s %p) ")
-         
-             for file in $files; do
-               echo "uploading file === $file to release-tag $TAG_NAME"
-               gh release upload "$TAG_NAME" "$file"
-             done   
-
-             echo
-             echo "lising of files ... "
-             echo
-             ls -lst pkg/target/*
