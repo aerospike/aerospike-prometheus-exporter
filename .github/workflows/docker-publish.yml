@@ -33,13 +33,14 @@ jobs:
     - name: Authenticate Snyk
       run: snyk auth ${{ secrets.SNYK_TOKEN }}
 
-    - name: Run Vulnerability Scan
-      run: |
-         make vulnerability-scan
+    # Commenting below targets as we are verifying the difference between snyk cli and snyk website results
+    # - name: Run Vulnerability Scan
+    #   run: |
+    #      make vulnerability-scan
 
-    - name: Run Container Vulnerability Scan
-      run: |
-         make vulnerability-scan-container
+    # - name: Run Container Vulnerability Scan
+    #   run: |
+    #      make vulnerability-scan-container
 
     - name: Build and push
       run: |
