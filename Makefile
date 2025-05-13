@@ -69,11 +69,15 @@ clean:
 # vulnerability scan the code base/project
 .PHONY: vulnerability-scan
 vulnerability-scan:
+    # Install snyk cli from https://github.com/snyk/snyk/releases
+    # Run snyk auth <token>
+    # Run snyk test --all-projects --policy-path=$(ROOT_DIR)/.snyk --severity-threshold=high
 	snyk test --all-projects --policy-path=$(ROOT_DIR)/.snyk --severity-threshold=high
 
 # vulnerability scan the container
 .PHONY: vulnerability-scan-container
 vulnerability-scan-container: vulnerability-scan vulnerability-create-container
+	# Install snyk cli from https://github.com/snyk/snyk/releases
 	snyk container test aerospike/aerospike-prometheus-exporter:latest --policy-path=$(ROOT_DIR)/.snyk --file=Dockerfile --severity-threshold=high
 
 .PHONY: vulnerability-create-container
