@@ -37,18 +37,18 @@ test: ## Run all the test-cases defined in this folder.
 # Builds RPM, DEB and TAR packages
 # Requires FPM package manager
 .PHONY: deb
-deb: exporter vulnerability-scan
+deb: exporter 
 	$(MAKE) -C $(ROOT_DIR)/pkg/ deb 
 
 .PHONY: fips-deb
 fips-deb: fipsparam exporter
 	$(MAKE) -C $(ROOT_DIR)/pkg/ fips-deb 
 
-.PHONY: rpm vulnerability-scan
+.PHONY: rpm
 rpm: exporter
 	$(MAKE) -C $(ROOT_DIR)/pkg/ rpm 
 
-.PHONY: fips-rpm vulnerability-scan
+.PHONY: fips-rpm 
 fips-rpm: fipsparam exporter
 	$(MAKE) -C $(ROOT_DIR)/pkg/ fips-rpm
 
