@@ -284,13 +284,14 @@ make release-docker-multi-arch
     "*_available_pct"
     ]
 
-    # Set metrics allowlist
+    # Set metrics allowlist, An empty list will include all metrics.
+    # below example, only 2 metrics mentioned will be scraped
     set_metrics_allowlist=[
     "objects",
     "tombstones"
     ]
 
-    # Node metrics allowlist
+    # Node metrics allowlist, An empty list will include all metrics.
     node_metrics_allowlist=[
     "uptime",
     "cluster_size",
@@ -306,7 +307,7 @@ make release-docker-multi-arch
     "lap_us"
     ]
 
-    # Secondary index metrics allowlist
+    # Secondary index metrics allowlist, An empty list will include all metrics.
     sindex_metrics_allowlist = [
     "entries",
     "ibtr_memory_used",
@@ -319,24 +320,28 @@ make release-docker-multi-arch
 
     # Metrics Blocklist - If specified, these metrics will be NOT be scraped.
 
-    # Namespace metrics blocklist
+    # Namespace metrics blocklist, An empty list means all metrics are allowed.
+    # to exclude or stop all metrics, use "*"
     namespace_metrics_blocklist=[
     "memory_used_sindex_bytes",
     "client_read_success"
     ]
 
-    # Set metrics blocklist
-    # set_metrics_blocklist=[]
+    # Set metrics blocklist, blocks all set metrics, An empty list means all metrics are allowed.
+    # to exclude or stop all metrics, use ["*"]
+    set_metrics_blocklist=["*"]
 
     # Node metrics blocklist
     node_metrics_blocklist=[
     "batch_index_*_buffers"
     ]
 
-    # XDR metrics blocklist (only for Aerospike versions 5.0 and above)
+    # XDR metrics blocklist (only for Aerospike versions 5.0 and above), An empty list means all metrics are allowed.
+    # to exclude or stop all metrics, use ["*"]
     # xdr_metrics_blocklist=[]
 
-    # Secondary index metrics blocklist
+    # Secondary index metrics blocklist, An empty list means all metrics are allowed.
+    # to exclude or stop all metrics, use ["*"]
     # sindex_metrics_blocklist = []
     ```
 

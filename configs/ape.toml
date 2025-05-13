@@ -152,18 +152,23 @@
       # Metrics Blocklist - If specified, these metrics will be NOT be scraped. An empty list will include all metrics.
       # Commenting out the below blocklist configs will disable metrics filtering (i.e. no metrics will be blocked/filtered).
 
-      # globbing pattern (wildcard) are allowd for allowlist and blocklist
+      # globbing pattern (wildcard) are allowed for allowlist and blocklist
       # for example "batch_index_*_buffers"
+      # to block all namespace metrics "*"
 
       # Namespace metrics allowlist, to control which Namespace metrics should be collected.
+      # to exclude or stop all namespace metrics, use ["*"] in blocklist
       # namespace_metrics_allowlist = []
       # namespace_metrics_blocklist = []
 
+      # Set metrics allowlist, empty list includes or allows all metrics to scrape
+      # to exclude or stop all set metrics, use ["*"] in blocklist
       # set_metrics_allowlist = []
       # set_metrics_blocklist = []
 
       # Latencies histogram allowlist, to control which Histogram-name metrics should be collected. 
       # Note: globbing patterns (wildcard) are not supported for this latency metric configuration. 
+      # to exclude or stop all latencies metrics, use ["*"] in blocklist
       # latencies_metrics_allowlist = []
       # latencies_metrics_blocklist = []
 
@@ -171,14 +176,17 @@
       # node_metrics_blocklist = []
 
       # Support only from Aerospike versions 5.0 and above
+      # to exclude or stop all xdr metrics, use ["*"] in blocklist
       # xdr_metrics_allowlist = []
       # xdr_metrics_blocklist = []
 
       # User statistics are available in Aerospike 5.6+
       # Note globbing patterns (wildcard) are not supported for this User configuration.
+      # to exclude or stop all set metrics, use ["*"] in blocklist
       # user_metrics_users_allowlist = []
       # user_metrics_users_blocklist = []
 
+      # to exclude or stop all sindex metrics, use ["*"] in blocklist
       # sindex_metrics_allowlist = []
       # sindex_metrics_blocklist = []
 
