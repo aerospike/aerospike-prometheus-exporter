@@ -37,7 +37,7 @@ test: ## Run all the test-cases defined in this folder.
 # Builds RPM, DEB and TAR packages
 # Requires FPM package manager
 .PHONY: deb
-deb: exporter
+deb: exporter 
 	$(MAKE) -C $(ROOT_DIR)/pkg/ deb 
 
 .PHONY: fips-deb
@@ -48,7 +48,7 @@ fips-deb: fipsparam exporter
 rpm: exporter
 	$(MAKE) -C $(ROOT_DIR)/pkg/ rpm 
 
-.PHONY: fips-rpm
+.PHONY: fips-rpm 
 fips-rpm: fipsparam exporter
 	$(MAKE) -C $(ROOT_DIR)/pkg/ fips-rpm
 
@@ -66,6 +66,26 @@ clean:
 	rm -rf aerospike-prometheus-exporter
 	$(MAKE) -C $(ROOT_DIR)/pkg/ $@
 
+# vulnerability scan the code base/project
+.PHONY: vulnerability-scan
+vulnerability-scan:
+    # Install snyk cli from https://github.com/snyk/snyk/releases
+    # Run snyk auth <token>
+    # Run snyk test --all-projects --policy-path=$(ROOT_DIR)/.snyk --severity-threshold=high
+	snyk test --all-projects --policy-path=$(ROOT_DIR)/.snyk --severity-threshold=high
+
+# vulnerability scan the container
+.PHONY: vulnerability-scan-container
+vulnerability-scan-container: vulnerability-scan vulnerability-create-container
+	# Install snyk cli from https://github.com/snyk/snyk/releases
+	snyk container test aerospike/aerospike-prometheus-exporter:latest --policy-path=$(ROOT_DIR)/.snyk --file=Dockerfile --severity-threshold=high
+
+.PHONY: vulnerability-create-container
+vulnerability-create-container:
+	docker buildx build --build-arg VERSION=$(VERSION) --platform linux/amd64 --load . -t aerospike/aerospike-prometheus-exporter:latest
+
+# snyk container 
+
 # Builds exporter docker image
 # Requires docker
 .PHONY: docker
@@ -75,8 +95,9 @@ docker:
 # NOTE: this builds and pushes the image to aerospike/aerospike-prometheus-exporter docker hub repository
 # Use this target only for release
 .PHONY: release-docker-multi-arch
-release-docker-multi-arch:
+release-docker-multi-arch: 
 	docker buildx build --build-arg VERSION=$(VERSION) --platform $(DOCKER_MULTI_ARCH_PLATFORMS) --push . -t aerospike/aerospike-prometheus-exporter:latest -t aerospike/aerospike-prometheus-exporter:$(VERSION)
+
 
 .PHONY: package-linux-arm64
 package-linux-arm64:
