@@ -27,13 +27,15 @@ jobs:
     - name: Set env
       run: |
         echo "DOCKER_TAG=$(echo $GITHUB_REF_NAME | cut -c 2-)" >> $GITHUB_ENV
-    - name: Set up Snyk CLI
-      uses: snyk/actions/setup@master
-
-    - name: Authenticate Snyk
-      run: snyk auth ${{ secrets.SNYK_TOKEN }}
 
     # Commenting below targets as we are verifying the difference between snyk cli and snyk website results
+    #
+    # - name: Set up Snyk CLI
+    #   uses: snyk/actions/setup@master
+
+    # - name: Authenticate Snyk
+    #   run: snyk auth ${{ secrets.SNYK_TOKEN }}
+
     # - name: Run Vulnerability Scan
     #   run: |
     #      make vulnerability-scan
