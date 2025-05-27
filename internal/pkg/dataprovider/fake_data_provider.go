@@ -4,22 +4,22 @@ package dataprovider
 import (
 	"sync"
 
-	aerospike "github.com/aerospike/aerospike-client-go/v7"
+	aero "github.com/aerospike/aerospike-client-go/v8"
 )
 
 type FakeDataProvider struct {
-	FetchUsersDetailsStub        func() (bool, []*aerospike.UserRoles, error)
+	FetchUsersDetailsStub        func() (bool, []*aero.UserRoles, error)
 	fetchUsersDetailsMutex       sync.RWMutex
 	fetchUsersDetailsArgsForCall []struct {
 	}
 	fetchUsersDetailsReturns struct {
 		result1 bool
-		result2 []*aerospike.UserRoles
+		result2 []*aero.UserRoles
 		result3 error
 	}
 	fetchUsersDetailsReturnsOnCall map[int]struct {
 		result1 bool
-		result2 []*aerospike.UserRoles
+		result2 []*aero.UserRoles
 		result3 error
 	}
 	RequestInfoStub        func([]string) (map[string]string, error)
@@ -39,7 +39,7 @@ type FakeDataProvider struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeDataProvider) FetchUsersDetails() (bool, []*aerospike.UserRoles, error) {
+func (fake *FakeDataProvider) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
 	fake.fetchUsersDetailsMutex.Lock()
 	ret, specificReturn := fake.fetchUsersDetailsReturnsOnCall[len(fake.fetchUsersDetailsArgsForCall)]
 	fake.fetchUsersDetailsArgsForCall = append(fake.fetchUsersDetailsArgsForCall, struct {
@@ -63,37 +63,37 @@ func (fake *FakeDataProvider) FetchUsersDetailsCallCount() int {
 	return len(fake.fetchUsersDetailsArgsForCall)
 }
 
-func (fake *FakeDataProvider) FetchUsersDetailsCalls(stub func() (bool, []*aerospike.UserRoles, error)) {
+func (fake *FakeDataProvider) FetchUsersDetailsCalls(stub func() (bool, []*aero.UserRoles, error)) {
 	fake.fetchUsersDetailsMutex.Lock()
 	defer fake.fetchUsersDetailsMutex.Unlock()
 	fake.FetchUsersDetailsStub = stub
 }
 
-func (fake *FakeDataProvider) FetchUsersDetailsReturns(result1 bool, result2 []*aerospike.UserRoles, result3 error) {
+func (fake *FakeDataProvider) FetchUsersDetailsReturns(result1 bool, result2 []*aero.UserRoles, result3 error) {
 	fake.fetchUsersDetailsMutex.Lock()
 	defer fake.fetchUsersDetailsMutex.Unlock()
 	fake.FetchUsersDetailsStub = nil
 	fake.fetchUsersDetailsReturns = struct {
 		result1 bool
-		result2 []*aerospike.UserRoles
+		result2 []*aero.UserRoles
 		result3 error
 	}{result1, result2, result3}
 }
 
-func (fake *FakeDataProvider) FetchUsersDetailsReturnsOnCall(i int, result1 bool, result2 []*aerospike.UserRoles, result3 error) {
+func (fake *FakeDataProvider) FetchUsersDetailsReturnsOnCall(i int, result1 bool, result2 []*aero.UserRoles, result3 error) {
 	fake.fetchUsersDetailsMutex.Lock()
 	defer fake.fetchUsersDetailsMutex.Unlock()
 	fake.FetchUsersDetailsStub = nil
 	if fake.fetchUsersDetailsReturnsOnCall == nil {
 		fake.fetchUsersDetailsReturnsOnCall = make(map[int]struct {
 			result1 bool
-			result2 []*aerospike.UserRoles
+			result2 []*aero.UserRoles
 			result3 error
 		})
 	}
 	fake.fetchUsersDetailsReturnsOnCall[i] = struct {
 		result1 bool
-		result2 []*aerospike.UserRoles
+		result2 []*aero.UserRoles
 		result3 error
 	}{result1, result2, result3}
 }
