@@ -21,11 +21,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}      
         run: |
-          mkdir artefacts
+          mkdir artifacts
           gh release download ${{ github.event.inputs.release_tag_info }} \
             --pattern '*.rpm' \
             --pattern '*.deb' \
-            --dir artefacts    
+            --dir artifacts    
 
       - name: Setup GPG
         uses: aerospike/shared-workflows/devops/setup-gpg@feat/setup-gpg-composite
@@ -48,15 +48,16 @@ jobs:
           export GNUPGHOME="${GNUPGHOME}"
 
           # Create symlink for gpg2 (required for rpm signing)
-          echo Creating soft link
+          echo "Creating soft link"
           sudo ln -sf $(which gpg) /usr/bin/gpg2 
 
+          # Create passphrase and public key files
           echo -e "$GPG_PASSPHRASE" > "$GNUPGHOME/passphrase"
           echo -e "$GPG_PUBLIC_KEY" > "$GNUPGHOME/public.key"
           echo "$GNUPGHOME/public.key"          
 
-          # Move to artefacts directory
-          cd artefacts
+          # Move to artifacts directory
+          cd artifacts
 
           files=$(find . -type f \( -name "aerospike-prome*.rpm" -o -name "*.deb" \) -printf "$(realpath -s %p) ")            
           for file in $files; do
@@ -70,13 +71,13 @@ jobs:
           rpm --import "$GNUPGHOME/public.key"
           
           # Sign using gpg
-          echo Adding signature to rpm artefacts
+          echo "Adding signature to rpm artifacts"
           rpm --addsign *.rpm
           
-          echo Checking signature to rpm artefacts
+          echo "Checking signature to rpm artifacts"
           rpm --checksig *.rpm
 
-          echo Signing deb files
+          echo "Signing deb files"
           dpkg-sig --sign builder --gpg-options "--batch --pinentry-mode loopback --passphrase-file $GNUPGHOME/passphrase" *.deb
 
           echo Verifying deb file signature
@@ -95,7 +96,7 @@ jobs:
             gh release delete-asset "$TAG_NAME" "$file" -y
           done
 
-          files=$(find ./artefacts -type f -name "aerospike-prome*" -printf "$(realpath -s %p) ")
+          files=$(find ./artifacts -type f -name "aerospike-prome*" -printf "$(realpath -s %p) ")
           for file in $files; do
              echo "uploading file $file"
              gh release upload "$TAG_NAME" "$file"             
