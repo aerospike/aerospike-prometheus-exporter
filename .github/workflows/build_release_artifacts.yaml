@@ -1,8 +1,7 @@
-# This workflow will build a golang project
-# This workflow will build a golang project
+# This workflow will build a golang project and create deb, rpm, and tgz artifacts
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Build exporter deb,rpm and tgz artifacts
+name: Build exporter deb, rpm and tgz artifacts
 
 on:
   push:
@@ -16,7 +15,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         include:
@@ -39,45 +38,89 @@ jobs:
         uses: actions-ecosystem/action-get-latest-tag@v1
         id: get-latest-tag
 
-      - name: Set up Snyk CLI
-        uses: snyk/actions/setup@master
-
-      - name: Authenticate Snyk
-        run: snyk auth ${{ secrets.SNYK_TOKEN }}
-
-      - name: Install FPM deps
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ruby ruby-dev build-essential rpm
+          sudo apt-get install -y ruby ruby-dev build-essential rpm dpkg-sig dpkg-dev
 
       - name: Install FPM
         run: |
           sudo gem install --no-document fpm
           fpm --version
 
-      - name: Build deb/rpm for ${{ matrix.arch }}
-        run: make ${{ matrix.make_target }}
+      - name: Set up Snyk CLI
+        uses: snyk/actions/setup@master
 
-      - name: Build tar for ${{ matrix.arch }}
-        run: make tar GOOS=linux GOARCH=${{ matrix.goarch }} ARCH=${{ matrix.tar_arch }}
+      - name: Authenticate Snyk
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
 
-      - name: Gzip tar to .tgz
+      - name: Build packages for ${{ matrix.arch }}
+        run: |
+          make ${{ matrix.make_target }}
+          make tar GOOS=linux GOARCH=${{ matrix.goarch }} ARCH=${{ matrix.tar_arch }}
+
+      - name: Create tgz archives
         run: |
           cd pkg/target
           gzip aerospike-prometheus-exporter*.tar
           for f in *.tar.gz; do
-            echo "Renaming $f"
             mv "$f" "${f%.tar.gz}.tgz"
           done
 
-      - name: Upload all artifacts
+      - name: Setup GPG
+        uses: aerospike/shared-workflows/.github/actions/setup-gpg@dda8173aca1f1e73f95267572a7d3849cd00f1b8
+        with:
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-public-key: ${{ secrets.GPG_PUBLIC_KEY }}
+          gpg-key-pass: ${{ secrets.GPG_PASS }}
+
+      - name: Sign packages
+        env: 
+          GPG_TTY: no-tty
+          HOME: /home/runner
+          GNUPGHOME: /home/runner/.gnupg
+          GPG_KEY_NAME: ${{ secrets.GPG_KEY_NAME }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASS }}
+        run: |
+          cd pkg/target
+          
+          # Sign RPM packages
+          if ls *.rpm 1> /dev/null 2>&1; then
+            echo "Signing RPM packages..."
+            rpm --addsign *.rpm
+            rpm --checksig *.rpm
+          fi
+          
+          # Sign DEB packages
+          if ls *.deb 1> /dev/null 2>&1; then
+            echo "Signing DEB packages..."
+            dpkg-sig --sign builder --gpg-options "--batch --pinentry-mode loopback --passphrase-file $GNUPGHOME/passphrase" *.deb
+            dpkg-sig --verify *.deb
+          fi
+          
+          # Generate checksums and signatures for all packages
+          for file in aerospike-prome*.rpm *.deb *.tgz; do
+            if [ -f "$file" ]; then
+              echo "Processing $file..."
+              sha256sum "$file" > "$file.sha256"
+              gpg --armour --digest-algo sha256 --detach-sign \
+                  --no-tty --batch --yes \
+                  --passphrase "$GPG_PASSPHRASE" \
+                  --local-user "$GPG_KEY_NAME" \
+                  --output "$file.sha256.asc" "$file.sha256"
+            fi
+          done
+
+      - name: Upload artifacts
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ steps.get-latest-tag.outputs.tag }}
         run: |
-          files=$(find pkg/target -type f -name "aerospike-prome*" -printf "%p ")
-          for file in $files; do
-            echo "Uploading $file to release $TAG_NAME"
-            gh release upload "$TAG_NAME" "$file"
+          cd pkg/target
+          for file in aerospike-prome*; do
+            if [ -f "$file" ]; then
+              echo "Uploading $file to release $TAG_NAME"
+              gh release upload "$TAG_NAME" "$file"
+            fi
           done
           
