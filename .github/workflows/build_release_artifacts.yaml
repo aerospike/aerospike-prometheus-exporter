@@ -39,7 +39,7 @@
         - name: Authenticate Snyk
           run: snyk auth ${{ secrets.SNYK_TOKEN }}
         - name: Install build dependencies
-          run: >
+          run: |
             sudo apt-get update
   
             sudo apt-get install -y ruby ruby-dev build-essential rpm dpkg-sig dpkg-dev
@@ -48,7 +48,7 @@
             sudo gem install --no-document fpm
             fpm --version
         - name: Build packages for ${{ matrix.arch }}
-          run: >
+          run: |
             make ${{ matrix.make_target }}
   
             make tar GOOS=linux GOARCH=${{ matrix.goarch }} ARCH=${{ matrix.tar_arch }}
@@ -72,7 +72,7 @@
             GNUPGHOME: /home/runner/.gnupg
             GPG_KEY_NAME: ${{ secrets.GPG_KEY_NAME }}
             GPG_PASSPHRASE: ${{ secrets.GPG_PASS }}
-          run: >
+          run: |
             cd pkg/target
   
   
