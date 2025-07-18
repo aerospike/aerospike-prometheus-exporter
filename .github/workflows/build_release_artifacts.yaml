@@ -38,12 +38,20 @@ jobs:
         uses: actions-ecosystem/action-get-latest-tag@v1
         id: get-latest-tag
 
+      - name: Set up Snyk CLI
+        uses: snyk/actions/setup@cdb760004ba9ea4d525f2e043745dfe85bb9077e
+        with:
+          snyk-version: v1.1297.3
+
+      - name: Authenticate Snyk
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
+
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y ruby ruby-dev build-essential rpm dpkg-sig dpkg-dev
 
-      - name: Install FPM
+      - name: Install FPM deps
         run: |
           sudo gem install --no-document fpm
           fpm --version
