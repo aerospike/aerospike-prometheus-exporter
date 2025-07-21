@@ -74,7 +74,7 @@
             GPG_PASSPHRASE: ${{ secrets.GPG_PASS }}
           if: ${{ env.GPG_KEY_NAME != '' }}
           run: |
-              cd pkg/target
+            cd pkg/target
   
   
             # Sign RPM packages
