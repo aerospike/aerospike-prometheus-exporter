@@ -72,8 +72,9 @@
             GNUPGHOME: /home/runner/.gnupg
             GPG_KEY_NAME: ${{ secrets.GPG_KEY_NAME }}
             GPG_PASSPHRASE: ${{ secrets.GPG_PASS }}
+          if: ${{ env.GPG_KEY_NAME != '' }}
           run: |
-            cd pkg/target
+              cd pkg/target
   
   
             # Sign RPM packages
