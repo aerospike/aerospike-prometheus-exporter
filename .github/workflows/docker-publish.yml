@@ -31,7 +31,9 @@ jobs:
     # Commenting below targets as we are verifying the difference between snyk cli and snyk website results
     #
     # - name: Set up Snyk CLI
-    #   uses: snyk/actions/setup@master
+    #   uses: snyk/actions/setup@cdb760004ba9ea4d525f2e043745dfe85bb9077e
+    #   with:
+    #       snyk-version: v1.1297.3
 
     # - name: Authenticate Snyk
     #   run: snyk auth ${{ secrets.SNYK_TOKEN }}
