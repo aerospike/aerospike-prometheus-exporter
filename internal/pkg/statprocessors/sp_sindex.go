@@ -24,24 +24,26 @@ func (siw *SindexStatsProcessor) PassOneKeys() []string {
 		log.Tracef("sindex-passonekeys:nil")
 		return nil
 	}
-	log.Tracef("sindex-passonekeys:%s", []string{"sindex"})
 
 	if Build == "" || len(Build) == 0 {
-		log.Tracef("Build version unclear skipping sindex command for now")
+		log.Tracef("sindex-passonekeys: Build version unclear skipping sindex command for now")
 		return nil
 	}
 
 	ok, err := isBuildVersionGreaterThanOrEqual(Build, "7.0.0.0")
 	if err != nil {
 		log.Warn(err)
+		log.Warnf("sindex-passonekeys:%s", []string{KEY_SINDEX_COMMAND, KEY_SINDEX_LIST_COMMAND})
 		return []string{KEY_SINDEX_COMMAND, KEY_SINDEX_LIST_COMMAND}
 	}
 
 	if ok {
+		log.Tracef("sindex-passonekeys:%s", []string{KEY_SINDEX_LIST_COMMAND})
 		return []string{KEY_SINDEX_LIST_COMMAND}
 	}
 
 	// older versions
+	log.Tracef("sindex-passonekeys:%s", []string{KEY_SINDEX_COMMAND})
 	return []string{KEY_SINDEX_COMMAND}
 }
 
