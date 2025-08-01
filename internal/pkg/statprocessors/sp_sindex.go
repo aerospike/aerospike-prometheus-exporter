@@ -13,6 +13,11 @@ type SindexStatsProcessor struct {
 	sindexMetrics map[string]AerospikeStat
 }
 
+const (
+	KEY_SINDEX_LIST_COMMAND = "sindex-list"
+	KEY_SINDEX_COMMAND      = "sindex"
+)
+
 func (siw *SindexStatsProcessor) PassOneKeys() []string {
 	if config.Cfg.Aerospike.DisableSindexMetrics {
 		// disabled
@@ -21,7 +26,23 @@ func (siw *SindexStatsProcessor) PassOneKeys() []string {
 	}
 	log.Tracef("sindex-passonekeys:%s", []string{"sindex"})
 
-	return []string{"sindex"}
+	if Build == "" || len(Build) == 0 {
+		log.Tracef("Build version unclear skipping sindex command for now")
+		return nil
+	}
+
+	ok, err := isBuildVersionGreaterThanOrEqual(Build, "7.0.0.0")
+	if err != nil {
+		log.Warn(err)
+		return []string{KEY_SINDEX_COMMAND, KEY_SINDEX_LIST_COMMAND}
+	}
+
+	if ok {
+		return []string{KEY_SINDEX_LIST_COMMAND}
+	}
+
+	// older versions
+	return []string{KEY_SINDEX_COMMAND}
 }
 
 func (siw *SindexStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (sindexCommands []string) {

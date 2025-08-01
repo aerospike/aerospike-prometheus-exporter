@@ -177,14 +177,17 @@ func GetMetricType(pContext commons.ContextType, pRawMetricName string) commons.
 }
 
 func BuildVersionGreaterThanOrEqual(rawMetrics map[string]string, ref string) (bool, error) {
-	if len(rawMetrics["build"]) == 0 {
+	return isBuildVersionGreaterThanOrEqual(rawMetrics["build"], ref)
+}
+
+func isBuildVersionGreaterThanOrEqual(build string, ref string) (bool, error) {
+	if len(build) == 0 {
 		return false, fmt.Errorf("couldn't get build version")
 	}
 
-	ver := rawMetrics["build"]
-	version, err := goversion.NewVersion(ver)
+	version, err := goversion.NewVersion(build)
 	if err != nil {
-		return false, fmt.Errorf("error parsing build version %s: %v", ver, err)
+		return false, fmt.Errorf("error parsing build version %s: %v", build, err)
 	}
 
 	refVersion, err := goversion.NewVersion(ref)
