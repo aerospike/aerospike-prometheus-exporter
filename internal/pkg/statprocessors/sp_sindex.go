@@ -30,14 +30,14 @@ func (siw *SindexStatsProcessor) PassOneKeys() []string {
 		return nil
 	}
 
-	ok, err := isBuildVersionGreaterThanOrEqual(Build, "7.0.0.0")
+	greater, err := isBuildVersionGreaterThanOrEqual(Build, "7.0.0.0")
 	if err != nil {
 		log.Warn(err)
-		log.Warnf("sindex-passonekeys:%s", []string{KEY_SINDEX_COMMAND, KEY_SINDEX_LIST_COMMAND})
-		return []string{KEY_SINDEX_COMMAND, KEY_SINDEX_LIST_COMMAND}
+		// return []string{KEY_SINDEX_COMMAND, KEY_SINDEX_LIST_COMMAND}
+		return nil
 	}
 
-	if ok {
+	if greater {
 		log.Tracef("sindex-passonekeys:%s", []string{KEY_SINDEX_LIST_COMMAND})
 		return []string{KEY_SINDEX_LIST_COMMAND}
 	}
