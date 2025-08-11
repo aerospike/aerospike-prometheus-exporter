@@ -26,12 +26,12 @@
               tar_arch: aarch64
       steps:
         - name: Checkout code
-          uses: actions/checkout@v3
+          uses: actions/checkout@v5
           with:
             fetch-depth: 0
         - name: Get latest tag
           id: get-latest-tag
-          uses: actions-ecosystem/action-get-latest-tag@v1
+          uses: actions-ecosystem/action-get-latest-tag@b7c32daec3395a9616f88548363a42652b22d435 # v1.6.0
         - name: Set up Snyk CLI
           uses: snyk/actions/setup@cdb760004ba9ea4d525f2e043745dfe85bb9077e
           with:
