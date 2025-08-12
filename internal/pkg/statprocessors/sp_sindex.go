@@ -25,12 +25,8 @@ func (siw *SindexStatsProcessor) PassOneKeys() []string {
 		return nil
 	}
 
-	if Build == "" || len(Build) == 0 {
-		log.Tracef("sindex-passonekeys: Build version unclear skipping sindex command for now")
-		return nil
-	}
-
 	greater, err := isBuildVersionGreaterThanOrEqual(Build, "7.0.0.0")
+
 	if err != nil {
 		log.Warn(err)
 		// return []string{KEY_SINDEX_COMMAND, KEY_SINDEX_LIST_COMMAND}
