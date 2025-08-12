@@ -102,11 +102,16 @@
               if [ -f "$file" ]; then
                 echo "Processing $file..."
                 sha256sum "$file" > "$file.sha256"
-                gpg --armour --digest-algo sha256 --detach-sign \
-                    --no-tty --batch --yes \
-                    --passphrase "$GPG_PASSPHRASE" \
-                    --local-user "$GPG_KEY_NAME" \
-                    --output "$file.sha256.asc" "$file.sha256"
+                # if file is tgz, then generate asc file
+                if [[ "$file" == *.tgz ]]; then
+                  # asc for tgz
+                  echo "Generating asc for $file"
+                  gpg --armour --detach-sign \
+                      --no-tty --batch --yes \
+                      --passphrase "$GPG_PASSPHRASE" \
+                      --local-user "$GPG_KEY_NAME" \
+                      --output "$file.asc" "$file"                    
+                  fi                
               fi
             done
         - name: Upload artifacts to release
