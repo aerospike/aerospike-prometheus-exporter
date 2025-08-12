@@ -98,22 +98,27 @@
   
             # Generate checksums and GPG signatures
   
-            for file in aerospike-prome*.rpm *.deb *.tgz; do
+            for file in aerospike-prome*.rpm *.deb ; do
               if [ -f "$file" ]; then
                 echo "Processing $file..."
                 sha256sum "$file" > "$file.sha256"
                 # if file is tgz, then generate asc file
-                if [[ "$file" == *.tgz ]]; then
-                  # asc for tgz
-                  echo "Generating asc for $file"
-                  gpg --armour --detach-sign \
-                      --no-tty --batch --yes \
-                      --passphrase "$GPG_PASSPHRASE" \
-                      --local-user "$GPG_KEY_NAME" \
-                      --output "$file.asc" "$file"                    
-                  fi                
               fi
             done
+
+            for file in aerospike-prome*.tgz; do
+              if [ -f "$file" ]; then
+                echo "Generating sha256 and asc for $file"
+                sha256sum "$file" > "$file.sha256"
+                # asc for tgz
+                gpg --armour --detach-sign \
+                    --no-tty --batch --yes \
+                    --passphrase "$GPG_PASSPHRASE" \
+                    --local-user "$GPG_KEY_NAME" \
+                    --output "$file.asc" "$file"                    
+              fi
+            done
+
         - name: Upload artifacts to release
           env:
             GH_TOKEN: ${{ github.token }}
