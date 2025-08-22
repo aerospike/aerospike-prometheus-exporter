@@ -70,12 +70,9 @@
             GPG_TTY: no-tty
             HOME: /home/runner
             GNUPGHOME: /home/runner/.gnupg
-            GPG_KEY_NAME: ${{ secrets.GPG_KEY_NAME }}
             GPG_PASSPHRASE: ${{ secrets.GPG_PASS }}
-          if: ${{ env.GPG_KEY_NAME != '' }}
           run: |
-            cd pkg/target
-  
+            cd pkg/target  
   
             # Sign RPM packages
   
@@ -84,8 +81,7 @@
               rpm --addsign *.rpm
               rpm --checksig *.rpm
             fi
-  
-  
+
             # Sign DEB packages
   
             if ls *.deb 1> /dev/null 2>&1; then
@@ -95,17 +91,15 @@
               dpkg-sig --verify *.deb
             fi
   
-  
-            # Generate checksums and GPG signatures
-  
+            # Generate checksums for RPM and DEB
             for file in aerospike-prome*.rpm *.deb ; do
               if [ -f "$file" ]; then
                 echo "Processing $file..."
                 sha256sum "$file" > "$file.sha256"
-                # if file is tgz, then generate asc file
               fi
             done
 
+            # Generate checksums and GPG signatures for TGZ
             for file in aerospike-prome*.tgz; do
               if [ -f "$file" ]; then
                 echo "Generating sha256 and asc for $file"
@@ -114,7 +108,8 @@
                 gpg --armour --detach-sign \
                     --no-tty --batch --yes \
                     --passphrase "$GPG_PASSPHRASE" \
-                    --local-user "$GPG_KEY_NAME" \
+                    --pinentry-mode loopback \
+                    --local-user aerospike-inc \
                     --output "$file.asc" "$file"                    
               fi
             done
