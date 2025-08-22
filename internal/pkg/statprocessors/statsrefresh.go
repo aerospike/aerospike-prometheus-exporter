@@ -27,6 +27,7 @@ func Refresh() ([]AerospikeStat, error) {
 			infoKeys = append(infoKeys, keys...)
 		}
 	}
+
 	// append infoKey "build" - this is removed from LatenciesStatsProcessor to avoid forced StatsProcessor sequence during refresh
 	infoKeys = append(infoKeys, "build")
 
@@ -34,6 +35,7 @@ func Refresh() ([]AerospikeStat, error) {
 	//   from namespaces,server/node-stats, xdr
 	//   if for any context (like jobs, latencies etc.,) no configs, they are not sent to server
 	passOneOutput, err := dataprovider.GetProvider().RequestInfo(infoKeys)
+
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +57,6 @@ func Refresh() ([]AerospikeStat, error) {
 	for i, c := range allStatsprocessorList {
 
 		if keys := c.PassTwoKeys(passOneOutput); len(keys) > 0 {
-
 			infoKeys = append(infoKeys, keys...)
 			statprocessorInfoKeys[i] = keys
 		}

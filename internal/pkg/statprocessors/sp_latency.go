@@ -29,15 +29,14 @@ func (lw *LatencyStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (late
 
 	latencyCommands = []string{"latencies:", "latency:"}
 
-	greater, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "5.1.0.0")
+	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "5.1.0.0")
 
 	if err != nil {
 		log.Warn(err)
 		return nil
-		// return latencyCommands
 	}
 
-	if greater {
+	if ge {
 		return lw.getLatenciesCommands(rawMetrics)
 	}
 
