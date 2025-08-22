@@ -44,15 +44,15 @@ func (uw *UserStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 
 	// validate aerospike build version
 	// support for user statistics is added in aerospike 5.6
-	var err error
-	ok, err := BuildVersionGreaterThanOrEqual(rawMetrics, "5.6.0.0")
+	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "5.6.0.0")
+
 	if err != nil {
 		// just log warning. don't send an error back
 		log.Warn(err)
 		return nil, nil
 	}
 
-	if !ok {
+	if !ge {
 		// disable user statisitcs if build version is not >= 5.6.0.0
 		log.Debug("Aerospike version doesn't support user statistics")
 		shouldFetchUserStatistics = false
