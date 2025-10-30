@@ -158,11 +158,11 @@ func handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabel
 	asRefreshStats, err := statprocessors.Refresh()
 	if err != nil {
 		log.Errorln("Error while refreshing Aerospike Metrics, error: ", err)
-		sendNodeUp(meter, ctx, commonLabels, 0.0)
+		sendNodeUp(meter, commonLabels, 0.0)
 		return
 	}
 	// aerospike server is up and we are able to fetch data
-	sendNodeUp(meter, ctx, commonLabels, 1.0)
+	sendNodeUp(meter, commonLabels, 1.0)
 
 	// process metrics
 	processAerospikeStats(meter, ctx, commonLabels, asRefreshStats)

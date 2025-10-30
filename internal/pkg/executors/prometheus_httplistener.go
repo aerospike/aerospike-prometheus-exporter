@@ -1,6 +1,7 @@
 package executors
 
 import (
+	"context"
 	"crypto/tls"
 	"net/http"
 	"time"
@@ -20,6 +21,29 @@ type PrometheusHttpExecutor struct {
 }
 
 func (pm PrometheusHttpExecutor) Initialize() error {
+
+	log.Infof("*** Starting Prometheus HTTP Server... ")
+
+	// Observe OS Signals
+	commons.HandleSignals()
+
+	shutdown := initPrometheusServer(pm)
+	defer shutdown()
+	// Start a goroutine to handle exit signals
+	go func() {
+		<-commons.ProcessExit
+		log.Debugf("Prometheus HTTP Executor got EXIT signal from OS")
+		shutdown()
+	}()
+
+	log.Infof("Prometheus HTTP server shut down gracefully")
+
+	return nil
+}
+
+func initPrometheusServer(pm PrometheusHttpExecutor) func() {
+
+	// Prometheus HTTP server implementation
 	mux := http.NewServeMux()
 
 	pm.promimpl = NewPrometheusImpl()
@@ -84,7 +108,7 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 		}
 	})
 
-	srv := &http.Server{
+	promHttpServer := &http.Server{
 		ReadTimeout:  time.Duration(config.Cfg.Agent.Timeout) * time.Second,
 		WriteTimeout: time.Duration(config.Cfg.Agent.Timeout) * time.Second,
 		Addr:         config.Cfg.Agent.Bind,
@@ -94,15 +118,32 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 
 	log.Infof("Listening for Prometheus on: %s", config.Cfg.Agent.Bind)
 
+	var serveErr error
 	if len(config.Cfg.Agent.CertFile) > 0 && len(config.Cfg.Agent.KeyFile) > 0 {
 		log.Info("Enabling HTTPS ...")
-		srv.TLSConfig = initExporterTLS()
-		log.Fatalln(srv.ListenAndServeTLS("", ""))
+		promHttpServer.TLSConfig = initExporterTLS()
+		serveErr = promHttpServer.ListenAndServeTLS("", "")
+	} else {
+		serveErr = promHttpServer.ListenAndServe()
 	}
 
-	log.Fatalln(srv.ListenAndServe())
+	// Check if error is due to server closure
+	if serveErr != nil && serveErr != http.ErrServerClosed {
+		log.Fatalf("HTTP server error: %v", serveErr)
+	}
 
-	return nil
+	// Handle graceful shutdown
+	return func() {
+		log.Infof("Prometheus executor received shutdown signal, shutting down HTTP server...")
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if promHttpServer != nil {
+			if shutdownErr := promHttpServer.Shutdown(ctx); shutdownErr != nil {
+				log.Errorf("Error during server shutdown: %v", shutdownErr)
+			}
+		}
+	}
+
 }
 
 // initExporterTLS initializes and returns TLS config to be used to serve metrics over HTTPS

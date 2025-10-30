@@ -6,12 +6,13 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
+	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	// "go.opentelemetry.io/otel/label"
 )
 
-func sendNodeUp(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, value float64) {
+func sendNodeUp(meter metric.Meter, commonLabels []attribute.KeyValue, value float64) {
 
 	nodeActiveDesc, _ := meter.Float64ObservableGauge(
 		"aerospike_node_up",
@@ -69,13 +70,15 @@ func processAerospikeStats(meter metric.Meter, ctx context.Context, commonLabels
 		labels = append(labels, commonLabels...)
 
 		// create Otel metric
-		if stat.MType == commons.MetricTypeCounter {
+		switch stat.MType {
+		case commons.MetricTypeCounter:
 			value := stat.Value
-
 			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, value)
+		case commons.MetricTypeGauge:
+			makeOtelGaugeMetric(meter, qualifiedName, desc, labels, stat.Value)
 
-		} else if stat.MType == commons.MetricTypeGauge {
-			makeOtelGaugeMetric(meter, ctx, qualifiedName, desc, labels, stat.Value)
+		default:
+			log.Errorf("Unknown metric type: %d", stat.MType)
 		}
 
 	}
@@ -93,7 +96,7 @@ func makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName s
 
 }
 
-func makeOtelGaugeMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, value float64) {
+func makeOtelGaugeMetric(meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue, value float64) {
 
 	// _, ok := mapGaugeMetricObjects[metricName]
 	ometric, _ := meter.Float64ObservableGauge(
