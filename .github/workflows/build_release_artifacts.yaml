@@ -62,7 +62,7 @@
         - name: Set up GPG for signing
           uses: aerospike/shared-workflows/.github/actions/setup-gpg@dda8173aca1f1e73f95267572a7d3849cd00f1b8
           with:
-            gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+            gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
             gpg-public-key: ${{ secrets.GPG_PUBLIC_KEY }}
             gpg-key-pass: ${{ secrets.GPG_PASS }}
         - name: Sign packages
@@ -70,7 +70,7 @@
             GPG_TTY: no-tty
             HOME: /home/runner
             GNUPGHOME: /home/runner/.gnupg
-            GPG_PASSPHRASE: ${{ secrets.GPG_PASS }}
+            GPG_PASS: ${{ secrets.GPG_PASS }}
           run: |
             cd pkg/target  
   
@@ -107,7 +107,7 @@
                 # asc for tgz
                 gpg --armour --detach-sign \
                     --no-tty --batch --yes \
-                    --passphrase "$GPG_PASSPHRASE" \
+                    --passphrase "$GPG_PASS" \
                     --pinentry-mode loopback \
                     --local-user aerospike-inc \
                     --output "$file.asc" "$file"                    
