@@ -59,6 +59,7 @@ jobs:
       - name: Create TGZ archives
         run: |
           cd pkg/target
+          
           gzip aerospike-prometheus-exporter*.tar
           for f in *.tar.gz; do
             mv "$f" "${f%.tar.gz}.tgz"
@@ -70,7 +71,7 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
           gpg-public-key: ${{ secrets.GPG_PUBLIC_KEY }}
           gpg-key-pass: ${{ secrets.GPG_PASS }}
-          
+
       - name: Sign packages
         env:
           GPG_TTY: no-tty
@@ -81,7 +82,6 @@ jobs:
           cd pkg/target  
 
           # Sign RPM packages
-
           if ls *.rpm 1> /dev/null 2>&1; then
             echo "Signing RPM packages..."
             rpm --addsign *.rpm
@@ -89,7 +89,6 @@ jobs:
           fi
 
           # Sign DEB packages
-
           if ls *.deb 1> /dev/null 2>&1; then
             echo "Signing DEB packages..."
             dpkg-sig --sign builder \
@@ -126,6 +125,7 @@ jobs:
           TAG_NAME: ${{ steps.get-latest-tag.outputs.tag }}
         run: |
           cd pkg/target
+
           for file in aerospike-prome*; do
             if [ -f "$file" ]; then
               echo "Uploading $file to release $TAG_NAME"
