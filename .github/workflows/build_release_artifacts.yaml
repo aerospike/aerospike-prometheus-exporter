@@ -28,29 +28,34 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
       - name: Get latest tag
         id: get-latest-tag
         uses: actions-ecosystem/action-get-latest-tag@b7c32daec3395a9616f88548363a42652b22d435 # v1.6.0
+
       - name: Set up Snyk CLI
         uses: snyk/actions/setup@cdb760004ba9ea4d525f2e043745dfe85bb9077e
         with:
           snyk-version: v1.1297.3
+
       - name: Authenticate Snyk
         run: snyk auth ${{ secrets.SNYK_TOKEN }}
+
       - name: Install build dependencies
         run: |
           sudo apt-get update
-
           sudo apt-get install -y ruby ruby-dev build-essential rpm dpkg-sig dpkg-dev
+
       - name: Install FPM
         run: |
           sudo gem install --no-document fpm
           fpm --version
+
       - name: Build packages for ${{ matrix.arch }}
         run: |
           make ${{ matrix.make_target }}
-
           make tar GOOS=linux GOARCH=${{ matrix.goarch }} ARCH=${{ matrix.tar_arch }}
+
       - name: Create TGZ archives
         run: |
           cd pkg/target
@@ -58,12 +63,14 @@ jobs:
           for f in *.tar.gz; do
             mv "$f" "${f%.tar.gz}.tgz"
           done
+
       - name: Set up GPG for signing
         uses: aerospike/shared-workflows/.github/actions/setup-gpg@dda8173aca1f1e73f95267572a7d3849cd00f1b8
         with:
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
           gpg-public-key: ${{ secrets.GPG_PUBLIC_KEY }}
           gpg-key-pass: ${{ secrets.GPG_PASS }}
+          
       - name: Sign packages
         env:
           GPG_TTY: no-tty
