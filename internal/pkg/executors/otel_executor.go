@@ -29,11 +29,8 @@ func (oe OtelExecutor) Initialize() error {
 	log.Infof("Otel sending thread started, sending data to : %s", config.Cfg.Agent.Otel.OtelEndpoint)
 	log.Infof("*** Initializing Otel Exporter.. START ")
 
-	// Observe OS Signals
-	commons.HandleSignals()
-
 	shutdown := initProvider()
-	defer shutdown()
+	// defer shutdown()
 	log.Infof("*** Starting Otel Metrics Push thread... ")
 
 	// Start a goroutine to handle exit signals
@@ -118,7 +115,7 @@ func initProvider() func() {
 	return func() {
 		cxt, cancel := context.WithTimeout(ctx, time.Duration(config.Cfg.Agent.Timeout)*time.Second)
 		defer cancel()
-		log.Infof("shuttting down..., flushing metrics to endpoint")
+		log.Infof("Otel Executor shuttting down..., flushing metrics to endpoint")
 		// pushes any last exports to the receiver
 		if err := meterProvider.Shutdown(cxt); err != nil {
 			otel.Handle(err)

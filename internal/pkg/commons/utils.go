@@ -296,8 +296,15 @@ func GetExporterBaseFolder() string {
 
 // OS Signal handling logic
 var ProcessExit chan bool
+var signalHandlersInitialized bool
 
 func HandleSignals() {
+	// Prevent multiple initialization
+	if signalHandlersInitialized {
+		return
+	}
+	signalHandlersInitialized = true
+
 	ProcessExit = make(chan bool)
 	sigChan := make(chan os.Signal, 1)
 
