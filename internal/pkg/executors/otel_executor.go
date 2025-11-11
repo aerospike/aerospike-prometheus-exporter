@@ -3,8 +3,9 @@ package executors
 import (
 	"context"
 	"strconv"
-	"sync"
-	"sync/atomic"
+
+	// "sync"
+
 	"time"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -96,58 +97,40 @@ func (oe OtelExecutor) Initialize() error {
 	)
 	otel.SetMeterProvider(meterProvider)
 
-	// Synchronized variable to track if meter is alive
-	var meterAlive atomic.Bool
-	meterAlive.Store(true)
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-
 	ticker := time.NewTicker(time.Duration(config.Cfg.Agent.Otel.OtelServerStatFetchInterval) * time.Second)
-	defer ticker.Stop()
 
 	log.Infof("*** Starting Otel Metrics Push thread... ")
 
 	// Start metric collection loop in a goroutine
 	go func() {
-		defer wg.Done()
+		defer ticker.Stop()
 
 		meter := otel.Meter(config.Cfg.Agent.Otel.OtelServiceName + "_Meter")
 		defaultCtx := context.Background()
 		commonLabels := getCommonLabels()
 
-		for meterAlive.Load() {
-			// Aerospike Refresh stats
-			handleAerospikeMetrics(meter, defaultCtx, commonLabels)
-
-			// System metrics
-			handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
-
-			// Wait for next tick, but exit promptly if meter is killed
+		for {
+			// Wait for next tick or shutdown signal
 			select {
 			case <-ticker.C:
-			default:
-				// do nothing
+				// Aerospike Refresh stats
+				handleAerospikeMetrics(meter, defaultCtx, commonLabels)
+
+				// System metrics
+				handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
+			case <-commons.ProcessExit:
+				// Exit immediately if shutdown signal received
+				// meterAlive.Store(false)
+				log.Infof("OTel executor received shutdown signal, shutting down...")
+				cxt, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+
+				// pushes any last exports to the receiver
+				if err := meterProvider.Shutdown(cxt); err != nil {
+					otel.Handle(err)
+				}
+				return
 			}
-		}
-
-		log.Infof("OTel executor received shutdown signal, flushing metrics to endpoint...")
-	}()
-
-	// Wait for OS signal and shutdown gracefully to ensure exit code 0
-	go func() {
-		<-commons.ProcessExit
-		meterAlive.Store(false)
-		// log.Infof("WAITING .... OTel executor received shutdown signal, shutting down and flushing metrics to endpoint...")
-		wg.Wait() // Wait for the metric collection loop to finish
-
-		log.Infof("OTel metric executor will be stopped, and meter will Shutdown in 10 seconds")
-		cxt, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		// pushes any last exports to the receiver
-		if err := meterProvider.Shutdown(cxt); err != nil {
-			otel.Handle(err)
 		}
 	}()
 
