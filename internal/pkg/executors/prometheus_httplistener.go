@@ -23,11 +23,6 @@ type PrometheusHttpExecutor struct {
 func (pm PrometheusHttpExecutor) Initialize() error {
 	log.Infof("*** Starting Prometheus HTTP Server... ")
 
-	initPrometheusServer(pm)
-	return nil
-}
-
-func initPrometheusServer(pm PrometheusHttpExecutor) {
 	// Prometheus HTTP server implementation
 	mux := http.NewServeMux()
 
@@ -127,12 +122,14 @@ func initPrometheusServer(pm PrometheusHttpExecutor) {
 	go func() {
 		<-commons.ProcessExit
 		log.Infof("Prometheus executor received shutdown signal, shutting down HTTP server...")
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		if shutdownErr := promHttpServer.Shutdown(ctx); shutdownErr != nil {
 			log.Errorf("Error during server shutdown: %v", shutdownErr)
 		}
 	}()
+
+	return nil
 }
 
 // initExporterTLS initializes and returns TLS config to be used to serve metrics over HTTPS

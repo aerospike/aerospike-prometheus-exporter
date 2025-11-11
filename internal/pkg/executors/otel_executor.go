@@ -3,6 +3,8 @@ package executors
 import (
 	"context"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -24,32 +26,14 @@ type OtelExecutor struct {
 }
 
 // Exporter interface implementation
-func (oe OtelExecutor) Initialize() error {
-
-	log.Infof("Otel sending thread started, sending data to : %s", config.Cfg.Agent.Otel.OtelEndpoint)
-	log.Infof("*** Initializing Otel Exporter.. START ")
-
-	shutdown := initProvider()
-	// defer shutdown()
-	log.Infof("*** Starting Otel Metrics Push thread... ")
-
-	// Start a goroutine to handle exit signals
-	go func() {
-		<-commons.ProcessExit
-		log.Debugf("OTel Executor got EXIT signal from OS")
-		shutdown()
-	}()
-
-	// start push executor
-	startMetricExecutor()
-
-	return nil
-}
-
 // Aerospike Otel metrics serving implementation
 //
 // Initializes an OTLP exporter, and configures the corresponding metric providers
-func initProvider() func() {
+func (oe OtelExecutor) Initialize() error {
+
+	log.Infof("Otel sending thread started, sending data to : %s", config.Cfg.Agent.Otel.OtelEndpoint)
+
+	log.Infof("*** Initializing Otel Exporter... ")
 
 	ctx := context.Background()
 	serviceName := config.Cfg.Agent.Otel.OtelServiceName
@@ -112,15 +96,62 @@ func initProvider() func() {
 	)
 	otel.SetMeterProvider(meterProvider)
 
-	return func() {
-		cxt, cancel := context.WithTimeout(ctx, time.Duration(config.Cfg.Agent.Timeout)*time.Second)
+	// Synchronized variable to track if meter is alive
+	var meterAlive atomic.Bool
+	meterAlive.Store(true)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	ticker := time.NewTicker(time.Duration(config.Cfg.Agent.Otel.OtelServerStatFetchInterval) * time.Second)
+	defer ticker.Stop()
+
+	log.Infof("*** Starting Otel Metrics Push thread... ")
+
+	// Start metric collection loop in a goroutine
+	go func() {
+		defer wg.Done()
+
+		meter := otel.Meter(config.Cfg.Agent.Otel.OtelServiceName + "_Meter")
+		defaultCtx := context.Background()
+		commonLabels := getCommonLabels()
+
+		for meterAlive.Load() {
+			// Aerospike Refresh stats
+			handleAerospikeMetrics(meter, defaultCtx, commonLabels)
+
+			// System metrics
+			handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
+
+			// Wait for next tick, but exit promptly if meter is killed
+			select {
+			case <-ticker.C:
+			default:
+				// do nothing
+			}
+		}
+
+		log.Infof("OTel executor received shutdown signal, flushing metrics to endpoint...")
+	}()
+
+	// Wait for OS signal and shutdown gracefully to ensure exit code 0
+	go func() {
+		<-commons.ProcessExit
+		meterAlive.Store(false)
+		// log.Infof("WAITING .... OTel executor received shutdown signal, shutting down and flushing metrics to endpoint...")
+		wg.Wait() // Wait for the metric collection loop to finish
+
+		log.Infof("OTel metric executor will be stopped, and meter will Shutdown in 10 seconds")
+		cxt, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		log.Infof("Otel Executor shuttting down..., flushing metrics to endpoint")
+
 		// pushes any last exports to the receiver
 		if err := meterProvider.Shutdown(cxt); err != nil {
 			otel.Handle(err)
 		}
-	}
+	}()
+
+	return nil
 }
 
 func getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
@@ -128,27 +159,6 @@ func getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.
 		return metricdata.CumulativeTemporality
 	}
 	return metricdata.DeltaTemporality
-}
-
-func startMetricExecutor() {
-
-	meter := otel.Meter(config.Cfg.Agent.Otel.OtelServiceName + "_Meter")
-
-	// defaultCtx := baggage.ContextWithBaggage(context.Background())
-	defaultCtx := context.Background()
-
-	commonLabels := getCommonLabels()
-
-	for {
-		// Aerospike Refresh stats
-		handleAerospikeMetrics(meter, defaultCtx, commonLabels)
-
-		// System metrics
-		handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
-
-		// sleep for config.N seconds
-		time.Sleep(time.Duration(config.Cfg.Agent.Otel.OtelServerStatFetchInterval) * time.Second)
-	}
 }
 
 func handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {

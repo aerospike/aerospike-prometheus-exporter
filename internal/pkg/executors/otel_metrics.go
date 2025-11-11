@@ -72,8 +72,7 @@ func processAerospikeStats(meter metric.Meter, ctx context.Context, commonLabels
 		// create Otel metric
 		switch stat.MType {
 		case commons.MetricTypeCounter:
-			value := stat.Value
-			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, value)
+			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, stat.Value)
 		case commons.MetricTypeGauge:
 			makeOtelGaugeMetric(meter, qualifiedName, desc, labels, stat.Value)
 
