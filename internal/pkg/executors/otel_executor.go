@@ -4,8 +4,6 @@ import (
 	"context"
 	"strconv"
 
-	// "sync"
-
 	"time"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -20,7 +18,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-	// "go.opentelemetry.io/otel/label"
 )
 
 type OtelExecutor struct {
@@ -120,7 +117,6 @@ func (oe OtelExecutor) Initialize() error {
 				handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
 			case <-commons.ProcessExit:
 				// Exit immediately if shutdown signal received
-				// meterAlive.Store(false)
 				log.Infof("OTel executor received shutdown signal, shutting down...")
 				cxt, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 				defer cancel()
@@ -172,7 +168,7 @@ func handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabe
 // Utility functions
 func readHeaders() map[string]string {
 	headers := make(map[string]string)
-	// headers["api-key"] = "08c5879e8cc53859d4a5554ec503558ee3ceNRAL"
+	// headers["api-key"] = "abcdefghijklmnopqrstuvwxyz"
 	headerPairs := config.Cfg.Agent.Otel.OtelHeaders
 	if len(headerPairs) > 0 {
 		for k, v := range headerPairs {

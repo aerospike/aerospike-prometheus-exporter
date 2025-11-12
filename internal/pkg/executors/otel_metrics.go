@@ -9,7 +9,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	// "go.opentelemetry.io/otel/label"
 )
 
 func sendNodeUp(meter metric.Meter, commonLabels []attribute.KeyValue, value float64) {
@@ -97,7 +96,6 @@ func makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName s
 
 func makeOtelGaugeMetric(meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue, value float64) {
 
-	// _, ok := mapGaugeMetricObjects[metricName]
 	ometric, _ := meter.Float64ObservableGauge(
 		metricName,
 		metric.WithDescription(desc),
