@@ -94,12 +94,11 @@ func (oe OtelExecutor) Initialize() error {
 	)
 	otel.SetMeterProvider(meterProvider)
 
-	ticker := time.NewTicker(time.Duration(config.Cfg.Agent.Otel.OtelServerStatFetchInterval) * time.Second)
-
 	log.Infof("*** Starting Otel Metrics Push thread... ")
 
 	// Start metric collection loop in a goroutine
 	go func() {
+		ticker := time.NewTicker(time.Duration(config.Cfg.Agent.Otel.OtelServerStatFetchInterval) * time.Second)
 		defer ticker.Stop()
 
 		meter := otel.Meter(config.Cfg.Agent.Otel.OtelServiceName + "_Meter")
