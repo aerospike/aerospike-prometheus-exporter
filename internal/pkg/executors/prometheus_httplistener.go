@@ -1,6 +1,7 @@
 package executors
 
 import (
+	"context"
 	"crypto/tls"
 	"net/http"
 	"time"
@@ -20,6 +21,9 @@ type PrometheusHttpExecutor struct {
 }
 
 func (pm PrometheusHttpExecutor) Initialize() error {
+	log.Infof("*** Starting Prometheus HTTP Server... ")
+
+	// Prometheus HTTP server implementation
 	mux := http.NewServeMux()
 
 	pm.promimpl = NewPrometheusImpl()
@@ -84,7 +88,7 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 		}
 	})
 
-	srv := &http.Server{
+	promHttpServer := &http.Server{
 		ReadTimeout:  time.Duration(config.Cfg.Agent.Timeout) * time.Second,
 		WriteTimeout: time.Duration(config.Cfg.Agent.Timeout) * time.Second,
 		Addr:         config.Cfg.Agent.Bind,
@@ -94,13 +98,36 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 
 	log.Infof("Listening for Prometheus on: %s", config.Cfg.Agent.Bind)
 
-	if len(config.Cfg.Agent.CertFile) > 0 && len(config.Cfg.Agent.KeyFile) > 0 {
-		log.Info("Enabling HTTPS ...")
-		srv.TLSConfig = initExporterTLS()
-		log.Fatalln(srv.ListenAndServeTLS("", ""))
-	}
+	// Start server in a goroutine - REQUIRED for graceful shutdown with exit code 0
+	// ListenAndServe() blocks, so without a goroutine we cannot handle OS signals
+	// Without Shutdown(), the process gets killed with exit code 2.
+	go func() {
+		var serveErr error
+		if len(config.Cfg.Agent.CertFile) > 0 && len(config.Cfg.Agent.KeyFile) > 0 {
+			log.Info("Enabling HTTPS ...")
+			promHttpServer.TLSConfig = initExporterTLS()
+			serveErr = promHttpServer.ListenAndServeTLS("", "")
+		} else {
+			serveErr = promHttpServer.ListenAndServe()
+		}
 
-	log.Fatalln(srv.ListenAndServe())
+		if serveErr != nil && serveErr != http.ErrServerClosed {
+			log.Fatalf("HTTP server error: %v", serveErr)
+		}
+	}()
+
+	log.Infof("Prometheus HTTP server started")
+
+	// Wait for OS signal and shutdown gracefully to ensure exit code 0
+	go func() {
+		<-commons.ProcessExit
+		log.Infof("Prometheus executor received shutdown signal, shutting down HTTP server...")
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if shutdownErr := promHttpServer.Shutdown(ctx); shutdownErr != nil {
+			log.Errorf("Error during server shutdown: %v", shutdownErr)
+		}
+	}()
 
 	return nil
 }

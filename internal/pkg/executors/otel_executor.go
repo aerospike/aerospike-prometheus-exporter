@@ -3,6 +3,7 @@ package executors
 import (
 	"context"
 	"strconv"
+
 	"time"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -17,42 +18,20 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-	// "go.opentelemetry.io/otel/label"
 )
 
 type OtelExecutor struct {
 }
 
 // Exporter interface implementation
-func (oe OtelExecutor) Initialize() error {
-
-	log.Infof("Otel sending thread started, sending data to : %s", config.Cfg.Agent.Otel.OtelEndpoint)
-	log.Infof("*** Initializing Otel Exporter.. START ")
-
-	// Observe OS Signals
-	commons.HandleSignals()
-
-	shutdown := initProvider()
-	defer shutdown()
-	log.Infof("*** Starting Otel Metrics Push thread... ")
-
-	// Start a goroutine to handle exit signals
-	go func() {
-		<-commons.ProcessExit
-		log.Debugf("OTel Executor got EXIT signal from OS")
-		shutdown()
-	}()
-
-	// start push executor
-	startMetricExecutor()
-
-	return nil
-}
-
 // Aerospike Otel metrics serving implementation
 //
 // Initializes an OTLP exporter, and configures the corresponding metric providers
-func initProvider() func() {
+func (oe OtelExecutor) Initialize() error {
+
+	log.Infof("Otel sending thread started, sending data to : %s", config.Cfg.Agent.Otel.OtelEndpoint)
+
+	log.Infof("*** Initializing Otel Exporter... ")
 
 	ctx := context.Background()
 	serviceName := config.Cfg.Agent.Otel.OtelServiceName
@@ -115,15 +94,42 @@ func initProvider() func() {
 	)
 	otel.SetMeterProvider(meterProvider)
 
-	return func() {
-		cxt, cancel := context.WithTimeout(ctx, time.Duration(config.Cfg.Agent.Timeout)*time.Second)
-		defer cancel()
-		log.Infof("shuttting down..., flushing metrics to endpoint")
-		// pushes any last exports to the receiver
-		if err := meterProvider.Shutdown(cxt); err != nil {
-			otel.Handle(err)
+	log.Infof("*** Starting Otel Metrics Push thread... ")
+
+	// Start metric collection loop in a goroutine
+	go func() {
+		ticker := time.NewTicker(time.Duration(config.Cfg.Agent.Otel.OtelServerStatFetchInterval) * time.Second)
+		defer ticker.Stop()
+
+		meter := otel.Meter(config.Cfg.Agent.Otel.OtelServiceName + "_Meter")
+		defaultCtx := context.Background()
+		commonLabels := getCommonLabels()
+
+		for {
+			// Wait for next tick or shutdown signal
+			select {
+			case <-ticker.C:
+				// Aerospike Refresh stats
+				handleAerospikeMetrics(meter, defaultCtx, commonLabels)
+
+				// System metrics
+				handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
+			case <-commons.ProcessExit:
+				// Exit immediately if shutdown signal received
+				log.Infof("OTel executor received shutdown signal, shutting down...")
+				cxt, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+
+				// pushes any last exports to the receiver
+				if err := meterProvider.Shutdown(cxt); err != nil {
+					otel.Handle(err)
+				}
+				return
+			}
 		}
-	}
+	}()
+
+	return nil
 }
 
 func getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
@@ -133,36 +139,15 @@ func getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.
 	return metricdata.DeltaTemporality
 }
 
-func startMetricExecutor() {
-
-	meter := otel.Meter(config.Cfg.Agent.Otel.OtelServiceName + "_Meter")
-
-	// defaultCtx := baggage.ContextWithBaggage(context.Background())
-	defaultCtx := context.Background()
-
-	commonLabels := getCommonLabels()
-
-	for {
-		// Aerospike Refresh stats
-		handleAerospikeMetrics(meter, defaultCtx, commonLabels)
-
-		// System metrics
-		handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
-
-		// sleep for config.N seconds
-		time.Sleep(time.Duration(config.Cfg.Agent.Otel.OtelServerStatFetchInterval) * time.Second)
-	}
-}
-
 func handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
 	asRefreshStats, err := statprocessors.Refresh()
 	if err != nil {
 		log.Errorln("Error while refreshing Aerospike Metrics, error: ", err)
-		sendNodeUp(meter, ctx, commonLabels, 0.0)
+		sendNodeUp(meter, commonLabels, 0.0)
 		return
 	}
 	// aerospike server is up and we are able to fetch data
-	sendNodeUp(meter, ctx, commonLabels, 1.0)
+	sendNodeUp(meter, commonLabels, 1.0)
 
 	// process metrics
 	processAerospikeStats(meter, ctx, commonLabels, asRefreshStats)
@@ -182,7 +167,7 @@ func handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabe
 // Utility functions
 func readHeaders() map[string]string {
 	headers := make(map[string]string)
-	// headers["api-key"] = "08c5879e8cc53859d4a5554ec503558ee3ceNRAL"
+	// headers["api-key"] = "abcdefghijklmnopqrstuvwxyz"
 	headerPairs := config.Cfg.Agent.Otel.OtelHeaders
 	if len(headerPairs) > 0 {
 		for k, v := range headerPairs {

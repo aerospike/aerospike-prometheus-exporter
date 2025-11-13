@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/executors"
 
@@ -31,6 +32,9 @@ func main() {
 	// initialize configs and gauge-stats
 	config.InitConfig(*configFile)
 	config.InitGaugeStats(*gaugeStatsFile)
+
+	// Initialize signal handling once for all executors
+	commons.HandleSignals()
 
 	if config.Cfg.Agent.PrometheusEnabled {
 		startExecutor("prometheus")

@@ -298,6 +298,11 @@ func GetExporterBaseFolder() string {
 var ProcessExit chan bool
 
 func HandleSignals() {
+	// Prevent multiple initialization
+	if ProcessExit != nil {
+		return
+	}
+
 	ProcessExit = make(chan bool)
 	sigChan := make(chan os.Signal, 1)
 
