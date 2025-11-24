@@ -128,7 +128,11 @@ func (md *MockAerospikeServer) internalInitialize(filePath string) {
 		fileLines = append(fileLines, strings.TrimSpace(fileScanner.Text()))
 	}
 
-	readFile.Close()
+	err = readFile.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	for _, line := range fileLines {
 		if strings.HasPrefix(line, "#") && strings.HasPrefix(line, "//") {

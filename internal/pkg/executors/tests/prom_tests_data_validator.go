@@ -78,7 +78,10 @@ func (md *UnittestDataHandler) loadPrometheusData() {
 		fileLines = append(fileLines, strings.TrimSpace(fileScanner.Text()))
 	}
 
-	readFile.Close()
+	err = readFile.Close()
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	// Initialize prom_validator data
 	prom_validator.Initialize(fileLines)

@@ -94,7 +94,7 @@ func (md *UnittestDataHandler) loadWatchersData() {
 		fileLines = append(fileLines, strings.TrimSpace(fileScanner.Text()))
 	}
 
-	readFile.Close()
+	_ = readFile.Close()
 
 	// loop all validators and initialize
 	for _, validator := range validators {
