@@ -66,7 +66,6 @@ func parseNetStats(fileName string) map[string]string {
 		log.Error("Error while opening file,", fileName, " Error: ", err)
 		return arrSysInfoStats
 	}
-	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 
@@ -85,6 +84,12 @@ func parseNetStats(fileName string) map[string]string {
 				arrSysInfoStats[key] = values[i]
 			}
 		}
+	}
+
+	err = file.Close()
+	if err != nil {
+		log.Error("Error while closing file,", fileName, " Error: ", err)
+		return arrSysInfoStats
 	}
 
 	return arrSysInfoStats

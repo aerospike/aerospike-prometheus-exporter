@@ -3,7 +3,9 @@ package dataprovider
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -29,6 +31,10 @@ func (asm AerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, error) 
 
 // Aerospike server interaction related code
 
+const (
+	GO_CLIENT_LIBRARY_PATH = "github.com/aerospike/aerospike-client-go/v8"
+)
+
 var (
 	fullHost   string
 	user       string
@@ -47,6 +53,8 @@ func initializeAndConnectAerospikeServer() (*aero.Connection, error) {
 	logrus.Debugf("Connecting to host %s ", fullHost)
 
 	asServerHost = aero.NewHost(config.Cfg.Aerospike.Host, int(config.Cfg.Aerospike.Port))
+	// aero.getLibraryVersion(aesModule)
+
 	asServerHost.TLSName = config.Cfg.Aerospike.NodeTLSName
 	user = config.Cfg.Aerospike.User
 	pass = config.Cfg.Aerospike.Password
@@ -66,6 +74,7 @@ func initializeAndConnectAerospikeServer() (*aero.Connection, error) {
 	clientPolicy = aero.NewClientPolicy()
 	clientPolicy.User = string(username)
 	clientPolicy.Password = string(password)
+	clientPolicy.ApplicationId = "exporter"
 
 	switch config.Cfg.Aerospike.AuthMode {
 	case "internal", "":
@@ -150,6 +159,13 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 				logrus.Debug("Error while connecting to aerospike server: ", err)
 				continue
 			}
+
+			// Set user-agent
+			err = setUserAgent()
+			if err != nil {
+				logrus.Debug("Error while setting user-agent: ", err)
+				continue
+			}
 		}
 
 		// Info request
@@ -220,4 +236,27 @@ func fetchUsersRoles() (bool, []*aero.UserRoles, error) {
 	}
 
 	return shouldFetchUserStatistics, users, nil
+}
+
+func setUserAgent() error {
+	// Server expected format "user-agent-version","client-library-version","exporter-version"
+
+	// Exporter version
+	appId := commons.GetModuleVersion("")
+	// Aerospike GO client library version
+	goLibraryVersion := commons.GetModuleVersion(GO_CLIENT_LIBRARY_PATH)
+
+	// set user-agent
+	userAgentId := fmt.Sprintf("1,go-%s,%s", goLibraryVersion, appId)
+	userAgentCommand := fmt.Sprintf("user-agent-set:value=%s", base64.StdEncoding.EncodeToString([]byte(userAgentId)))
+
+	command := []string{userAgentCommand}
+
+	logrus.Debug("Setting User-Agent in Server: infoKeys: ", command)
+	_, err := asConnection.RequestInfo(command...)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

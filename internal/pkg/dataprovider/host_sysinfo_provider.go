@@ -23,7 +23,6 @@ func (sip SystemInfoProvider) GetFileFD() map[string]string {
 		log.Error("Error while opening file,", fileName, " Error: ", err)
 		return fileFDStats
 	}
-	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 
@@ -33,6 +32,12 @@ func (sip SystemInfoProvider) GetFileFD() map[string]string {
 
 		fileFDStats["allocated"] = values[0]
 
+	}
+
+	err = file.Close()
+	if err != nil {
+		log.Error("Error while closing file,", fileName, " Error: ", err)
+		return fileFDStats
 	}
 
 	log.Debug("FileFD Stats - Count of return stats ", len(fileFDStats))

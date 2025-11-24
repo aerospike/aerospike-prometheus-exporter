@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"syscall"
@@ -378,4 +379,34 @@ func loadCipherSuitesList() map[string]uint16 {
 	}
 
 	return supportedCipherSuites
+}
+
+// getModuleVersion returns the version of a module from build info.
+// If modulePath is empty, returns the main module version (exporter version).
+// Otherwise, searches for the module in dependencies and returns its version.
+func GetModuleVersion(modulePath string) string {
+	// golang idiomatic module version is "(devel)" if not set.
+	defaultVersion := "(devel)"
+
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return defaultVersion
+	}
+
+	// If modulePath is empty, return main module version (exporter version)
+	if modulePath == "" {
+		if info.Main.Version != "" {
+			return info.Main.Version
+		}
+		return defaultVersion
+	}
+
+	// Search for module in dependencies
+	for _, dep := range info.Deps {
+		if dep.Path == modulePath {
+			return dep.Version
+		}
+	}
+
+	return defaultVersion
 }

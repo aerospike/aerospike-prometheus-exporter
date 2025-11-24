@@ -86,7 +86,6 @@ func makeHttpCallToPromProcessor(t *testing.T, asMetrics []statprocessors.Aerosp
 	if err != nil {
 		fmt.Println("Error while reading Http Response: ", err)
 	}
-	defer resp.Body.Close()
 
 	// reinitialize global array
 	metrics_from_prom = []string{}
@@ -105,6 +104,8 @@ func makeHttpCallToPromProcessor(t *testing.T, asMetrics []statprocessors.Aerosp
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Error while reading Http Response: ", err)
 	}
+
+	_ = resp.Body.Close()
 
 	assert.NotEmpty(t, metrics_from_prom, " NO metrics received from prom running locally")
 
