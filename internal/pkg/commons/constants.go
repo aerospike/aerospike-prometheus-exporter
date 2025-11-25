@@ -26,7 +26,7 @@ const (
 	METRIC_LABEL_STORAGE_ENGINE            = "storage_engine"
 	METRIC_LABEL_USER                      = "user"
 	METRIC_LABEL_UA_VERSION                = "version"
-	METRIC_LABEL_UA_CLIENT_LIBRARY_VERSION = "client_library_version"
+	METRIC_LABEL_UA_CLIENT_LIBRARY_VERSION = "client_version"
 	METRIC_LABEL_UA_APP_ID                 = "app_id"
 	METRIC_LABEL_EXPORTER_VERSION          = "exporter_version"
 )
