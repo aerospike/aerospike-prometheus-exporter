@@ -247,7 +247,7 @@ func setUserAgent() error {
 	goLibraryVersion := commons.GetModuleVersion(GO_CLIENT_LIBRARY_PATH)
 
 	// set user-agent
-	userAgentId := fmt.Sprintf("1,go-%s,exporter-%s", goLibraryVersion, appId)
+	userAgentId := fmt.Sprintf("1,go-%s,ape-%s", goLibraryVersion, appId)
 	userAgentCommand := fmt.Sprintf("user-agent-set:value=%s", base64.StdEncoding.EncodeToString([]byte(userAgentId)))
 
 	command := []string{userAgentCommand}
