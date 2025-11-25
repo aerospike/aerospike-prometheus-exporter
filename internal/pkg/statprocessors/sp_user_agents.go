@@ -2,7 +2,6 @@ package statprocessors
 
 import (
 	"encoding/base64"
-	"fmt"
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -40,7 +39,6 @@ func (ua *UserAgentsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[st
 	for _, key := range infoKeys {
 
 		userAgentsMetrics := rawMetrics[key]
-		fmt.Println("key is ", key, " and userAgentsMetrics is ", userAgentsMetrics)
 		uaMetricsToSend, err := ua.handleRefresh(key, userAgentsMetrics)
 
 		if err != nil {
@@ -56,7 +54,6 @@ func (ua *UserAgentsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[st
 func (ua *UserAgentsStatsProcessor) handleRefresh(infoKeyToProcess string, uaRawMetrics string) ([]AerospikeStat, error) {
 
 	stats := strings.Split(uaRawMetrics, ";")
-	fmt.Println("infoKeyToProcess is ", infoKeyToProcess, " and stats are ", stats)
 	var uaMetricsToSend = []AerospikeStat{}
 
 	for _, stat := range stats {
@@ -90,8 +87,6 @@ func (ua *UserAgentsStatsProcessor) handleRefresh(infoKeyToProcess string, uaRaw
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_UA_VERSION, commons.METRIC_LABEL_UA_CLIENT_LIBRARY_VERSION, commons.METRIC_LABEL_UA_APP_ID}
 		labelValues := []string{ClusterName, Service, userAgentVersion, clientLibraryVersion, appId}
-
-		fmt.Println("userAgentVersion is ", userAgentVersion, " clientLibraryVersion is ", clientLibraryVersion, " appId is ", appId, " and uaClientVersionCount is ", pv)
 
 		asMetric.updateValues(pv, labels, labelValues)
 		uaMetricsToSend = append(uaMetricsToSend, asMetric)
