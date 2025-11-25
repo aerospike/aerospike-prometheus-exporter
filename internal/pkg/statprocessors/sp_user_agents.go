@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	USER_AGENTS = "user-agents"
+	USER_AGENTS = "bad-user-agents"
 )
 
 type UserAgentsStatsProcessor struct {
@@ -63,7 +63,6 @@ func (ua *UserAgentsStatsProcessor) handleRefresh(infoKeyToProcess string, uaRaw
 		userAgentVersion, clientLibraryVersion, appId, err := ua.getUserAgentInfo(stat)
 
 		if err != nil {
-			logrus.Error("Error decoding user agent client version: encoded value: ", stat, " error: ", err)
 			continue
 		}
 
@@ -85,7 +84,7 @@ func (ua *UserAgentsStatsProcessor) handleRefresh(infoKeyToProcess string, uaRaw
 			ua.userAgentsMetrics[stat] = asMetric
 		}
 
-		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_UA_VERSION, commons.METRIC_LABEL_UA_CLIENT_LIBRARY_VERSION, commons.METRIC_LABEL_UA_APP_ID}
+		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_UA_CLIENT_LIBRARY_VERSION, commons.METRIC_LABEL_UA_CLIENT_APP_ID}
 		labelValues := []string{ClusterName, Service, userAgentVersion, clientLibraryVersion, appId}
 
 		asMetric.updateValues(pv, labels, labelValues)

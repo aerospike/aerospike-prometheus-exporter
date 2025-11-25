@@ -15,19 +15,19 @@ const (
 
 // below constant represent the labels we send along with metrics to Prometheus or something
 const (
-	METRIC_LABEL_CLUSTER_NAME              = "cluster_name"
-	METRIC_LABEL_SERVICE                   = "service"
-	METRIC_LABEL_NS                        = "ns"
-	METRIC_LABEL_SET                       = "set"
-	METRIC_LABEL_LE                        = "le"
-	METRIC_LABEL_DC_NAME                   = "dc"
-	METRIC_LABEL_INDEX                     = "index"
-	METRIC_LABEL_SINDEX                    = "sindex"
-	METRIC_LABEL_STORAGE_ENGINE            = "storage_engine"
-	METRIC_LABEL_USER                      = "user"
-	METRIC_LABEL_UA_VERSION                = "version"
-	METRIC_LABEL_UA_CLIENT_LIBRARY_VERSION = "client_version"
-	METRIC_LABEL_UA_APP_ID                 = "app_id"
+	METRIC_LABEL_CLUSTER_NAME   = "cluster_name"
+	METRIC_LABEL_SERVICE        = "service"
+	METRIC_LABEL_NS             = "ns"
+	METRIC_LABEL_SET            = "set"
+	METRIC_LABEL_LE             = "le"
+	METRIC_LABEL_DC_NAME        = "dc"
+	METRIC_LABEL_INDEX          = "index"
+	METRIC_LABEL_SINDEX         = "sindex"
+	METRIC_LABEL_STORAGE_ENGINE = "storage_engine"
+	METRIC_LABEL_USER           = "user"
+	// METRIC_LABEL_UA_VERSION                = "agent_version"
+	METRIC_LABEL_UA_CLIENT_LIBRARY_VERSION = "client_library_version"
+	METRIC_LABEL_UA_CLIENT_APP_ID          = "client_app_id"
 	METRIC_LABEL_EXPORTER_VERSION          = "exporter_version"
 )
 

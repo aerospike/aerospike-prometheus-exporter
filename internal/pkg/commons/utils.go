@@ -394,16 +394,16 @@ func GetModuleVersion(modulePath string) string {
 	}
 
 	// If modulePath is empty, return main module version (exporter version)
-	if modulePath == "" {
-		if info.Main.Version != "" {
-			return info.Main.Version
-		}
-		return defaultVersion
+	if modulePath == info.Main.Path {
+		fmt.Println("info.Main.Version is ", info.Main.Version)
+		return info.Main.Version
 	}
 
 	// Search for module in dependencies
 	for _, dep := range info.Deps {
+		fmt.Println("dep.Path is ", dep.Path)
 		if dep.Path == modulePath {
+			fmt.Println("dep.Version is ", dep.Version)
 			return dep.Version
 		}
 	}

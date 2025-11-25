@@ -57,9 +57,11 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []s
 	var infoKeys []string
 	for _, ns := range nsList {
 		// infoKey ==> namespace/test, namespace/bar
-		infoKeys = append(infoKeys, KEY_NS_NAMESPACE+"/"+ns)
-		if NamespaceLatencyBenchmarks[ns] == nil {
-			NamespaceLatencyBenchmarks[ns] = make(map[string]string)
+		if len(ns) > 0 {
+			infoKeys = append(infoKeys, KEY_NS_NAMESPACE+"/"+ns)
+			if NamespaceLatencyBenchmarks[ns] == nil {
+				NamespaceLatencyBenchmarks[ns] = make(map[string]string)
+			}
 		}
 	}
 
@@ -78,6 +80,8 @@ func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[str
 	if nw.namespaceStats == nil {
 		nw.namespaceStats = make(map[string]AerospikeStat)
 	}
+
+	// fmt.Println("rawMetrics is ", rawMetrics)
 
 	var allMetricsToSend = []AerospikeStat{}
 	for _, infoKey := range infoKeys {

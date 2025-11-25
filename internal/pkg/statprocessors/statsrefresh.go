@@ -1,9 +1,12 @@
 package statprocessors
 
 import (
+	"strings"
+
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -48,6 +51,13 @@ func Refresh() ([]AerospikeStat, error) {
 		if serverPool != nil || clientPool != nil {
 			Infokey_Service = INFOKEY_SERVICE_TLS_STD
 			log.Debugf("TLS Mode is enabled, setting infokey-service as  'service-tls-std' for further fetching from server.")
+		}
+	}
+
+	for k, v := range passOneOutput {
+		if strings.HasPrefix(strings.ToUpper(v), "ERROR:") {
+			logrus.Error("ERROR received when executing passOne info command: ", k, " and value is ", v, " - IGNORING this command")
+			delete(passOneOutput, k)
 		}
 	}
 

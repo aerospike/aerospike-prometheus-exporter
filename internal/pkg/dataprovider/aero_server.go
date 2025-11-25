@@ -32,7 +32,8 @@ func (asm AerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, error) 
 // Aerospike server interaction related code
 
 const (
-	GO_CLIENT_LIBRARY_PATH = "github.com/aerospike/aerospike-client-go/v8"
+	GO_CLIENT_LIBRARY_PATH     = "github.com/aerospike/aerospike-client-go/v8"
+	AERO_EXPORTER_LIBRARY_PATH = "github.com/aerospike/aerospike-prometheus-exporter"
 )
 
 var (
@@ -242,7 +243,7 @@ func setUserAgent() error {
 	// Server expected format "user-agent-version","client-library-version","exporter-version"
 
 	// Exporter version
-	appId := commons.GetModuleVersion("")
+	appId := commons.GetModuleVersion(AERO_EXPORTER_LIBRARY_PATH)
 	// Aerospike GO client library version
 	goLibraryVersion := commons.GetModuleVersion(GO_CLIENT_LIBRARY_PATH)
 
