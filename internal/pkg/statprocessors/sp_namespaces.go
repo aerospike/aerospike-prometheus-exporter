@@ -81,8 +81,6 @@ func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[str
 		nw.namespaceStats = make(map[string]AerospikeStat)
 	}
 
-	// fmt.Println("rawMetrics is ", rawMetrics)
-
 	var allMetricsToSend = []AerospikeStat{}
 	for _, infoKey := range infoKeys {
 
