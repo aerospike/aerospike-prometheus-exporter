@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	USER_AGENTS = "bad-user-agents"
+	USER_AGENTS = "user-agents"
 )
 
 type UserAgentsStatsProcessor struct {
@@ -24,7 +24,18 @@ func (ua *UserAgentsStatsProcessor) PassOneKeys() []string {
 
 func (ua *UserAgentsStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string {
 	log.Tracef("user-agent-passonekeys:%s", []string{USER_AGENTS})
-	return []string{USER_AGENTS}
+	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "8.1.0.0")
+
+	if err != nil {
+		log.Warn(err)
+		return nil
+	}
+	if ge {
+		return []string{USER_AGENTS}
+	}
+
+	log.Debug("user-agent-passonekeys: ignoring user-agents command for build version < 8.1.0.0")
+	return nil
 }
 
 // refresh prom metrics - parse the given rawMetrics (both config and stats ) and push to given channel
