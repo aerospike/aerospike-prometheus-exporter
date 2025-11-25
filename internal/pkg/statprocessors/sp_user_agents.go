@@ -24,12 +24,13 @@ func (ua *UserAgentsStatsProcessor) PassOneKeys() []string {
 
 func (ua *UserAgentsStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string {
 	log.Tracef("user-agent-passonekeys:%s", []string{USER_AGENTS})
-	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "8.1.0.0")
+	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "8.0.0.0")
 
 	if err != nil {
 		log.Warn(err)
 		return nil
 	}
+
 	if ge {
 		return []string{USER_AGENTS}
 	}
@@ -50,7 +51,7 @@ func (ua *UserAgentsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[st
 	for _, key := range infoKeys {
 
 		userAgentsMetrics := rawMetrics[key]
-		uaMetricsToSend, err := ua.handleRefresh(key, userAgentsMetrics)
+		uaMetricsToSend, err := ua.handleRefresh(userAgentsMetrics)
 
 		if err != nil {
 			return nil, err
@@ -62,7 +63,7 @@ func (ua *UserAgentsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[st
 	return allMetricsToSend, nil
 }
 
-func (ua *UserAgentsStatsProcessor) handleRefresh(infoKeyToProcess string, uaRawMetrics string) ([]AerospikeStat, error) {
+func (ua *UserAgentsStatsProcessor) handleRefresh(uaRawMetrics string) ([]AerospikeStat, error) {
 
 	stats := strings.Split(uaRawMetrics, ";")
 	var uaMetricsToSend = []AerospikeStat{}
@@ -71,7 +72,8 @@ func (ua *UserAgentsStatsProcessor) handleRefresh(infoKeyToProcess string, uaRaw
 		if len(stat) == 0 {
 			continue
 		}
-		userAgentVersion, clientLibraryVersion, appId, err := ua.getUserAgentInfo(stat)
+		// stat = user-agent=MSxhc2FkbS00LjAuMix1bmtub3du:count=1
+		clientLibraryVersion, appId, err := ua.getUserAgentInfo(stat)
 
 		if err != nil {
 			continue
@@ -96,7 +98,7 @@ func (ua *UserAgentsStatsProcessor) handleRefresh(infoKeyToProcess string, uaRaw
 		}
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_UA_CLIENT_LIBRARY_VERSION, commons.METRIC_LABEL_UA_CLIENT_APP_ID}
-		labelValues := []string{ClusterName, Service, userAgentVersion, clientLibraryVersion, appId}
+		labelValues := []string{ClusterName, Service, clientLibraryVersion, appId}
 
 		asMetric.updateValues(pv, labels, labelValues)
 		uaMetricsToSend = append(uaMetricsToSend, asMetric)
@@ -105,23 +107,23 @@ func (ua *UserAgentsStatsProcessor) handleRefresh(infoKeyToProcess string, uaRaw
 	return uaMetricsToSend, nil
 }
 
-func (ua *UserAgentsStatsProcessor) getUserAgentInfo(aaKeyWithAllInfo string) (string, string, string, error) {
+func (ua *UserAgentsStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (string, string, error) {
 
-	//TODO: discuss on values to return
-	userAgentVersion, clientLibraryVersion, appId := "unknown", "unknown", "unknown"
+	clientLibraryVersion, appId := "unknown", "unknown"
 
-	uaKey := strings.ReplaceAll(strings.Split(aaKeyWithAllInfo, ":")[0], "user-agent=", "")
+	// user-agent=MSxhc2FkbS00LjAuMix1bmtub3du:count=1, get the first part
+	uaKey := strings.ReplaceAll(strings.Split(uaKeyWithAllInfo, ":")[0], "user-agent=", "")
 	uaInfo, err := base64.StdEncoding.DecodeString(uaKey)
 
 	if err != nil {
 		logrus.Error("Error decoding user agent client version: encoded value: ", uaKey, " error: ", err)
-		return userAgentVersion, clientLibraryVersion, appId, err
+		return clientLibraryVersion, appId, err
 	}
 
 	uaInfoValues := strings.Split(string(uaInfo), ",")
 
 	// older clients, apps with no user-agent logic then we get "unknown" values
-	userAgentVersion = uaInfoValues[0]
+	// userAgentVersion = uaInfoValues[0]
 	if len(uaInfoValues) > 1 {
 		clientLibraryVersion = uaInfoValues[1]
 	}
@@ -129,5 +131,5 @@ func (ua *UserAgentsStatsProcessor) getUserAgentInfo(aaKeyWithAllInfo string) (s
 		appId = uaInfoValues[2]
 	}
 
-	return userAgentVersion, clientLibraryVersion, appId, nil
+	return clientLibraryVersion, appId, nil
 }
