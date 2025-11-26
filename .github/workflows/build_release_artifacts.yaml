@@ -99,8 +99,17 @@ jobs:
           # Generate checksums for RPM and DEB
           for file in aerospike-prome*.rpm *.deb ; do
             if [ -f "$file" ]; then
-              echo "Processing $file..."
+              echo "Generating sha256 and asc for $file..."
               sha256sum "$file" > "$file.sha256"
+
+              # asc for *.sha256 files
+              gpg --armour --detach-sign \
+                  --no-tty --batch --yes \
+                  --passphrase "$GPG_PASS" \
+                  --pinentry-mode loopback \
+                  --local-user phani \
+                  --output "$file.sha256.asc" "$file.sha256"    
+
             fi
           done
 
