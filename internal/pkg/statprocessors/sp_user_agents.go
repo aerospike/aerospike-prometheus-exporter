@@ -24,7 +24,7 @@ func (ua *UserAgentsStatsProcessor) PassOneKeys() []string {
 
 func (ua *UserAgentsStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string {
 	log.Tracef("user-agent-passonekeys:%s", []string{USER_AGENTS})
-	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "8.0.0.0")
+	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "8.1.0.0")
 
 	if err != nil {
 		log.Warn(err)
@@ -123,7 +123,7 @@ func (ua *UserAgentsStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (s
 	uaInfoValues := strings.Split(string(uaInfo), ",")
 
 	// older clients, apps with no user-agent logic then we get "unknown" values
-	// userAgentVersion = uaInfoValues[0]
+	// example: 1,go-1.0.0,ape-1.0.0 - for now we are not using userAgentVersion
 	if len(uaInfoValues) > 1 {
 		clientLibraryVersion = uaInfoValues[1]
 	}
