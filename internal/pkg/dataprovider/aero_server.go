@@ -54,7 +54,6 @@ func initializeAndConnectAerospikeServer() (*aero.Connection, error) {
 	logrus.Debugf("Connecting to host %s ", fullHost)
 
 	asServerHost = aero.NewHost(config.Cfg.Aerospike.Host, int(config.Cfg.Aerospike.Port))
-	// aero.getLibraryVersion(aesModule)
 
 	asServerHost.TLSName = config.Cfg.Aerospike.NodeTLSName
 	user = config.Cfg.Aerospike.User
@@ -240,15 +239,15 @@ func fetchUsersRoles() (bool, []*aero.UserRoles, error) {
 }
 
 func setUserAgent() error {
-	// Server expected format "user-agent-version","client-library-version","exporter-version"
+	// Server expected format "user-agent-version","client-library-version","exporter-version/app-id-info"
 
 	// Exporter version
 	appId := commons.GetModuleVersion(AERO_EXPORTER_LIBRARY_PATH)
 	// Aerospike GO client library version
-	goLibraryVersion := commons.GetModuleVersion(GO_CLIENT_LIBRARY_PATH)
+	clientLibraryVersion := commons.GetModuleVersion(GO_CLIENT_LIBRARY_PATH)
 
 	// set user-agent
-	userAgentId := fmt.Sprintf("1,go-%s,ape-%s", goLibraryVersion, appId)
+	userAgentId := fmt.Sprintf("1,go-%s,ape-%s", clientLibraryVersion, appId)
 	userAgentCommand := fmt.Sprintf("user-agent-set:value=%s", base64.StdEncoding.EncodeToString([]byte(userAgentId)))
 
 	command := []string{userAgentCommand}
