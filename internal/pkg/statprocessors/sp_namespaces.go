@@ -57,11 +57,9 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []s
 	var infoKeys []string
 	for _, ns := range nsList {
 		// infoKey ==> namespace/test, namespace/bar
-		if len(ns) > 0 {
-			infoKeys = append(infoKeys, KEY_NS_NAMESPACE+"/"+ns)
-			if NamespaceLatencyBenchmarks[ns] == nil {
-				NamespaceLatencyBenchmarks[ns] = make(map[string]string)
-			}
+		infoKeys = append(infoKeys, KEY_NS_NAMESPACE+"/"+ns)
+		if NamespaceLatencyBenchmarks[ns] == nil {
+			NamespaceLatencyBenchmarks[ns] = make(map[string]string)
 		}
 	}
 

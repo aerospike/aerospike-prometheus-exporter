@@ -43,10 +43,8 @@ func (xw *XdrStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string 
 			// command structure will be like get-config:context=xdr;dc=backup_dc_as8;namespace=test
 			// command structure will be like get-stat:context=xdr;dc=backup_dc_as8;namespace=test
 			for _, ns := range listNamespaces {
-				if len(ns) > 0 {
-					infoKeys = append(infoKeys, KEY_XDR_STAT+dc+";namespace="+ns)
-					infoKeys = append(infoKeys, KEY_XDR_CONFIG+dc+";namespace="+ns)
-				}
+				infoKeys = append(infoKeys, KEY_XDR_CONFIG+dc+";namespace="+ns)
+				infoKeys = append(infoKeys, KEY_XDR_STAT+dc+";namespace="+ns)
 			}
 		}
 	}
