@@ -74,7 +74,7 @@ func initializeAndConnectAerospikeServer() (*aero.Connection, error) {
 	clientPolicy = aero.NewClientPolicy()
 	clientPolicy.User = string(username)
 	clientPolicy.Password = string(password)
-	clientPolicy.ApplicationId = "exporter"
+	clientPolicy.ApplicationId = "aero-prom-exporter"
 
 	switch config.Cfg.Aerospike.AuthMode {
 	case "internal", "":
@@ -247,7 +247,7 @@ func setUserAgent() error {
 	clientLibraryVersion := commons.GetModuleVersion(GO_CLIENT_LIBRARY_PATH)
 
 	// set user-agent
-	userAgentId := fmt.Sprintf("1,go-%s,ape-%s", clientLibraryVersion, appId)
+	userAgentId := fmt.Sprintf("1,go-%s,aero-prom-exporter-%s", clientLibraryVersion, appId)
 	userAgentCommand := fmt.Sprintf("user-agent-set:value=%s", base64.StdEncoding.EncodeToString([]byte(userAgentId)))
 
 	command := []string{userAgentCommand}

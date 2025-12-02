@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -84,7 +83,7 @@ func (ua *UserAgentsStatsProcessor) handleRefresh(uaRawMetrics string) ([]Aerosp
 
 		pv, err := commons.TryConvert(uaClientVersionCount)
 		if err != nil {
-			logrus.Error("Error converting user agent client version count: ", uaClientVersionCount, " error: ", err)
+			log.Error("Error converting user agent client version count: ", uaClientVersionCount, " error: ", err)
 			continue
 		}
 
@@ -116,7 +115,7 @@ func (ua *UserAgentsStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (s
 	uaInfo, err := base64.StdEncoding.DecodeString(uaKey)
 
 	if err != nil {
-		logrus.Error("Error decoding user agent client version: encoded value: ", uaKey, " error: ", err)
+		log.Error("Error decoding user agent client version: encoded value: ", uaKey, " error: ", err)
 		return clientLibraryVersion, appId, err
 	}
 
