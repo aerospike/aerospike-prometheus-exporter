@@ -107,7 +107,7 @@ jobs:
                   --no-tty --batch --yes \
                   --passphrase "$GPG_PASS" \
                   --pinentry-mode loopback \
-                  --local-user phani \
+                  --local-user aerospike-inc \
                   --output "$file.sha256.asc" "$file.sha256"    
 
             fi
