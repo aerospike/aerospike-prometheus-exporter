@@ -87,14 +87,11 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	// handle configs
 	var allMetricsToSend = []AerospikeStat{}
 
-	lCfgMetricsToSend := sw.handleRefresh(rawMetrics[KEY_SERVICE_CONFIG])
+	// Config
+	allMetricsToSend = append(allMetricsToSend, sw.handleRefresh(rawMetrics[KEY_SERVICE_CONFIG])...)
 
 	// handle stats
-	lStatMetricsToSend := sw.handleRefresh(rawMetrics[KEY_SERVICE_STATISTICS])
-
-	// merge both array into single
-	allMetricsToSend = append(allMetricsToSend, lCfgMetricsToSend...)
-	allMetricsToSend = append(allMetricsToSend, lStatMetricsToSend...)
+	allMetricsToSend = append(allMetricsToSend, sw.handleRefresh(rawMetrics[KEY_SERVICE_STATISTICS])...)
 
 	// parse logs Sink
 	allMetricsToSend = append(allMetricsToSend, sw.handleLogSinkStats(rawMetrics)...)
