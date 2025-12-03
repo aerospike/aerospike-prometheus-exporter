@@ -1,6 +1,7 @@
 package statprocessors
 
 import (
+	"encoding/base64"
 	"strconv"
 	"strings"
 
@@ -34,6 +35,18 @@ func (sw *NodeStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string
 
 	passTwoKeys := []string{KEY_SERVICE_CONFIG, KEY_SERVICE_STATISTICS}
 	passTwoKeys = append(passTwoKeys, sinkCmds...)
+
+	// add user-agents command if build version is >= 8.1.0.0
+	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "8.1.0.0")
+
+	if err != nil {
+		log.Warn(err)
+		return passTwoKeys
+	}
+
+	if ge {
+		passTwoKeys = append(passTwoKeys, "user-agents")
+	}
 
 	log.Tracef("node-passtwokeys:%s", passTwoKeys)
 
@@ -85,6 +98,9 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 
 	// parse logs Sink
 	allMetricsToSend = append(allMetricsToSend, sw.handleLogSinkStats(rawMetrics)...)
+
+	// handle user-agents
+	allMetricsToSend = append(allMetricsToSend, sw.handleUserAgentsStats(rawMetrics)...)
 
 	return allMetricsToSend, nil
 }
@@ -183,4 +199,78 @@ func (sw *NodeStatsProcessor) createLogSinkMetric(statName string, statValue flo
 
 	return asMetric
 
+}
+
+// handleUserAgentsStats handles the user-agents stats and returns the metrics to send
+func (sw *NodeStatsProcessor) handleUserAgentsStats(rawMetrics map[string]string) []AerospikeStat {
+
+	var refreshMetricsToSend = []AerospikeStat{}
+
+	userAgentsMetrics := rawMetrics["user-agents"]
+	stats := strings.Split(userAgentsMetrics, ";")
+
+	for _, stat := range stats {
+		if len(stat) == 0 {
+			continue
+		}
+		// stat = user-agent=MSxhc2FkbS00LjAuMix1bmtub3du:count=1
+		clientLibraryVersion, appId, err := sw.getUserAgentInfo(stat)
+
+		if err != nil {
+			continue
+		}
+
+		// Count value
+		uaClientVersionCount := strings.ReplaceAll(strings.Split(stat, ":")[1], "count=", "")
+
+		pv, err := commons.TryConvert(uaClientVersionCount)
+		if err != nil {
+			log.Error("Error converting user agent client version count: ", uaClientVersionCount, " error: ", err)
+			continue
+		}
+
+		asMetric, exists := sw.nodeMetrics[stat]
+		dynamicStatname := "details"
+
+		if !exists {
+			allowed := isMetricAllowed(commons.CTX_USER_AGENTS, stat)
+			asMetric = NewAerospikeStat(commons.CTX_USER_AGENTS, dynamicStatname, allowed)
+			sw.nodeMetrics[stat] = asMetric
+		}
+
+		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_UA_CLIENT_LIBRARY_VERSION, commons.METRIC_LABEL_UA_CLIENT_APP_ID}
+		labelValues := []string{ClusterName, Service, clientLibraryVersion, appId}
+
+		asMetric.updateValues(pv, labels, labelValues)
+		refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
+	}
+
+	return refreshMetricsToSend
+}
+
+func (sw *NodeStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (string, string, error) {
+
+	clientLibraryVersion, appId := "unknown", "unknown"
+
+	// user-agent=MSxhc2FkbS00LjAuMix1bmtub3du:count=1, get the first part
+	uaKey := strings.ReplaceAll(strings.Split(uaKeyWithAllInfo, ":")[0], "user-agent=", "")
+	uaInfo, err := base64.StdEncoding.DecodeString(uaKey)
+
+	if err != nil {
+		log.Error("Error decoding user agent client version: encoded value: ", uaKey, " error: ", err)
+		return clientLibraryVersion, appId, err
+	}
+
+	uaInfoValues := strings.Split(string(uaInfo), ",")
+
+	// older clients, apps with no user-agent logic then we get "unknown" values
+	// example: 1,go-1.0.0,ape-1.0.0 - for now we are not using userAgentVersion
+	if len(uaInfoValues) > 1 {
+		clientLibraryVersion = uaInfoValues[1]
+	}
+	if len(uaInfoValues) > 2 {
+		appId = uaInfoValues[2]
+	}
+
+	return clientLibraryVersion, appId, nil
 }

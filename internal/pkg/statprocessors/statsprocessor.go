@@ -23,7 +23,6 @@ var statprocessors = []StatProcessor{
 	&XdrStatsProcessor{},
 	&LatencyStatsProcessor{},
 	&UserStatsProcessor{},
-	&UserAgentsStatsProcessor{},
 }
 
 func GetStatsProcessors() []StatProcessor {
