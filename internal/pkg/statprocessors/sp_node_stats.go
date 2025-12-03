@@ -100,7 +100,9 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	allMetricsToSend = append(allMetricsToSend, sw.handleLogSinkStats(rawMetrics)...)
 
 	// handle user-agents
-	allMetricsToSend = append(allMetricsToSend, sw.handleUserAgentsStats(rawMetrics)...)
+	if rawMetrics["user-agents"] != "" {
+		allMetricsToSend = append(allMetricsToSend, sw.handleUserAgentsStats(rawMetrics)...)
+	}
 
 	return allMetricsToSend, nil
 }
@@ -224,6 +226,7 @@ func (sw *NodeStatsProcessor) handleUserAgentsStats(rawMetrics map[string]string
 		uaClientVersionCount := strings.ReplaceAll(strings.Split(stat, ":")[1], "count=", "")
 
 		pv, err := commons.TryConvert(uaClientVersionCount)
+
 		if err != nil {
 			log.Error("Error converting user agent client version count: ", uaClientVersionCount, " error: ", err)
 			continue
