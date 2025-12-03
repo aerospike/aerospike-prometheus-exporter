@@ -97,7 +97,7 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	allMetricsToSend = append(allMetricsToSend, sw.handleLogSinkStats(rawMetrics)...)
 
 	// handle user-agents
-	if rawMetrics["user-agents"] != "" {
+	if _, exists := rawMetrics["user-agents"]; exists {
 		allMetricsToSend = append(allMetricsToSend, sw.handleUserAgentsStats(rawMetrics)...)
 	}
 
