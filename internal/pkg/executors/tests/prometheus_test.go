@@ -87,11 +87,12 @@ func makeHttpCallToPromProcessor(t *testing.T, asMetrics []statprocessors.Aerosp
 		fmt.Println("Error while reading Http Response: ", err)
 	}
 
+	defer resp.Body.Close() //nolint:errcheck
+
 	// reinitialize global array
 	metrics_from_prom = []string{}
 
 	scanner := bufio.NewScanner(resp.Body)
-	defer resp.Body.Close() //nolint:errcheck
 
 	// fmt.Println("*** START ")
 	for scanner.Scan() {

@@ -254,7 +254,7 @@ func (sw *NodeStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (string,
 	// user-agent=MSxhc2FkbS00LjAuMix1bmtub3du:count=1, first part is user-agent, second part is count
 	uaKeyWithAllInfoParts := strings.Split(uaKeyWithAllInfo, ":")
 
-	uaKey := strings.ReplaceAll(uaKeyWithAllInfoParts[0], "user-agent=", "")
+	uaKey := strings.Split(uaKeyWithAllInfoParts[0], "=")[1]
 
 	uaInfo, err := base64.StdEncoding.DecodeString(uaKey)
 
@@ -263,7 +263,6 @@ func (sw *NodeStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (string,
 		return clientLibraryVersion, appId, uaClientVersionCount, err
 	}
 
-	uaClientVersionCount = strings.ReplaceAll(uaKeyWithAllInfoParts[1], "count=", "")
 	uaInfoValues := strings.Split(string(uaInfo), ",")
 
 	// older clients, apps with no user-agent logic then we get "unknown" values
@@ -271,9 +270,13 @@ func (sw *NodeStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (string,
 	if len(uaInfoValues) > 1 {
 		clientLibraryVersion = uaInfoValues[1]
 	}
+
 	if len(uaInfoValues) > 2 {
 		appId = uaInfoValues[2]
 	}
+
+	// count value is the second part of the user-agent key
+	uaClientVersionCount = strings.Split(uaKeyWithAllInfoParts[1], "=")[1]
 
 	return clientLibraryVersion, appId, uaClientVersionCount, nil
 }

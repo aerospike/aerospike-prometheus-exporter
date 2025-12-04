@@ -4,6 +4,8 @@ github.com/aerospike/aerospike-client-go/v8 v8.2.1 h1:Vxp+E1Sj+r5o67x+BP8FE07DVw
 github.com/aerospike/aerospike-client-go/v8 v8.2.1/go.mod h1:H6CzKDoHxBj1yY/oQPci1bUIbEx2ATQtJ2GtZ+N64Wg=
 github.com/aerospike/aerospike-client-go/v8 v8.4.2 h1:j6D+XCWn2ZkFU6o64BGzy6cYQksSnKspMiUi4PRbmkQ=
 github.com/aerospike/aerospike-client-go/v8 v8.4.2/go.mod h1:F3qwGJUMWOtqZha7O2VglfIDatH3Rj8wYhmI7bkHOfU=
+github.com/aerospike/aerospike-client-go/v8 v8.5.0 h1:5jRv6v9M9PgGXOxm1+XzqVM8dNOnaF7bed+tr45YPKc=
+github.com/aerospike/aerospike-client-go/v8 v8.5.0/go.mod h1:F3qwGJUMWOtqZha7O2VglfIDatH3Rj8wYhmI7bkHOfU=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/cenkalti/backoff/v4 v4.2.1 h1:y4OZtCnogmCPw98Zjyt5a6+QwPLGkiQsYW5oUqylYbM=
