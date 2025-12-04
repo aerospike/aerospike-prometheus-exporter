@@ -47,8 +47,6 @@ func (uw *UserStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "5.6.0.0")
 
 	if err != nil {
-		// just log warning. don't send an error back
-		log.Warn(err)
 		return nil, nil
 	}
 

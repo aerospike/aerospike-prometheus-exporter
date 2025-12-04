@@ -8,6 +8,7 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/gobwas/glob"
+	log "github.com/sirupsen/logrus"
 
 	goversion "github.com/hashicorp/go-version"
 )
@@ -185,12 +186,14 @@ func isBuildVersionGreaterThanOrEqual(build string, ref string) (bool, error) {
 	version, err := goversion.NewVersion(build)
 
 	if err != nil {
+		log.Warnf("error parsing build version %s: %v", build, err)
 		return false, fmt.Errorf("error parsing build version %s: %v", build, err)
 	}
 
 	refVersion, err := goversion.NewVersion(ref)
 
 	if err != nil {
+		log.Warnf("error parsing reference version %s: %v", ref, err)
 		return false, fmt.Errorf("error parsing reference version %s: %v", ref, err)
 	}
 

@@ -40,7 +40,6 @@ func (sw *NodeStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string
 	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "8.1.0.0")
 
 	if err != nil {
-		log.Warn(err)
 		return passTwoKeys
 	}
 
@@ -209,19 +208,18 @@ func (sw *NodeStatsProcessor) handleUserAgentsStats(rawMetrics map[string]string
 	stats := strings.Split(userAgentsMetrics, ";")
 
 	for _, stat := range stats {
+
 		if len(stat) == 0 {
 			continue
 		}
 		// stat = user-agent=MSxhc2FkbS00LjAuMix1bmtub3du:count=1
-		clientLibraryVersion, appId, err := sw.getUserAgentInfo(stat)
+		clientLibraryVersion, appId, uaClientVersionCount, err := sw.getUserAgentInfo(stat)
 
 		if err != nil {
 			continue
 		}
 
 		// Count value
-		uaClientVersionCount := strings.ReplaceAll(strings.Split(stat, ":")[1], "count=", "")
-
 		pv, err := commons.TryConvert(uaClientVersionCount)
 
 		if err != nil {
@@ -230,11 +228,11 @@ func (sw *NodeStatsProcessor) handleUserAgentsStats(rawMetrics map[string]string
 		}
 
 		asMetric, exists := sw.nodeMetrics[stat]
-		dynamicStatname := "details"
+		dynamicStatname := "user_agent_details"
 
 		if !exists {
-			allowed := isMetricAllowed(commons.CTX_USER_AGENTS, stat)
-			asMetric = NewAerospikeStat(commons.CTX_USER_AGENTS, dynamicStatname, allowed)
+			allowed := isMetricAllowed(commons.CTX_NODE_STATS, stat)
+			asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, dynamicStatname, allowed)
 			sw.nodeMetrics[stat] = asMetric
 		}
 
@@ -248,19 +246,24 @@ func (sw *NodeStatsProcessor) handleUserAgentsStats(rawMetrics map[string]string
 	return refreshMetricsToSend
 }
 
-func (sw *NodeStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (string, string, error) {
+func (sw *NodeStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (string, string, string, error) {
 
 	clientLibraryVersion, appId := "unknown", "unknown"
+	uaClientVersionCount := "0"
 
-	// user-agent=MSxhc2FkbS00LjAuMix1bmtub3du:count=1, get the first part
-	uaKey := strings.ReplaceAll(strings.Split(uaKeyWithAllInfo, ":")[0], "user-agent=", "")
+	// user-agent=MSxhc2FkbS00LjAuMix1bmtub3du:count=1, first part is user-agent, second part is count
+	uaKeyWithAllInfoParts := strings.Split(uaKeyWithAllInfo, ":")
+
+	uaKey := strings.ReplaceAll(uaKeyWithAllInfoParts[0], "user-agent=", "")
+
 	uaInfo, err := base64.StdEncoding.DecodeString(uaKey)
 
 	if err != nil {
 		log.Error("Error decoding user agent client version: encoded value: ", uaKey, " error: ", err)
-		return clientLibraryVersion, appId, err
+		return clientLibraryVersion, appId, uaClientVersionCount, err
 	}
 
+	uaClientVersionCount = strings.ReplaceAll(uaKeyWithAllInfoParts[1], "count=", "")
 	uaInfoValues := strings.Split(string(uaInfo), ",")
 
 	// older clients, apps with no user-agent logic then we get "unknown" values
@@ -272,5 +275,5 @@ func (sw *NodeStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (string,
 		appId = uaInfoValues[2]
 	}
 
-	return clientLibraryVersion, appId, nil
+	return clientLibraryVersion, appId, uaClientVersionCount, nil
 }

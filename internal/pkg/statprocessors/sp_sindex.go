@@ -28,7 +28,6 @@ func (siw *SindexStatsProcessor) PassOneKeys() []string {
 	ge, err := isBuildVersionGreaterThanOrEqual(Build, "7.0.0.0")
 
 	if err != nil {
-		log.Warn(err)
 		return nil
 	}
 

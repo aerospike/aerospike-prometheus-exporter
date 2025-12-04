@@ -69,6 +69,7 @@ func (md *UnittestDataHandler) loadPrometheusData() {
 	if err != nil {
 		fmt.Println(err)
 	}
+	defer readFile.Close() //nolint:errcheck
 
 	fileScanner := bufio.NewScanner(readFile)
 	fileScanner.Split(bufio.ScanLines)
@@ -76,11 +77,6 @@ func (md *UnittestDataHandler) loadPrometheusData() {
 
 	for fileScanner.Scan() {
 		fileLines = append(fileLines, strings.TrimSpace(fileScanner.Text()))
-	}
-
-	err = readFile.Close()
-	if err != nil {
-		fmt.Println(err)
 	}
 
 	// Initialize prom_validator data

@@ -86,6 +86,8 @@ func (md *UnittestDataHandler) loadWatchersData() {
 		fmt.Println(err)
 	}
 
+	defer readFile.Close() //nolint:errcheck
+
 	fileScanner := bufio.NewScanner(readFile)
 	fileScanner.Split(bufio.ScanLines)
 	var fileLines []string
@@ -93,8 +95,6 @@ func (md *UnittestDataHandler) loadWatchersData() {
 	for fileScanner.Scan() {
 		fileLines = append(fileLines, strings.TrimSpace(fileScanner.Text()))
 	}
-
-	_ = readFile.Close()
 
 	// loop all validators and initialize
 	for _, validator := range validators {

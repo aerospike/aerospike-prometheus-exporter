@@ -32,7 +32,6 @@ func (lw *LatencyStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (late
 	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "5.1.0.0")
 
 	if err != nil {
-		log.Warn(err)
 		return nil
 	}
 

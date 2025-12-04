@@ -91,6 +91,8 @@ func makeHttpCallToPromProcessor(t *testing.T, asMetrics []statprocessors.Aerosp
 	metrics_from_prom = []string{}
 
 	scanner := bufio.NewScanner(resp.Body)
+	defer resp.Body.Close() //nolint:errcheck
+
 	// fmt.Println("*** START ")
 	for scanner.Scan() {
 		text := scanner.Text()
@@ -99,13 +101,10 @@ func makeHttpCallToPromProcessor(t *testing.T, asMetrics []statprocessors.Aerosp
 			metrics_from_prom = append(metrics_from_prom, strings.TrimSpace(text))
 		}
 	}
-	// fmt.Println("*** END ")
 
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Error while reading Http Response: ", err)
 	}
-
-	_ = resp.Body.Close()
 
 	assert.NotEmpty(t, metrics_from_prom, " NO metrics received from prom running locally")
 

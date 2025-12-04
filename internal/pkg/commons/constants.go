@@ -3,14 +3,13 @@ package commons
 import "github.com/prometheus/procfs"
 
 const (
-	CTX_USERS       ContextType = "users"
-	CTX_NAMESPACE   ContextType = "namespace"
-	CTX_NODE_STATS  ContextType = "node_stats"
-	CTX_SETS        ContextType = "sets"
-	CTX_SINDEX      ContextType = "sindex"
-	CTX_XDR         ContextType = "xdr"
-	CTX_USER_AGENTS ContextType = "user_agents"
-	CTX_LATENCIES   ContextType = "latencies"
+	CTX_USERS      ContextType = "users"
+	CTX_NAMESPACE  ContextType = "namespace"
+	CTX_NODE_STATS ContextType = "node_stats"
+	CTX_SETS       ContextType = "sets"
+	CTX_SINDEX     ContextType = "sindex"
+	CTX_XDR        ContextType = "xdr"
+	CTX_LATENCIES  ContextType = "latencies"
 )
 
 // below constant represent the labels we send along with metrics to Prometheus or something

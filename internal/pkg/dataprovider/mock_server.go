@@ -117,6 +117,7 @@ func (md *MockAerospikeServer) internalInitialize(filePath string) {
 	if err != nil {
 		fmt.Println(err)
 	}
+	defer readFile.Close() //nolint:errcheck
 
 	fmt.Println("Loading mock-data provider data from file :", filePath)
 
@@ -126,12 +127,6 @@ func (md *MockAerospikeServer) internalInitialize(filePath string) {
 
 	for fileScanner.Scan() {
 		fileLines = append(fileLines, strings.TrimSpace(fileScanner.Text()))
-	}
-
-	err = readFile.Close()
-	if err != nil {
-		fmt.Println(err)
-		return
 	}
 
 	for _, line := range fileLines {
