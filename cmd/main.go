@@ -39,8 +39,13 @@ func main() {
 	if config.Cfg.Agent.PrometheusEnabled {
 		startExecutor("prometheus")
 	}
+
 	if config.Cfg.Agent.OtelEnabled {
 		startExecutor("otel")
+	}
+
+	if config.Cfg.Agent.RestEnabled {
+		startExecutor("rest")
 	}
 
 	select {}

@@ -66,6 +66,23 @@
       basic_auth_username = ""
       basic_auth_password = ""
 
+[Agent.Rest]
+
+      # service-name
+      service_name = "aerospike-server-metrics-service"
+
+      # REST Endpoint
+      endpoint = ""
+
+      # timeout
+      timeout = 10
+
+      # REST headers
+      headers = {}
+
+      # REST server-stat fetch interval (default 15, not recommended to to reduce this)
+      server_stat_fetch_interval = 15
+
 [Agent.OpenTelemetry]
       # NOTE: currently supports only gRPC endpoints
 

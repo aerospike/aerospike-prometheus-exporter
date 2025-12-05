@@ -51,7 +51,7 @@ func getCommonLabels() []attribute.KeyValue {
 	return attrkv
 }
 
-func processAerospikeStats(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
+func processAndPushStats(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
 
 	// create the required metered objectes
 	for _, stat := range refreshStats {

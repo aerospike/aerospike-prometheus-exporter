@@ -17,6 +17,7 @@ type Config struct {
 	Agent struct {
 		OtelEnabled       bool `toml:"enable_open_telemetry"`
 		PrometheusEnabled bool `toml:"enable_prometheus"`
+		RestEnabled       bool
 
 		MetricLabels map[string]string `toml:"labels"`
 
@@ -47,6 +48,14 @@ type Config struct {
 			OtelPushInterval            uint8             `toml:"push_interval"`
 			OtelServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
 		} `toml:"OpenTelemetry"`
+
+		Rest struct {
+			ServiceName             string            `toml:"service_name"`
+			Endpoint                string            `toml:"endpoint"`
+			Headers                 map[string]string `toml:"headers"`
+			Timeout                 uint8             `toml:"timeout"`
+			ServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
+		} `toml:"Rest"`
 
 		IsKubernetes      bool
 		KubernetesPodName string
@@ -200,6 +209,9 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		log.Fatalf("In Aerospike section, root_ca cannot be null when cert_file and key_file are configured")
 	}
 
+	// validate REST endpoint
+	// TODO: if REST, should we support Prometheus?
+	Cfg.Agent.RestEnabled = len(strings.TrimSpace(Cfg.Agent.Rest.Endpoint)) >= 0
 }
 
 func (c *Config) FetchCloudInfo(md toml.MetaData) {

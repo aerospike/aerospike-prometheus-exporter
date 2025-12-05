@@ -150,7 +150,7 @@ func handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabel
 	sendNodeUp(meter, commonLabels, 1.0)
 
 	// process metrics
-	processAerospikeStats(meter, ctx, commonLabels, asRefreshStats)
+	processAndPushStats(meter, ctx, commonLabels, asRefreshStats)
 
 }
 
@@ -161,7 +161,7 @@ func handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabe
 		return
 	}
 	// process metrics
-	processAerospikeStats(meter, ctx, commonLabels, sysInfoRefreshStats)
+	processAndPushStats(meter, ctx, commonLabels, sysInfoRefreshStats)
 }
 
 // Utility functions
