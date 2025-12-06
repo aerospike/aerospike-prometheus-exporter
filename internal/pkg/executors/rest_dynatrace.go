@@ -32,7 +32,7 @@ func (re *RestExecutor) dtProcessMetrics(commonLabels []string, refreshedStats [
 	for _, stat := range refreshedStats {
 		// qualifiedName := stat.QualifyMetricContext() + "_" + NormalizeMetric(stat.Name)
 		// qualifiedName := "aerospike.server." + string(stat.Context) + "." + NormalizeMetric(stat.Name)
-		qualifiedName := "aserver." + string(stat.Context) + "." + NormalizeMetric(stat.Name)
+		qualifiedName := "bserver." + string(stat.Context) + "." + NormalizeMetric(stat.Name)
 
 		metricLabels := []string{}
 		for idx, label := range stat.Labels {
@@ -44,12 +44,6 @@ func (re *RestExecutor) dtProcessMetrics(commonLabels []string, refreshedStats [
 		// Dynatrace append .count for counters, we are sending all metrics as gauges
 		metricType = "gauge"
 
-		// if stat.MType == commons.MetricTypeGauge {
-		// 	metricType = "gauge"
-		// } else {
-		// 	metricType = "count"
-		// }
-
 		formattedMetric := fmt.Sprintf(DT_METRIC_FORMAT, qualifiedName, strings.Join(metricLabels, ","), metricType, stat.Value)
 		metricBatch = append(metricBatch, formattedMetric)
 
@@ -59,6 +53,7 @@ func (re *RestExecutor) dtProcessMetrics(commonLabels []string, refreshedStats [
 			statusCode, responseBody := re.sendMetrics(metricBatch)
 
 			if !re.dtProcessResponseBody(statusCode, responseBody) {
+				//TODO: discuss with sunil if we can break or continue pros & cons
 				noErrorWhileSendingMetrics = false
 				break
 			}
@@ -77,7 +72,7 @@ func (re *RestExecutor) dtProcessMetrics(commonLabels []string, refreshedStats [
 
 func (re *RestExecutor) dtSendNodeUp(labels []string, value float64) {
 	// metricName := "aerospike.server.node_up"
-	metricName := "aserver.node_up"
+	metricName := "bserver.node_up"
 	metricType := "gauge"
 	metricLabels := strings.Join(labels, ",")
 
@@ -111,8 +106,8 @@ func (re *RestExecutor) dtProcessResponseBody(statusCode int, responseBody []byt
 	// Parse JSON response from Dynatrace
 	// Success response -- {"linesOk":1,"linesInvalid":0,"error":null,"warnings":null}
 	// Failure response -- {"linesOk":0,"linesInvalid":1,"error":
-	// {"code":400,"message":"1 invalid lines","invalidLines":
-	// [{"line":1,"error":"unexpected end of input","identifier":"aerospike_xdr_dc_namespace_ship_versions_interval"}]},"warnings":null}
+	//   {"code":400,"message":"1 invalid lines","invalidLines":
+	//   [{"line":1,"error":"unexpected end of input","identifier":"aerospike_xdr_dc_namespace_ship_versions_interval"}]},"warnings":null}
 
 	var response map[string]interface{}
 	if err := json.Unmarshal(responseBody, &response); err != nil {
