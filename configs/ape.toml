@@ -77,7 +77,8 @@
       # timeout
       timeout = 10
 
-      # REST headers
+      # REST headers - key=value pairs separated by comma(,)
+      # Example: Dynatrace auto token: "Authorization"="Api-Token <api-token-created>"
       headers = {}
 
       # REST server-stat fetch interval (default 15, not recommended to to reduce this)

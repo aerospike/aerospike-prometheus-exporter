@@ -28,23 +28,21 @@ func (re RestExecutor) Initialize() error {
 
 	serviceName := config.Cfg.Agent.Rest.ServiceName
 	restEndpoint := config.Cfg.Agent.Rest.Endpoint
-	headers := config.Cfg.Agent.Rest.Headers
 
-	log.Infof("*** Starting REST Metrics Push thread... Service Name: %s, Endpoint: %s, Headers: %v", serviceName, restEndpoint, headers)
-
-	log.Infof("*** Starting Otel Metrics Push thread... ")
+	log.Infof("*** Starting REST Metrics Push thread... Service Name: %s, Endpoint: %s ", serviceName, restEndpoint)
 
 	// Start metric collection loop in a goroutine
 	go func() {
 		ticker := time.NewTicker(time.Duration(config.Cfg.Agent.Rest.ServerStatFetchInterval) * time.Second)
 		defer ticker.Stop()
-		commonLabels := re.getCommonLabels()
 
 		for {
 			// Wait for next tick or shutdown signal
 			select {
 			case <-ticker.C:
 				asRefreshStats, err := statprocessors.Refresh()
+
+				commonLabels := re.getCommonLabels()
 
 				if err != nil {
 					log.Errorln("Error while refreshing Aerospike Metrics, error: ", err)
@@ -53,9 +51,10 @@ func (re RestExecutor) Initialize() error {
 				}
 
 				re.dtProcessMetrics(commonLabels, asRefreshStats)
+				//TODO: for Dynatrace do we need to send systeminfo metrics? -- no, it will be handled by Dynatrace
 			case <-commons.ProcessExit:
 				// Exit immediately if shutdown signal received
-				log.Infof("OTel executor received shutdown signal, shutting down...")
+				log.Infof("REST Executor received shutdown signal, shutting down...")
 				_, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 				defer cancel()
 
@@ -71,7 +70,7 @@ func (re *RestExecutor) createRequest(url string, reqBody *bytes.Buffer) (*http.
 	// Create HTTP request
 	req, err := http.NewRequest("POST", url, reqBody)
 	if err != nil {
-		log.Errorf("Error creating HTTP request: %v", err)
+		log.Errorf("Error creating HTTP request: url=%s, error=%v", url, err)
 		return nil, err
 	}
 
@@ -162,7 +161,7 @@ func (re RestExecutor) getCommonLabels() []string {
 
 	if statprocessors.Service != "" {
 		labels = append(labels, fmt.Sprintf("service=%s", statprocessors.Service))
-		labels = append(labels, fmt.Sprintf("dt.entity.host=HOST-%s", statprocessors.Service))
+
 	}
 
 	if statprocessors.Build != "" {
