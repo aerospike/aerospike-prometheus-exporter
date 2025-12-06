@@ -22,7 +22,7 @@ func (re *RestExecutor) dtProcessMetrics(commonLabels []string, asRefreshStats [
 	// loop through the aerospike metrics and collect them in batches
 	for _, stat := range asRefreshStats {
 		// qualifiedName := stat.QualifyMetricContext() + "_" + NormalizeMetric(stat.Name)
-		qualifiedName := stat.QualifyMetricContext() + ".server." + NormalizeMetric(stat.Name)
+		qualifiedName := "aerospike.server." + string(stat.Context) + "." + NormalizeMetric(stat.Name)
 
 		metricLabels := []string{}
 		for idx, label := range stat.Labels {
