@@ -84,9 +84,9 @@ func (re *RestExecutor) createRequest(url string, reqBody *bytes.Buffer) (*http.
 	return req, nil
 }
 
-func (re *RestExecutor) sendMetrics(metrics []string) {
+func (re *RestExecutor) sendMetrics(metrics []string) (int, []byte) {
 	if len(metrics) == 0 {
-		return
+		return 0, nil
 	}
 
 	// Join all metrics with newlines (Dynatrace accepts multiple metrics separated by newlines)
@@ -98,7 +98,7 @@ func (re *RestExecutor) sendMetrics(metrics []string) {
 	req, err := re.createRequest(config.Cfg.Agent.Rest.Endpoint, bytes.NewBufferString(metricsBody))
 	if err != nil {
 		log.Errorf("Error creating HTTP request: %v", err)
-		return
+		return 0, nil
 	}
 
 	// Get or create HTTP client
@@ -109,25 +109,19 @@ func (re *RestExecutor) sendMetrics(metrics []string) {
 
 	if err != nil {
 		log.Errorf("Error sending HTTP request: %v", err)
-		return
+		return 0, nil
 	}
+	defer resp.Body.Close() // nolint: errcheck
+
 	body, err := io.ReadAll(resp.Body)
 
 	if err != nil {
 		log.Errorf("Error reading HTTP response body: %v", err)
-		return
+		return resp.StatusCode, nil
 	}
 
-	defer resp.Body.Close() // nolint: errcheck
-
-	// Check response status
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		log.Warnf("Batch HTTP Request Failed, returned non-success status: %d, response: %s", resp.StatusCode, string(body))
-		fmt.Println("Batch HTTP Request Failed, returned non-success status: ", resp.StatusCode, string(body))
-	} else {
-		log.Debugf("Successfully sent batch of %d metrics", len(metrics))
-		fmt.Println("Successfully sent batch of metrics to Dynatrace", len(metrics))
-	}
+	// Return status code and response body to caller
+	return resp.StatusCode, body
 }
 
 // Utility functions
