@@ -36,7 +36,6 @@ func (re *RestExecutor) dtProcessMetrics(commonLabels []string, asRefreshStats [
 		}
 
 		formattedMetric := fmt.Sprintf(DT_METRIC_FORMAT, qualifiedName, strings.Join(metricLabels, ","), metricType, stat.Value)
-		fmt.Println(formattedMetric)
 		metricBatch = append(metricBatch, formattedMetric)
 
 		// Send batch when it reaches the minimum size
