@@ -64,12 +64,14 @@ func (re *RestExecutor) dtProcessMetrics(commonLabels []string, refreshedStats [
 
 func (re *RestExecutor) dtSendNodeUp(labels []string, value float64) {
 	// metricName := "aerospike.server.node_up"
-	metricName := "aerospike.server.node_up"
+	metricName := "aserver.node_up"
 	metricType := "gauge"
 	metricLabels := strings.Join(labels, ",")
 
 	// Format: metricName,labels metricType value
 	nodeUpMetric := fmt.Sprintf(DT_METRIC_FORMAT, metricName, metricLabels, metricType, value)
+
+	fmt.Println(nodeUpMetric)
 
 	re.sendMetrics([]string{nodeUpMetric})
 }

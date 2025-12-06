@@ -94,9 +94,6 @@ func (re *RestExecutor) sendMetrics(metrics []string) {
 
 	log.Debugf("Sending batch of %d metrics to Dynatrace", len(metrics))
 
-	// Get or create HTTP client
-	client := re.getHttpClient()
-
 	// Create request body with raw data (equivalent to curl --data-raw)
 	req, err := re.createRequest(config.Cfg.Agent.Rest.Endpoint, bytes.NewBufferString(metricsBody))
 	if err != nil {
@@ -104,24 +101,32 @@ func (re *RestExecutor) sendMetrics(metrics []string) {
 		return
 	}
 
+	// Get or create HTTP client
+	client := re.getHttpClient()
+
 	// Send request
 	resp, err := client.Do(req)
+
 	if err != nil {
 		log.Errorf("Error sending HTTP request: %v", err)
 		return
 	}
 	body, err := io.ReadAll(resp.Body)
+
 	if err != nil {
 		log.Errorf("Error reading HTTP response body: %v", err)
 		return
 	}
+
 	defer resp.Body.Close() // nolint: errcheck
 
 	// Check response status
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		log.Warnf("Batch HTTP Request Failed, returned non-success status: %d, response: %s", resp.StatusCode, string(body))
+		fmt.Println("Batch HTTP Request Failed, returned non-success status: ", resp.StatusCode, string(body))
 	} else {
 		log.Debugf("Successfully sent batch of %d metrics", len(metrics))
+		fmt.Println("Successfully sent batch of metrics to Dynatrace", len(metrics))
 	}
 }
 
@@ -132,7 +137,7 @@ func (re *RestExecutor) getHttpClient() *http.Client {
 	timeout := time.Duration(config.Cfg.Agent.Rest.Timeout) * time.Second
 
 	if re.httpClient == nil {
-		log.Debugf("HTTP client is nil, creating new client with timeout: %v", timeout)
+		log.Infof("HTTP client is nil, creating new client with timeout: %v", timeout)
 
 		// Create HTTP client with proper timeout
 		// Default transport handles HTTPS automatically
