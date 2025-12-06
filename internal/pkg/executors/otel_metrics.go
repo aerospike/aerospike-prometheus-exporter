@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-func sendNodeUp(meter metric.Meter, commonLabels []attribute.KeyValue, value float64) {
+func (oe OtelExecutor) sendNodeUp(meter metric.Meter, commonLabels []attribute.KeyValue, value float64) {
 
 	nodeActiveDesc, _ := meter.Float64ObservableGauge(
 		"aerospike_node_up",
@@ -39,7 +39,7 @@ func sendNodeUp(meter metric.Meter, commonLabels []attribute.KeyValue, value flo
 	handleErr(err, "sendNodeUp() Error while creating object for stat 'aerospike_node_up' ")
 }
 
-func getCommonLabels() []attribute.KeyValue {
+func (oe OtelExecutor) getCommonLabels() []attribute.KeyValue {
 	mlabels := config.Cfg.Agent.MetricLabels
 	attrkv := []attribute.KeyValue{}
 	if len(mlabels) > 0 {
@@ -51,7 +51,7 @@ func getCommonLabels() []attribute.KeyValue {
 	return attrkv
 }
 
-func processAndPushStats(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
+func (oe OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
 
 	// create the required metered objectes
 	for _, stat := range refreshStats {
@@ -71,9 +71,9 @@ func processAndPushStats(meter metric.Meter, ctx context.Context, commonLabels [
 		// create Otel metric
 		switch stat.MType {
 		case commons.MetricTypeCounter:
-			makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, stat.Value)
+			oe.makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, stat.Value)
 		case commons.MetricTypeGauge:
-			makeOtelGaugeMetric(meter, qualifiedName, desc, labels, stat.Value)
+			oe.makeOtelGaugeMetric(meter, qualifiedName, desc, labels, stat.Value)
 
 		default:
 			log.Errorf("Unknown metric type: %d", stat.MType)
@@ -83,7 +83,7 @@ func processAndPushStats(meter metric.Meter, ctx context.Context, commonLabels [
 
 }
 
-func makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, value float64) {
+func (oe OtelExecutor) makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, value float64) {
 
 	ometric, _ := meter.Float64Counter(
 		metricName,
@@ -94,7 +94,7 @@ func makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName s
 
 }
 
-func makeOtelGaugeMetric(meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue, value float64) {
+func (oe OtelExecutor) makeOtelGaugeMetric(meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue, value float64) {
 
 	ometric, _ := meter.Float64ObservableGauge(
 		metricName,

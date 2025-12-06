@@ -51,7 +51,7 @@ func (oe OtelExecutor) Initialize() error {
 	handleErr(err, "Failed to create OTel Resource")
 
 	otelAgentAddr := config.Cfg.Agent.Otel.OtelEndpoint
-	headers := readHeaders()
+	headers := oe.readHeaders()
 
 	log.Debug("** OTel endpoint ", otelAgentAddr)
 	log.Debug("** OTel header count ", len(headers))
@@ -66,7 +66,7 @@ func (oe OtelExecutor) Initialize() error {
 			ctx,
 			otlpmetricgrpc.WithHeaders(headers),
 			otlpmetricgrpc.WithEndpoint(otelAgentAddr),
-			otlpmetricgrpc.WithTemporalitySelector(getTemporalitySelector),
+			otlpmetricgrpc.WithTemporalitySelector(oe.getTemporalitySelector),
 			// otlpmetricgrpc.WithAggregationSelector(getAggregationSelector),
 		)
 	} else {
@@ -75,7 +75,7 @@ func (oe OtelExecutor) Initialize() error {
 			otlpmetricgrpc.WithInsecure(),
 			otlpmetricgrpc.WithHeaders(headers),
 			otlpmetricgrpc.WithEndpoint(otelAgentAddr),
-			otlpmetricgrpc.WithTemporalitySelector(getTemporalitySelector),
+			otlpmetricgrpc.WithTemporalitySelector(oe.getTemporalitySelector),
 			// otlpmetricgrpc.WithAggregationSelector(getAggregationSelector),
 		)
 
@@ -103,17 +103,17 @@ func (oe OtelExecutor) Initialize() error {
 
 		meter := otel.Meter(config.Cfg.Agent.Otel.OtelServiceName + "_Meter")
 		defaultCtx := context.Background()
-		commonLabels := getCommonLabels()
+		commonLabels := oe.getCommonLabels()
 
 		for {
 			// Wait for next tick or shutdown signal
 			select {
 			case <-ticker.C:
 				// Aerospike Refresh stats
-				handleAerospikeMetrics(meter, defaultCtx, commonLabels)
+				oe.handleAerospikeMetrics(meter, defaultCtx, commonLabels)
 
 				// System metrics
-				handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
+				oe.handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
 			case <-commons.ProcessExit:
 				// Exit immediately if shutdown signal received
 				log.Infof("OTel executor received shutdown signal, shutting down...")
@@ -132,40 +132,44 @@ func (oe OtelExecutor) Initialize() error {
 	return nil
 }
 
-func getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
+func (oe OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
 	if instrumentKind == sdkmetric.InstrumentKindCounter {
 		return metricdata.CumulativeTemporality
 	}
 	return metricdata.DeltaTemporality
 }
 
-func handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
+func (oe OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
 	asRefreshStats, err := statprocessors.Refresh()
+
 	if err != nil {
 		log.Errorln("Error while refreshing Aerospike Metrics, error: ", err)
-		sendNodeUp(meter, commonLabels, 0.0)
+		oe.sendNodeUp(meter, commonLabels, 0.0)
 		return
 	}
+
 	// aerospike server is up and we are able to fetch data
-	sendNodeUp(meter, commonLabels, 1.0)
+	oe.sendNodeUp(meter, commonLabels, 1.0)
 
 	// process metrics
-	processAndPushStats(meter, ctx, commonLabels, asRefreshStats)
+	oe.processAndPushStats(meter, ctx, commonLabels, asRefreshStats)
 
 }
 
-func handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
+func (oe OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
 	sysInfoRefreshStats, err := statprocessors.RefreshSystemInfo()
+
 	if err != nil {
 		log.Errorln("Error while refreshing SystemInfo, error: ", err)
 		return
 	}
+
 	// process metrics
-	processAndPushStats(meter, ctx, commonLabels, sysInfoRefreshStats)
+	oe.processAndPushStats(meter, ctx, commonLabels, sysInfoRefreshStats)
 }
 
 // Utility functions
-func readHeaders() map[string]string {
+func (oe OtelExecutor) readHeaders() map[string]string {
 	headers := make(map[string]string)
 	// headers["api-key"] = "abcdefghijklmnopqrstuvwxyz"
 	headerPairs := config.Cfg.Agent.Otel.OtelHeaders
