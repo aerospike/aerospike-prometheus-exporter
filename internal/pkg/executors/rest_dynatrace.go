@@ -12,6 +12,7 @@ import (
 
 // Dynatrace metrics line format: metricName,labels metricType,value Optional[timestamp_ms]
 const DT_METRIC_FORMAT = "%s,%s %s,%.1f"
+const BATCH_SIZE = 500
 
 func (re *RestExecutor) dtProcessMetrics(commonLabels []string, refreshedStats []statprocessors.AerospikeStat) {
 	labels := []string{}
@@ -23,10 +24,9 @@ func (re *RestExecutor) dtProcessMetrics(commonLabels []string, refreshedStats [
 	re.dtSendNodeUp(labels, 1.0)
 
 	// Batch metrics - collect at least 500 before sending
-	var batchSize = 500
-	metricBatch := make([]string, 0, batchSize)
-	var metricType string
-	noErrorWhileSendingMetrics := true
+	metricBatch := make([]string, 0, BATCH_SIZE)
+	metricType := "gauge"
+	isMetricSendSuccess := true
 
 	// loop through the aerospike metrics and collect them in batches
 	for _, stat := range refreshedStats {
@@ -49,12 +49,12 @@ func (re *RestExecutor) dtProcessMetrics(commonLabels []string, refreshedStats [
 
 		// Send batch when it reaches the minimum size
 		// Dynatrace max batch size is upto 1MB
-		if len(metricBatch) >= batchSize {
+		if len(metricBatch) >= BATCH_SIZE {
 			statusCode, responseBody := re.sendMetrics(metricBatch)
 
 			if !re.dtProcessResponseBody(statusCode, responseBody) {
 				//TODO: discuss with sunil if we can break or continue pros & cons
-				noErrorWhileSendingMetrics = false
+				isMetricSendSuccess = false
 				break
 			}
 			metricBatch = metricBatch[:0] // Reset slice but keep capacity
@@ -62,7 +62,7 @@ func (re *RestExecutor) dtProcessMetrics(commonLabels []string, refreshedStats [
 	}
 
 	// Send any remaining metrics (less than batchSize)
-	if noErrorWhileSendingMetrics && len(metricBatch) > 0 {
+	if isMetricSendSuccess && len(metricBatch) > 0 {
 		statusCode, responseBody := re.sendMetrics(metricBatch)
 
 		// Ignore the response body and status code, as we are sending the last batch of metrics
