@@ -171,6 +171,8 @@ func (oe OtelExecutor) GetOtelHttMetricProvider(resource *resource.Resource) (*s
 			ctx,
 			otlpmetrichttp.WithHeaders(headers),
 			otlpmetrichttp.WithEndpoint(config.Cfg.Agent.Otel.OtelEndpoint),
+			// otlpmetrichttp.WithURLPath("api/v2/otlp/v1/metrics"),
+			otlpmetrichttp.WithURLPath(config.Cfg.Agent.Otel.OtelEndpointURL),
 			otlpmetrichttp.WithTemporalitySelector(oe.getTemporalitySelector),
 			// otlpmetrichttp.WithAggregationSelector(getAggregationSelector),
 		)
@@ -180,6 +182,8 @@ func (oe OtelExecutor) GetOtelHttMetricProvider(resource *resource.Resource) (*s
 			otlpmetrichttp.WithInsecure(),
 			otlpmetrichttp.WithHeaders(headers),
 			otlpmetrichttp.WithEndpoint(config.Cfg.Agent.Otel.OtelEndpoint),
+			// otlpmetrichttp.WithURLPath("api/v2/otlp/v1/metrics"),
+			otlpmetrichttp.WithURLPath(config.Cfg.Agent.Otel.OtelEndpointURL),
 			otlpmetrichttp.WithTemporalitySelector(oe.getTemporalitySelector),
 			// otlpmetrichttp.WithAggregationSelector(getAggregationSelector),
 		)
@@ -200,10 +204,21 @@ func (oe OtelExecutor) GetOtelHttMetricProvider(resource *resource.Resource) (*s
 }
 
 func (oe OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
-	if instrumentKind == sdkmetric.InstrumentKindCounter {
+	// if instrumentKind == sdkmetric.InstrumentKindCounter {
+	// 	return metricdata.CumulativeTemporality
+	// }
+	// return metricdata.DeltaTemporality
+
+	switch instrumentKind {
+	case sdkmetric.InstrumentKindCounter,
+		sdkmetric.InstrumentKindObservableCounter,
+		sdkmetric.InstrumentKindHistogram,
+		sdkmetric.InstrumentKindUpDownCounter,
+		sdkmetric.InstrumentKindObservableUpDownCounter:
 		return metricdata.CumulativeTemporality
+	default:
+		return metricdata.DeltaTemporality // or Cumulative if you *really* want
 	}
-	return metricdata.DeltaTemporality
 }
 
 func (oe OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {

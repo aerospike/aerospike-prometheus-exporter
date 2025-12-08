@@ -68,6 +68,8 @@ func (oe OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Conte
 		// append common labels
 		labels = append(labels, commonLabels...)
 
+		// oe.makeOtelGaugeMetric(meter, qualifiedName, desc, labels, stat.Value)
+
 		// create Otel metric
 		switch stat.MType {
 		case commons.MetricTypeCounter:

@@ -72,11 +72,14 @@
       # OTel service-name
       service_name = "aerospike-server-metrics-service"
 
+      # OTel Endpoint - grpc or http
+      endpoint_type = "grpc"
+
       # OTel Endpoint
       endpoint = ""
 
-      # OTel Endpoint - grpc or http
-      endpoint_type = "grpc"
+      # OTel Endpoint URL Path 
+      endpoint_url = ""
 
       # OTel SSL/TLS, for HTTPS endpoints
       endpoint_tls_enabled = true
