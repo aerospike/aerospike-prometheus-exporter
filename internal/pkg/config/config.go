@@ -204,6 +204,10 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 	}
 
 	// validate Otel endpoint type
+	if len(Cfg.Agent.Otel.OtelEndpointType) == 0 {
+		Cfg.Agent.Otel.OtelEndpointType = "grpc"
+	}
+
 	if Cfg.Agent.Otel.OtelEndpointType != "http" && Cfg.Agent.Otel.OtelEndpointType != "grpc" {
 		log.Fatalf("Invalid endpoint type: %s. Supported types are: http, grpc", Cfg.Agent.Otel.OtelEndpointType)
 	}

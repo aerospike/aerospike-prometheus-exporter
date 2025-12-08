@@ -84,7 +84,9 @@
       # OTel SSL/TLS, for HTTPS endpoints
       endpoint_tls_enabled = true
 
-      # OTel headers
+      # OTel headers, 
+      # NOTE: Each header will be a "<key>"="<value>" pair and each header is comma separated
+      # Example: "api-key"="<api-key>","Authorization"="Api-Token <token>"
       headers = {}
 
       # OTel server-stat fetch interval (default 15, not recommended to to reduce this)
