@@ -33,6 +33,9 @@ func (oe OtelExecutor) Initialize() error {
 	log.Infof("Otel sending thread started, sending data to : %s", config.Cfg.Agent.Otel.OtelEndpoint)
 
 	log.Infof("*** Initializing Otel Exporter... ")
+	log.Debug("** OTel endpoint ", config.Cfg.Agent.Otel.OtelEndpoint)
+	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.OtelServiceName)
+	log.Debug("** OTel TLS flag enabled? ", config.Cfg.Agent.Otel.OtelTlsEnabled)
 
 	ctx := context.Background()
 	var meterProvider *sdkmetric.MeterProvider
@@ -54,10 +57,10 @@ func (oe OtelExecutor) Initialize() error {
 
 	if config.Cfg.Agent.Otel.OtelEndpointType == "grpc" {
 		// meterProvider, err = oe.GetOtelGrpcMetricProvider(resource)
-		metricExporter, err = oe.GetOtelGrpcMetricProvider(resource)
+		metricExporter, err = oe.CreateGrpcMetricExporter(resource)
 	} else {
 		// meterProvider, err = oe.GetOtelHttMetricProvider(resource)
-		metricExporter, err = oe.GetOtelHttMetricProvider(resource)
+		metricExporter, err = oe.CreateHttpMetricExporter(resource)
 	}
 
 	handleErr(err, "Failed to create the collector metric exporter")
@@ -112,8 +115,8 @@ func (oe OtelExecutor) Initialize() error {
 	return nil
 }
 
-// func (oe OtelExecutor) GetOtelGrpcMetricProvider(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
-func (oe OtelExecutor) GetOtelGrpcMetricProvider(resource *resource.Resource) (sdkmetric.Exporter, error) {
+// func (oe OtelExecutor) CreateGrpcMetricExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
+func (oe OtelExecutor) CreateGrpcMetricExporter(resource *resource.Resource) (sdkmetric.Exporter, error) {
 	headers := oe.readHeaders()
 
 	ctx := context.Background()
@@ -121,100 +124,50 @@ func (oe OtelExecutor) GetOtelGrpcMetricProvider(resource *resource.Resource) (s
 	var metricExp *otlpmetricgrpc.Exporter
 	var err error
 
-	log.Debug("** OTel endpoint ", config.Cfg.Agent.Otel.OtelEndpoint)
-	log.Debug("** OTel header count ", len(headers))
-	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.OtelServiceName)
-	log.Debug("** OTel TLS flag enabled? ", config.Cfg.Agent.Otel.OtelTlsEnabled)
-
 	log.Infof("Creating MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.OtelTlsEnabled))
 
-	if config.Cfg.Agent.Otel.OtelTlsEnabled {
-
-		metricExp, err = otlpmetricgrpc.New(
-			ctx,
-			otlpmetricgrpc.WithHeaders(headers),
-			otlpmetricgrpc.WithEndpoint(config.Cfg.Agent.Otel.OtelEndpoint),
-			otlpmetricgrpc.WithTemporalitySelector(oe.getTemporalitySelector),
-			// otlpmetricgrpc.WithAggregationSelector(getAggregationSelector),
-		)
-	} else {
-		metricExp, err = otlpmetricgrpc.New(
-			ctx,
-			otlpmetricgrpc.WithInsecure(),
-			otlpmetricgrpc.WithHeaders(headers),
-			otlpmetricgrpc.WithEndpoint(config.Cfg.Agent.Otel.OtelEndpoint),
-			otlpmetricgrpc.WithTemporalitySelector(oe.getTemporalitySelector),
-			// otlpmetricgrpc.WithAggregationSelector(getAggregationSelector),
-		)
-
+	// Build options conditionally
+	exporterOptions := []otlpmetricgrpc.Option{
+		otlpmetricgrpc.WithHeaders(headers),
+		otlpmetricgrpc.WithEndpoint(config.Cfg.Agent.Otel.OtelEndpoint),
+		otlpmetricgrpc.WithTemporalitySelector(oe.getTemporalitySelector),
 	}
 
-	// meterProvider := sdkmetric.NewMeterProvider(
-	// 	sdkmetric.WithResource(resource),
-	// 	sdkmetric.WithReader(
-	// 		sdkmetric.NewPeriodicReader(
-	// 			metricExp,
-	// 			sdkmetric.WithInterval(time.Duration(config.Cfg.Agent.Otel.OtelPushInterval)*time.Second),
-	// 		),
-	// 	),
-	// )
+	// Only add WithInsecure() when TLS is disabled
+	if !config.Cfg.Agent.Otel.OtelTlsEnabled {
+		exporterOptions = append(exporterOptions, otlpmetricgrpc.WithInsecure())
+	}
 
-	// return meterProvider, err
+	metricExp, err = otlpmetricgrpc.New(ctx, exporterOptions...)
+
 	return metricExp, err
 }
 
-// func (oe OtelExecutor) GetOtelHttMetricProvider(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
-func (oe OtelExecutor) GetOtelHttMetricProvider(resource *resource.Resource) (sdkmetric.Exporter, error) {
+// func (oe OtelExecutor) CreateHttpMetricExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
+func (oe OtelExecutor) CreateHttpMetricExporter(resource *resource.Resource) (sdkmetric.Exporter, error) {
+
 	headers := oe.readHeaders()
-
 	ctx := context.Background()
-
 	var err error
-
-	log.Debug("** OTel endpoint ", config.Cfg.Agent.Otel.OtelEndpoint)
-	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.OtelServiceName)
-	log.Debug("** OTel TLS flag enabled? ", config.Cfg.Agent.Otel.OtelTlsEnabled)
-
 	var metricExp *otlpmetrichttp.Exporter
 
 	log.Infof("Creating MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.OtelTlsEnabled))
 
-	if config.Cfg.Agent.Otel.OtelTlsEnabled {
-
-		metricExp, err = otlpmetrichttp.New(
-			ctx,
-			otlpmetrichttp.WithHeaders(headers),
-			otlpmetrichttp.WithEndpoint(config.Cfg.Agent.Otel.OtelEndpoint),
-			// otlpmetrichttp.WithURLPath("api/v2/otlp/v1/metrics"),
-			otlpmetrichttp.WithURLPath(config.Cfg.Agent.Otel.OtelEndpointURL),
-			otlpmetrichttp.WithTemporalitySelector(oe.getTemporalitySelector),
-			// otlpmetrichttp.WithAggregationSelector(getAggregationSelector),
-		)
-	} else {
-		metricExp, err = otlpmetrichttp.New(
-			ctx,
-			otlpmetrichttp.WithInsecure(),
-			otlpmetrichttp.WithHeaders(headers),
-			otlpmetrichttp.WithEndpoint(config.Cfg.Agent.Otel.OtelEndpoint),
-			// otlpmetrichttp.WithURLPath("api/v2/otlp/v1/metrics"),
-			otlpmetrichttp.WithURLPath(config.Cfg.Agent.Otel.OtelEndpointURL),
-			otlpmetrichttp.WithTemporalitySelector(oe.getTemporalitySelector),
-			// otlpmetrichttp.WithAggregationSelector(getAggregationSelector),
-		)
-
+	// Build options conditionally
+	exporterOptions := []otlpmetrichttp.Option{
+		otlpmetrichttp.WithHeaders(headers),
+		otlpmetrichttp.WithEndpoint(config.Cfg.Agent.Otel.OtelEndpoint),
+		otlpmetrichttp.WithURLPath(config.Cfg.Agent.Otel.OtelEndpointURL),
+		otlpmetrichttp.WithTemporalitySelector(oe.getTemporalitySelector),
 	}
 
-	// meterProvider := sdkmetric.NewMeterProvider(
-	// 	sdkmetric.WithResource(resource),
-	// 	sdkmetric.WithReader(
-	// 		sdkmetric.NewPeriodicReader(
-	// 			metricExp,
-	// 			sdkmetric.WithInterval(time.Duration(config.Cfg.Agent.Otel.OtelPushInterval)*time.Second),
-	// 		),
-	// 	),
-	// )
+	// Only add WithInsecure() when TLS is disabled
+	if !config.Cfg.Agent.Otel.OtelTlsEnabled {
+		exporterOptions = append(exporterOptions, otlpmetrichttp.WithInsecure())
+	}
 
-	// return meterProvider, err
+	metricExp, err = otlpmetrichttp.New(ctx, exporterOptions...)
+
 	return metricExp, err
 }
 

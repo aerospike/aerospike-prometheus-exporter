@@ -2,6 +2,8 @@ package executors
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
@@ -97,6 +99,10 @@ func (oe OtelExecutor) makeOtelCounterMetric(meter metric.Meter, ctx context.Con
 }
 
 func (oe OtelExecutor) makeOtelGaugeMetric(meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue, value float64) {
+
+	if strings.Contains(metricName, "master_objects") {
+		fmt.Println("makeOtelGaugeMetric() Metric name: ", metricName, " Value: ", value)
+	}
 
 	ometric, _ := meter.Float64ObservableGauge(
 		metricName,
