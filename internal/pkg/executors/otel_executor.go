@@ -159,8 +159,6 @@ func (oe OtelExecutor) GetOtelHttMetricProvider(resource *resource.Resource) (*s
 	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.OtelServiceName)
 	log.Debug("** OTel TLS flag enabled? ", config.Cfg.Agent.Otel.OtelTlsEnabled)
 
-	log.Infof("Creating MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.OtelTlsEnabled))
-
 	var metricExp *otlpmetrichttp.Exporter
 
 	log.Infof("Creating MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.OtelTlsEnabled))
@@ -215,9 +213,9 @@ func (oe OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.Instrumen
 		sdkmetric.InstrumentKindHistogram,
 		sdkmetric.InstrumentKindUpDownCounter,
 		sdkmetric.InstrumentKindObservableUpDownCounter:
-		return metricdata.CumulativeTemporality
+		return metricdata.DeltaTemporality
 	default:
-		return metricdata.DeltaTemporality // or Cumulative if you *really* want
+		return metricdata.DeltaTemporality
 	}
 }
 
