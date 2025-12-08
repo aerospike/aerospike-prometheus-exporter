@@ -124,7 +124,7 @@ func (oe OtelExecutor) CreateGrpcMetricExporter(resource *resource.Resource) (sd
 	var metricExp *otlpmetricgrpc.Exporter
 	var err error
 
-	log.Infof("Creating MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.OtelTlsEnabled))
+	log.Infof("Creating Otel GRPC MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.OtelTlsEnabled))
 
 	// Build options conditionally
 	exporterOptions := []otlpmetricgrpc.Option{
@@ -151,7 +151,7 @@ func (oe OtelExecutor) CreateHttpMetricExporter(resource *resource.Resource) (sd
 	var err error
 	var metricExp *otlpmetrichttp.Exporter
 
-	log.Infof("Creating MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.OtelTlsEnabled))
+	log.Infof("Creating Otel HTTP MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.OtelTlsEnabled))
 
 	// Build options conditionally
 	exporterOptions := []otlpmetrichttp.Option{
