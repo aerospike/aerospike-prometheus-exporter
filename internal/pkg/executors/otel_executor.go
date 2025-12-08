@@ -36,6 +36,7 @@ func (oe OtelExecutor) Initialize() error {
 
 	ctx := context.Background()
 	var meterProvider *sdkmetric.MeterProvider
+	var metricExporter sdkmetric.Exporter
 
 	resource, err := resource.New(ctx,
 		resource.WithFromEnv(),
@@ -52,12 +53,24 @@ func (oe OtelExecutor) Initialize() error {
 	handleErr(err, "Failed to create OTel Resource")
 
 	if config.Cfg.Agent.Otel.OtelEndpointType == "grpc" {
-		meterProvider, err = oe.GetOtelGrpcMetricProvider(resource)
+		// meterProvider, err = oe.GetOtelGrpcMetricProvider(resource)
+		metricExporter, err = oe.GetOtelGrpcMetricProvider(resource)
 	} else {
-		meterProvider, err = oe.GetOtelHttMetricProvider(resource)
+		// meterProvider, err = oe.GetOtelHttMetricProvider(resource)
+		metricExporter, err = oe.GetOtelHttMetricProvider(resource)
 	}
 
 	handleErr(err, "Failed to create the collector metric exporter")
+
+	meterProvider = sdkmetric.NewMeterProvider(
+		sdkmetric.WithResource(resource),
+		sdkmetric.WithReader(
+			sdkmetric.NewPeriodicReader(
+				metricExporter,
+				sdkmetric.WithInterval(time.Duration(config.Cfg.Agent.Otel.OtelPushInterval)*time.Second),
+			),
+		),
+	)
 
 	otel.SetMeterProvider(meterProvider)
 
@@ -99,7 +112,8 @@ func (oe OtelExecutor) Initialize() error {
 	return nil
 }
 
-func (oe OtelExecutor) GetOtelGrpcMetricProvider(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
+// func (oe OtelExecutor) GetOtelGrpcMetricProvider(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
+func (oe OtelExecutor) GetOtelGrpcMetricProvider(resource *resource.Resource) (sdkmetric.Exporter, error) {
 	headers := oe.readHeaders()
 
 	ctx := context.Background()
@@ -135,20 +149,22 @@ func (oe OtelExecutor) GetOtelGrpcMetricProvider(resource *resource.Resource) (*
 
 	}
 
-	meterProvider := sdkmetric.NewMeterProvider(
-		sdkmetric.WithResource(resource),
-		sdkmetric.WithReader(
-			sdkmetric.NewPeriodicReader(
-				metricExp,
-				sdkmetric.WithInterval(time.Duration(config.Cfg.Agent.Otel.OtelPushInterval)*time.Second),
-			),
-		),
-	)
+	// meterProvider := sdkmetric.NewMeterProvider(
+	// 	sdkmetric.WithResource(resource),
+	// 	sdkmetric.WithReader(
+	// 		sdkmetric.NewPeriodicReader(
+	// 			metricExp,
+	// 			sdkmetric.WithInterval(time.Duration(config.Cfg.Agent.Otel.OtelPushInterval)*time.Second),
+	// 		),
+	// 	),
+	// )
 
-	return meterProvider, err
+	// return meterProvider, err
+	return metricExp, err
 }
 
-func (oe OtelExecutor) GetOtelHttMetricProvider(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
+// func (oe OtelExecutor) GetOtelHttMetricProvider(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
+func (oe OtelExecutor) GetOtelHttMetricProvider(resource *resource.Resource) (sdkmetric.Exporter, error) {
 	headers := oe.readHeaders()
 
 	ctx := context.Background()
@@ -188,17 +204,18 @@ func (oe OtelExecutor) GetOtelHttMetricProvider(resource *resource.Resource) (*s
 
 	}
 
-	meterProvider := sdkmetric.NewMeterProvider(
-		sdkmetric.WithResource(resource),
-		sdkmetric.WithReader(
-			sdkmetric.NewPeriodicReader(
-				metricExp,
-				sdkmetric.WithInterval(time.Duration(config.Cfg.Agent.Otel.OtelPushInterval)*time.Second),
-			),
-		),
-	)
+	// meterProvider := sdkmetric.NewMeterProvider(
+	// 	sdkmetric.WithResource(resource),
+	// 	sdkmetric.WithReader(
+	// 		sdkmetric.NewPeriodicReader(
+	// 			metricExp,
+	// 			sdkmetric.WithInterval(time.Duration(config.Cfg.Agent.Otel.OtelPushInterval)*time.Second),
+	// 		),
+	// 	),
+	// )
 
-	return meterProvider, err
+	// return meterProvider, err
+	return metricExp, err
 }
 
 func (oe OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
@@ -207,6 +224,7 @@ func (oe OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.Instrumen
 	// }
 	// return metricdata.DeltaTemporality
 
+	// TODO: discuss with Sunil, should we change all metrics to Gauge as Dynatrace does not support Monotic-Cumulative-sum
 	switch instrumentKind {
 	case sdkmetric.InstrumentKindCounter,
 		sdkmetric.InstrumentKindObservableCounter,
