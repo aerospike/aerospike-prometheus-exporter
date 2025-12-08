@@ -14,7 +14,6 @@ func GetExecutors() map[string]Executor {
 	executorsMap := map[string]Executor{
 		PROMETHEUS: &PrometheusHttpExecutor{},
 		OTELGRPC:   &OtelExecutor{},
-		REST:       &RestExecutor{},
 	}
 
 	return executorsMap

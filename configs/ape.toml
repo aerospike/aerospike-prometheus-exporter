@@ -66,24 +66,6 @@
       basic_auth_username = ""
       basic_auth_password = ""
 
-[Agent.Rest]
-
-      # service-name
-      service_name = "aerospike-server-metrics-service"
-
-      # REST Endpoint
-      endpoint = ""
-
-      # timeout
-      timeout = 10
-
-      # REST headers - key=value pairs separated by comma(,)
-      # Example: Dynatrace auto token: "Authorization"="Api-Token <api-token-created>"
-      headers = {}
-
-      # REST server-stat fetch interval (default 15, not recommended to to reduce this)
-      server_stat_fetch_interval = 15
-
 [Agent.OpenTelemetry]
       # NOTE: currently supports only gRPC endpoints
 
@@ -92,6 +74,9 @@
 
       # OTel Endpoint
       endpoint = ""
+
+      # OTel Endpoint - grpc or http
+      endpoint_type = "grpc"
 
       # OTel SSL/TLS, for HTTPS endpoints
       endpoint_tls_enabled = true

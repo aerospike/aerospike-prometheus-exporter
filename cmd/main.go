@@ -44,10 +44,6 @@ func main() {
 		startExecutor("otel")
 	}
 
-	if config.Cfg.Agent.RestEnabled {
-		startExecutor("rest")
-	}
-
 	select {}
 }
 
