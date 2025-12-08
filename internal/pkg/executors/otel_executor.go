@@ -37,11 +37,11 @@ func (oe OtelExecutor) Initialize() error {
 	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.OtelServiceName)
 	log.Debug("** OTel TLS flag enabled? ", config.Cfg.Agent.Otel.OtelTlsEnabled)
 
-	ctx := context.Background()
+	defaultContext := context.Background()
 	var meterProvider *sdkmetric.MeterProvider
 	var metricExporter sdkmetric.Exporter
 
-	resource, err := resource.New(ctx,
+	resource, err := resource.New(defaultContext,
 		resource.WithFromEnv(),
 		resource.WithProcess(),
 		// resource.WithTelemetrySDK(),
@@ -56,11 +56,9 @@ func (oe OtelExecutor) Initialize() error {
 	handleErr(err, "Failed to create OTel Resource")
 
 	if config.Cfg.Agent.Otel.OtelEndpointType == "grpc" {
-		// meterProvider, err = oe.GetOtelGrpcMetricProvider(resource)
-		metricExporter, err = oe.CreateGrpcMetricExporter(resource)
+		metricExporter, err = oe.CreateGrpcMetricExporter(defaultContext, resource)
 	} else {
-		// meterProvider, err = oe.GetOtelHttMetricProvider(resource)
-		metricExporter, err = oe.CreateHttpMetricExporter(resource)
+		metricExporter, err = oe.CreateHttpMetricExporter(defaultContext, resource)
 	}
 
 	handleErr(err, "Failed to create the collector metric exporter")
@@ -116,10 +114,8 @@ func (oe OtelExecutor) Initialize() error {
 }
 
 // func (oe OtelExecutor) CreateGrpcMetricExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
-func (oe OtelExecutor) CreateGrpcMetricExporter(resource *resource.Resource) (sdkmetric.Exporter, error) {
+func (oe OtelExecutor) CreateGrpcMetricExporter(ctx context.Context, resource *resource.Resource) (sdkmetric.Exporter, error) {
 	headers := oe.readHeaders()
-
-	ctx := context.Background()
 
 	var metricExp *otlpmetricgrpc.Exporter
 	var err error
@@ -144,20 +140,25 @@ func (oe OtelExecutor) CreateGrpcMetricExporter(resource *resource.Resource) (sd
 }
 
 // func (oe OtelExecutor) CreateHttpMetricExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
-func (oe OtelExecutor) CreateHttpMetricExporter(resource *resource.Resource) (sdkmetric.Exporter, error) {
+func (oe OtelExecutor) CreateHttpMetricExporter(ctx context.Context, resource *resource.Resource) (sdkmetric.Exporter, error) {
 
 	headers := oe.readHeaders()
-	ctx := context.Background()
 	var err error
 	var metricExp *otlpmetrichttp.Exporter
 
 	log.Infof("Creating Otel HTTP MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.OtelTlsEnabled))
+
+	// NOTE: Below is only for testing purposes
+	// tlsConfig := &tls.Config{
+	// 	InsecureSkipVerify: true, // ⚠️ OK for your lab VM; don’t use in strict prod
+	// }
 
 	// Build options conditionally
 	exporterOptions := []otlpmetrichttp.Option{
 		otlpmetrichttp.WithHeaders(headers),
 		otlpmetrichttp.WithEndpoint(config.Cfg.Agent.Otel.OtelEndpoint),
 		otlpmetrichttp.WithURLPath(config.Cfg.Agent.Otel.OtelEndpointURL),
+		// otlpmetrichttp.WithTLSClientConfig(tlsConfig),
 		otlpmetrichttp.WithTemporalitySelector(oe.getTemporalitySelector),
 	}
 
