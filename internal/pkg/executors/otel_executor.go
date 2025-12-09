@@ -186,8 +186,40 @@ func (oe OtelExecutor) getGrpcEndpointToUse() string {
 	return config.Cfg.Agent.Otel.Endpoint
 }
 
+// getTemporalitySelector returns the appropriate temporality for each instrument kind
+// NOTE:
+//  Gauges don't have temporality (they're instantaneous values),
+//  but the SDK still calls this selector. For gauges, the SDK will ignore the temporality setting.
+//  Dynatrace supports both Delta and Cumulative temporality for metrics that support it.
+
+// NOTE: Dynatrace and Datadog does not support MONOTONIC_CUMULATIVE_SUM - Aerospike counters are monotonic
+//
+//	So, we are using Delta temporality for counters and histograms
+//	and Delta temporality for gauges
+//	This is to ensure that the metrics are compatible with Dynatrace and Datadog
+//	* avoid any issues with the metrics collection
+//	* ensure that the metrics are compatible with Dynatrace and Datadog
+//	* avoid any issues with the metrics collection
 func (oe OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
-	return metricdata.DeltaTemporality
+	switch instrumentKind {
+	case sdkmetric.InstrumentKindCounter,
+		sdkmetric.InstrumentKindObservableCounter,
+		sdkmetric.InstrumentKindHistogram,
+		sdkmetric.InstrumentKindUpDownCounter,
+		sdkmetric.InstrumentKindObservableUpDownCounter:
+		// Use Delta temporality for counters and histograms
+		// This sends only the change since the last export, which is efficient
+		return metricdata.DeltaTemporality
+	case sdkmetric.InstrumentKindObservableGauge,
+		sdkmetric.InstrumentKindGauge:
+		// Gauges are instantaneous values and don't technically have temporality
+		// However, if the SDK requires a value, we return DeltaTemporality
+		// The SDK will handle gauges as instantaneous snapshots regardless
+		return metricdata.DeltaTemporality
+	default:
+		// Default to Delta temporality for any unknown types
+		return metricdata.DeltaTemporality
+	}
 }
 
 func (oe OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
