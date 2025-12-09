@@ -56,9 +56,9 @@ func (oe OtelExecutor) Initialize() error {
 	handleErr(err, "Failed to create OTel Resource")
 
 	if config.Cfg.Agent.Otel.OtelEndpointType == "grpc" {
-		metricExporter, err = oe.CreateGrpcMetricExporter(defaultContext, resource)
+		metricExporter, err = oe.createGrpcMetricExporter(defaultContext, resource)
 	} else {
-		metricExporter, err = oe.CreateHttpMetricExporter(defaultContext, resource)
+		metricExporter, err = oe.createHttpMetricExporter(defaultContext, resource)
 	}
 
 	handleErr(err, "Failed to create the collector metric exporter")
@@ -113,8 +113,8 @@ func (oe OtelExecutor) Initialize() error {
 	return nil
 }
 
-// func (oe OtelExecutor) CreateGrpcMetricExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
-func (oe OtelExecutor) CreateGrpcMetricExporter(ctx context.Context, resource *resource.Resource) (sdkmetric.Exporter, error) {
+// func (oe OtelExecutor) createGrpcMetricExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
+func (oe OtelExecutor) createGrpcMetricExporter(ctx context.Context, resource *resource.Resource) (sdkmetric.Exporter, error) {
 	headers := oe.readHeaders()
 
 	var metricExp *otlpmetricgrpc.Exporter
@@ -139,8 +139,8 @@ func (oe OtelExecutor) CreateGrpcMetricExporter(ctx context.Context, resource *r
 	return metricExp, err
 }
 
-// func (oe OtelExecutor) CreateHttpMetricExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
-func (oe OtelExecutor) CreateHttpMetricExporter(ctx context.Context, resource *resource.Resource) (sdkmetric.Exporter, error) {
+// func (oe OtelExecutor) createHttpMetricExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
+func (oe OtelExecutor) createHttpMetricExporter(ctx context.Context, resource *resource.Resource) (sdkmetric.Exporter, error) {
 
 	headers := oe.readHeaders()
 	var err error

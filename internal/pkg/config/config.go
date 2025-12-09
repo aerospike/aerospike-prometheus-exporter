@@ -203,11 +203,12 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		log.Fatalf("In Aerospike section, root_ca cannot be null when cert_file and key_file are configured")
 	}
 
-	// validate Otel endpoint type
+	// validate Otel endpoint type and default to grpc
 	if len(Cfg.Agent.Otel.OtelEndpointType) == 0 {
 		Cfg.Agent.Otel.OtelEndpointType = "grpc"
 	}
 
+	Cfg.Agent.Otel.OtelEndpointType = strings.ToLower(strings.TrimSpace(Cfg.Agent.Otel.OtelEndpointType))
 	if Cfg.Agent.Otel.OtelEndpointType != "http" && Cfg.Agent.Otel.OtelEndpointType != "grpc" {
 		log.Fatalf("Invalid endpoint type: %s. Supported types are: http, grpc", Cfg.Agent.Otel.OtelEndpointType)
 	}
