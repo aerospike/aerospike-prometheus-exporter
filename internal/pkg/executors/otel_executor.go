@@ -2,7 +2,6 @@ package executors
 
 import (
 	"context"
-	"strconv"
 
 	"time"
 
@@ -35,7 +34,6 @@ func (oe OtelExecutor) Initialize() error {
 	log.Infof("*** Initializing Otel Exporter... ")
 	log.Debug("** OTel endpoint ", config.Cfg.Agent.Otel.Endpoint)
 	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.ServiceName)
-	log.Debug("** OTel TLS flag enabled? ", config.Cfg.Agent.Otel.TlsEnabled)
 
 	defaultContext := context.Background()
 	var meterProvider *sdkmetric.MeterProvider
@@ -125,8 +123,6 @@ func (oe OtelExecutor) createGrpcExporter(ctx context.Context) (sdkmetric.Export
 	var metricExp *otlpmetricgrpc.Exporter
 	var err error
 
-	log.Infof("Creating Otel GRPC MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.TlsEnabled))
-
 	// Build options conditionally
 	exporterOptions := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithHeaders(headers),
@@ -134,7 +130,7 @@ func (oe OtelExecutor) createGrpcExporter(ctx context.Context) (sdkmetric.Export
 		otlpmetricgrpc.WithTemporalitySelector(oe.getTemporalitySelector),
 	}
 
-	// // Only add WithInsecure() when TLS is disabled
+	// //NOTE: Testing purposes only. Only add WithInsecure() when TLS is disabled
 	// if !config.Cfg.Agent.Otel.OtelTlsEnabled {
 	// 	exporterOptions = append(exporterOptions, otlpmetricgrpc.WithInsecure())
 	// }
@@ -152,8 +148,6 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 	var err error
 	var metricExp *otlpmetrichttp.Exporter
 
-	log.Infof("Creating Otel HTTP MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.TlsEnabled))
-
 	// NOTE: Below is only for testing purposes
 	// tlsConfig := &tls.Config{
 	// 	InsecureSkipVerify: true,
@@ -167,7 +161,7 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 		// otlpmetrichttp.WithTLSClientConfig(tlsConfig),
 	}
 
-	// // Only add WithInsecure() when TLS is disabled
+	// NOTE: Testing purposes only. Only add WithInsecure() when TLS is disabled
 	// if !config.Cfg.Agent.Otel.OtelTlsEnabled {
 	// 	exporterOptions = append(exporterOptions, otlpmetrichttp.WithInsecure())
 	// }
@@ -208,13 +202,12 @@ func (oe OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.Instrumen
 		sdkmetric.InstrumentKindUpDownCounter,
 		sdkmetric.InstrumentKindObservableUpDownCounter:
 		// Use Delta temporality for counters and histograms
-		// This sends only the change since the last export, which is efficient
+		// Send only the change since the last export
 		return metricdata.DeltaTemporality
 	case sdkmetric.InstrumentKindObservableGauge,
 		sdkmetric.InstrumentKindGauge:
 		// Gauges are instantaneous values and don't technically have temporality
-		// However, if the SDK requires a value, we return DeltaTemporality
-		// The SDK will handle gauges as instantaneous snapshots regardless
+		// SDK treats gauges as instantaneous snapshots regardless
 		return metricdata.DeltaTemporality
 	default:
 		// Default to Delta temporality for any unknown types

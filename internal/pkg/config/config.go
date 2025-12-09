@@ -44,7 +44,6 @@ type Config struct {
 			Endpoint                string            `toml:"endpoint"` // DEPRECATED. Use grpc_endpoint
 			GrpcEndpoint            string            `toml:"grpc_endpoint"`
 			HttpEndpoint            string            `toml:"http_endpoint"`
-			TlsEnabled              bool              `toml:"endpoint_tls_enabled"`
 			Headers                 map[string]string `toml:"headers"`
 			PushInterval            uint8             `toml:"push_interval"`
 			ServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`

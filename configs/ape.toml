@@ -83,9 +83,6 @@
       # provide entire http url
       http_endpoint = ""
 
-      # OTel SSL/TLS, for HTTPS endpoints
-      endpoint_tls_enabled = true
-
       # OTel headers, 
       # NOTE: Each header will be a "<key>"="<value>" pair and each header is comma separated
       # Example: "api-key"="<api-key>","Authorization"="Api-Token <token>"
