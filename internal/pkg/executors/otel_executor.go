@@ -30,12 +30,12 @@ type OtelExecutor struct {
 // Initializes an OTLP exporter, and configures the corresponding metric providers
 func (oe OtelExecutor) Initialize() error {
 
-	log.Infof("Otel sending thread started, sending data to : %s", config.Cfg.Agent.Otel.OtelEndpoint)
+	log.Infof("Otel sending thread started, sending data to : %s", config.Cfg.Agent.Otel.Endpoint)
 
 	log.Infof("*** Initializing Otel Exporter... ")
-	log.Debug("** OTel endpoint ", config.Cfg.Agent.Otel.OtelEndpoint)
-	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.OtelServiceName)
-	log.Debug("** OTel TLS flag enabled? ", config.Cfg.Agent.Otel.OtelTlsEnabled)
+	log.Debug("** OTel endpoint ", config.Cfg.Agent.Otel.Endpoint)
+	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.ServiceName)
+	log.Debug("** OTel TLS flag enabled? ", config.Cfg.Agent.Otel.TlsEnabled)
 
 	defaultContext := context.Background()
 	var meterProvider *sdkmetric.MeterProvider
@@ -49,7 +49,7 @@ func (oe OtelExecutor) Initialize() error {
 		resource.WithContainer(),
 		resource.WithAttributes(
 			// the service name used to display traces/metrics in backends
-			semconv.ServiceNameKey.String(config.Cfg.Agent.Otel.OtelServiceName),
+			semconv.ServiceNameKey.String(config.Cfg.Agent.Otel.ServiceName),
 		),
 	)
 
@@ -57,7 +57,7 @@ func (oe OtelExecutor) Initialize() error {
 		log.Fatalf("Failed to create OTel Resource %v", err)
 	}
 
-	if config.Cfg.Agent.Otel.OtelHttpEndpoint != "" {
+	if config.Cfg.Agent.Otel.HttpEndpoint != "" {
 		metricExporter, err = oe.createHttpExporter(defaultContext)
 	} else {
 		// either grpc_endpoint or endpoint is configured
@@ -73,7 +73,7 @@ func (oe OtelExecutor) Initialize() error {
 		sdkmetric.WithReader(
 			sdkmetric.NewPeriodicReader(
 				metricExporter,
-				sdkmetric.WithInterval(time.Duration(config.Cfg.Agent.Otel.OtelPushInterval)*time.Second),
+				sdkmetric.WithInterval(time.Duration(config.Cfg.Agent.Otel.PushInterval)*time.Second),
 			),
 		),
 	)
@@ -84,10 +84,10 @@ func (oe OtelExecutor) Initialize() error {
 
 	// Start metric collection loop in a goroutine
 	go func() {
-		ticker := time.NewTicker(time.Duration(config.Cfg.Agent.Otel.OtelServerStatFetchInterval) * time.Second)
+		ticker := time.NewTicker(time.Duration(config.Cfg.Agent.Otel.ServerStatFetchInterval) * time.Second)
 		defer ticker.Stop()
 
-		meter := otel.Meter(config.Cfg.Agent.Otel.OtelServiceName + "_Meter")
+		meter := otel.Meter(config.Cfg.Agent.Otel.ServiceName + "_Meter")
 		defaultCtx := context.Background()
 		commonLabels := oe.getCommonLabels()
 
@@ -125,12 +125,12 @@ func (oe OtelExecutor) createGrpcExporter(ctx context.Context) (sdkmetric.Export
 	var metricExp *otlpmetricgrpc.Exporter
 	var err error
 
-	log.Infof("Creating Otel GRPC MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.OtelTlsEnabled))
+	log.Infof("Creating Otel GRPC MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.TlsEnabled))
 
 	// Build options conditionally
 	exporterOptions := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithHeaders(headers),
-		otlpmetricgrpc.WithEndpoint(config.Cfg.Agent.Otel.OtelEndpoint),
+		otlpmetricgrpc.WithEndpoint(oe.getGrpcEndpointToUse()),
 		otlpmetricgrpc.WithTemporalitySelector(oe.getTemporalitySelector),
 	}
 
@@ -142,6 +142,7 @@ func (oe OtelExecutor) createGrpcExporter(ctx context.Context) (sdkmetric.Export
 	metricExp, err = otlpmetricgrpc.New(ctx, exporterOptions...)
 
 	return metricExp, err
+
 }
 
 // func (oe OtelExecutor) createHttpExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
@@ -151,7 +152,7 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 	var err error
 	var metricExp *otlpmetrichttp.Exporter
 
-	log.Infof("Creating Otel HTTP MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.OtelTlsEnabled))
+	log.Infof("Creating Otel HTTP MetricsExporter with TLS %s", strconv.FormatBool(config.Cfg.Agent.Otel.TlsEnabled))
 
 	// NOTE: Below is only for testing purposes
 	// tlsConfig := &tls.Config{
@@ -161,7 +162,7 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 	// Build options conditionally
 	exporterOptions := []otlpmetrichttp.Option{
 		otlpmetrichttp.WithHeaders(headers),
-		otlpmetrichttp.WithEndpointURL(oe.getHttpEndpointToUse()),
+		otlpmetrichttp.WithEndpointURL(config.Cfg.Agent.Otel.HttpEndpoint),
 		otlpmetrichttp.WithTemporalitySelector(oe.getTemporalitySelector),
 		// otlpmetrichttp.WithTLSClientConfig(tlsConfig),
 	}
@@ -176,13 +177,13 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 	return metricExp, err
 }
 
-func (oe OtelExecutor) getHttpEndpointToUse() string {
+func (oe OtelExecutor) getGrpcEndpointToUse() string {
 
-	if len(config.Cfg.Agent.Otel.OtelGrpcEndpoint) != 0 {
-		return config.Cfg.Agent.Otel.OtelGrpcEndpoint
+	if len(config.Cfg.Agent.Otel.GrpcEndpoint) != 0 {
+		return config.Cfg.Agent.Otel.GrpcEndpoint
 	}
 
-	return config.Cfg.Agent.Otel.OtelEndpoint
+	return config.Cfg.Agent.Otel.Endpoint
 }
 
 func (oe OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
@@ -222,7 +223,7 @@ func (oe OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, ctx context.C
 func (oe OtelExecutor) readHeaders() map[string]string {
 	headers := make(map[string]string)
 	// headers["api-key"] = "abcdefghijklmnopqrstuvwxyz"
-	headerPairs := config.Cfg.Agent.Otel.OtelHeaders
+	headerPairs := config.Cfg.Agent.Otel.Headers
 	if len(headerPairs) > 0 {
 		for k, v := range headerPairs {
 			headers[k] = v

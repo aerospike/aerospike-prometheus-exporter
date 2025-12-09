@@ -40,14 +40,14 @@ type Config struct {
 		BasicAuthPassword string `toml:"basic_auth_password"`
 
 		Otel struct {
-			OtelServiceName             string            `toml:"service_name"`
-			OtelEndpoint                string            `toml:"endpoint"` // DEPRECATED. Use grpc_endpoint
-			OtelGrpcEndpoint            string            `toml:"grpc_endpoint"`
-			OtelHttpEndpoint            string            `toml:"http_endpoint"`
-			OtelTlsEnabled              bool              `toml:"endpoint_tls_enabled"`
-			OtelHeaders                 map[string]string `toml:"headers"`
-			OtelPushInterval            uint8             `toml:"push_interval"`
-			OtelServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
+			ServiceName             string            `toml:"service_name"`
+			Endpoint                string            `toml:"endpoint"` // DEPRECATED. Use grpc_endpoint
+			GrpcEndpoint            string            `toml:"grpc_endpoint"`
+			HttpEndpoint            string            `toml:"http_endpoint"`
+			TlsEnabled              bool              `toml:"endpoint_tls_enabled"`
+			Headers                 map[string]string `toml:"headers"`
+			PushInterval            uint8             `toml:"push_interval"`
+			ServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
 		} `toml:"OpenTelemetry"`
 
 		IsKubernetes      bool
@@ -171,16 +171,16 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		c.Agent.UseMockDatasource = false
 	}
 
-	if len(c.Agent.Otel.OtelServiceName) == 0 {
-		c.Agent.Otel.OtelServiceName = "aerospike-server-metrics-service"
+	if len(c.Agent.Otel.ServiceName) == 0 {
+		c.Agent.Otel.ServiceName = "aerospike-server-metrics-service"
 	}
 
-	if c.Agent.Otel.OtelPushInterval == 0 {
-		c.Agent.Otel.OtelPushInterval = 60
+	if c.Agent.Otel.PushInterval == 0 {
+		c.Agent.Otel.PushInterval = 60
 	}
 
-	if c.Agent.Otel.OtelServerStatFetchInterval == 0 {
-		c.Agent.Otel.OtelPushInterval = 15
+	if c.Agent.Otel.ServerStatFetchInterval == 0 {
+		c.Agent.Otel.PushInterval = 15
 	}
 
 	if !md.IsDefined("Agent", "enable_prometheus") {
@@ -202,13 +202,19 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		log.Fatalf("In Aerospike section, root_ca cannot be null when cert_file and key_file are configured")
 	}
 
-	// validate Otel grpc_endpoint and http_endpoint configs
-	if len(Cfg.Agent.Otel.OtelGrpcEndpoint) == 0 && len(Cfg.Agent.Otel.OtelHttpEndpoint) == 0 {
-		log.Fatalf("In OpenTelemetry section, grpc_endpoint or http_endpoint is not present")
+	// validate Otel endpoint, grpc_endpoint and http_endpoint configs
+	if (len(Cfg.Agent.Otel.Endpoint) == 0 || len(Cfg.Agent.Otel.GrpcEndpoint) == 0) &&
+		len(Cfg.Agent.Otel.HttpEndpoint) == 0 {
+
+		log.Fatalf("In OpenTelemetry section, endpoint or grpc_endpoint or http_endpoint is not present")
 	}
 
-	if len(Cfg.Agent.Otel.OtelGrpcEndpoint) != 0 && len(Cfg.Agent.Otel.OtelHttpEndpoint) != 0 {
+	if len(Cfg.Agent.Otel.GrpcEndpoint) != 0 && len(Cfg.Agent.Otel.HttpEndpoint) != 0 {
 		log.Fatalf("In OpenTelemetry section, grpc_endpoint and http_endpoint cannot be configured at the same time")
+	}
+
+	if len(Cfg.Agent.Otel.Endpoint) != 0 && len(Cfg.Agent.Otel.HttpEndpoint) != 0 {
+		log.Fatalf("In OpenTelemetry section, endpoint and http_endpoint cannot be configured at the same time")
 	}
 }
 
