@@ -7,7 +7,6 @@ type Executor interface {
 const (
 	PROMETHEUS = "prometheus"
 	OTELGRPC   = "otel"
-	REST       = "rest"
 )
 
 func GetExecutors() map[string]Executor {

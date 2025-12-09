@@ -160,8 +160,9 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 	// Build options conditionally
 	exporterOptions := []otlpmetrichttp.Option{
 		otlpmetrichttp.WithHeaders(headers),
-		otlpmetrichttp.WithEndpoint(config.Cfg.Agent.Otel.OtelEndpoint),
-		otlpmetrichttp.WithURLPath(config.Cfg.Agent.Otel.OtelEndpointURL),
+		// otlpmetrichttp.WithEndpoint(config.Cfg.Agent.Otel.OtelEndpoint),
+		// otlpmetrichttp.WithURLPath(config.Cfg.Agent.Otel.OtelEndpointURL),
+		otlpmetrichttp.WithEndpointURL(config.Cfg.Agent.Otel.OtelEndpointURL),
 		// otlpmetrichttp.WithTLSClientConfig(tlsConfig),
 		otlpmetrichttp.WithTemporalitySelector(oe.getTemporalitySelector),
 	}
@@ -177,22 +178,7 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 }
 
 func (oe OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
-	// if instrumentKind == sdkmetric.InstrumentKindCounter {
-	// 	return metricdata.CumulativeTemporality
-	// }
-	// return metricdata.DeltaTemporality
-
-	// TODO: discuss with Sunil, should we change all metrics to Gauge as Dynatrace does not support Monotic-Cumulative-sum
-	switch instrumentKind {
-	case sdkmetric.InstrumentKindCounter,
-		sdkmetric.InstrumentKindObservableCounter,
-		sdkmetric.InstrumentKindHistogram,
-		sdkmetric.InstrumentKindUpDownCounter,
-		sdkmetric.InstrumentKindObservableUpDownCounter:
-		return metricdata.DeltaTemporality
-	default:
-		return metricdata.DeltaTemporality
-	}
+	return metricdata.DeltaTemporality
 }
 
 func (oe OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {

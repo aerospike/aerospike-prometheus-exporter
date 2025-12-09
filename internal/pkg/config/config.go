@@ -17,7 +17,6 @@ type Config struct {
 	Agent struct {
 		OtelEnabled       bool `toml:"enable_open_telemetry"`
 		PrometheusEnabled bool `toml:"enable_prometheus"`
-		RestEnabled       bool
 
 		MetricLabels map[string]string `toml:"labels"`
 
