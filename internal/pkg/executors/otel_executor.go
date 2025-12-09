@@ -57,10 +57,11 @@ func (oe OtelExecutor) Initialize() error {
 		log.Fatalf("Failed to create OTel Resource %v", err)
 	}
 
-	if config.Cfg.Agent.Otel.OtelEndpointType == "grpc" {
-		metricExporter, err = oe.createGrpcExporter(defaultContext)
-	} else {
+	if config.Cfg.Agent.Otel.OtelHttpEndpoint != "" {
 		metricExporter, err = oe.createHttpExporter(defaultContext)
+	} else {
+		// either grpc_endpoint or endpoint is configured
+		metricExporter, err = oe.createGrpcExporter(defaultContext)
 	}
 
 	if err != nil {
@@ -133,10 +134,10 @@ func (oe OtelExecutor) createGrpcExporter(ctx context.Context) (sdkmetric.Export
 		otlpmetricgrpc.WithTemporalitySelector(oe.getTemporalitySelector),
 	}
 
-	// Only add WithInsecure() when TLS is disabled
-	if !config.Cfg.Agent.Otel.OtelTlsEnabled {
-		exporterOptions = append(exporterOptions, otlpmetricgrpc.WithInsecure())
-	}
+	// // Only add WithInsecure() when TLS is disabled
+	// if !config.Cfg.Agent.Otel.OtelTlsEnabled {
+	// 	exporterOptions = append(exporterOptions, otlpmetricgrpc.WithInsecure())
+	// }
 
 	metricExp, err = otlpmetricgrpc.New(ctx, exporterOptions...)
 
@@ -160,21 +161,28 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 	// Build options conditionally
 	exporterOptions := []otlpmetrichttp.Option{
 		otlpmetrichttp.WithHeaders(headers),
-		// otlpmetrichttp.WithEndpoint(config.Cfg.Agent.Otel.OtelEndpoint),
-		// otlpmetrichttp.WithURLPath(config.Cfg.Agent.Otel.OtelEndpointURL),
-		otlpmetrichttp.WithEndpointURL(config.Cfg.Agent.Otel.OtelEndpointURL),
-		// otlpmetrichttp.WithTLSClientConfig(tlsConfig),
+		otlpmetrichttp.WithEndpointURL(oe.getHttpEndpointToUse()),
 		otlpmetrichttp.WithTemporalitySelector(oe.getTemporalitySelector),
+		// otlpmetrichttp.WithTLSClientConfig(tlsConfig),
 	}
 
-	// Only add WithInsecure() when TLS is disabled
-	if !config.Cfg.Agent.Otel.OtelTlsEnabled {
-		exporterOptions = append(exporterOptions, otlpmetrichttp.WithInsecure())
-	}
+	// // Only add WithInsecure() when TLS is disabled
+	// if !config.Cfg.Agent.Otel.OtelTlsEnabled {
+	// 	exporterOptions = append(exporterOptions, otlpmetrichttp.WithInsecure())
+	// }
 
 	metricExp, err = otlpmetrichttp.New(ctx, exporterOptions...)
 
 	return metricExp, err
+}
+
+func (oe OtelExecutor) getHttpEndpointToUse() string {
+
+	if len(config.Cfg.Agent.Otel.OtelGrpcEndpoint) != 0 {
+		return config.Cfg.Agent.Otel.OtelGrpcEndpoint
+	}
+
+	return config.Cfg.Agent.Otel.OtelEndpoint
 }
 
 func (oe OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {

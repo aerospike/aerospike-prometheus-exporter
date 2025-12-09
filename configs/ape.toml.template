@@ -75,11 +75,14 @@
         # OTel SSL/TLS, for HTTPS endpoints
         endpoint_tls_enabled = ${AGENT_OTEL_TLS_ENABLED}
 
-        # OTel Endpoint - grpc or http
-        endpoint_type = "${AGENT_OTEL_ENDPOINT_TYPE}"
+        # OTel Endpoint
+        # NOTE: Only endpoint does not include protocol http/https
+        # NOTE: if endpoint and grpc_endpoint are configured grpc_endpoint takes precedence
+        grpc_endpoint = "${AGENT_OTEL_GRPC_ENDPOINT}"
 
         # OTel Endpoint URL Path 
-        endpoint_url = "${AGENT_OTEL_ENDPOINT_URL}"
+        # provide entire http url
+        http_endpoint = "${AGENT_OTEL_HTTP_ENDPOINT}"
 
         # OTel headers
         headers = "{${AGENT_OTEL_HEADERS}}"

@@ -41,9 +41,9 @@ type Config struct {
 
 		Otel struct {
 			OtelServiceName             string            `toml:"service_name"`
-			OtelEndpointType            string            `toml:"endpoint_type"`
-			OtelEndpoint                string            `toml:"endpoint"`
-			OtelEndpointURL             string            `toml:"endpoint_url"`
+			OtelEndpoint                string            `toml:"endpoint"` // DEPRECATED. Use grpc_endpoint
+			OtelGrpcEndpoint            string            `toml:"grpc_endpoint"`
+			OtelHttpEndpoint            string            `toml:"http_endpoint"`
 			OtelTlsEnabled              bool              `toml:"endpoint_tls_enabled"`
 			OtelHeaders                 map[string]string `toml:"headers"`
 			OtelPushInterval            uint8             `toml:"push_interval"`
@@ -202,16 +202,14 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		log.Fatalf("In Aerospike section, root_ca cannot be null when cert_file and key_file are configured")
 	}
 
-	// validate Otel endpoint type and default to grpc
-	if len(Cfg.Agent.Otel.OtelEndpointType) == 0 {
-		Cfg.Agent.Otel.OtelEndpointType = "grpc"
+	// validate Otel grpc_endpoint and http_endpoint configs
+	if len(Cfg.Agent.Otel.OtelGrpcEndpoint) == 0 && len(Cfg.Agent.Otel.OtelHttpEndpoint) == 0 {
+		log.Fatalf("In OpenTelemetry section, grpc_endpoint or http_endpoint is not present")
 	}
 
-	Cfg.Agent.Otel.OtelEndpointType = strings.ToLower(strings.TrimSpace(Cfg.Agent.Otel.OtelEndpointType))
-	if Cfg.Agent.Otel.OtelEndpointType != "http" && Cfg.Agent.Otel.OtelEndpointType != "grpc" {
-		log.Fatalf("Invalid endpoint type: %s. Supported types are: http, grpc", Cfg.Agent.Otel.OtelEndpointType)
+	if len(Cfg.Agent.Otel.OtelGrpcEndpoint) != 0 && len(Cfg.Agent.Otel.OtelHttpEndpoint) != 0 {
+		log.Fatalf("In OpenTelemetry section, grpc_endpoint and http_endpoint cannot be configured at the same time")
 	}
-
 }
 
 func (c *Config) FetchCloudInfo(md toml.MetaData) {
