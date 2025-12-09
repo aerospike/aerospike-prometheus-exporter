@@ -36,7 +36,9 @@ func (oe OtelExecutor) sendNodeUp(meter metric.Meter, commonLabels []attribute.K
 		return nil
 	}, nodeActiveDesc)
 
-	handleErr(err, "sendNodeUp() Error while creating object for stat 'aerospike_node_up' ")
+	if err != nil {
+		log.Fatalf("sendNodeUp() Error while creating object for stat 'aerospike_node_up': %v", err)
+	}
 }
 
 func (oe OtelExecutor) getCommonLabels() []attribute.KeyValue {
@@ -80,9 +82,7 @@ func (oe OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Conte
 		default:
 			log.Errorf("Unknown metric type: %d", stat.MType)
 		}
-
 	}
-
 }
 
 func (oe OtelExecutor) makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, value float64) {
@@ -93,7 +93,6 @@ func (oe OtelExecutor) makeOtelCounterMetric(meter metric.Meter, ctx context.Con
 	)
 
 	ometric.Add(ctx, value, metric.WithAttributes(labels...))
-
 }
 
 func (oe OtelExecutor) makeOtelGaugeMetric(meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue, value float64) {
@@ -108,6 +107,7 @@ func (oe OtelExecutor) makeOtelGaugeMetric(meter metric.Meter, metricName string
 		return nil
 	}, ometric)
 
-	handleErr(err, "makeOtelGaugeMetric() Error while creating object for stat "+metricName)
-
+	if err != nil {
+		log.Fatalf("makeOtelGaugeMetric() Error while creating object for stat %s: %v", metricName, err)
+	}
 }
