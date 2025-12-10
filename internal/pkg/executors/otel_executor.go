@@ -167,6 +167,7 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 	// 	exporterOptions = append(exporterOptions, otlpmetrichttp.WithInsecure())
 	// }
 
+	log.Infof("Creating Otel MetricsExporter with HttpEndpoint: %s", config.Cfg.Agent.Otel.HttpEndpoint)
 	metricExp, err = otlpmetrichttp.New(ctx, exporterOptions...)
 
 	return metricExp, err
