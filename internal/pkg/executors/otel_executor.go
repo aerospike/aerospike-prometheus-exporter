@@ -126,7 +126,7 @@ func (oe OtelExecutor) createGrpcExporter(ctx context.Context) (sdkmetric.Export
 	// Build options conditionally
 	exporterOptions := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithHeaders(headers),
-		otlpmetricgrpc.WithEndpoint(oe.getGrpcEndpointToUse()),
+		otlpmetricgrpc.WithEndpoint(config.Cfg.Agent.Otel.GrpcEndpoint),
 		otlpmetricgrpc.WithTemporalitySelector(oe.getTemporalitySelector),
 	}
 
@@ -135,6 +135,7 @@ func (oe OtelExecutor) createGrpcExporter(ctx context.Context) (sdkmetric.Export
 	// 	exporterOptions = append(exporterOptions, otlpmetricgrpc.WithInsecure())
 	// }
 
+	log.Infof("Creating Otel MetricsExporter with GrpcEndpoint: %s", config.Cfg.Agent.Otel.GrpcEndpoint)
 	metricExp, err = otlpmetricgrpc.New(ctx, exporterOptions...)
 
 	return metricExp, err
@@ -169,15 +170,6 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 	metricExp, err = otlpmetrichttp.New(ctx, exporterOptions...)
 
 	return metricExp, err
-}
-
-func (oe OtelExecutor) getGrpcEndpointToUse() string {
-
-	if len(config.Cfg.Agent.Otel.GrpcEndpoint) != 0 {
-		return config.Cfg.Agent.Otel.GrpcEndpoint
-	}
-
-	return config.Cfg.Agent.Otel.Endpoint
 }
 
 // getTemporalitySelector returns the appropriate temporality for each instrument kind
