@@ -52,10 +52,12 @@ func startExecutor(mode string) {
 
 	processor := metric_handlers[mode]
 	log.Infof("Starting metrics serving mode with '%s'", mode)
+
 	if processor != nil {
 		// start processor in a separate thread
 		go func() {
 			err := processor.Initialize()
+
 			if err != nil {
 				fmt.Println("Error while Initializing Processor ", err)
 			}
@@ -65,6 +67,7 @@ func startExecutor(mode string) {
 
 func parseCommandlineArgs() {
 	flag.Parse()
+
 	if *showUsage {
 		flag.Usage()
 		os.Exit(0)

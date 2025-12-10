@@ -202,19 +202,19 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 	}
 
 	// validate Otel endpoint, grpc_endpoint and http_endpoint configs
-	if (len(Cfg.Agent.Otel.Endpoint) == 0 || len(Cfg.Agent.Otel.GrpcEndpoint) == 0) &&
-		len(Cfg.Agent.Otel.HttpEndpoint) == 0 {
-
-		log.Fatalf("In OpenTelemetry section, endpoint or grpc_endpoint or http_endpoint is not present")
+	if len(Cfg.Agent.Otel.GrpcEndpoint) > 0 {
+		log.Infof("In OpenTelemetry section, grpc_endpoint is configured. Ignoring endpoint configuration ")
+	} else if len(Cfg.Agent.Otel.Endpoint) > 0 {
+		log.Infof("In OpenTelemetry section, Using endpoint as grpc_endpoint ")
+		Cfg.Agent.Otel.GrpcEndpoint = Cfg.Agent.Otel.Endpoint
 	}
 
 	if len(Cfg.Agent.Otel.GrpcEndpoint) != 0 && len(Cfg.Agent.Otel.HttpEndpoint) != 0 {
 		log.Fatalf("In OpenTelemetry section, grpc_endpoint and http_endpoint cannot be configured at the same time")
+	} else if len(Cfg.Agent.Otel.GrpcEndpoint) == 0 && len(Cfg.Agent.Otel.HttpEndpoint) == 0 {
+		log.Fatalf("In OpenTelemetry section, Grpc  or Http is not configured")
 	}
 
-	if len(Cfg.Agent.Otel.Endpoint) != 0 && len(Cfg.Agent.Otel.HttpEndpoint) != 0 {
-		log.Fatalf("In OpenTelemetry section, endpoint and http_endpoint cannot be configured at the same time")
-	}
 }
 
 func (c *Config) FetchCloudInfo(md toml.MetaData) {
@@ -263,11 +263,13 @@ func InitConfig(configFile string) {
 
 	log.Infof("Loading configuration file %s", configFile)
 	blob, err := os.ReadFile(configFile)
+
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	md, err := toml.Decode(string(blob), &Cfg)
+
 	if err != nil {
 		log.Fatalln(err)
 	}
