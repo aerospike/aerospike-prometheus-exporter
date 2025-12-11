@@ -127,7 +127,11 @@ func (oe *OtelExecutor) getOrCreateGauge(key string, meter metric.Meter, metricN
 	}
 
 	// Create
-	og, _ := meter.Float64ObservableGauge(metricName, metric.WithDescription(desc))
+	og, err := meter.Float64ObservableGauge(metricName, metric.WithDescription(desc))
+
+	if err != nil {
+		log.Fatalf("getOrCreateGauge() Error while creating object for stat %s: %v", metricName, err)
+	}
 
 	gd := &gaugeData{
 		instrument: og,
@@ -136,12 +140,16 @@ func (oe *OtelExecutor) getOrCreateGauge(key string, meter metric.Meter, metricN
 	gd.value.Store(float64(0))
 
 	// Register callback ONCE
-	meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
 		vAny := gd.value.Load()
 		v := vAny.(float64)
 		o.ObserveFloat64(gd.instrument, v, metric.WithAttributes(labels...))
 		return nil
 	}, og)
+
+	if err != nil {
+		log.Fatalf("Error while RegisterCallback for Gauge stat %s: %v", metricName, err)
+	}
 
 	oe.gauges[key] = gd
 	return gd
