@@ -2,7 +2,6 @@ package executors
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -13,7 +12,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-func (oe OtelExecutor) sendNodeUp(meter metric.Meter, commonLabels []attribute.KeyValue, value float64) {
+func (oe *OtelExecutor) sendNodeUp(meter metric.Meter, commonLabels []attribute.KeyValue, value float64) {
 
 	labels := []attribute.KeyValue{
 		attribute.String("cluster_name", statprocessors.ClusterName),
@@ -31,7 +30,7 @@ func (oe OtelExecutor) sendNodeUp(meter metric.Meter, commonLabels []attribute.K
 
 }
 
-func (oe OtelExecutor) getCommonLabels() []attribute.KeyValue {
+func (oe *OtelExecutor) getCommonLabels() []attribute.KeyValue {
 	mlabels := config.Cfg.Agent.MetricLabels
 	attrkv := []attribute.KeyValue{}
 	if len(mlabels) > 0 {
@@ -43,7 +42,7 @@ func (oe OtelExecutor) getCommonLabels() []attribute.KeyValue {
 	return attrkv
 }
 
-func (oe OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
+func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
 
 	// create the required metered objectes
 	for _, stat := range refreshStats {
@@ -69,10 +68,8 @@ func (oe OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Conte
 			counter := oe.getCounterMetric(metricKey, meter, qualifiedName, desc, labels)
 
 			// Only zero (first run) or positive deltas are sent
+			// TODO: discuss with sunil, when we restart a large value will come
 			if (stat.Value - counter.value) >= 0 {
-				if strings.Contains(qualifiedName, "client_write_success") {
-					fmt.Println("Adding counter delta: qualifiedName - ", qualifiedName, " : delta - ", (stat.Value - counter.value))
-				}
 				counter.instrument.Add(ctx, (stat.Value - counter.value), metric.WithAttributes(counter.labels...))
 			}
 
@@ -129,9 +126,7 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 		vAny := gd.value.Load()
 		v := vAny.(float64)
 		o.ObserveFloat64(gd.instrument, v, metric.WithAttributes(labels...))
-		if strings.Contains(metricName, "master_objects") {
-			fmt.Println("Observing Gauge: qualifiedName - ", metricName, " : value - ", v)
-		}
+
 		return nil
 	}, og)
 

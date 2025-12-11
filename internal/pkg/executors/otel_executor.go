@@ -3,6 +3,7 @@ package executors
 import (
 	"context"
 	"crypto/tls"
+	"sync"
 	"sync/atomic"
 
 	"time"
@@ -39,13 +40,15 @@ type OtelExecutor struct {
 	// Each measurement/instrument = one metric + labels + latest value
 	gauges   map[string]*GaugeMetrics
 	counters map[string]*CounterMetrics
+
+	mutex sync.Mutex
 }
 
 // Exporter interface implementation
 // Aerospike Otel metrics serving implementation
 //
 // Initializes an OTLP exporter, and configures the corresponding metric providers
-func (oe OtelExecutor) Initialize() error {
+func (oe *OtelExecutor) Initialize() error {
 
 	log.Infof("Otel sending thread started, sending data to : %s", config.Cfg.Agent.Otel.Endpoint)
 
@@ -115,12 +118,20 @@ func (oe OtelExecutor) Initialize() error {
 			// Wait for next tick or shutdown signal
 			select {
 			case <-ticker.C:
+				// Try to acquire lock non-blocking - skip if already locked
+				if !oe.mutex.TryLock() {
+					log.Debug("Skipping metrics collection - mutex already locked (previous collection still in progress)")
+					continue
+				}
 
 				// Aerospike Refresh stats
 				oe.handleAerospikeMetrics(meter, defaultCtx, commonLabels)
 
 				// System metrics
 				oe.handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
+
+				oe.mutex.Unlock()
+
 			case <-commons.ProcessExit:
 				// Exit immediately if shutdown signal received
 				log.Infof("OTel executor received shutdown signal, shutting down...")
@@ -139,8 +150,8 @@ func (oe OtelExecutor) Initialize() error {
 	return nil
 }
 
-// func (oe OtelExecutor) createGrpcExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
-func (oe OtelExecutor) createGrpcExporter(ctx context.Context) (sdkmetric.Exporter, error) {
+// func (oe *OtelExecutor) createGrpcExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
+func (oe *OtelExecutor) createGrpcExporter(ctx context.Context) (sdkmetric.Exporter, error) {
 	headers := oe.readHeaders()
 
 	var metricExp *otlpmetricgrpc.Exporter
@@ -165,8 +176,8 @@ func (oe OtelExecutor) createGrpcExporter(ctx context.Context) (sdkmetric.Export
 
 }
 
-// func (oe OtelExecutor) createHttpExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
-func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Exporter, error) {
+// func (oe *OtelExecutor) createHttpExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
+func (oe *OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Exporter, error) {
 
 	headers := oe.readHeaders()
 	var err error
@@ -206,11 +217,11 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 //	This is to ensure that the metrics are compatible with Dynatrace and Datadog
 //	* avoid any issues with the metrics collection
 //	* ensure that the metrics are compatible with Dynatrace, New Relic and Datadog
-func (oe OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
+func (oe *OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
 	return metricdata.DeltaTemporality
 }
 
-func (oe OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
+func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
 	asRefreshStats, err := statprocessors.Refresh()
 
 	if err != nil {
@@ -227,7 +238,7 @@ func (oe OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Co
 
 }
 
-func (oe OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
+func (oe *OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
 	sysInfoRefreshStats, err := statprocessors.RefreshSystemInfo()
 
 	if err != nil {
@@ -240,7 +251,7 @@ func (oe OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, ctx context.C
 }
 
 // Utility functions
-func (oe OtelExecutor) readHeaders() map[string]string {
+func (oe *OtelExecutor) readHeaders() map[string]string {
 	headers := make(map[string]string)
 	// headers["api-key"] = "abcdefghijklmnopqrstuvwxyz"
 	headerPairs := config.Cfg.Agent.Otel.Headers
