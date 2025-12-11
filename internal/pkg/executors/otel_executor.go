@@ -2,6 +2,7 @@ package executors
 
 import (
 	"context"
+	"crypto/tls"
 	"sync/atomic"
 
 	"time"
@@ -171,16 +172,16 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 	var metricExp *otlpmetrichttp.Exporter
 
 	// NOTE: Below is only for testing purposes
-	// tlsConfig := &tls.Config{
-	// 	InsecureSkipVerify: true,
-	// }
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+	}
 
 	// Build options conditionally
 	exporterOptions := []otlpmetrichttp.Option{
 		otlpmetrichttp.WithHeaders(headers),
 		otlpmetrichttp.WithEndpointURL(config.Cfg.Agent.Otel.HttpEndpoint),
 		otlpmetrichttp.WithTemporalitySelector(oe.getTemporalitySelector),
-		// otlpmetrichttp.WithTLSClientConfig(tlsConfig),
+		otlpmetrichttp.WithTLSClientConfig(tlsConfig),
 	}
 
 	// NOTE: Testing purposes only. Only add WithInsecure() when TLS is disabled
@@ -194,39 +195,18 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 	return metricExp, err
 }
 
-// getTemporalitySelector returns the appropriate temporality for each instrument kind
-// NOTE:
-//  Gauges don't have temporality (they're instantaneous values),
-//  but the SDK still calls this selector. For gauges, the SDK will ignore the temporality setting.
+//  Gauges don't have temporality (they're instantaneous values), as SDK still calls this selector.
+//  For gauges, the SDK will ignore the temporality setting.
 //  Dynatrace supports both Delta and Cumulative temporality for metrics that support it.
 
 // NOTE: Dynatrace and Datadog does not support MONOTONIC_CUMULATIVE_SUM - Aerospike counters are monotonic
 //
-//	So, we are using Delta temporality for counters and histograms
-//	and Delta temporality for gauges
+//	So, we are using Delta temporality for counters,  histograms and gauges
 //	This is to ensure that the metrics are compatible with Dynatrace and Datadog
 //	* avoid any issues with the metrics collection
-//	* ensure that the metrics are compatible with Dynatrace and Datadog
-//	* avoid any issues with the metrics collection
+//	* ensure that the metrics are compatible with Dynatrace, New Relic and Datadog
 func (oe OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
-	switch instrumentKind {
-	case sdkmetric.InstrumentKindCounter,
-		sdkmetric.InstrumentKindObservableCounter,
-		sdkmetric.InstrumentKindHistogram,
-		sdkmetric.InstrumentKindUpDownCounter,
-		sdkmetric.InstrumentKindObservableUpDownCounter:
-		// Use Delta temporality for counters and histograms
-		// Send only the change since the last export
-		return metricdata.DeltaTemporality
-	case sdkmetric.InstrumentKindObservableGauge,
-		sdkmetric.InstrumentKindGauge:
-		// Gauges are instantaneous values and don't technically have temporality
-		// SDK treats gauges as instantaneous snapshots regardless
-		return metricdata.DeltaTemporality
-	default:
-		// Default to Delta temporality for any unknown types
-		return metricdata.DeltaTemporality
-	}
+	return metricdata.DeltaTemporality
 }
 
 func (oe OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {

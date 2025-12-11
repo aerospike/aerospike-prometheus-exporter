@@ -2,6 +2,7 @@ package executors
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -81,6 +82,9 @@ func (oe OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Conte
 
 			// Only zero (first run) or positive deltas are sent
 			if (stat.Value - counter.value) >= 0 {
+				if strings.Contains(qualifiedName, "client_write_success") {
+					fmt.Println("Adding counter delta: qualifiedName - ", qualifiedName, " : delta - ", (stat.Value - counter.value))
+				}
 				counter.instrument.Add(ctx, (stat.Value - counter.value), metric.WithAttributes(counter.labels...))
 			}
 
