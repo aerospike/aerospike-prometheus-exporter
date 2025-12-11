@@ -2,6 +2,7 @@ package executors
 
 import (
 	"context"
+	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
@@ -64,21 +65,27 @@ func (oe OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Conte
 		labels := []attribute.KeyValue{}
 		// label name to value mapped using index
 		for idx, label := range stat.Labels {
+			if len(stat.LabelValues) == 0 {
+				log.Debugf("Label values are null or not present for stat %s and label %s", stat.Name, label)
+				continue
+			}
 			labels = append(labels, attribute.String(label, stat.LabelValues[idx]))
 		}
 
 		// append common labels
 		labels = append(labels, commonLabels...)
 
-		// oe.makeOtelGaugeMetric(meter, qualifiedName, desc, labels, stat.Value)
+		key := oe.constructMetricKey(qualifiedName, labels)
 
 		// create Otel metric
 		switch stat.MType {
 		case commons.MetricTypeCounter:
 			oe.makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, stat.Value)
 		case commons.MetricTypeGauge:
-			oe.makeOtelGaugeMetric(meter, qualifiedName, desc, labels, stat.Value)
+			// oe.makeOtelGaugeMetric(meter, qualifiedName, desc, labels, stat.Value)
 
+			gauge := oe.getOrCreateGauge(key, meter, qualifiedName, desc, labels)
+			gauge.value.Store(stat.Value)
 		default:
 			log.Errorf("Unknown metric type: %d", stat.MType)
 		}
@@ -95,19 +102,59 @@ func (oe OtelExecutor) makeOtelCounterMetric(meter metric.Meter, ctx context.Con
 	ometric.Add(ctx, value, metric.WithAttributes(labels...))
 }
 
-func (oe OtelExecutor) makeOtelGaugeMetric(meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue, value float64) {
+// func (oe OtelExecutor) makeOtelGaugeMetric(meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue, value float64) {
 
-	ometric, _ := meter.Float64ObservableGauge(
-		metricName,
-		metric.WithDescription(desc),
-	)
-	_, err := meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-		a := value
-		o.ObserveFloat64(ometric, a, metric.WithAttributes(labels...))
-		return nil
-	}, ometric)
+// 	ometric, _ := meter.Float64ObservableGauge(
+// 		metricName,
+// 		metric.WithDescription(desc),
+// 	)
+// 	_, err := meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+// 		a := value
+// 		o.ObserveFloat64(ometric, a, metric.WithAttributes(labels...))
+// 		return nil
+// 	}, ometric)
 
-	if err != nil {
-		log.Fatalf("makeOtelGaugeMetric() Error while creating object for stat %s: %v", metricName, err)
+// 	if err != nil {
+// 		log.Fatalf("makeOtelGaugeMetric() Error while creating object for stat %s: %v", metricName, err)
+// 	}
+// }
+
+func (oe *OtelExecutor) getOrCreateGauge(key string, meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue) *gaugeData {
+
+	// Fast path
+	if gd, ok := oe.gauges[key]; ok {
+		return gd
 	}
+
+	// Create
+	og, _ := meter.Float64ObservableGauge(metricName, metric.WithDescription(desc))
+
+	gd := &gaugeData{
+		instrument: og,
+		labels:     labels,
+	}
+	gd.value.Store(float64(0))
+
+	// Register callback ONCE
+	meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+		vAny := gd.value.Load()
+		v := vAny.(float64)
+		o.ObserveFloat64(gd.instrument, v, metric.WithAttributes(labels...))
+		return nil
+	}, og)
+
+	oe.gauges[key] = gd
+	return gd
+}
+
+func (oe *OtelExecutor) constructMetricKey(metricName string, labels []attribute.KeyValue) string {
+	var b strings.Builder
+	b.WriteString(metricName)
+	for _, l := range labels {
+		b.WriteString("|")
+		b.WriteString(string(l.Key))
+		b.WriteString("=")
+		b.WriteString(l.Value.Emit())
+	}
+	return b.String()
 }

@@ -2,6 +2,7 @@ package executors
 
 import (
 	"context"
+	"sync/atomic"
 
 	"time"
 
@@ -20,7 +21,15 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
+// One gauge = one instrument + labels + latest value
+type gaugeData struct {
+	instrument metric.Float64ObservableGauge
+	labels     []attribute.KeyValue
+	value      atomic.Value // stores float64
+}
+
 type OtelExecutor struct {
+	gauges map[string]*gaugeData
 }
 
 // Exporter interface implementation
@@ -149,7 +158,7 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 	var err error
 	var metricExp *otlpmetrichttp.Exporter
 
-	// NOTE: Below is only for testing purposes
+	// // NOTE: Below is only for testing purposes
 	// tlsConfig := &tls.Config{
 	// 	InsecureSkipVerify: true,
 	// }
