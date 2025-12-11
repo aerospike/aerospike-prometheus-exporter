@@ -44,6 +44,9 @@ func (oe OtelExecutor) Initialize() error {
 	log.Debug("** OTel endpoint ", config.Cfg.Agent.Otel.Endpoint)
 	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.ServiceName)
 
+	// initialize the gauges map
+	oe.gauges = make(map[string]*gaugeData)
+
 	defaultContext := context.Background()
 	var meterProvider *sdkmetric.MeterProvider
 	var metricExporter sdkmetric.Exporter
