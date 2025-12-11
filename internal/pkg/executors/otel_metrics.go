@@ -15,15 +15,6 @@ import (
 
 func (oe OtelExecutor) sendNodeUp(meter metric.Meter, commonLabels []attribute.KeyValue, value float64) {
 
-	nodeActiveDesc, _ := meter.Float64ObservableGauge(
-		"aerospike_node_up",
-		metric.WithDescription("Aerospike node active status"),
-	)
-
-	if config.Cfg.Agent.IsKubernetes {
-		statprocessors.Service = config.Cfg.Agent.KubernetesPodName
-	}
-
 	labels := []attribute.KeyValue{
 		attribute.String("cluster_name", statprocessors.ClusterName),
 		attribute.String("service", statprocessors.Service),
@@ -33,14 +24,11 @@ func (oe OtelExecutor) sendNodeUp(meter metric.Meter, commonLabels []attribute.K
 	// append common labels
 	labels = append(labels, commonLabels...)
 
-	_, err := meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-		o.ObserveFloat64(nodeActiveDesc, value, metric.WithAttributes(labels...))
-		return nil
-	}, nodeActiveDesc)
+	metricKey := oe.constructMetricKey("aerospike_node_up", labels)
 
-	if err != nil {
-		log.Fatalf("sendNodeUp() Error while creating object for stat 'aerospike_node_up': %v", err)
-	}
+	nodeUpGauge := oe.getGaugeMetric(metricKey, meter, "aerospike_node_up", "Aerospike node active status", labels)
+	nodeUpGauge.value.Store(value)
+
 }
 
 func (oe OtelExecutor) getCommonLabels() []attribute.KeyValue {
@@ -73,12 +61,12 @@ func (oe OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Conte
 		// append common labels
 		labels = append(labels, commonLabels...)
 
-		key := oe.constructMetricKey(qualifiedName, labels)
+		metricKey := oe.constructMetricKey(qualifiedName, labels)
 
 		// create Otel metric
 		switch stat.MType {
 		case commons.MetricTypeCounter:
-			counter := oe.getCounterMetric(key, meter, qualifiedName, desc, labels)
+			counter := oe.getCounterMetric(metricKey, meter, qualifiedName, desc, labels)
 
 			// Only zero (first run) or positive deltas are sent
 			if (stat.Value - counter.value) >= 0 {
@@ -92,7 +80,7 @@ func (oe OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Conte
 
 		case commons.MetricTypeGauge:
 
-			gauge := oe.getGaugeMetric(key, meter, qualifiedName, desc, labels)
+			gauge := oe.getGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
 			gauge.value.Store(stat.Value)
 		default:
 			log.Errorf("Unknown metric type: %d", stat.MType)
@@ -141,6 +129,9 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 		vAny := gd.value.Load()
 		v := vAny.(float64)
 		o.ObserveFloat64(gd.instrument, v, metric.WithAttributes(labels...))
+		if strings.Contains(metricName, "master_objects") {
+			fmt.Println("Observing Gauge: qualifiedName - ", metricName, " : value - ", v)
+		}
 		return nil
 	}, og)
 

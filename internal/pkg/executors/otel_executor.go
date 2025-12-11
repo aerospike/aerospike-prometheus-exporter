@@ -115,6 +115,7 @@ func (oe OtelExecutor) Initialize() error {
 			// Wait for next tick or shutdown signal
 			select {
 			case <-ticker.C:
+
 				// Aerospike Refresh stats
 				oe.handleAerospikeMetrics(meter, defaultCtx, commonLabels)
 
