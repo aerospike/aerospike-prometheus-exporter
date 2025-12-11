@@ -42,7 +42,8 @@ func (oe *OtelExecutor) getCommonLabels() []attribute.KeyValue {
 	return attrkv
 }
 
-func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
+func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Context,
+	commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
 
 	// create the required metered objectes
 	for _, stat := range refreshStats {
@@ -65,20 +66,20 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 		// create Otel metric
 		switch stat.MType {
 		case commons.MetricTypeCounter:
-			counter := oe.getCounterMetric(metricKey, meter, qualifiedName, desc, labels)
+			cMetric := oe.getCounterMetric(metricKey, meter, qualifiedName, desc, labels)
 
 			// Only zero (first run) or positive deltas are sent
 			// TODO: discuss with sunil, when we restart a large value will come
-			if (stat.Value - counter.value) >= 0 {
-				counter.instrument.Add(ctx, (stat.Value - counter.value), metric.WithAttributes(counter.labels...))
+			if (stat.Value - cMetric.value) >= 0 {
+				cMetric.instrument.Add(ctx, (stat.Value - cMetric.value), metric.WithAttributes(cMetric.labels...))
 			}
 
-			counter.value = stat.Value
+			cMetric.value = stat.Value
 
 		case commons.MetricTypeGauge:
 
-			gauge := oe.getGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
-			gauge.value.Store(stat.Value)
+			gMetric := oe.getGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
+			gMetric.value.Store(stat.Value)
 		default:
 			log.Errorf("Unknown metric type: %d", stat.MType)
 		}
@@ -99,7 +100,8 @@ func (oe *OtelExecutor) constructMetricKey(metricName string, labels []attribute
 	return b.String()
 }
 
-func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue) *GaugeMetrics {
+func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricName string,
+	desc string, labels []attribute.KeyValue) *GaugeMetrics {
 
 	// Fast path
 	if gd, ok := oe.gauges[key]; ok {
@@ -123,8 +125,7 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 
 	// Register callback ONCE
 	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-		vAny := gd.value.Load()
-		v := vAny.(float64)
+		v := gd.value.Load().(float64)
 		o.ObserveFloat64(gd.instrument, v, metric.WithAttributes(labels...))
 
 		return nil
@@ -138,7 +139,8 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 	return gd
 }
 
-func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue) *CounterMetrics {
+func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricName string,
+	desc string, labels []attribute.KeyValue) *CounterMetrics {
 
 	if cd, ok := oe.counters[key]; ok {
 		return cd

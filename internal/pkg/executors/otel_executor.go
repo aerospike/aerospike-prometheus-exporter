@@ -32,7 +32,7 @@ type GaugeMetrics struct {
 type CounterMetrics struct {
 	instrument metric.Float64Counter
 	labels     []attribute.KeyValue
-	value      float64 // current refreshed value
+	value      float64 // last refreshed value
 }
 
 type OtelExecutor struct {
@@ -119,6 +119,7 @@ func (oe *OtelExecutor) Initialize() error {
 			select {
 			case <-ticker.C:
 				// Try to acquire lock non-blocking - skip if already locked
+				// TODO: discuss with Sunil, if we can use a different approach to avoid the mutex
 				if !oe.mutex.TryLock() {
 					log.Debug("Skipping metrics collection - mutex already locked (previous collection still in progress)")
 					continue
@@ -207,10 +208,10 @@ func (oe *OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Expor
 	return metricExp, err
 }
 
-//  Gauges don't have temporality (they're instantaneous values), as SDK still calls this selector.
-//  For gauges, the SDK will ignore the temporality setting.
-//  Dynatrace supports both Delta and Cumulative temporality for metrics that support it.
-
+//	Gauges don't have temporality (they're instantaneous values), as SDK still calls this selector.
+//	For gauges, the SDK will ignore the temporality setting.
+//	Dynatrace supports both Delta and Cumulative temporality for metrics that support it.
+//
 // NOTE: Dynatrace and Datadog does not support MONOTONIC_CUMULATIVE_SUM - Aerospike counters are monotonic
 //
 //	So, we are using Delta temporality for counters,  histograms and gauges
