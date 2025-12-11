@@ -2,7 +2,6 @@ package executors
 
 import (
 	"context"
-	"crypto/tls"
 	"sync/atomic"
 
 	"time"
@@ -172,16 +171,16 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 	var metricExp *otlpmetrichttp.Exporter
 
 	// NOTE: Below is only for testing purposes
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true,
-	}
+	// tlsConfig := &tls.Config{
+	// 	InsecureSkipVerify: true,
+	// }
 
 	// Build options conditionally
 	exporterOptions := []otlpmetrichttp.Option{
 		otlpmetrichttp.WithHeaders(headers),
 		otlpmetrichttp.WithEndpointURL(config.Cfg.Agent.Otel.HttpEndpoint),
 		otlpmetrichttp.WithTemporalitySelector(oe.getTemporalitySelector),
-		otlpmetrichttp.WithTLSClientConfig(tlsConfig),
+		// otlpmetrichttp.WithTLSClientConfig(tlsConfig),
 	}
 
 	// NOTE: Testing purposes only. Only add WithInsecure() when TLS is disabled
