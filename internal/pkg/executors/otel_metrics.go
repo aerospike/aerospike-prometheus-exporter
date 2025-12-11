@@ -65,10 +65,7 @@ func (oe OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Conte
 		labels := []attribute.KeyValue{}
 		// label name to value mapped using index
 		for idx, label := range stat.Labels {
-			if len(stat.LabelValues) == 0 {
-				log.Debugf("Label values are null or not present for stat %s and label %s", stat.Name, label)
-				continue
-			}
+			//TODO: handle if label value is null or not present
 			labels = append(labels, attribute.String(label, stat.LabelValues[idx]))
 		}
 
@@ -80,11 +77,18 @@ func (oe OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Conte
 		// create Otel metric
 		switch stat.MType {
 		case commons.MetricTypeCounter:
-			oe.makeOtelCounterMetric(meter, ctx, qualifiedName, desc, labels, stat.Value)
-		case commons.MetricTypeGauge:
-			// oe.makeOtelGaugeMetric(meter, qualifiedName, desc, labels, stat.Value)
+			counter := oe.getCounterMetric(key, meter, qualifiedName, desc, labels)
 
-			gauge := oe.getOrCreateGauge(key, meter, qualifiedName, desc, labels)
+			// Only zero (first run) or positive deltas are sent
+			if (stat.Value - counter.value) >= 0 {
+				counter.instrument.Add(ctx, (stat.Value - counter.value), metric.WithAttributes(counter.labels...))
+			}
+
+			counter.value = stat.Value
+
+		case commons.MetricTypeGauge:
+
+			gauge := oe.getGaugeMetric(key, meter, qualifiedName, desc, labels)
 			gauge.value.Store(stat.Value)
 		default:
 			log.Errorf("Unknown metric type: %d", stat.MType)
@@ -92,34 +96,21 @@ func (oe OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Conte
 	}
 }
 
-func (oe OtelExecutor) makeOtelCounterMetric(meter metric.Meter, ctx context.Context, metricName string, desc string, labels []attribute.KeyValue, value float64) {
+func (oe *OtelExecutor) constructMetricKey(metricName string, labels []attribute.KeyValue) string {
+	var b strings.Builder
+	b.WriteString(metricName)
 
-	ometric, _ := meter.Float64Counter(
-		metricName,
-		metric.WithDescription(desc),
-	)
+	for _, l := range labels {
+		b.WriteString("|")
+		b.WriteString(string(l.Key))
+		b.WriteString("=")
+		b.WriteString(l.Value.Emit())
+	}
 
-	ometric.Add(ctx, value, metric.WithAttributes(labels...))
+	return b.String()
 }
 
-// func (oe OtelExecutor) makeOtelGaugeMetric(meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue, value float64) {
-
-// 	ometric, _ := meter.Float64ObservableGauge(
-// 		metricName,
-// 		metric.WithDescription(desc),
-// 	)
-// 	_, err := meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-// 		a := value
-// 		o.ObserveFloat64(ometric, a, metric.WithAttributes(labels...))
-// 		return nil
-// 	}, ometric)
-
-// 	if err != nil {
-// 		log.Fatalf("makeOtelGaugeMetric() Error while creating object for stat %s: %v", metricName, err)
-// 	}
-// }
-
-func (oe *OtelExecutor) getOrCreateGauge(key string, meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue) *gaugeData {
+func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue) *GaugeMetrics {
 
 	// Fast path
 	if gd, ok := oe.gauges[key]; ok {
@@ -133,10 +124,12 @@ func (oe *OtelExecutor) getOrCreateGauge(key string, meter metric.Meter, metricN
 		log.Fatalf("getOrCreateGauge() Error while creating object for stat %s: %v", metricName, err)
 	}
 
-	gd := &gaugeData{
+	gd := &GaugeMetrics{
 		instrument: og,
 		labels:     labels,
 	}
+
+	// Initialize the value to 0
 	gd.value.Store(float64(0))
 
 	// Register callback ONCE
@@ -155,14 +148,25 @@ func (oe *OtelExecutor) getOrCreateGauge(key string, meter metric.Meter, metricN
 	return gd
 }
 
-func (oe *OtelExecutor) constructMetricKey(metricName string, labels []attribute.KeyValue) string {
-	var b strings.Builder
-	b.WriteString(metricName)
-	for _, l := range labels {
-		b.WriteString("|")
-		b.WriteString(string(l.Key))
-		b.WriteString("=")
-		b.WriteString(l.Value.Emit())
+func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricName string, desc string, labels []attribute.KeyValue) *CounterMetrics {
+
+	if cd, ok := oe.counters[key]; ok {
+		return cd
 	}
-	return b.String()
+
+	instr, err := meter.Float64Counter(
+		metricName,
+		metric.WithDescription(desc),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	cd := &CounterMetrics{
+		instrument: instr,
+		value:      0,
+	}
+
+	oe.counters[key] = cd
+	return cd
 }

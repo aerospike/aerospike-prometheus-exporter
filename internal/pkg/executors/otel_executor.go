@@ -2,6 +2,7 @@ package executors
 
 import (
 	"context"
+	"crypto/tls"
 	"sync/atomic"
 
 	"time"
@@ -21,15 +22,23 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
-// One gauge = one instrument + labels + latest value
-type gaugeData struct {
+type GaugeMetrics struct {
 	instrument metric.Float64ObservableGauge
 	labels     []attribute.KeyValue
-	value      atomic.Value // stores float64
+	value      atomic.Value // float64, avoid read/write race condition
+}
+
+type CounterMetrics struct {
+	instrument metric.Float64Counter
+	labels     []attribute.KeyValue
+	value      float64 // current refreshed value
 }
 
 type OtelExecutor struct {
-	gauges map[string]*gaugeData
+	// KEY =  one metric + labels
+	// Each measurement/instrument = one metric + labels + latest value
+	gauges   map[string]*GaugeMetrics
+	counters map[string]*CounterMetrics
 }
 
 // Exporter interface implementation
@@ -45,7 +54,8 @@ func (oe OtelExecutor) Initialize() error {
 	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.ServiceName)
 
 	// initialize the gauges map
-	oe.gauges = make(map[string]*gaugeData)
+	oe.gauges = make(map[string]*GaugeMetrics)
+	oe.counters = make(map[string]*CounterMetrics)
 
 	defaultContext := context.Background()
 	var meterProvider *sdkmetric.MeterProvider
@@ -161,17 +171,17 @@ func (oe OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Export
 	var err error
 	var metricExp *otlpmetrichttp.Exporter
 
-	// // NOTE: Below is only for testing purposes
-	// tlsConfig := &tls.Config{
-	// 	InsecureSkipVerify: true,
-	// }
+	// NOTE: Below is only for testing purposes
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+	}
 
 	// Build options conditionally
 	exporterOptions := []otlpmetrichttp.Option{
 		otlpmetrichttp.WithHeaders(headers),
 		otlpmetrichttp.WithEndpointURL(config.Cfg.Agent.Otel.HttpEndpoint),
 		otlpmetrichttp.WithTemporalitySelector(oe.getTemporalitySelector),
-		// otlpmetrichttp.WithTLSClientConfig(tlsConfig),
+		otlpmetrichttp.WithTLSClientConfig(tlsConfig),
 	}
 
 	// NOTE: Testing purposes only. Only add WithInsecure() when TLS is disabled
