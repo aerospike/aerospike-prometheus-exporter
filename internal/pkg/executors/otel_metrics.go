@@ -137,8 +137,7 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 }
 
 func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricName string,
-	desc string, labels []attribute.KeyValue,
-) *CounterMetrics {
+	desc string, labels []attribute.KeyValue) *CounterMetrics {
 
 	// Fast path
 	if cd, ok := oe.counters[key]; ok {
