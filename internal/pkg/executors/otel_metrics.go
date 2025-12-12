@@ -63,23 +63,20 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 
 		metricKey := oe.constructMetricKey(qualifiedName, labels)
 
-		// create Otel metric
+		// Use or Create Otel metric
 		switch stat.MType {
 		case commons.MetricTypeCounter:
 			cMetric := oe.getCounterMetric(metricKey, meter, qualifiedName, desc, labels)
 
-			// Only zero (first run) or positive deltas are sent
-			// TODO: discuss with sunil, when we restart a large value will come
-			if (stat.Value - cMetric.value) >= 0 {
-				cMetric.instrument.Add(ctx, (stat.Value - cMetric.value), metric.WithAttributes(cMetric.labels...))
+			// If server restarts while exporter running, delta will be negative, so we don't send it
+			if stat.Value >= 0 {
+				cMetric.value.Store(float64(stat.Value))
 			}
-
-			cMetric.value = stat.Value
 
 		case commons.MetricTypeGauge:
 
 			gMetric := oe.getGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
-			gMetric.value.Store(stat.Value)
+			gMetric.value.Store(float64(stat.Value))
 		default:
 			log.Errorf("Unknown metric type: %d", stat.MType)
 		}
@@ -140,23 +137,46 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 }
 
 func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricName string,
-	desc string, labels []attribute.KeyValue) *CounterMetrics {
+	desc string, labels []attribute.KeyValue,
+) *CounterMetrics {
 
+	// Fast path
 	if cd, ok := oe.counters[key]; ok {
 		return cd
 	}
 
-	instr, err := meter.Float64Counter(
+	// Create ObservableCounter
+	oc, err := meter.Float64ObservableCounter(
 		metricName,
 		metric.WithDescription(desc),
 	)
 	if err != nil {
-		panic(err)
+		log.Fatalf("getCounterMetric() Error while creating object for stat %s: %v", metricName, err)
 	}
 
 	cd := &CounterMetrics{
-		instrument: instr,
-		value:      0,
+		instrument: oc,
+		labels:     labels,
+	}
+	// Initialize the value to 0
+	cd.value.Store(float64(0))
+
+	// Register callback ONCE for this instrument
+	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+		vAny := cd.value.Load()
+
+		// atomic.Value can be nil before first Store, guard for safety
+		var v float64
+		if vAny != nil {
+			v = vAny.(float64)
+		}
+
+		o.ObserveFloat64(cd.instrument, v, metric.WithAttributes(cd.labels...))
+		return nil
+	}, oc)
+
+	if err != nil {
+		log.Fatalf("Error while RegisterCallback for Counter stat %s: %v", metricName, err)
 	}
 
 	oe.counters[key] = cd

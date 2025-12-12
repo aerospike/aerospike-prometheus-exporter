@@ -30,9 +30,9 @@ type GaugeMetrics struct {
 }
 
 type CounterMetrics struct {
-	instrument metric.Float64Counter
+	instrument metric.Float64ObservableCounter
 	labels     []attribute.KeyValue
-	value      float64 // last refreshed value
+	value      atomic.Value // float64, avoid read/write race condition
 }
 
 type OtelExecutor struct {
