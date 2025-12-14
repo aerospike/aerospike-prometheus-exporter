@@ -208,9 +208,9 @@ func (oe *OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Expor
 	return metricExp, err
 }
 
-//	Gauges don't have temporality (they're instantaneous values), as SDK still calls this selector.
-//	For gauges, the SDK will ignore the temporality setting.
-//	Dynatrace supports both Delta and Cumulative temporality for metrics that support it.
+// Gauges don't have temporality (they're instantaneous values), as SDK still calls this selector.
+// For gauges, the SDK will ignore the temporality setting.
+// For counters, we are using Delta temporality to ensure that the metrics are compatible with Dynatrace and Datadog
 //
 // NOTE: Dynatrace and Datadog does not support MONOTONIC_CUMULATIVE_SUM - Aerospike counters are monotonic
 //
@@ -226,7 +226,7 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 	asRefreshStats, err := statprocessors.Refresh()
 
 	if err != nil {
-		log.Errorln("Error while refreshing Aerospike Metrics, error: ", err)
+		log.Errorf("Error while refreshing Aerospike Metrics, error: %v", err)
 		oe.sendNodeUp(meter, commonLabels, 0.0)
 		return
 	}

@@ -33,6 +33,7 @@ func (oe *OtelExecutor) sendNodeUp(meter metric.Meter, commonLabels []attribute.
 func (oe *OtelExecutor) getCommonLabels() []attribute.KeyValue {
 	mlabels := config.Cfg.Agent.MetricLabels
 	attrkv := []attribute.KeyValue{}
+
 	if len(mlabels) > 0 {
 		for k, v := range mlabels {
 			attrkv = append(attrkv, attribute.String(k, v))
@@ -149,6 +150,7 @@ func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricN
 		metricName,
 		metric.WithDescription(desc),
 	)
+
 	if err != nil {
 		log.Fatalf("getCounterMetric() Error while creating object for stat %s: %v", metricName, err)
 	}

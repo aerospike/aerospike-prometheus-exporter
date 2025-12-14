@@ -201,18 +201,15 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		log.Fatalf("In Aerospike section, root_ca cannot be null when cert_file and key_file are configured")
 	}
 
-	// validate Otel endpoint, grpc_endpoint and http_endpoint configs
-	if len(Cfg.Agent.Otel.GrpcEndpoint) > 0 {
-		log.Infof("In OpenTelemetry section, grpc_endpoint is configured. Ignoring endpoint configuration ")
-	} else if len(Cfg.Agent.Otel.Endpoint) > 0 {
-		log.Infof("In OpenTelemetry section, Using endpoint as grpc_endpoint ")
-		Cfg.Agent.Otel.GrpcEndpoint = Cfg.Agent.Otel.Endpoint
+	// validate Otel endpoint and grpc_endpoint configs
+	if len(Cfg.Agent.Otel.Endpoint) > 0 && len(Cfg.Agent.Otel.GrpcEndpoint) > 0 {
+		log.Fatalf("In OpenTelemetry section, ONLY  endpoint or grpc_endpoint can be configured, not both")
 	}
 
 	if len(Cfg.Agent.Otel.GrpcEndpoint) != 0 && len(Cfg.Agent.Otel.HttpEndpoint) != 0 {
-		log.Fatalf("In OpenTelemetry section, grpc_endpoint and http_endpoint cannot be configured at the same time")
+		log.Fatalf("In OpenTelemetry section, grpc_endpoint and http_endpoint can be configured, not both")
 	} else if len(Cfg.Agent.Otel.GrpcEndpoint) == 0 && len(Cfg.Agent.Otel.HttpEndpoint) == 0 {
-		log.Fatalf("In OpenTelemetry section, Grpc  or Http is not configured")
+		log.Fatalf("In OpenTelemetry section, Grpc  or Http neither is configured")
 	}
 
 }
