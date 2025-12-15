@@ -88,6 +88,8 @@ node_gauge_stats = [
 	"heap_mapped_kbytes",
 	"heap_site_count",
 	"heartbeat_connections",
+	"host_free_mem_kbytes",
+	"host_free_mem_pct",	
 	"info_queue",
 	"migrate_partitions_remaining",
 	"objects",
