@@ -12,22 +12,15 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-func (oe *OtelExecutor) sendNodeUp(meter metric.Meter, commonLabels []attribute.KeyValue, value float64) {
+const AEROSPIKE_NODE_UP = "aerospike_node_up"
 
-	labels := []attribute.KeyValue{
-		attribute.String("cluster_name", statprocessors.ClusterName),
-		attribute.String("service", statprocessors.Service),
-		attribute.String("build", statprocessors.Build),
-	}
+func (oe *OtelExecutor) sendNodeUp(meter metric.Meter,
+	labels []attribute.KeyValue, value float64) {
 
-	// append common labels
-	labels = append(labels, commonLabels...)
+	metricKey := oe.constructMetricKey(AEROSPIKE_NODE_UP, labels)
 
-	metricKey := oe.constructMetricKey("aerospike_node_up", labels)
-
-	nodeUpGauge := oe.getGaugeMetric(metricKey, meter, "aerospike_node_up", "Aerospike node active status", labels)
+	nodeUpGauge := oe.getGaugeMetric(metricKey, meter, AEROSPIKE_NODE_UP, "Aerospike node active status", labels)
 	nodeUpGauge.value.Store(value)
-
 }
 
 func (oe *OtelExecutor) getCommonLabels() []attribute.KeyValue {

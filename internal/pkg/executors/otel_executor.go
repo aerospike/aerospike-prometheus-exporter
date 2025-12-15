@@ -227,12 +227,19 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 
 	if err != nil {
 		log.Errorf("Error while refreshing Aerospike Metrics, error: %v", err)
+		// aerospike server is down, send common labels
 		oe.sendNodeUp(meter, commonLabels, 0.0)
 		return
 	}
 
-	// aerospike server is up and we are able to fetch data
-	oe.sendNodeUp(meter, commonLabels, 1.0)
+	labels := []attribute.KeyValue{
+		attribute.String("cluster_name", statprocessors.ClusterName),
+		attribute.String("service", statprocessors.Service),
+		attribute.String("build", statprocessors.Build),
+	}
+
+	// aerospike server is up and we are able to fetch data, send common + server labels
+	oe.sendNodeUp(meter, append(commonLabels, labels...), 1.0)
 
 	// process metrics
 	oe.processAndPushStats(meter, ctx, commonLabels, asRefreshStats)
