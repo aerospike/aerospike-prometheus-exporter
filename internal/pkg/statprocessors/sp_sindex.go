@@ -65,7 +65,7 @@ func (siw *SindexStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (sind
 func (siw *SindexStatsProcessor) getSindexCommands(sindexesMeta []string) (sindexCommands []string) {
 	for _, sindex := range sindexesMeta {
 		stats := commons.ParseStats(sindex, ":")
-		sindexCommands = append(sindexCommands, siw.sindexCommand+"/"+stats["ns"]+"/"+stats["indexname"])
+		sindexCommands = append(sindexCommands, "sindex/"+stats["ns"]+"/"+stats["indexname"])
 	}
 
 	return sindexCommands
@@ -84,36 +84,39 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 	var allMetricsToSend = []AerospikeStat{}
 
 	for _, sindex := range infoKeys {
-		if strings.HasPrefix(sindex, "sindex/") {
-			log.Tracef("sindex-stats:%v:%v", sindex, rawMetrics[sindex])
 
-			sindexInfoKey := strings.ReplaceAll(sindex, "sindex/", "")
-			sindexInfoKeySplit := strings.Split(sindexInfoKey, "/")
-			nsName := sindexInfoKeySplit[0]
-			sindexName := sindexInfoKeySplit[1]
-			log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
+		if !strings.HasPrefix(sindex, "sindex/") {
+			continue
+		}
+		log.Tracef("sindex-stats:%v:%v", sindex, rawMetrics[sindex])
 
-			stats := commons.ParseStats(rawMetrics[sindex], ";")
-			for stat, value := range stats {
-				pv, err := commons.TryConvert(value)
-				if err != nil {
-					continue
-				}
-				asMetric, exists := siw.sindexMetrics[stat]
+		sindexInfoKey := strings.ReplaceAll(sindex, "sindex/", "")
+		sindexInfoKeySplit := strings.Split(sindexInfoKey, "/")
+		nsName := sindexInfoKeySplit[0]
+		sindexName := sindexInfoKeySplit[1]
+		log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
 
-				if !exists {
-					allowed := isMetricAllowed(commons.CTX_SINDEX, stat)
-					asMetric = NewAerospikeStat(commons.CTX_SINDEX, stat, allowed)
-					siw.sindexMetrics[stat] = asMetric
-				}
+		stats := commons.ParseStats(rawMetrics[sindex], ";")
+		for stat, value := range stats {
+			pv, err := commons.TryConvert(value)
 
-				labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_SINDEX}
-				labelValues := []string{ClusterName, Service, nsName, sindexName}
-
-				asMetric.updateValues(pv, labels, labelValues)
-				allMetricsToSend = append(allMetricsToSend, asMetric)
-
+			if err != nil {
+				continue
 			}
+
+			asMetric, exists := siw.sindexMetrics[stat]
+
+			if !exists {
+				allowed := isMetricAllowed(commons.CTX_SINDEX, stat)
+				asMetric = NewAerospikeStat(commons.CTX_SINDEX, stat, allowed)
+				siw.sindexMetrics[stat] = asMetric
+			}
+
+			labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_SINDEX}
+			labelValues := []string{ClusterName, Service, nsName, sindexName}
+
+			asMetric.updateValues(pv, labels, labelValues)
+			allMetricsToSend = append(allMetricsToSend, asMetric)
 		}
 
 	}
