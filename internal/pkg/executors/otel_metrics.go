@@ -15,7 +15,7 @@ import (
 const AEROSPIKE_NODE_UP = "aerospike_node_up"
 
 func (oe *OtelExecutor) sendNodeUp(meter metric.Meter,
-	labels []attribute.KeyValue, value float64) {
+	labels []attribute.KeyValue, value int64) {
 
 	metricKey := oe.constructMetricKey(AEROSPIKE_NODE_UP, labels)
 
@@ -64,13 +64,13 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 
 			// If server restarts while exporter running, delta will be negative, so we don't send it
 			if stat.Value >= 0 {
-				cMetric.value.Store(float64(stat.Value))
+				cMetric.value.Store(int64(stat.Value))
 			}
 
 		case commons.MetricTypeGauge:
 
 			gMetric := oe.getGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
-			gMetric.value.Store(float64(stat.Value))
+			gMetric.value.Store(int64(stat.Value))
 		default:
 			log.Errorf("Unknown metric type: %d", stat.MType)
 		}
@@ -100,7 +100,7 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 	}
 
 	// Create
-	og, err := meter.Float64ObservableGauge(metricName, metric.WithDescription(desc))
+	og, err := meter.Int64ObservableGauge(metricName, metric.WithDescription(desc))
 
 	if err != nil {
 		log.Fatalf("getOrCreateGauge() Error while creating object for stat %s: %v", metricName, err)
@@ -112,12 +112,12 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 	}
 
 	// Initialize the value to 0
-	gd.value.Store(float64(0))
+	gd.value.Store(0)
 
 	// Register callback ONCE
 	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-		v := gd.value.Load().(float64)
-		o.ObserveFloat64(gd.instrument, v, metric.WithAttributes(labels...))
+		v := gd.value.Load()
+		o.ObserveInt64(gd.instrument, v, metric.WithAttributes(labels...))
 
 		return nil
 	}, og)
@@ -139,7 +139,7 @@ func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricN
 	}
 
 	// Create ObservableCounter
-	oc, err := meter.Float64ObservableCounter(
+	oc, err := meter.Int64ObservableCounter(
 		metricName,
 		metric.WithDescription(desc),
 	)
@@ -153,19 +153,12 @@ func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricN
 		labels:     labels,
 	}
 	// Initialize the value to 0
-	cd.value.Store(float64(0))
+	cd.value.Store(0)
 
 	// Register callback ONCE for this instrument
 	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-		vAny := cd.value.Load()
-
-		// atomic.Value can be nil before first Store, guard for safety
-		var v float64
-		if vAny != nil {
-			v = vAny.(float64)
-		}
-
-		o.ObserveFloat64(cd.instrument, v, metric.WithAttributes(cd.labels...))
+		v := cd.value.Load()
+		o.ObserveInt64(cd.instrument, v, metric.WithAttributes(cd.labels...))
 		return nil
 	}, oc)
 

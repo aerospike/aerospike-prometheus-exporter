@@ -3,7 +3,6 @@ package executors
 import (
 	"context"
 	"crypto/tls"
-	"sync"
 	"sync/atomic"
 
 	"time"
@@ -24,15 +23,15 @@ import (
 )
 
 type GaugeMetrics struct {
-	instrument metric.Float64ObservableGauge
+	instrument metric.Int64ObservableGauge
 	labels     []attribute.KeyValue
-	value      atomic.Value // float64, avoid read/write race condition
+	value      atomic.Int64 // int64, avoid read/write race condition
 }
 
 type CounterMetrics struct {
-	instrument metric.Float64ObservableCounter
+	instrument metric.Int64ObservableCounter
 	labels     []attribute.KeyValue
-	value      atomic.Value // float64, avoid read/write race condition
+	value      atomic.Int64 // int64, avoid read/write race condition
 }
 
 type OtelExecutor struct {
@@ -40,8 +39,6 @@ type OtelExecutor struct {
 	// Each measurement/instrument = one metric + labels + latest value
 	gauges   map[string]*GaugeMetrics
 	counters map[string]*CounterMetrics
-
-	mutex sync.Mutex
 }
 
 // Exporter interface implementation
@@ -117,21 +114,15 @@ func (oe *OtelExecutor) Initialize() error {
 		for {
 			// Wait for next tick or shutdown signal
 			select {
-			case <-ticker.C:
-				// Try to acquire lock non-blocking - skip if already locked
-				// TODO: discuss with Sunil, if we can use a different approach to avoid the mutex
-				if !oe.mutex.TryLock() {
-					log.Debug("Skipping metrics collection - mutex already locked (previous collection still in progress)")
-					continue
-				}
+			case t := <-ticker.C:
+				// Ticker drops events from channel buffer if previous event is still in-progress
+				log.Debugf("\t *** ticker.C: %s", t.Format(time.RFC3339))
 
 				// Aerospike Refresh stats
 				oe.handleAerospikeMetrics(meter, defaultCtx, commonLabels)
 
 				// System metrics
 				oe.handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
-
-				oe.mutex.Unlock()
 
 			case <-commons.ProcessExit:
 				// Exit immediately if shutdown signal received
@@ -219,7 +210,18 @@ func (oe *OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Expor
 //	* avoid any issues with the metrics collection
 //	* ensure that the metrics are compatible with Dynatrace, New Relic and Datadog
 func (oe *OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
-	return metricdata.DeltaTemporality
+
+	switch instrumentKind {
+	case sdkmetric.InstrumentKindCounter,
+		sdkmetric.InstrumentKindObservableCounter,
+		sdkmetric.InstrumentKindObservableUpDownCounter,
+		sdkmetric.InstrumentKindHistogram:
+		//TODO: further discussion with sunil on this
+		return metricdata.DeltaTemporality
+	default:
+		// Gauges
+		return metricdata.CumulativeTemporality
+	}
 }
 
 func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
@@ -228,7 +230,7 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 	if err != nil {
 		log.Errorf("Error while refreshing Aerospike Metrics, error: %v", err)
 		// aerospike server is down, send common labels
-		oe.sendNodeUp(meter, commonLabels, 0.0)
+		oe.sendNodeUp(meter, commonLabels, 0)
 		return
 	}
 
@@ -239,7 +241,7 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 	}
 
 	// aerospike server is up and we are able to fetch data, send common + server labels
-	oe.sendNodeUp(meter, append(commonLabels, labels...), 1.0)
+	oe.sendNodeUp(meter, append(commonLabels, labels...), 1)
 
 	// process metrics
 	oe.processAndPushStats(meter, ctx, commonLabels, asRefreshStats)
