@@ -65,6 +65,7 @@ func (siw *SindexStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (sind
 func (siw *SindexStatsProcessor) getSindexCommands(sindexesMeta []string) (sindexCommands []string) {
 	for _, sindex := range sindexesMeta {
 		stats := commons.ParseStats(sindex, ":")
+		//TODO: discuss with sunil, sindex/ is giving deprecated warning at server
 		sindexCommands = append(sindexCommands, "sindex/"+stats["ns"]+"/"+stats["indexname"])
 	}
 
@@ -85,9 +86,10 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 
 	for _, sindex := range infoKeys {
 
-		if !strings.HasPrefix(sindex, "sindex/") {
+		if !strings.HasPrefix(sindex, "sindex") {
 			continue
 		}
+
 		log.Tracef("sindex-stats:%v:%v", sindex, rawMetrics[sindex])
 
 		sindexInfoKey := strings.ReplaceAll(sindex, "sindex/", "")
