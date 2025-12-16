@@ -11,6 +11,7 @@ import (
 
 type SindexStatsProcessor struct {
 	sindexMetrics map[string]AerospikeStat
+	sindexCommand string
 }
 
 const (
@@ -33,23 +34,26 @@ func (siw *SindexStatsProcessor) PassOneKeys() []string {
 
 	if ge {
 		log.Tracef("sindex-passonekeys:%s", []string{KEY_SINDEX_LIST_COMMAND})
+		siw.sindexCommand = KEY_SINDEX_LIST_COMMAND
 		return []string{KEY_SINDEX_LIST_COMMAND}
 	}
 
 	// older versions
 	log.Tracef("sindex-passonekeys:%s", []string{KEY_SINDEX_COMMAND})
+	siw.sindexCommand = KEY_SINDEX_COMMAND
 	return []string{KEY_SINDEX_COMMAND}
 }
 
 func (siw *SindexStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (sindexCommands []string) {
+
 	if config.Cfg.Aerospike.DisableSindexMetrics {
 		// disabled
 		return nil
 	}
 
-	log.Tracef("sindex:%v", rawMetrics["sindex"])
+	log.Tracef("sindex:%v", rawMetrics[siw.sindexCommand])
 
-	sindexesMeta := strings.Split(rawMetrics["sindex"], ";")
+	sindexesMeta := strings.Split(rawMetrics[siw.sindexCommand], ";")
 	sindexCommands = siw.getSindexCommands(sindexesMeta)
 
 	log.Tracef("sindex-passtwokeys:%s", sindexCommands)
@@ -61,7 +65,7 @@ func (siw *SindexStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (sind
 func (siw *SindexStatsProcessor) getSindexCommands(sindexesMeta []string) (sindexCommands []string) {
 	for _, sindex := range sindexesMeta {
 		stats := commons.ParseStats(sindex, ":")
-		sindexCommands = append(sindexCommands, "sindex/"+stats["ns"]+"/"+stats["indexname"])
+		sindexCommands = append(sindexCommands, siw.sindexCommand+"/"+stats["ns"]+"/"+stats["indexname"])
 	}
 
 	return sindexCommands
