@@ -66,7 +66,8 @@ func (siw *SindexStatsProcessor) getSindexCommands(sindexesMeta []string) (sinde
 	for _, sindex := range sindexesMeta {
 		stats := commons.ParseStats(sindex, ":")
 		//TODO: discuss with sunil, sindex/ is giving deprecated warning at server
-		sindexCommands = append(sindexCommands, "sindex/"+stats["ns"]+"/"+stats["indexname"])
+		// sindexCommands = append(sindexCommands, "sindex-stat/"+stats["ns"]+"/"+stats["indexname"])
+		sindexCommands = append(sindexCommands, "sindex-stat:namespace="+stats["ns"]+";indexname="+stats["indexname"])
 	}
 
 	return sindexCommands
@@ -86,16 +87,19 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 
 	for _, sindex := range infoKeys {
 
-		if !strings.HasPrefix(sindex, "sindex") {
+		// during first run we get error: ERROR:4:missing 'indexname'...
+		if !strings.HasPrefix(sindex, "sindex") || strings.Contains(rawMetrics[sindex], "ERROR") {
 			continue
 		}
 
 		log.Tracef("sindex-stats:%v:%v", sindex, rawMetrics[sindex])
 
-		sindexInfoKey := strings.ReplaceAll(sindex, "sindex/", "")
-		sindexInfoKeySplit := strings.Split(sindexInfoKey, "/")
-		nsName := sindexInfoKeySplit[0]
-		sindexName := sindexInfoKeySplit[1]
+		// sindex-stat:namespace=test;indexname=3rd_sindex
+		sindexInfoKey := strings.ReplaceAll(sindex, "sindex-stat", "")
+		sindexInfos := strings.Split(sindexInfoKey, ";")
+		nsName := strings.Split(sindexInfos[0], "=")[1]
+		sindexName := strings.Split(sindexInfos[1], "=")[1]
+
 		log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
 
 		stats := commons.ParseStats(rawMetrics[sindex], ";")
