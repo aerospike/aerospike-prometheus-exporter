@@ -78,10 +78,8 @@ func (oe *OtelExecutor) Initialize() error {
 	}
 
 	if config.Cfg.Agent.Otel.HttpEndpoint != "" {
-		log.Infof("Creating Otel MetricsExporter with HttpEndpoint: %s", config.Cfg.Agent.Otel.HttpEndpoint)
 		metricExporter, err = oe.BuildHttpExporter(defaultContext)
 	} else {
-		log.Infof("Creating Otel MetricsExporter with GrpcEndpoint: %s", config.Cfg.Agent.Otel.GrpcEndpoint)
 		// either grpc_endpoint or endpoint is configured
 		metricExporter, err = oe.BuildGrpcExporter(defaultContext)
 	}
