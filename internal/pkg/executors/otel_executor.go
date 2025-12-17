@@ -47,7 +47,7 @@ type OtelExecutor struct {
 // Initializes an OTLP exporter, and configures the corresponding metric providers
 func (oe *OtelExecutor) Initialize() error {
 
-	log.Infof("Otel sending thread started, sending data to : %s", config.Cfg.Agent.Otel.Endpoint)
+	log.Infof("Otel sending thread started. ")
 
 	log.Infof("*** Initializing Otel Exporter... ")
 	log.Debug("** OTel endpoint ", config.Cfg.Agent.Otel.Endpoint)
@@ -78,8 +78,10 @@ func (oe *OtelExecutor) Initialize() error {
 	}
 
 	if config.Cfg.Agent.Otel.HttpEndpoint != "" {
+		log.Infof("Creating Otel MetricsExporter with HttpEndpoint: %s", config.Cfg.Agent.Otel.HttpEndpoint)
 		metricExporter, err = oe.createHttpExporter(defaultContext)
 	} else {
+		log.Infof("Creating Otel MetricsExporter with GrpcEndpoint: %s", config.Cfg.Agent.Otel.GrpcEndpoint)
 		// either grpc_endpoint or endpoint is configured
 		metricExporter, err = oe.createGrpcExporter(defaultContext)
 	}
@@ -210,18 +212,20 @@ func (oe *OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Expor
 //	* avoid any issues with the metrics collection
 //	* ensure that the metrics are compatible with Dynatrace, New Relic and Datadog
 func (oe *OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
+	// TODO: further discussion with sunil on this
+	return metricdata.DeltaTemporality
 
-	switch instrumentKind {
-	case sdkmetric.InstrumentKindCounter,
-		sdkmetric.InstrumentKindObservableCounter,
-		sdkmetric.InstrumentKindObservableUpDownCounter,
-		sdkmetric.InstrumentKindHistogram:
-		//TODO: further discussion with sunil on this
-		return metricdata.DeltaTemporality
-	default:
-		// Gauges
-		return metricdata.CumulativeTemporality
-	}
+	// switch instrumentKind {
+	// case sdkmetric.InstrumentKindCounter,
+	// 	sdkmetric.InstrumentKindObservableCounter,
+	// 	sdkmetric.InstrumentKindObservableUpDownCounter,
+	// 	sdkmetric.InstrumentKindHistogram:
+	// 	//TODO: further discussion with sunil on this
+	// 	return metricdata.DeltaTemporality
+	// default:
+	// 	// Gauges
+	// 	return metricdata.CumulativeTemporality
+	// }
 }
 
 func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {

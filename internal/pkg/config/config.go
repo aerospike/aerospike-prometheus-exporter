@@ -204,6 +204,9 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 	// validate Otel endpoint and grpc_endpoint configs
 	if len(Cfg.Agent.Otel.Endpoint) > 0 && len(Cfg.Agent.Otel.GrpcEndpoint) > 0 {
 		log.Fatalf("In OpenTelemetry section, ONLY  endpoint or grpc_endpoint can be configured, not both")
+	} else if len(Cfg.Agent.Otel.Endpoint) > 0 && len(Cfg.Agent.Otel.GrpcEndpoint) == 0 {
+		log.Infof("In OpenTelemetry section, endpoint configured will be used as grpc_endpoint")
+		Cfg.Agent.Otel.GrpcEndpoint = Cfg.Agent.Otel.Endpoint
 	}
 
 	if len(Cfg.Agent.Otel.GrpcEndpoint) != 0 && len(Cfg.Agent.Otel.HttpEndpoint) != 0 {
