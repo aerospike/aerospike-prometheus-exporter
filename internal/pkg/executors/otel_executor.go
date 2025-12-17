@@ -79,11 +79,11 @@ func (oe *OtelExecutor) Initialize() error {
 
 	if config.Cfg.Agent.Otel.HttpEndpoint != "" {
 		log.Infof("Creating Otel MetricsExporter with HttpEndpoint: %s", config.Cfg.Agent.Otel.HttpEndpoint)
-		metricExporter, err = oe.createHttpExporter(defaultContext)
+		metricExporter, err = oe.BuildHttpExporter(defaultContext)
 	} else {
 		log.Infof("Creating Otel MetricsExporter with GrpcEndpoint: %s", config.Cfg.Agent.Otel.GrpcEndpoint)
 		// either grpc_endpoint or endpoint is configured
-		metricExporter, err = oe.createGrpcExporter(defaultContext)
+		metricExporter, err = oe.BuildGrpcExporter(defaultContext)
 	}
 
 	if err != nil {
@@ -144,8 +144,8 @@ func (oe *OtelExecutor) Initialize() error {
 	return nil
 }
 
-// func (oe *OtelExecutor) createGrpcExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
-func (oe *OtelExecutor) createGrpcExporter(ctx context.Context) (sdkmetric.Exporter, error) {
+// func (oe *OtelExecutor) BuildGrpcExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
+func (oe *OtelExecutor) BuildGrpcExporter(ctx context.Context) (sdkmetric.Exporter, error) {
 	headers := oe.readHeaders()
 
 	var metricExp *otlpmetricgrpc.Exporter
@@ -170,8 +170,7 @@ func (oe *OtelExecutor) createGrpcExporter(ctx context.Context) (sdkmetric.Expor
 
 }
 
-// func (oe *OtelExecutor) createHttpExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
-func (oe *OtelExecutor) createHttpExporter(ctx context.Context) (sdkmetric.Exporter, error) {
+func (oe *OtelExecutor) BuildHttpExporter(ctx context.Context) (sdkmetric.Exporter, error) {
 
 	headers := oe.readHeaders()
 	var err error
