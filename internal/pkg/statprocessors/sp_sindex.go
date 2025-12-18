@@ -71,7 +71,7 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 	for _, sindex := range infoKeys {
 
 		// during first run we get error: ERROR:4:missing 'indexname'...
-		if !strings.HasPrefix(sindex, "sindex") || strings.Contains(rawMetrics[sindex], "ERROR") {
+		if !strings.HasPrefix(sindex, "sindex") {
 			continue
 		}
 
