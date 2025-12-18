@@ -11,36 +11,21 @@ import (
 
 type SindexStatsProcessor struct {
 	sindexMetrics map[string]AerospikeStat
-	sindexCommand string
 }
 
 const (
-	KEY_SINDEX_LIST_COMMAND = "sindex-list"
-	KEY_SINDEX_COMMAND      = "sindex"
+	KEY_SINDEX_COMMAND = "sindex-list"
 )
 
 func (siw *SindexStatsProcessor) PassOneKeys() []string {
+
 	if config.Cfg.Aerospike.DisableSindexMetrics {
 		// disabled
 		log.Tracef("sindex-passonekeys:nil")
 		return nil
 	}
 
-	ge, err := isBuildVersionGreaterThanOrEqual(Build, "7.0.0.0")
-
-	if err != nil {
-		return nil
-	}
-
-	if ge {
-		log.Tracef("sindex-passonekeys:%s", []string{KEY_SINDEX_LIST_COMMAND})
-		siw.sindexCommand = KEY_SINDEX_LIST_COMMAND
-		return []string{KEY_SINDEX_LIST_COMMAND}
-	}
-
-	// older versions
 	log.Tracef("sindex-passonekeys:%s", []string{KEY_SINDEX_COMMAND})
-	siw.sindexCommand = KEY_SINDEX_COMMAND
 	return []string{KEY_SINDEX_COMMAND}
 }
 
@@ -51,9 +36,9 @@ func (siw *SindexStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (sind
 		return nil
 	}
 
-	log.Tracef("sindex:%v", rawMetrics[siw.sindexCommand])
+	log.Tracef("sindex:%v", rawMetrics[KEY_SINDEX_COMMAND])
 
-	sindexesMeta := strings.Split(rawMetrics[siw.sindexCommand], ";")
+	sindexesMeta := strings.Split(rawMetrics[KEY_SINDEX_COMMAND], ";")
 	sindexCommands = siw.getSindexCommands(sindexesMeta)
 
 	log.Tracef("sindex-passtwokeys:%s", sindexCommands)
@@ -65,8 +50,6 @@ func (siw *SindexStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (sind
 func (siw *SindexStatsProcessor) getSindexCommands(sindexesMeta []string) (sindexCommands []string) {
 	for _, sindex := range sindexesMeta {
 		stats := commons.ParseStats(sindex, ":")
-		//TODO: discuss with sunil, sindex/ is giving deprecated warning at server
-		// sindexCommands = append(sindexCommands, "sindex-stat/"+stats["ns"]+"/"+stats["indexname"])
 		sindexCommands = append(sindexCommands, "sindex-stat:namespace="+stats["ns"]+";indexname="+stats["indexname"])
 	}
 
@@ -94,11 +77,7 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 
 		log.Tracef("sindex-stats:%v:%v", sindex, rawMetrics[sindex])
 
-		// sindex-stat:namespace=test;indexname=3rd_sindex
-		sindexInfoKey := strings.ReplaceAll(sindex, "sindex-stat", "")
-		sindexInfos := strings.Split(sindexInfoKey, ";")
-		nsName := strings.Split(sindexInfos[0], "=")[1]
-		sindexName := strings.Split(sindexInfos[1], "=")[1]
+		nsName, sindexName := siw.getNamespaceAndSindexName(sindex)
 
 		log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
 
@@ -128,4 +107,17 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 	}
 
 	return allMetricsToSend, nil
+}
+
+func (siw *SindexStatsProcessor) getNamespaceAndSindexName(sindexInfoKey string) (string, string) {
+
+	// sindex-stat:namespace=test;indexname=3rd_sindex
+	sindexInfos := strings.Split(sindexInfoKey, ":")
+	// namespace=test;indexname=3rd_sindex
+	sindexInfos = strings.Split(sindexInfos[1], ";")
+
+	nsName := strings.Split(sindexInfos[0], "=")[1]
+	sindexName := strings.Split(sindexInfos[1], "=")[1]
+
+	return nsName, sindexName
 }
