@@ -41,16 +41,23 @@ func (siw *SindexStatsProcessor) PassTwoKeys(passOneStats map[string]string) (si
 	sindexesMeta := strings.Split(passOneStats[KEY_SINDEX_COMMAND], ";")
 	sindexCommands = siw.getSindexCommands(sindexesMeta)
 
-	log.Tracef("sindex-passtwokeys:%s", sindexCommands)
+	log.Tracef("sindex-passtwokeys: length is %d and command %s", len(sindexCommands), sindexCommands)
+
+	if len(sindexCommands) == 0 {
+		return nil
+	}
 
 	return sindexCommands
 }
 
 // getSindexCommands returns list of commands to fetch sindex statistics
 func (siw *SindexStatsProcessor) getSindexCommands(sindexesMeta []string) (sindexCommands []string) {
+
 	for _, sindex := range sindexesMeta {
 		stats := commons.ParseStats(sindex, ":")
-		sindexCommands = append(sindexCommands, "sindex-stat:namespace="+stats["ns"]+";indexname="+stats["indexname"])
+		if stats["ns"] != "" {
+			sindexCommands = append(sindexCommands, "sindex-stat:namespace="+stats["ns"]+";indexname="+stats["indexname"])
+		}
 	}
 
 	return sindexCommands
@@ -69,12 +76,6 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 	var allMetricsToSend = []AerospikeStat{}
 
 	for _, sindex := range infoKeys {
-
-		// during first run we get error: ERROR:4:missing 'indexname'...
-		//TODO: specify why this ERROR comes
-		if !strings.HasPrefix(sindex, "sindex") {
-			continue
-		}
 
 		log.Tracef("sindex-stats:%v:%v", sindex, rawMetrics[sindex])
 
