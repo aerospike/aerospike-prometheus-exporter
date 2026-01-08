@@ -29,16 +29,16 @@ func (siw *SindexStatsProcessor) PassOneKeys() []string {
 	return []string{KEY_SINDEX_COMMAND}
 }
 
-func (siw *SindexStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (sindexCommands []string) {
+func (siw *SindexStatsProcessor) PassTwoKeys(passOneStats map[string]string) (sindexCommands []string) {
 
 	if config.Cfg.Aerospike.DisableSindexMetrics {
 		// disabled
 		return nil
 	}
 
-	log.Tracef("sindex:%v", rawMetrics[KEY_SINDEX_COMMAND])
+	log.Tracef("sindex:%v", passOneStats[KEY_SINDEX_COMMAND])
 
-	sindexesMeta := strings.Split(rawMetrics[KEY_SINDEX_COMMAND], ";")
+	sindexesMeta := strings.Split(passOneStats[KEY_SINDEX_COMMAND], ";")
 	sindexCommands = siw.getSindexCommands(sindexesMeta)
 
 	log.Tracef("sindex-passtwokeys:%s", sindexCommands)
@@ -71,6 +71,7 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 	for _, sindex := range infoKeys {
 
 		// during first run we get error: ERROR:4:missing 'indexname'...
+		//TODO: specify why this ERROR comes
 		if !strings.HasPrefix(sindex, "sindex") {
 			continue
 		}

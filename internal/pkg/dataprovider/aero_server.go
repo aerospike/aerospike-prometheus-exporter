@@ -145,7 +145,7 @@ func createNewConnection() (*aero.Connection, error) {
 
 func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error) {
 	var err error
-	rawMetrics := make(map[string]string)
+	requestInfoResponseMap := make(map[string]string)
 
 	// Retry for connection, timeout, network errors
 	// including errors from RequestInfo()
@@ -168,7 +168,8 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 		}
 
 		// Info request
-		rawMetrics, err = asConnection.RequestInfo(infoKeys...)
+		requestInfoResponseMap, err = asConnection.RequestInfo(infoKeys...)
+
 		if err != nil {
 			logrus.Debug("Error while requestInfo ( infoKeys...), closing connection : Error is: ", err, " and infoKeys: ", infoKeys)
 			asConnection.Close()
@@ -179,15 +180,15 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 		break
 	}
 
-	if len(rawMetrics) == 1 {
-		for k := range rawMetrics {
+	if len(requestInfoResponseMap) == 1 {
+		for k := range requestInfoResponseMap {
 			if strings.HasPrefix(strings.ToUpper(k), "ERROR:") {
 				return nil, errors.New(k)
 			}
 		}
 	}
 
-	return rawMetrics, err
+	return requestInfoResponseMap, err
 }
 
 func fetchUsersRoles() (bool, []*aero.UserRoles, error) {

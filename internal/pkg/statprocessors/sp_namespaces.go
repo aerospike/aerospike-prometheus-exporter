@@ -48,8 +48,8 @@ func (nw *NamespaceStatsProcessor) PassOneKeys() []string {
 	return []string{KEY_NS_METADATA}
 }
 
-func (nw *NamespaceStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string {
-	s := rawMetrics[KEY_NS_METADATA]
+func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) []string {
+	s := passOneStats[KEY_NS_METADATA]
 	nsList := strings.Split(s, ";")
 
 	log.Tracef("namespaces:%s", s)

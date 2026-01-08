@@ -56,7 +56,8 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 	ch <- o.ticks
 
 	// refresh metrics from various statprocessors,
-	refreshed_metrics, err := statprocessors.Refresh()
+	refreshedMetrics, err := statprocessors.Refresh()
+
 	if err != nil {
 		log.Errorln(err)
 		ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 0.0, statprocessors.ClusterName, statprocessors.Service, statprocessors.Build)
@@ -69,18 +70,19 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 	}
 	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, statprocessors.ClusterName, statprocessors.Service, statprocessors.Build)
 
-	for _, wm := range refreshed_metrics {
+	for _, wm := range refreshedMetrics {
 		PushToPrometheus(wm, ch)
 	}
 
 	// System Metrics - Memory, Disk and Filesystem - push the fetched metrics to prometheus
-	system_metrics, err := statprocessors.RefreshSystemInfo()
+	systemMetrics, err := statprocessors.RefreshSystemInfo()
+
 	if err != nil {
 		log.Errorln("Error while refreshing SystemInfo Stats, error: ", err)
 	}
 
 	// push the fetched metrics to prometheus
-	for _, wm := range system_metrics {
+	for _, wm := range systemMetrics {
 		PushToPrometheus(wm, ch)
 	}
 

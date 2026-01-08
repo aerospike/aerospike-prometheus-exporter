@@ -24,15 +24,15 @@ func (xw *XdrStatsProcessor) PassOneKeys() []string {
 	return []string{KEY_XDR_METADATA}
 }
 
-func (xw *XdrStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string {
-	log.Tracef("get-config:context=xdr:%s", rawMetrics[KEY_XDR_METADATA])
+func (xw *XdrStatsProcessor) PassTwoKeys(passOneStats map[string]string) []string {
+	log.Tracef("get-config:context=xdr:%s", passOneStats[KEY_XDR_METADATA])
 
-	res := rawMetrics[KEY_XDR_METADATA]
+	res := passOneStats[KEY_XDR_METADATA]
 	list := commons.ParseStats(res, ";")
 	dcsList := strings.Split(list["dcs"], ",")
 
 	// XDR stats and configs are at Namespace level also
-	listNamespaces := strings.Split(rawMetrics[KEY_NS_METADATA], ";")
+	listNamespaces := strings.Split(passOneStats[KEY_NS_METADATA], ";")
 
 	var infoKeys []string
 	for _, dc := range dcsList {
