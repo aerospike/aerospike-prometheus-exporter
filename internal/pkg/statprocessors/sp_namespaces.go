@@ -73,7 +73,7 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 	return infoKeys
 }
 
-func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
+func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, requestInfoResponse map[string]string) ([]AerospikeStat, error) {
 
 	if nw.namespaceStats == nil {
 		nw.namespaceStats = make(map[string]AerospikeStat)
@@ -84,12 +84,12 @@ func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[str
 
 		// we get 2 info-key Types - examples: index-pressure or namespace/test, namespace/materials
 		if strings.HasPrefix(infoKey, KEY_NS_NAMESPACE) {
-			tempNsMetricsToSend := nw.refreshNamespaceStats(infoKey, infoKeys, rawMetrics)
+			tempNsMetricsToSend := nw.refreshNamespaceStats(infoKey, infoKeys, requestInfoResponse)
 			allMetricsToSend = append(allMetricsToSend, tempNsMetricsToSend...)
 
 		} else if strings.HasPrefix(infoKey, KEY_NS_INDEX_PRESSURE) {
 			// namespace/<ns> will be multiple times according to the # of namespaces configured in the server
-			tempNsMetricsToSend := nw.refreshIndexPressure(infoKey, infoKeys, rawMetrics)
+			tempNsMetricsToSend := nw.refreshIndexPressure(infoKey, infoKeys, requestInfoResponse)
 			allMetricsToSend = append(allMetricsToSend, tempNsMetricsToSend...)
 		}
 

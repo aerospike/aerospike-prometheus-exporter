@@ -52,10 +52,10 @@ func (sw *NodeStatsProcessor) PassTwoKeys(passOneStats map[string]string) []stri
 	return passTwoKeys
 }
 
-func (sw *NodeStatsProcessor) parseLogSinkDetails(rawMetrics map[string]string) []string {
+func (sw *NodeStatsProcessor) parseLogSinkDetails(requestInfoResponse map[string]string) []string {
 	logSinkCmds := []string{}
 
-	logSinks := strings.Split(rawMetrics[KEY_SERVICE_LOGS], ";")
+	logSinks := strings.Split(requestInfoResponse[KEY_SERVICE_LOGS], ";")
 
 	// reset the logSinkCount to 0 always, if server restarts by changing debug level, no need to fetch
 	sw.logSinkCount = 0
@@ -73,39 +73,39 @@ func (sw *NodeStatsProcessor) parseLogSinkDetails(rawMetrics map[string]string) 
 // All (allowed/blocked) node stats. Based on the config.Aerospike.NodeMetricsAllowlist, config.Aerospike.NodeMetricsBlocklist.
 // var nodeMetrics = make(map[string]AerospikeStat)
 
-func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
+func (sw *NodeStatsProcessor) Refresh(infoKeys []string, requestInfoResponse map[string]string) ([]AerospikeStat, error) {
 
 	if sw.nodeMetrics == nil {
 		sw.nodeMetrics = make(map[string]AerospikeStat)
 	}
 
-	log.Tracef("node-configs:%s", rawMetrics[KEY_SERVICE_CONFIG])
-	log.Tracef("node-stats:%s", rawMetrics[KEY_SERVICE_STATISTICS])
+	log.Tracef("node-configs:%s", requestInfoResponse[KEY_SERVICE_CONFIG])
+	log.Tracef("node-stats:%s", requestInfoResponse[KEY_SERVICE_STATISTICS])
 
 	// we are sending configs and stats in same refresh call, as both are being sent to prom, instead of doing prom-push in 2 functions
 	// handle configs
 	var allMetricsToSend = []AerospikeStat{}
 
 	// Config
-	allMetricsToSend = append(allMetricsToSend, sw.handleRefresh(rawMetrics[KEY_SERVICE_CONFIG])...)
+	allMetricsToSend = append(allMetricsToSend, sw.handleRefresh(requestInfoResponse[KEY_SERVICE_CONFIG])...)
 
 	// handle stats
-	allMetricsToSend = append(allMetricsToSend, sw.handleRefresh(rawMetrics[KEY_SERVICE_STATISTICS])...)
+	allMetricsToSend = append(allMetricsToSend, sw.handleRefresh(requestInfoResponse[KEY_SERVICE_STATISTICS])...)
 
 	// parse logs Sink
-	allMetricsToSend = append(allMetricsToSend, sw.handleLogSinkStats(rawMetrics)...)
+	allMetricsToSend = append(allMetricsToSend, sw.handleLogSinkStats(requestInfoResponse)...)
 
 	// handle user-agents
-	if _, exists := rawMetrics["user-agents"]; exists {
-		allMetricsToSend = append(allMetricsToSend, sw.handleUserAgentsStats(rawMetrics)...)
+	if _, exists := requestInfoResponse["user-agents"]; exists {
+		allMetricsToSend = append(allMetricsToSend, sw.handleUserAgentsStats(requestInfoResponse)...)
 	}
 
 	return allMetricsToSend, nil
 }
 
-func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string) []AerospikeStat {
+func (sw *NodeStatsProcessor) handleRefresh(requestInfoKeyResponse string) []AerospikeStat {
 
-	stats := commons.ParseStats(nodeRawMetrics, ";")
+	stats := commons.ParseStats(requestInfoKeyResponse, ";")
 
 	var refreshMetricsToSend = []AerospikeStat{}
 
@@ -154,7 +154,7 @@ func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string) []AerospikeSt
 	return refreshMetricsToSend
 }
 
-func (sw *NodeStatsProcessor) handleLogSinkStats(rawMetrics map[string]string) []AerospikeStat {
+func (sw *NodeStatsProcessor) handleLogSinkStats(requestInfoResponse map[string]string) []AerospikeStat {
 
 	var refreshMetricsToSend = []AerospikeStat{}
 
@@ -164,7 +164,7 @@ func (sw *NodeStatsProcessor) handleLogSinkStats(rawMetrics map[string]string) [
 	// log-sink-ids will be from 0..(n-1)
 	for idx := 0; idx < sw.logSinkCount; idx++ {
 		logSinkKey := "log/" + strconv.Itoa(idx)
-		value := rawMetrics[logSinkKey]
+		value := requestInfoResponse[logSinkKey]
 
 		if strings.Contains(value, ":DEBUG") {
 			debugValue = 1.0

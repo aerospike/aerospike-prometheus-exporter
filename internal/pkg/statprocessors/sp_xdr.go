@@ -54,8 +54,8 @@ func (xw *XdrStatsProcessor) PassTwoKeys(passOneStats map[string]string) []strin
 	return infoKeys
 }
 
-// refresh prom metrics - parse the given rawMetrics (both config and stats ) and push to given channel
-func (xw *XdrStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
+// refresh prom metrics - parse the given requestInfoResponse (both config and stats ) and push to given channel
+func (xw *XdrStatsProcessor) Refresh(infoKeys []string, requestInfoResponse map[string]string) ([]AerospikeStat, error) {
 
 	if xw.xdrMetrics == nil {
 		xw.xdrMetrics = make(map[string]AerospikeStat)
@@ -65,7 +65,7 @@ func (xw *XdrStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]st
 
 	for _, key := range infoKeys {
 
-		xdrRawMetrics := rawMetrics[key]
+		xdrRawMetrics := requestInfoResponse[key]
 		// find and construct metric name
 		dcName, ns, metricPrefix := xw.constructMetricNamePrefix(key)
 		tmpXdrMetricsToSend := xw.handleRefresh(key, xdrRawMetrics, dcName, ns, metricPrefix)
@@ -104,11 +104,11 @@ func (xw *XdrStatsProcessor) constructMetricNamePrefix(infoKeyToProcess string) 
 	return dcName, nsName, "" // no-prefix/default i.e. no suffix like "dc" / "dc_namespace"
 }
 
-func (xw *XdrStatsProcessor) handleRefresh(infoKeyToProcess string, xdrRawMetrics string,
+func (xw *XdrStatsProcessor) handleRefresh(infoKeyToProcess string, xdrRequestInfoResponse string,
 	dcName string, ns string, metricPrefix string) []AerospikeStat {
-	log.Tracef("xdr-%s:%s", infoKeyToProcess, xdrRawMetrics)
+	log.Tracef("xdr-%s:%s", infoKeyToProcess, xdrRequestInfoResponse)
 
-	stats := commons.ParseStats(xdrRawMetrics, ";")
+	stats := commons.ParseStats(xdrRequestInfoResponse, ";")
 	var xdrMetricsToSend = []AerospikeStat{}
 	for stat, value := range stats {
 
