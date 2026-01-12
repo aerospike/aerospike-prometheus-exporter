@@ -1,6 +1,6 @@
 module github.com/aerospike/aerospike-prometheus-exporter
 
-go 1.24.5
+go 1.25.5
 
 require (
 	github.com/BurntSushi/toml v1.2.1
