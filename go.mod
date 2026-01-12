@@ -3,7 +3,7 @@ module github.com/aerospike/aerospike-prometheus-exporter
 go 1.25.5
 
 require (
-	github.com/BurntSushi/toml v1.2.1
+	github.com/BurntSushi/toml v1.6.0
 	github.com/aerospike/aerospike-client-go/v8 v8.4.2
 	github.com/gobwas/glob v0.2.3
 	github.com/hashicorp/go-version v1.6.0
