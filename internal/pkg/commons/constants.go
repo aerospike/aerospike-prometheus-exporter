@@ -46,6 +46,7 @@ const (
 	CTX_SYSINFO_FILEFD_STATS     ContextType = "sysinfo_filefd"
 	CTX_SYSINFO_VM_STATS         ContextType = "sysinfo_vmstat"
 )
+
 const (
 	METRIC_LABEL_DEVICE      = "device"
 	METRIC_LABEL_MAJOR       = "major_version"
@@ -64,4 +65,9 @@ var (
 	UDEV_DATA_PATH    = "/run/udev/data"
 	NET_STAT_PATH     = "net/netstat"
 	NET_DEV_STAT_PATH = "/proc/net/dev"
+)
+
+const (
+	DELTA_TEMPORALITY      = "delta"
+	CUMULATIVE_TEMPORALITY = "cumulative"
 )

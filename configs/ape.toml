@@ -94,6 +94,10 @@
       # OTel metric push interval (default 60, not recommended to to reduce this)
       push_interval = 60
 
+      # Defines the temporality to be applied depending on end point treats
+      # supported values: delta, cumulative (default)
+      counter_temporality = cumulative
+
 [Aerospike]
       db_host = "localhost"
       db_port = 3000

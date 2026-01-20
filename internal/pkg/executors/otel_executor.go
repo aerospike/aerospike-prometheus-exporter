@@ -209,8 +209,27 @@ func (oe *OtelExecutor) BuildHttpExporter(ctx context.Context) (sdkmetric.Export
 //	* avoid any issues with the metrics collection
 //	* ensure that the metrics are compatible with Dynatrace, New Relic and Datadog
 func (oe *OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
+
+	// check if the counter_temporality is configured
+
 	// TODO: further discussion with sunil on this
-	return metricdata.DeltaTemporality
+	switch instrumentKind {
+	case sdkmetric.InstrumentKindCounter,
+		sdkmetric.InstrumentKindObservableCounter,
+		sdkmetric.InstrumentKindObservableUpDownCounter,
+		sdkmetric.InstrumentKindHistogram:
+
+		if config.Cfg.Agent.Otel.CounterTemporality == commons.DELTA_TEMPORALITY {
+			return metricdata.DeltaTemporality
+		}
+
+		return metricdata.CumulativeTemporality
+
+	default:
+		return metricdata.CumulativeTemporality
+	}
+
+	// TODO: further discussion with sunil on this
 
 	// switch instrumentKind {
 	// case sdkmetric.InstrumentKindCounter,

@@ -47,6 +47,7 @@ type Config struct {
 			Headers                 map[string]string `toml:"headers"`
 			PushInterval            uint8             `toml:"push_interval"`
 			ServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
+			CounterTemporality      string            `toml:"counter_temporality"`
 		} `toml:"OpenTelemetry"`
 
 		IsKubernetes      bool
@@ -213,6 +214,12 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		log.Fatalf("In OpenTelemetry section, grpc_endpoint and http_endpoint can be configured, not both")
 	} else if len(Cfg.Agent.Otel.GrpcEndpoint) == 0 && len(Cfg.Agent.Otel.HttpEndpoint) == 0 {
 		log.Fatalf("In OpenTelemetry section, Grpc  or Http neither is configured")
+	}
+
+	if len(Cfg.Agent.Otel.CounterTemporality) == 0 {
+		Cfg.Agent.Otel.CounterTemporality = "cumulative"
+	} else if Cfg.Agent.Otel.CounterTemporality != "delta" && Cfg.Agent.Otel.CounterTemporality != "cumulative" {
+		log.Fatalf("In OpenTelemetry section, counter_temporality must be either delta or cumulative")
 	}
 
 }
