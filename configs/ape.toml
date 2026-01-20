@@ -96,7 +96,7 @@
 
       # Defines the temporality to be applied depending on end point treats
       # supported values: delta, cumulative (default)
-      counter_temporality = cumulative
+      counter_temporality = "cumulative"
 
 [Aerospike]
       db_host = "localhost"
