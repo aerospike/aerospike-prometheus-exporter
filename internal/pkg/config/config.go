@@ -202,6 +202,12 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		log.Fatalf("In Aerospike section, root_ca cannot be null when cert_file and key_file are configured")
 	}
 
+	if Cfg.Agent.OtelEnabled {
+		c.validateOtelConfigs()
+	}
+}
+
+func (c *Config) validateOtelConfigs() {
 	// validate Otel endpoint and grpc_endpoint configs
 	if len(Cfg.Agent.Otel.Endpoint) > 0 && len(Cfg.Agent.Otel.GrpcEndpoint) > 0 {
 		log.Fatalf("In OpenTelemetry section, ONLY  endpoint or grpc_endpoint can be configured, not both")
@@ -221,7 +227,6 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 	} else if Cfg.Agent.Otel.CounterTemporality != "delta" && Cfg.Agent.Otel.CounterTemporality != "cumulative" {
 		log.Fatalf("In OpenTelemetry section, counter_temporality must be either delta or cumulative")
 	}
-
 }
 
 func (c *Config) FetchCloudInfo(md toml.MetaData) {
