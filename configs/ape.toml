@@ -95,8 +95,11 @@
       push_interval = 60
 
       # Defines the temporality to be applied depending on end point treats
-      # supported values: delta, cumulative (default)
-      counter_temporality = "cumulative"
+      # supported values: delta (default), cumulative
+      # Why Delta is default, many customer use Datadog and Dynatrace.
+      # NOTE: Datadog and Dynatrace only support Delta's for monotonic-cumulative counters 
+      #       Newrelic accepts Delta and monotonic-sum
+      counter_temporality = "delta"
 
 [Aerospike]
       db_host = "localhost"

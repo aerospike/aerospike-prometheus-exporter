@@ -3,6 +3,7 @@ package executors
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"sync/atomic"
 
 	"time"
@@ -209,39 +210,15 @@ func (oe *OtelExecutor) BuildHttpExporter(ctx context.Context) (sdkmetric.Export
 //	* avoid any issues with the metrics collection
 //	* ensure that the metrics are compatible with Dynatrace, New Relic and Datadog
 func (oe *OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
+	fmt.Println("getTemporalitySelector", instrumentKind)
 
-	// check if the counter_temporality is configured
+	if instrumentKind == sdkmetric.InstrumentKindObservableCounter &&
+		config.Cfg.Agent.Otel.CounterTemporality == commons.DELTA_TEMPORALITY {
 
-	// TODO: further discussion with sunil on this
-	switch instrumentKind {
-	case sdkmetric.InstrumentKindCounter,
-		sdkmetric.InstrumentKindObservableCounter,
-		sdkmetric.InstrumentKindObservableUpDownCounter,
-		sdkmetric.InstrumentKindHistogram:
-
-		if config.Cfg.Agent.Otel.CounterTemporality == commons.DELTA_TEMPORALITY {
-			return metricdata.DeltaTemporality
-		}
-
-		return metricdata.CumulativeTemporality
-
-	default:
-		return metricdata.CumulativeTemporality
+		return metricdata.DeltaTemporality
 	}
 
-	// TODO: further discussion with sunil on this
-
-	// switch instrumentKind {
-	// case sdkmetric.InstrumentKindCounter,
-	// 	sdkmetric.InstrumentKindObservableCounter,
-	// 	sdkmetric.InstrumentKindObservableUpDownCounter,
-	// 	sdkmetric.InstrumentKindHistogram:
-	// 	//TODO: further discussion with sunil on this
-	// 	return metricdata.DeltaTemporality
-	// default:
-	// 	// Gauges
-	// 	return metricdata.CumulativeTemporality
-	// }
+	return metricdata.CumulativeTemporality
 }
 
 func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {

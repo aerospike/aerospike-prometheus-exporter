@@ -223,7 +223,8 @@ func (c *Config) validateOtelConfigs() {
 	}
 
 	if len(Cfg.Agent.Otel.CounterTemporality) == 0 {
-		Cfg.Agent.Otel.CounterTemporality = "cumulative"
+		// Delta is default as many Datadog and Dynatrace customers. which accept only Delta's
+		Cfg.Agent.Otel.CounterTemporality = "delta"
 	} else if Cfg.Agent.Otel.CounterTemporality != "delta" && Cfg.Agent.Otel.CounterTemporality != "cumulative" {
 		log.Fatalf("In OpenTelemetry section, counter_temporality must be either delta or cumulative")
 	}
