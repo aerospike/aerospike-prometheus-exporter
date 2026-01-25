@@ -3,7 +3,6 @@ package executors
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"sync/atomic"
 
 	"time"
@@ -40,6 +39,11 @@ type OtelExecutor struct {
 	// Each measurement/instrument = one metric + labels + latest value
 	gauges   map[string]*GaugeMetrics
 	counters map[string]*CounterMetrics
+
+	meterProvider  *sdkmetric.MeterProvider
+	metricExporter sdkmetric.Exporter
+
+	isFirstRefresh atomic.Bool
 }
 
 // Exporter interface implementation
@@ -48,7 +52,7 @@ type OtelExecutor struct {
 // Initializes an OTLP exporter, and configures the corresponding metric providers
 func (oe *OtelExecutor) Initialize() error {
 
-	log.Infof("Otel sending thread started. ")
+	oe.isFirstRefresh.Store(true)
 
 	log.Infof("*** Initializing Otel Exporter... ")
 	log.Debug("** OTel endpoint ", config.Cfg.Agent.Otel.Endpoint)
@@ -59,8 +63,6 @@ func (oe *OtelExecutor) Initialize() error {
 	oe.counters = make(map[string]*CounterMetrics)
 
 	defaultContext := context.Background()
-	var meterProvider *sdkmetric.MeterProvider
-	var metricExporter sdkmetric.Exporter
 
 	resource, err := resource.New(defaultContext,
 		resource.WithFromEnv(),
@@ -79,27 +81,27 @@ func (oe *OtelExecutor) Initialize() error {
 	}
 
 	if config.Cfg.Agent.Otel.HttpEndpoint != "" {
-		metricExporter, err = oe.BuildHttpExporter(defaultContext)
+		oe.metricExporter, err = oe.BuildHttpExporter(defaultContext)
 	} else {
 		// either grpc_endpoint or endpoint is configured
-		metricExporter, err = oe.BuildGrpcExporter(defaultContext)
+		oe.metricExporter, err = oe.BuildGrpcExporter(defaultContext)
 	}
 
 	if err != nil {
 		log.Fatalf("Failed to create the collector metric exporter %v", err)
 	}
 
-	meterProvider = sdkmetric.NewMeterProvider(
+	oe.meterProvider = sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(resource),
 		sdkmetric.WithReader(
 			sdkmetric.NewPeriodicReader(
-				metricExporter,
+				oe.metricExporter,
 				sdkmetric.WithInterval(time.Duration(config.Cfg.Agent.Otel.PushInterval)*time.Second),
 			),
 		),
 	)
 
-	otel.SetMeterProvider(meterProvider)
+	otel.SetMeterProvider(oe.meterProvider)
 
 	log.Infof("*** Starting Otel Metrics Push thread... ")
 
@@ -132,7 +134,7 @@ func (oe *OtelExecutor) Initialize() error {
 				defer cancel()
 
 				// pushes any last exports to the receiver
-				if err := meterProvider.Shutdown(cxt); err != nil {
+				if err := oe.meterProvider.Shutdown(cxt); err != nil {
 					otel.Handle(err)
 				}
 				return
@@ -210,7 +212,6 @@ func (oe *OtelExecutor) BuildHttpExporter(ctx context.Context) (sdkmetric.Export
 //	* avoid any issues with the metrics collection
 //	* ensure that the metrics are compatible with Dynatrace, New Relic and Datadog
 func (oe *OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
-	fmt.Println("getTemporalitySelector", instrumentKind)
 
 	if instrumentKind == sdkmetric.InstrumentKindObservableCounter &&
 		config.Cfg.Agent.Otel.CounterTemporality == commons.DELTA_TEMPORALITY {
@@ -242,7 +243,6 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 
 	// process metrics
 	oe.processAndPushStats(meter, ctx, commonLabels, asRefreshStats)
-
 }
 
 func (oe *OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {

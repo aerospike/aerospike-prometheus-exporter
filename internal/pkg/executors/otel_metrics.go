@@ -63,9 +63,8 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 			cMetric := oe.getCounterMetric(metricKey, meter, qualifiedName, desc, labels)
 
 			// If server restarts while exporter running, delta will be negative, so we don't send it
-			if stat.Value >= 0 {
-				cMetric.value.Store(int64(stat.Value))
-			}
+			// TODO: discuss with sunil on this
+			cMetric.value.Store(int64(stat.Value))
 
 		case commons.MetricTypeGauge:
 
