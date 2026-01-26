@@ -192,8 +192,7 @@ func (oe *OtelExecutor) BuildGrpcExporter(ctx context.Context) (sdkmetric.Export
 	log.Infof("Creating Otel MetricsExporter with GrpcEndpoint: %s", config.Cfg.Agent.Otel.GrpcEndpoint)
 	metricExp, err = otlpmetricgrpc.New(ctx, exporterOptions...)
 
-	var exporter sdkmetric.Exporter
-	exporter = &AeroOtelMetricProvider{
+	var exporter = &AeroOtelMetricProvider{
 		Exporter:         metricExp,
 		skipRefreshStats: &oe.skipRefreshStats,
 	}
@@ -228,8 +227,7 @@ func (oe *OtelExecutor) BuildHttpExporter(ctx context.Context) (sdkmetric.Export
 	log.Infof("Creating Otel MetricsExporter with HttpEndpoint: %s", config.Cfg.Agent.Otel.HttpEndpoint)
 	metricExp, err = otlpmetrichttp.New(ctx, exporterOptions...)
 
-	var exporter sdkmetric.Exporter
-	exporter = &AeroOtelMetricProvider{
+	var exporter = &AeroOtelMetricProvider{
 		Exporter:         metricExp,
 		skipRefreshStats: &oe.skipRefreshStats,
 	}
@@ -283,24 +281,15 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 	// Refresh counter starts with 0,
 	// - when ==1 we will let the values added to the MeterProvider, still dont push
 	// - when >=2 we will let MeterProvider start pushing as it will have the first value and delats are calculated
-	switch oe.refreshCounter.Load() {
-	case 2:
+
+	if oe.refreshCounter.Load() == 2 {
 		log.Infof("%s Refreshing Aerospike Metrics, counter: %d", time.Now().Format(time.RFC3339), oe.refreshCounter.Load())
 		log.Infof("%s Refreshing Aerospike Metrics, first time, skipping", time.Now().Format(time.RFC3339))
 		oe.skipRefreshStats.Store(false)
-	default:
-		// process metrics
-		oe.processAndPushStats(meter, ctx, commonLabels, asRefreshStats)
 	}
 
-	// if oe.refreshCounter.Load() == 2 {
-	// 	log.Infof("%s Refreshing Aerospike Metrics, counter: %d", time.Now().Format(time.RFC3339), oe.refreshCounter.Load())
-	// 	log.Infof("%s Refreshing Aerospike Metrics, first time, skipping", time.Now().Format(time.RFC3339))
-	// 	oe.skipRefreshStats.Store(false)
-	// }
-
-	// // process metrics
-	// oe.processAndPushStats(meter, ctx, commonLabels, asRefreshStats)
+	// process metrics
+	oe.processAndPushStats(meter, ctx, commonLabels, asRefreshStats)
 
 }
 
