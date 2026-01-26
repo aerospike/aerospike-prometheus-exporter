@@ -22,6 +22,23 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
+// AeroOtelMetricProvider intercepts the Export call
+type AeroOtelMetricProvider struct {
+	sdkmetric.Exporter
+
+	skipRefreshStats *atomic.Bool
+}
+
+func (aome *AeroOtelMetricProvider) Export(ctx context.Context, rm *metricdata.ResourceMetrics) error {
+	// CompareAndSwap ensures thread-safety if multiple routines trigger export
+	if aome.skipRefreshStats.Load() {
+		// Return nil to simulate a successful export without actually sending data
+		log.Infof("%s AeroOtelMetricProvider, First refresh of metrics, ignored", time.Now().Format(time.RFC3339))
+		return nil
+	}
+	return aome.Exporter.Export(ctx, rm)
+}
+
 type GaugeMetrics struct {
 	instrument metric.Int64ObservableGauge
 	labels     []attribute.KeyValue
@@ -43,7 +60,8 @@ type OtelExecutor struct {
 	meterProvider  *sdkmetric.MeterProvider
 	metricExporter sdkmetric.Exporter
 
-	isFirstRefresh atomic.Bool
+	skipRefreshStats atomic.Bool
+	refreshCounter   atomic.Int64
 }
 
 // Exporter interface implementation
@@ -51,9 +69,6 @@ type OtelExecutor struct {
 //
 // Initializes an OTLP exporter, and configures the corresponding metric providers
 func (oe *OtelExecutor) Initialize() error {
-
-	oe.isFirstRefresh.Store(true)
-
 	log.Infof("*** Initializing Otel Exporter... ")
 	log.Debug("** OTel endpoint ", config.Cfg.Agent.Otel.Endpoint)
 	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.ServiceName)
@@ -80,6 +95,10 @@ func (oe *OtelExecutor) Initialize() error {
 		log.Fatalf("Failed to create OTel Resource %v", err)
 	}
 
+	// var exporter sdkmetric.Exporter
+	oe.skipRefreshStats.Store(true)
+	oe.refreshCounter.Store(0)
+
 	if config.Cfg.Agent.Otel.HttpEndpoint != "" {
 		oe.metricExporter, err = oe.BuildHttpExporter(defaultContext)
 	} else {
@@ -90,6 +109,12 @@ func (oe *OtelExecutor) Initialize() error {
 	if err != nil {
 		log.Fatalf("Failed to create the collector metric exporter %v", err)
 	}
+
+	// construct AeroOtelMetricProvider
+	// oe.metricExporter = &AeroOtelMetricProvider{
+	// 	Exporter:       exporter,
+	// 	isFirstRefresh: &oe.isFirstRefresh,
+	// }
 
 	oe.meterProvider = sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(resource),
@@ -167,7 +192,12 @@ func (oe *OtelExecutor) BuildGrpcExporter(ctx context.Context) (sdkmetric.Export
 	log.Infof("Creating Otel MetricsExporter with GrpcEndpoint: %s", config.Cfg.Agent.Otel.GrpcEndpoint)
 	metricExp, err = otlpmetricgrpc.New(ctx, exporterOptions...)
 
-	return metricExp, err
+	var exporter sdkmetric.Exporter
+	exporter = &AeroOtelMetricProvider{
+		Exporter:         metricExp,
+		skipRefreshStats: &oe.skipRefreshStats,
+	}
+	return exporter, err
 
 }
 
@@ -198,7 +228,13 @@ func (oe *OtelExecutor) BuildHttpExporter(ctx context.Context) (sdkmetric.Export
 	log.Infof("Creating Otel MetricsExporter with HttpEndpoint: %s", config.Cfg.Agent.Otel.HttpEndpoint)
 	metricExp, err = otlpmetrichttp.New(ctx, exporterOptions...)
 
-	return metricExp, err
+	var exporter sdkmetric.Exporter
+	exporter = &AeroOtelMetricProvider{
+		Exporter:         metricExp,
+		skipRefreshStats: &oe.skipRefreshStats,
+	}
+
+	return exporter, err
 }
 
 // Gauges don't have temporality (they're instantaneous values), as SDK still calls this selector.
@@ -241,8 +277,31 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 	// aerospike server is up and we are able to fetch data, send common + server labels
 	oe.sendNodeUp(meter, append(commonLabels, labels...), 1)
 
-	// process metrics
-	oe.processAndPushStats(meter, ctx, commonLabels, asRefreshStats)
+	// Increment counter if server refresh is successful
+	oe.refreshCounter.Add(1)
+
+	// Refresh counter starts with 0,
+	// - when ==1 we will let the values added to the MeterProvider, still dont push
+	// - when >=2 we will let MeterProvider start pushing as it will have the first value and delats are calculated
+	switch oe.refreshCounter.Load() {
+	case 2:
+		log.Infof("%s Refreshing Aerospike Metrics, counter: %d", time.Now().Format(time.RFC3339), oe.refreshCounter.Load())
+		log.Infof("%s Refreshing Aerospike Metrics, first time, skipping", time.Now().Format(time.RFC3339))
+		oe.skipRefreshStats.Store(false)
+	default:
+		// process metrics
+		oe.processAndPushStats(meter, ctx, commonLabels, asRefreshStats)
+	}
+
+	// if oe.refreshCounter.Load() == 2 {
+	// 	log.Infof("%s Refreshing Aerospike Metrics, counter: %d", time.Now().Format(time.RFC3339), oe.refreshCounter.Load())
+	// 	log.Infof("%s Refreshing Aerospike Metrics, first time, skipping", time.Now().Format(time.RFC3339))
+	// 	oe.skipRefreshStats.Store(false)
+	// }
+
+	// // process metrics
+	// oe.processAndPushStats(meter, ctx, commonLabels, asRefreshStats)
+
 }
 
 func (oe *OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
@@ -250,6 +309,12 @@ func (oe *OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, ctx context.
 
 	if err != nil {
 		log.Errorln("Error while refreshing SystemInfo, error: ", err)
+		return
+	}
+
+	if oe.refreshCounter.Load() == 2 {
+		log.Infof("%s Refreshing SystemInfo Metrics, first time, skipping", time.Now().Format(time.RFC3339))
+		oe.skipRefreshStats.Store(false)
 		return
 	}
 
