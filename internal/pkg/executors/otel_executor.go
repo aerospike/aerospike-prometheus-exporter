@@ -301,10 +301,11 @@ func (oe *OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, ctx context.
 		return
 	}
 
+	// not incrementing here as we consider aerospike stats and systems stats as single cycle
+	//     even in 2 different functions
 	if oe.refreshCounter.Load() == 2 {
 		log.Infof("%s Refreshing SystemInfo Metrics, first time, skipping", time.Now().Format(time.RFC3339))
 		oe.skipRefreshStats.Store(false)
-		return
 	}
 
 	// process metrics
