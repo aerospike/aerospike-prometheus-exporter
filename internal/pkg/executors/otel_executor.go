@@ -71,7 +71,7 @@ func (oe *OtelExecutor) Initialize() error {
 	log.Debug("** OTel endpoint ", config.Cfg.Agent.Otel.Endpoint)
 	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.ServiceName)
 
-	// initialize the gauges map
+	// initialize the metric caches
 	oe.gauges = make(map[string]*GaugeMetrics)
 	oe.counters = make(map[string]*CounterMetrics)
 
@@ -106,15 +106,6 @@ func (oe *OtelExecutor) Initialize() error {
 	if err != nil {
 		log.Fatalf("Failed to create the collector metric exporter %v", err)
 	}
-
-	// // Ensure embedded exporter methods delegate to the OTLP exporter.
-	// oe.Exporter = oe.metricExporter
-
-	// construct AeroOtelMetricProvider
-	// oe.metricExporter = &AeroOtelMetricProvider{
-	// 	Exporter:       exporter,
-	// 	isFirstRefresh: &oe.isFirstRefresh,
-	// }
 
 	oe.meterProvider = sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(resource),
