@@ -22,23 +22,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
-// AeroOtelMetricProvider intercepts the Export call
-type AeroOtelMetricProvider struct {
-	sdkmetric.Exporter
-
-	skipRefreshStats *atomic.Bool
-}
-
-func (aome *AeroOtelMetricProvider) Export(ctx context.Context, rm *metricdata.ResourceMetrics) error {
-	// CompareAndSwap ensures thread-safety if multiple routines trigger export
-	if aome.skipRefreshStats.Load() {
-		// Return nil to simulate a successful export without actually sending data
-		log.Infof("%s AeroOtelMetricProvider, First refresh of metrics, ignored", time.Now().Format(time.RFC3339))
-		return nil
-	}
-	return aome.Exporter.Export(ctx, rm)
-}
-
 type GaugeMetrics struct {
 	instrument metric.Int64ObservableGauge
 	labels     []attribute.KeyValue
@@ -51,20 +34,35 @@ type CounterMetrics struct {
 	value      atomic.Int64 // int64, avoid read/write race condition
 }
 
+// OTelExecutor is class on its own and also implements and embeds sdkmetric.Exporter interface
+//
+//	this will give control on various operations like Export, Temporality, Aggregation, ForceFlush, Shutdown
 type OtelExecutor struct {
+	sdkmetric.Exporter
 	// KEY =  one metric + labels
 	// Each measurement/instrument = one metric + labels + latest value
 	gauges   map[string]*GaugeMetrics
 	counters map[string]*CounterMetrics
 
-	meterProvider  *sdkmetric.MeterProvider
-	metricExporter sdkmetric.Exporter
+	meterProvider *sdkmetric.MeterProvider
+	// metricExporter sdkmetric.Exporter
 
-	skipRefreshStats atomic.Bool
-	refreshCounter   atomic.Int64
+	refreshCounter atomic.Int64
 }
 
-// Exporter interface implementation
+// sdkmetric.Exporter interface implementation
+func (oe *OtelExecutor) Export(ctx context.Context, rm *metricdata.ResourceMetrics) error {
+
+	// do not send metrics to end point to avoid large spikes in delta when exporter restarts
+	if oe.refreshCounter.Load() <= 2 {
+		// Return nil to simulate a successful export without actually sending data
+		log.Debugf("%s OtelExecutor, Ignoring refresh of metrics export %d", time.Now().Format(time.RFC3339), oe.refreshCounter.Load())
+		return nil
+	}
+
+	return oe.Exporter.Export(ctx, rm)
+}
+
 // Aerospike Otel metrics serving implementation
 //
 // Initializes an OTLP exporter, and configures the corresponding metric providers
@@ -96,19 +94,21 @@ func (oe *OtelExecutor) Initialize() error {
 	}
 
 	// var exporter sdkmetric.Exporter
-	oe.skipRefreshStats.Store(true)
 	oe.refreshCounter.Store(0)
 
 	if config.Cfg.Agent.Otel.HttpEndpoint != "" {
-		oe.metricExporter, err = oe.BuildHttpExporter(defaultContext)
+		oe.Exporter, err = oe.BuildHttpExporter(defaultContext)
 	} else {
 		// either grpc_endpoint or endpoint is configured
-		oe.metricExporter, err = oe.BuildGrpcExporter(defaultContext)
+		oe.Exporter, err = oe.BuildGrpcExporter(defaultContext)
 	}
 
 	if err != nil {
 		log.Fatalf("Failed to create the collector metric exporter %v", err)
 	}
+
+	// // Ensure embedded exporter methods delegate to the OTLP exporter.
+	// oe.Exporter = oe.metricExporter
 
 	// construct AeroOtelMetricProvider
 	// oe.metricExporter = &AeroOtelMetricProvider{
@@ -120,7 +120,7 @@ func (oe *OtelExecutor) Initialize() error {
 		sdkmetric.WithResource(resource),
 		sdkmetric.WithReader(
 			sdkmetric.NewPeriodicReader(
-				oe.metricExporter,
+				oe,
 				sdkmetric.WithInterval(time.Duration(config.Cfg.Agent.Otel.PushInterval)*time.Second),
 			),
 		),
@@ -174,7 +174,7 @@ func (oe *OtelExecutor) Initialize() error {
 func (oe *OtelExecutor) BuildGrpcExporter(ctx context.Context) (sdkmetric.Exporter, error) {
 	headers := oe.readHeaders()
 
-	var metricExp *otlpmetricgrpc.Exporter
+	var exporter *otlpmetricgrpc.Exporter
 	var err error
 
 	// Build options conditionally
@@ -190,12 +190,8 @@ func (oe *OtelExecutor) BuildGrpcExporter(ctx context.Context) (sdkmetric.Export
 	// }
 
 	log.Infof("Creating Otel MetricsExporter with GrpcEndpoint: %s", config.Cfg.Agent.Otel.GrpcEndpoint)
-	metricExp, err = otlpmetricgrpc.New(ctx, exporterOptions...)
+	exporter, err = otlpmetricgrpc.New(ctx, exporterOptions...)
 
-	var exporter = &AeroOtelMetricProvider{
-		Exporter:         metricExp,
-		skipRefreshStats: &oe.skipRefreshStats,
-	}
 	return exporter, err
 
 }
@@ -204,7 +200,7 @@ func (oe *OtelExecutor) BuildHttpExporter(ctx context.Context) (sdkmetric.Export
 
 	headers := oe.readHeaders()
 	var err error
-	var metricExp *otlpmetrichttp.Exporter
+	var exporter *otlpmetrichttp.Exporter
 
 	// NOTE: Below is only for testing purposes
 	tlsConfig := &tls.Config{
@@ -225,12 +221,7 @@ func (oe *OtelExecutor) BuildHttpExporter(ctx context.Context) (sdkmetric.Export
 	// }
 
 	log.Infof("Creating Otel MetricsExporter with HttpEndpoint: %s", config.Cfg.Agent.Otel.HttpEndpoint)
-	metricExp, err = otlpmetrichttp.New(ctx, exporterOptions...)
-
-	var exporter = &AeroOtelMetricProvider{
-		Exporter:         metricExp,
-		skipRefreshStats: &oe.skipRefreshStats,
-	}
+	exporter, err = otlpmetrichttp.New(ctx, exporterOptions...)
 
 	return exporter, err
 }
@@ -277,16 +268,7 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 
 	// Increment counter if server refresh is successful
 	oe.refreshCounter.Add(1)
-
-	// Refresh counter starts with 0,
-	// - when ==1 we will let the values added to the MeterProvider, still dont push
-	// - when >=2 we will let MeterProvider start pushing as it will have the first value and delats are calculated
-
-	if oe.refreshCounter.Load() == 2 {
-		log.Infof("%s Refreshing Aerospike Metrics, counter: %d", time.Now().Format(time.RFC3339), oe.refreshCounter.Load())
-		log.Infof("%s Refreshing Aerospike Metrics, first time, skipping", time.Now().Format(time.RFC3339))
-		oe.skipRefreshStats.Store(false)
-	}
+	log.Debugf("%s Aerospike refreshCounter incremented to %d", time.Now().Format(time.RFC3339), oe.refreshCounter.Load())
 
 	// process metrics
 	oe.processAndPushStats(meter, ctx, commonLabels, asRefreshStats)
@@ -299,13 +281,6 @@ func (oe *OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, ctx context.
 	if err != nil {
 		log.Errorln("Error while refreshing SystemInfo, error: ", err)
 		return
-	}
-
-	// not incrementing here as we consider aerospike stats and systems stats as single cycle
-	//     even in 2 different functions
-	if oe.refreshCounter.Load() == 2 {
-		log.Infof("%s Refreshing SystemInfo Metrics, first time, skipping", time.Now().Format(time.RFC3339))
-		oe.skipRefreshStats.Store(false)
 	}
 
 	// process metrics

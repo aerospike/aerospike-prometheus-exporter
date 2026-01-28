@@ -42,7 +42,9 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 	// create the required metered objectes
 	for _, stat := range refreshStats {
 
-		qualifiedName := stat.QualifyMetricContext() + "_" + NormalizeMetric(stat.Name)
+		qualifiedName := statprocessors.PREFIX_AEROSPIKE_OTEL + "." + string(stat.Context)
+		qualifiedName = qualifiedName + "." + NormalizeMetric(stat.Name)
+
 		desc := NormalizeMetric("description_" + stat.Name)
 
 		labels := []attribute.KeyValue{}
