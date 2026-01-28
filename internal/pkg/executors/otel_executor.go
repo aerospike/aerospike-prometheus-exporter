@@ -249,8 +249,8 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 	}
 
 	labels := []attribute.KeyValue{
-		attribute.String("cluster_name", statprocessors.ClusterName),
-		attribute.String("service", statprocessors.Service),
+		attribute.String("aerospike_cluster", statprocessors.ClusterName),
+		attribute.String("aerospike_service", statprocessors.Service),
 		attribute.String("build", statprocessors.Build),
 	}
 
