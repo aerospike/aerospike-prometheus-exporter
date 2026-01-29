@@ -82,11 +82,13 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 
 			if config.Cfg.Agent.Otel.AllMetricsAsGauge {
 				gMetric := oe.getGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
+
 				if gMetric != nil {
 					gMetric.value.Store(int64(stat.Value))
 				}
 			} else {
 				cMetric := oe.getCounterMetric(metricKey, meter, qualifiedName, desc, labels)
+
 				if cMetric != nil {
 					cMetric.value.Store(int64(stat.Value))
 				}
@@ -95,9 +97,11 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 		case commons.MetricTypeGauge:
 
 			gMetric := oe.getGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
+
 			if gMetric != nil {
 				gMetric.value.Store(int64(stat.Value))
 			}
+
 		default:
 			log.Errorf("Unknown metric type: %d", stat.MType)
 		}
