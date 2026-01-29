@@ -48,6 +48,7 @@ type Config struct {
 			PushInterval            uint8             `toml:"push_interval"`
 			ServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
 			CounterTemporality      string            `toml:"counter_temporality"`
+			AllMetricsAsGauge       bool              `toml:"all_metrics_are_gauges"`
 		} `toml:"OpenTelemetry"`
 
 		IsKubernetes      bool
@@ -205,6 +206,10 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 	if Cfg.Agent.OtelEnabled {
 		c.validateOtelConfigs()
 	}
+
+	if !md.IsDefined("Agent", "OpenTelemetry", "all_metrics_as_gauge") {
+		Cfg.Agent.Otel.AllMetricsAsGauge = true
+	}
 }
 
 func (c *Config) validateOtelConfigs() {
@@ -228,6 +233,7 @@ func (c *Config) validateOtelConfigs() {
 	} else if Cfg.Agent.Otel.CounterTemporality != "delta" && Cfg.Agent.Otel.CounterTemporality != "cumulative" {
 		log.Fatalf("In OpenTelemetry section, counter_temporality must be either delta or cumulative")
 	}
+
 }
 
 func (c *Config) FetchCloudInfo(md toml.MetaData) {

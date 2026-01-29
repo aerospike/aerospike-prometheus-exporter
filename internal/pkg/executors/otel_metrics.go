@@ -2,7 +2,6 @@ package executors
 
 import (
 	"context"
-	"os"
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -15,8 +14,8 @@ import (
 
 const AEROSPIKE_NODE_UP = "aerospike.server.node.up"
 
-// this man is used to rename standard labels to OTEL suitable labels
-var OTEL_LABELS_MAPPING = map[string]string{
+// this map is used to rename standard labels to OTEL suitable labels
+var OTEL_LABEL_NAME_MAPPING = map[string]string{
 	commons.METRIC_LABEL_CLUSTER_NAME:              "aerospike_cluster",
 	commons.METRIC_LABEL_SERVICE:                   "aerospike_service",
 	commons.METRIC_LABEL_NS:                        "ns",
@@ -53,12 +52,6 @@ func (oe *OtelExecutor) getCommonLabels() []attribute.KeyValue {
 	return attrkv
 }
 
-func (oe *OtelExecutor) allMetricsAreGauges() bool {
-	envConfig := os.Getenv("AEROSPIKE_ALL_METRICS_ARE_GAUGES")
-	//TODO: discuss with sunil on this
-	return envConfig != "" && strings.ToLower(envConfig) == "true"
-}
-
 func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Context,
 	commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
 
@@ -74,7 +67,7 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 		// label name to value mapped using index
 		for idx, label := range stat.Labels {
 			//TODO: handle if label value is null or not present
-			renamedLabel := OTEL_LABELS_MAPPING[label]
+			renamedLabel := OTEL_LABEL_NAME_MAPPING[label]
 			labels = append(labels, attribute.String(renamedLabel, stat.LabelValues[idx]))
 		}
 
@@ -84,24 +77,27 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 		metricKey := oe.constructMetricKey(qualifiedName, labels)
 
 		// Use or Create Otel metric
-		allMetricsAreGauges := oe.allMetricsAreGauges()
 		switch stat.MType {
 		case commons.MetricTypeCounter:
-			if allMetricsAreGauges {
+
+			if config.Cfg.Agent.Otel.AllMetricsAsGauge {
 				gMetric := oe.getGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
-				gMetric.value.Store(int64(stat.Value))
+				if gMetric != nil {
+					gMetric.value.Store(int64(stat.Value))
+				}
 			} else {
 				cMetric := oe.getCounterMetric(metricKey, meter, qualifiedName, desc, labels)
-
-				// If server restarts while exporter running, delta will be negative, so we don't send it
-				// TODO: discuss with sunil on this
-				cMetric.value.Store(int64(stat.Value))
+				if cMetric != nil {
+					cMetric.value.Store(int64(stat.Value))
+				}
 			}
 
 		case commons.MetricTypeGauge:
 
 			gMetric := oe.getGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
-			gMetric.value.Store(int64(stat.Value))
+			if gMetric != nil {
+				gMetric.value.Store(int64(stat.Value))
+			}
 		default:
 			log.Errorf("Unknown metric type: %d", stat.MType)
 		}
@@ -134,7 +130,8 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 	og, err := meter.Int64ObservableGauge(metricName, metric.WithDescription(desc))
 
 	if err != nil {
-		log.Fatalf("getOrCreateGauge() Error while creating object for stat %s: %v", metricName, err)
+		log.Fatalf("Error while creating object for gauge stat %s: %v", metricName, err)
+		return nil
 	}
 
 	gd := &GaugeMetrics{
@@ -176,7 +173,7 @@ func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricN
 	)
 
 	if err != nil {
-		log.Fatalf("getCounterMetric() Error while creating object for stat %s: %v", metricName, err)
+		log.Fatalf("Error while creating object for counter stat %s: %v", metricName, err)
 	}
 
 	cd := &CounterMetrics{
