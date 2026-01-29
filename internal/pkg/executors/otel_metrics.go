@@ -15,9 +15,20 @@ import (
 
 const AEROSPIKE_NODE_UP = "aerospike.server.node.up"
 
+// this man is used to rename standard labels to OTEL suitable labels
 var OTEL_LABELS_MAPPING = map[string]string{
-	commons.METRIC_LABEL_CLUSTER_NAME: "aerospike_cluster",
-	commons.METRIC_LABEL_SERVICE:      "aerospike_service",
+	commons.METRIC_LABEL_CLUSTER_NAME:              "aerospike_cluster",
+	commons.METRIC_LABEL_SERVICE:                   "aerospike_service",
+	commons.METRIC_LABEL_NS:                        "ns",
+	commons.METRIC_LABEL_SET:                       "set",
+	commons.METRIC_LABEL_LE:                        "le",
+	commons.METRIC_LABEL_DC_NAME:                   "dc",
+	commons.METRIC_LABEL_INDEX:                     "index",
+	commons.METRIC_LABEL_SINDEX:                    "sindex",
+	commons.METRIC_LABEL_STORAGE_ENGINE:            "storage_engine",
+	commons.METRIC_LABEL_USER:                      "user",
+	commons.METRIC_LABEL_UA_CLIENT_LIBRARY_VERSION: "client_library_version",
+	commons.METRIC_LABEL_UA_CLIENT_APP_ID:          "client_app_id",
 }
 
 func (oe *OtelExecutor) sendNodeUp(meter metric.Meter,
@@ -63,12 +74,8 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 		// label name to value mapped using index
 		for idx, label := range stat.Labels {
 			//TODO: handle if label value is null or not present
-			if renamedLabel, ok := OTEL_LABELS_MAPPING[label]; ok {
-				labels = append(labels, attribute.String(renamedLabel, stat.LabelValues[idx]))
-			} else {
-				labels = append(labels, attribute.String(label, stat.LabelValues[idx]))
-			}
-			// labels = append(labels, attribute.String(label, stat.LabelValues[idx]))
+			renamedLabel := OTEL_LABELS_MAPPING[label]
+			labels = append(labels, attribute.String(renamedLabel, stat.LabelValues[idx]))
 		}
 
 		// append common labels
