@@ -2,6 +2,7 @@ package executors
 
 import (
 	"context"
+	"os"
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -12,7 +13,12 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-const AEROSPIKE_NODE_UP = "aerospike_node_up"
+const AEROSPIKE_NODE_UP = "aerospike.server.node.up"
+
+var OTEL_LABELS_MAPPING = map[string]string{
+	commons.METRIC_LABEL_CLUSTER_NAME: "aerospike_cluster",
+	commons.METRIC_LABEL_SERVICE:      "aerospike_service",
+}
 
 func (oe *OtelExecutor) sendNodeUp(meter metric.Meter,
 	labels []attribute.KeyValue, value int64) {
@@ -36,6 +42,12 @@ func (oe *OtelExecutor) getCommonLabels() []attribute.KeyValue {
 	return attrkv
 }
 
+func (oe *OtelExecutor) allMetricsAreGauges() bool {
+	envConfig := os.Getenv("AEROSPIKE_ALL_METRICS_ARE_GAUGES")
+	log.Infof("AEROSPIKE_ALL_METRICS_ARE_GAUGES: %s", envConfig)
+	return envConfig != "" && strings.ToLower(envConfig) == "true"
+}
+
 func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Context,
 	commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
 
@@ -51,7 +63,12 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 		// label name to value mapped using index
 		for idx, label := range stat.Labels {
 			//TODO: handle if label value is null or not present
-			labels = append(labels, attribute.String(label, stat.LabelValues[idx]))
+			if renamedLabel, ok := OTEL_LABELS_MAPPING[label]; ok {
+				labels = append(labels, attribute.String(renamedLabel, stat.LabelValues[idx]))
+			} else {
+				labels = append(labels, attribute.String(label, stat.LabelValues[idx]))
+			}
+			// labels = append(labels, attribute.String(label, stat.LabelValues[idx]))
 		}
 
 		// append common labels
@@ -60,13 +77,19 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 		metricKey := oe.constructMetricKey(qualifiedName, labels)
 
 		// Use or Create Otel metric
+		allMetricsAreGauges := oe.allMetricsAreGauges()
 		switch stat.MType {
 		case commons.MetricTypeCounter:
-			cMetric := oe.getCounterMetric(metricKey, meter, qualifiedName, desc, labels)
+			if allMetricsAreGauges {
+				gMetric := oe.getGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
+				gMetric.value.Store(int64(stat.Value))
+			} else {
+				cMetric := oe.getCounterMetric(metricKey, meter, qualifiedName, desc, labels)
 
-			// If server restarts while exporter running, delta will be negative, so we don't send it
-			// TODO: discuss with sunil on this
-			cMetric.value.Store(int64(stat.Value))
+				// If server restarts while exporter running, delta will be negative, so we don't send it
+				// TODO: discuss with sunil on this
+				cMetric.value.Store(int64(stat.Value))
+			}
 
 		case commons.MetricTypeGauge:
 
