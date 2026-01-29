@@ -44,7 +44,6 @@ func (oe *OtelExecutor) getCommonLabels() []attribute.KeyValue {
 
 func (oe *OtelExecutor) allMetricsAreGauges() bool {
 	envConfig := os.Getenv("AEROSPIKE_ALL_METRICS_ARE_GAUGES")
-	log.Infof("AEROSPIKE_ALL_METRICS_ARE_GAUGES: %s", envConfig)
 	return envConfig != "" && strings.ToLower(envConfig) == "true"
 }
 
