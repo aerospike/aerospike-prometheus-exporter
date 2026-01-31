@@ -103,9 +103,9 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, requestInfoResponse map
 	return allMetricsToSend, nil
 }
 
-func (sw *NodeStatsProcessor) handleRefresh(requestInfoKeyResponse string) []AerospikeStat {
+func (sw *NodeStatsProcessor) handleRefresh(requestInfoResponse string) []AerospikeStat {
 
-	stats := commons.ParseStats(requestInfoKeyResponse, ";")
+	stats := commons.ParseStats(requestInfoResponse, ";")
 
 	var refreshMetricsToSend = []AerospikeStat{}
 
@@ -200,11 +200,11 @@ func (sw *NodeStatsProcessor) createLogSinkMetric(statName string, statValue flo
 }
 
 // handleUserAgentsStats handles the user-agents stats and returns the metrics to send
-func (sw *NodeStatsProcessor) handleUserAgentsStats(rawMetrics map[string]string) []AerospikeStat {
+func (sw *NodeStatsProcessor) handleUserAgentsStats(requestInfoResponse map[string]string) []AerospikeStat {
 
 	var refreshMetricsToSend = []AerospikeStat{}
 
-	userAgentsMetrics := rawMetrics["user-agents"]
+	userAgentsMetrics := requestInfoResponse["user-agents"]
 	stats := strings.Split(userAgentsMetrics, ";")
 
 	for _, stat := range stats {
