@@ -63,7 +63,7 @@ func (siw *SindexStatsProcessor) getSindexCommands(sindexesMeta []string) (sinde
 	return sindexCommands
 }
 
-func (siw *SindexStatsProcessor) Refresh(infoKeys []string, requestInfoResponse map[string]string) ([]AerospikeStat, error) {
+func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 	if config.Cfg.Aerospike.DisableSindexMetrics {
 		// disabled
 		return nil, nil
@@ -77,13 +77,13 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, requestInfoResponse 
 
 	for _, sindex := range infoKeys {
 
-		log.Tracef("sindex-stats:%v:%v", sindex, requestInfoResponse[sindex])
+		log.Tracef("sindex-stats:%v:%v", sindex, rawMetrics[sindex])
 
 		nsName, sindexName := siw.getNamespaceAndSindexName(sindex)
 
-		log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, requestInfoResponse[sindex])
+		log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
 
-		stats := commons.ParseStats(requestInfoResponse[sindex], ";")
+		stats := commons.ParseStats(rawMetrics[sindex], ";")
 		for stat, value := range stats {
 			pv, err := commons.TryConvert(value)
 

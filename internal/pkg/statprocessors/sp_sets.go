@@ -28,11 +28,11 @@ func (sw *SetsStatsProcessor) PassTwoKeys(passOneStats map[string]string) []stri
 	return []string{KEY_SETS}
 }
 
-func (sw *SetsStatsProcessor) Refresh(infoKeys []string, requestInfoResponse map[string]string) ([]AerospikeStat, error) {
+func (sw *SetsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 
-	setStats := strings.Split(requestInfoResponse[KEY_SETS], ";")
+	setStats := strings.Split(rawMetrics[KEY_SETS], ";")
 
-	log.Tracef("set-stats:%v", requestInfoResponse[KEY_SETS])
+	log.Tracef("set-stats:%v", rawMetrics[KEY_SETS])
 
 	if sw.setMetrics == nil {
 		sw.setMetrics = make(map[string]AerospikeStat)

@@ -77,7 +77,7 @@ func isStatLatencyHistRelated(stat string) bool {
 		strings.Contains(stat, "enable-hist-")) // hist-proxy & hist-info - both at service level
 }
 
-func (lw *LatencyStatsProcessor) Refresh(infoKeys []string, requestInfoResponse map[string]string) ([]AerospikeStat, error) {
+func (lw *LatencyStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 
 	allowedLatenciesList := make(map[string]struct{})
 	blockedLatenciessList := make(map[string]struct{})
@@ -94,33 +94,33 @@ func (lw *LatencyStatsProcessor) Refresh(infoKeys []string, requestInfoResponse 
 		}
 	}
 
-	// log.Tracef("latencies-stats:latencies:hist={test}-benchmarks-read -- %+v", requestInfoResponse["latencies:hist={test}-benchmarks-read"])
-	log.Tracef("latency-stats:%+v", requestInfoResponse["latency:"])
+	// log.Tracef("latencies-stats:latencies:hist={test}-benchmarks-read -- %+v", rawMetrics["latencies:hist={test}-benchmarks-read"])
+	log.Tracef("latency-stats:%+v", rawMetrics["latency:"])
 	var allMetricsToSend = []AerospikeStat{}
 
 	// loop all the latency infokeys
 	for ik := range infoKeys {
-		latencyMetricsToSend := parseSingleLatenciesKey(infoKeys[ik], requestInfoResponse, allowedLatenciesList, blockedLatenciessList)
+		latencyMetricsToSend := parseSingleLatenciesKey(infoKeys[ik], rawMetrics, allowedLatenciesList, blockedLatenciessList)
 		allMetricsToSend = append(allMetricsToSend, latencyMetricsToSend...)
 	}
 
 	return allMetricsToSend, nil
 }
 
-func parseSingleLatenciesKey(singleLatencyKey string, requestInfoResponse map[string]string,
+func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]string,
 	allowedLatenciesList map[string]struct{}, blockedLatenciessList map[string]struct{}) []AerospikeStat {
 
 	var latencyStats map[string]LatencyStatsMap
 
-	if requestInfoResponse["latencies:"] != "" {
+	if rawMetrics["latencies:"] != "" {
 		// in latest aerospike server>5.1 version, latencies: will always come as infokey, so no need to check other latency commands
-		latencyStats = parseLatencyInfo(requestInfoResponse[singleLatencyKey], int(config.Cfg.Aerospike.LatencyBucketsCount))
+		latencyStats = parseLatencyInfo(rawMetrics[singleLatencyKey], int(config.Cfg.Aerospike.LatencyBucketsCount))
 	} else {
-		latencyStats = parseLatencyInfoLegacy(requestInfoResponse["latency:"], int(config.Cfg.Aerospike.LatencyBucketsCount))
+		latencyStats = parseLatencyInfoLegacy(rawMetrics["latency:"], int(config.Cfg.Aerospike.LatencyBucketsCount))
 	}
 
 	// log.Tracef("latency-stats:%+v", latencyStats)
-	log.Tracef("latencies-stats:%+v:%+v", singleLatencyKey, requestInfoResponse[singleLatencyKey])
+	log.Tracef("latencies-stats:%+v:%+v", singleLatencyKey, rawMetrics[singleLatencyKey])
 	var latencyMetricsToSend = []AerospikeStat{}
 
 	for namespaceName, nsLatencyStats := range latencyStats {
