@@ -154,6 +154,7 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 		if asConnection == nil || !asConnection.IsConnected() {
 			// Create new connection
 			asConnection, err = initializeAndConnectAerospikeServer()
+
 			if err != nil {
 				logrus.Debug("Error while connecting to aerospike server: ", err)
 				continue
@@ -161,23 +162,29 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 
 			// Set user-agent
 			err = setUserAgent()
+
 			if err != nil {
 				logrus.Debug("Error while setting user-agent: ", err)
 				continue
 			}
 		}
 
-		// Info request
-		requestInfoResponse, err = asConnection.RequestInfo(infoKeys...)
+		// defensive check
+		if asConnection.IsConnected() {
+			// Info request
+			requestInfoResponse, err = asConnection.RequestInfo(infoKeys...)
 
-		if err != nil {
-			logrus.Debug("Error while requestInfo ( infoKeys...), closing connection : Error is: ", err, " and infoKeys: ", infoKeys)
-			asConnection.Close()
-			asConnection = nil
-			continue
+			if err != nil {
+				logrus.Debug("Error while requestInfo ( infoKeys...), closing connection : Error is: ", err, " and infoKeys: ", infoKeys)
+				asConnection.Close()
+				// making nil, to force a connection, if any n/w disruption happen between my connection call
+				//   and requestinfo call, -- it internall will fail because of n/w disruption
+				asConnection = nil
+				continue
+			}
+
+			break
 		}
-
-		break
 	}
 
 	if len(requestInfoResponse) == 1 {
@@ -254,6 +261,7 @@ func setUserAgent() error {
 
 	logrus.Debug("Setting User-Agent in Server: infoKeys: ", command)
 	_, err := asConnection.RequestInfo(command...)
+
 	if err != nil {
 		return err
 	}

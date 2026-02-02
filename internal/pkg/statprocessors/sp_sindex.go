@@ -14,7 +14,7 @@ type SindexStatsProcessor struct {
 }
 
 const (
-	KEY_SINDEX_COMMAND = "sindex-list"
+	KEY_SINDEX_COMMAND = "sindex-list:"
 )
 
 func (siw *SindexStatsProcessor) PassOneKeys() []string {
