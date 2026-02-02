@@ -172,7 +172,7 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 		}
 
 		// defensive check
-		if asConnection.IsConnected() {
+		if asConnection != nil && asConnection.IsConnected() {
 			// Info request
 			requestInfoResponse, err = asConnection.RequestInfo(infoKeys...)
 
