@@ -171,22 +171,19 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 			}
 		}
 
-		// defensive check
-		if asConnection != nil && asConnection.IsConnected() {
-			// Info request
-			requestInfoResponse, err = asConnection.RequestInfo(infoKeys...)
+		// Info request
+		requestInfoResponse, err = asConnection.RequestInfo(infoKeys...)
 
-			if err != nil {
-				logrus.Debug("Error while requestInfo ( infoKeys...), closing connection : Error is: ", err, " and infoKeys: ", infoKeys)
-				asConnection.Close()
-				// making nil, to force a connection, if any n/w disruption happen between my connection call
-				//   and requestinfo call, -- it internall will fail because of n/w disruption
-				asConnection = nil
-				continue
-			}
-
-			break
+		if err != nil {
+			logrus.Debug("Error while requestInfo ( infoKeys...), closing connection : Error is: ", err, " and infoKeys: ", infoKeys)
+			asConnection.Close()
+			// making nil, to force a connection, if any n/w disruption happen between my connection call
+			//   and requestinfo call, -- it internall will fail because of n/w disruption
+			asConnection = nil
+			continue
 		}
+
+		break
 	}
 
 	if len(requestInfoResponse) == 1 {
