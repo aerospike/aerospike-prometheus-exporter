@@ -48,7 +48,7 @@ type Config struct {
 			PushInterval            uint8             `toml:"push_interval"`
 			ServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
 			CounterTemporality      string            `toml:"counter_temporality"`
-			AllMetricsAsGauge       bool              `toml:"all_metrics_are_gauges"`
+			AllMetricsAsGauge       bool              `toml:"all_metrics_as_gauges"`
 		} `toml:"OpenTelemetry"`
 
 		IsKubernetes      bool
@@ -207,7 +207,7 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		c.validateOtelConfigs()
 	}
 
-	if !md.IsDefined("Agent", "OpenTelemetry", "all_metrics_as_gauge") {
+	if !md.IsDefined("Agent", "OpenTelemetry", "all_metrics_as_gauges") {
 		Cfg.Agent.Otel.AllMetricsAsGauge = true
 	}
 }
