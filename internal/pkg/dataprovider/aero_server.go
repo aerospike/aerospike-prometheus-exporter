@@ -173,7 +173,7 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 		if err != nil {
 			logrus.Debug("Error while requestInfo ( infoKeys...), closing connection : Error is: ", err, " and infoKeys: ", infoKeys)
 			asConnection.Close()
-			//TODO: do we need to assign nil to asConnection? i.e. asConnection = nil
+			asConnection = nil
 			continue
 		}
 
