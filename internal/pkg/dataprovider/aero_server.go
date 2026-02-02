@@ -123,6 +123,7 @@ func initAerospikeTLS() *tls.Config {
 
 func createNewConnection() (*aero.Connection, error) {
 	asConnection, err := aero.NewConnection(clientPolicy, asServerHost)
+
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +137,7 @@ func createNewConnection() (*aero.Connection, error) {
 	// Set no connection deadline to re-use connection, but socketTimeout will be in effect
 	var deadline time.Time
 	err = asConnection.SetTimeout(deadline, clientPolicy.Timeout)
+
 	if err != nil {
 		return nil, err
 	}
