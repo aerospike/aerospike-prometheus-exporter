@@ -123,6 +123,7 @@ func initAerospikeTLS() *tls.Config {
 
 func createNewConnection() (*aero.Connection, error) {
 	asConnection, err := aero.NewConnection(clientPolicy, asServerHost)
+
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +137,7 @@ func createNewConnection() (*aero.Connection, error) {
 	// Set no connection deadline to re-use connection, but socketTimeout will be in effect
 	var deadline time.Time
 	err = asConnection.SetTimeout(deadline, clientPolicy.Timeout)
+
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +147,7 @@ func createNewConnection() (*aero.Connection, error) {
 
 func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error) {
 	var err error
-	rawMetrics := make(map[string]string)
+	requestInfoResponse := make(map[string]string)
 
 	// Retry for connection, timeout, network errors
 	// including errors from RequestInfo()
@@ -154,6 +156,7 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 		if asConnection == nil || !asConnection.IsConnected() {
 			// Create new connection
 			asConnection, err = initializeAndConnectAerospikeServer()
+
 			if err != nil {
 				logrus.Debug("Error while connecting to aerospike server: ", err)
 				continue
@@ -161,6 +164,7 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 
 			// Set user-agent
 			err = setUserAgent()
+
 			if err != nil {
 				logrus.Debug("Error while setting user-agent: ", err)
 				continue
@@ -168,26 +172,29 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 		}
 
 		// Info request
-		rawMetrics, err = asConnection.RequestInfo(infoKeys...)
+		requestInfoResponse, err = asConnection.RequestInfo(infoKeys...)
+
 		if err != nil {
 			logrus.Error("Error while requestInfo ( infoKeys...), closing connection : Error is: ", err, " and infoKeys: ", infoKeys)
 			asConnection.Close()
-			//TODO: do we need to assign nil to asConnection? i.e. asConnection = nil
+			// making nil, to force a connection, if any n/w disruption happen between my connection call
+			//   and requestinfo call, -- it internall will fail because of n/w disruption
+			asConnection = nil
 			continue
 		}
 
 		break
 	}
 
-	if len(rawMetrics) == 1 {
-		for k := range rawMetrics {
+	if len(requestInfoResponse) == 1 {
+		for k := range requestInfoResponse {
 			if strings.HasPrefix(strings.ToUpper(k), "ERROR:") {
 				return nil, errors.New(k)
 			}
 		}
 	}
 
-	return rawMetrics, err
+	return requestInfoResponse, err
 }
 
 func fetchUsersRoles() (bool, []*aero.UserRoles, error) {
@@ -253,6 +260,7 @@ func setUserAgent() error {
 
 	logrus.Debug("Setting User-Agent in Server: infoKeys: ", command)
 	_, err := asConnection.RequestInfo(command...)
+
 	if err != nil {
 		return err
 	}

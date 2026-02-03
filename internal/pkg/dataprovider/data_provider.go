@@ -14,24 +14,24 @@ type DataProvider interface {
 }
 
 // pre-create the instances
-var dp_aerospike_server = &AerospikeServer{}
-var dp_mock_server = &MockAerospikeServer{}
-var sys_info_provider = &SystemInfoProvider{}
+var dpAerospikeServer = &AerospikeServer{}
+var dpMockServer = &MockAerospikeServer{}
+var dpSysInfoProvider = &SystemInfoProvider{}
 
 func GetProvider() DataProvider {
 
 	if config.Cfg.Agent.UseMockDatasource {
 		// initialize, internally it will check if already initialized
-		dp_mock_server.Initialize()
+		dpMockServer.Initialize()
 
 		// a := &FakeDataProvider{}
 
-		return dp_mock_server
+		return dpMockServer
 	}
 
-	return dp_aerospike_server
+	return dpAerospikeServer
 }
 
 func GetSystemProvider() *SystemInfoProvider {
-	return sys_info_provider
+	return dpSysInfoProvider
 }

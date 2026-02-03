@@ -14,54 +14,50 @@ type SindexStatsProcessor struct {
 }
 
 const (
-	KEY_SINDEX_LIST_COMMAND = "sindex-list"
-	KEY_SINDEX_COMMAND      = "sindex"
+	KEY_SINDEX_COMMAND = "sindex-list:"
 )
 
 func (siw *SindexStatsProcessor) PassOneKeys() []string {
+
 	if config.Cfg.Aerospike.DisableSindexMetrics {
 		// disabled
 		log.Tracef("sindex-passonekeys:nil")
 		return nil
 	}
 
-	ge, err := isBuildVersionGreaterThanOrEqual(Build, "7.0.0.0")
-
-	if err != nil {
-		return nil
-	}
-
-	if ge {
-		log.Tracef("sindex-passonekeys:%s", []string{KEY_SINDEX_LIST_COMMAND})
-		return []string{KEY_SINDEX_LIST_COMMAND}
-	}
-
-	// older versions
 	log.Tracef("sindex-passonekeys:%s", []string{KEY_SINDEX_COMMAND})
 	return []string{KEY_SINDEX_COMMAND}
 }
 
-func (siw *SindexStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (sindexCommands []string) {
+func (siw *SindexStatsProcessor) PassTwoKeys(passOneStats map[string]string) (sindexCommands []string) {
+
 	if config.Cfg.Aerospike.DisableSindexMetrics {
 		// disabled
 		return nil
 	}
 
-	log.Tracef("sindex:%v", rawMetrics["sindex"])
+	log.Tracef("sindex:%v", passOneStats[KEY_SINDEX_COMMAND])
 
-	sindexesMeta := strings.Split(rawMetrics["sindex"], ";")
+	sindexesMeta := strings.Split(passOneStats[KEY_SINDEX_COMMAND], ";")
 	sindexCommands = siw.getSindexCommands(sindexesMeta)
 
-	log.Tracef("sindex-passtwokeys:%s", sindexCommands)
+	log.Tracef("sindex-passtwokeys: length is %d and command %s", len(sindexCommands), sindexCommands)
+
+	if len(sindexCommands) == 0 {
+		return nil
+	}
 
 	return sindexCommands
 }
 
 // getSindexCommands returns list of commands to fetch sindex statistics
 func (siw *SindexStatsProcessor) getSindexCommands(sindexesMeta []string) (sindexCommands []string) {
+
 	for _, sindex := range sindexesMeta {
 		stats := commons.ParseStats(sindex, ":")
-		sindexCommands = append(sindexCommands, "sindex/"+stats["ns"]+"/"+stats["indexname"])
+		if stats["ns"] != "" {
+			sindexCommands = append(sindexCommands, "sindex-stat:namespace="+stats["ns"]+";indexname="+stats["indexname"])
+		}
 	}
 
 	return sindexCommands
@@ -80,39 +76,50 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 	var allMetricsToSend = []AerospikeStat{}
 
 	for _, sindex := range infoKeys {
-		if strings.HasPrefix(sindex, "sindex/") {
-			log.Tracef("sindex-stats:%v:%v", sindex, rawMetrics[sindex])
 
-			sindexInfoKey := strings.ReplaceAll(sindex, "sindex/", "")
-			sindexInfoKeySplit := strings.Split(sindexInfoKey, "/")
-			nsName := sindexInfoKeySplit[0]
-			sindexName := sindexInfoKeySplit[1]
-			log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
+		log.Tracef("sindex-stats:%v:%v", sindex, rawMetrics[sindex])
 
-			stats := commons.ParseStats(rawMetrics[sindex], ";")
-			for stat, value := range stats {
-				pv, err := commons.TryConvert(value)
-				if err != nil {
-					continue
-				}
-				asMetric, exists := siw.sindexMetrics[stat]
+		nsName, sindexName := siw.getNamespaceAndSindexName(sindex)
 
-				if !exists {
-					allowed := isMetricAllowed(commons.CTX_SINDEX, stat)
-					asMetric = NewAerospikeStat(commons.CTX_SINDEX, stat, allowed)
-					siw.sindexMetrics[stat] = asMetric
-				}
+		log.Tracef("sindex-stats:%s:%s:%s", nsName, sindexName, rawMetrics[sindex])
 
-				labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_SINDEX}
-				labelValues := []string{ClusterName, Service, nsName, sindexName}
+		stats := commons.ParseStats(rawMetrics[sindex], ";")
+		for stat, value := range stats {
+			pv, err := commons.TryConvert(value)
 
-				asMetric.updateValues(pv, labels, labelValues)
-				allMetricsToSend = append(allMetricsToSend, asMetric)
-
+			if err != nil {
+				continue
 			}
+
+			asMetric, exists := siw.sindexMetrics[stat]
+
+			if !exists {
+				allowed := isMetricAllowed(commons.CTX_SINDEX, stat)
+				asMetric = NewAerospikeStat(commons.CTX_SINDEX, stat, allowed)
+				siw.sindexMetrics[stat] = asMetric
+			}
+
+			labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_SINDEX}
+			labelValues := []string{ClusterName, Service, nsName, sindexName}
+
+			asMetric.updateValues(pv, labels, labelValues)
+			allMetricsToSend = append(allMetricsToSend, asMetric)
 		}
 
 	}
 
 	return allMetricsToSend, nil
+}
+
+func (siw *SindexStatsProcessor) getNamespaceAndSindexName(sindexInfoKey string) (string, string) {
+
+	// sindex-stat:namespace=test;indexname=3rd_sindex
+	sindexInfos := strings.Split(sindexInfoKey, ":")
+	// namespace=test;indexname=3rd_sindex
+	sindexInfos = strings.Split(sindexInfos[1], ";")
+
+	nsName := strings.Split(sindexInfos[0], "=")[1]
+	sindexName := strings.Split(sindexInfos[1], "=")[1]
+
+	return nsName, sindexName
 }

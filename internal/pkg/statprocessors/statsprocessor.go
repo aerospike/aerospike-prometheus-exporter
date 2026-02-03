@@ -10,7 +10,7 @@ var NamespaceLatencyBenchmarks = make(map[string]map[string]string)
 
 type StatProcessor interface {
 	PassOneKeys() []string
-	PassTwoKeys(rawMetrics map[string]string) []string
+	PassTwoKeys(passOneStats map[string]string) []string
 	Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error)
 }
 

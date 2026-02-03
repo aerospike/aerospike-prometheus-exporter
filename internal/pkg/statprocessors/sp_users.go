@@ -23,7 +23,7 @@ func (uw *UserStatsProcessor) PassOneKeys() []string {
 	return nil
 }
 
-func (uw *UserStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string {
+func (uw *UserStatsProcessor) PassTwoKeys(passOneStats map[string]string) []string {
 	log.Tracef("users-passtwokeys:nil")
 	return nil
 }

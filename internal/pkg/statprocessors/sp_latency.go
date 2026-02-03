@@ -19,7 +19,7 @@ func (lw *LatencyStatsProcessor) PassOneKeys() []string {
 	return nil
 }
 
-func (lw *LatencyStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (latencyCommands []string) {
+func (lw *LatencyStatsProcessor) PassTwoKeys(passOneStats map[string]string) (latencyCommands []string) {
 
 	// return if this feature is disabled.
 	if config.Cfg.Aerospike.DisableLatenciesMetrics {
@@ -29,14 +29,14 @@ func (lw *LatencyStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (late
 
 	// latencyCommands = []string{"latencies:", "latency:"}
 
-	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "5.1.0.0")
+	ge, err := isBuildVersionGreaterThanOrEqual(passOneStats["build"], "5.1.0.0")
 
 	if err != nil {
 		return nil
 	}
 
 	if ge {
-		return lw.getLatenciesCommands(rawMetrics)
+		return lw.getLatenciesCommands(passOneStats)
 	}
 
 	// legacy / old version
@@ -44,7 +44,7 @@ func (lw *LatencyStatsProcessor) PassTwoKeys(rawMetrics map[string]string) (late
 	return []string{"latency:"}
 }
 
-func (lw *LatencyStatsProcessor) getLatenciesCommands(rawMetrics map[string]string) []string {
+func (lw *LatencyStatsProcessor) getLatenciesCommands(passOneStats map[string]string) []string {
 	var commands = []string{"latencies:"}
 
 	// below latency-command are added to the auto-enabled list, i.e. latencies: command

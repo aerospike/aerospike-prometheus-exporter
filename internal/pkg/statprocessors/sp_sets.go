@@ -22,7 +22,7 @@ func (sw *SetsStatsProcessor) PassOneKeys() []string {
 	return nil
 }
 
-func (sw *SetsStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string {
+func (sw *SetsStatsProcessor) PassTwoKeys(passOneStats map[string]string) []string {
 	log.Tracef("sets-passtwokeys:%s", []string{KEY_SETS})
 
 	return []string{KEY_SETS}

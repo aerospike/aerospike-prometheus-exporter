@@ -27,17 +27,17 @@ func (sw *NodeStatsProcessor) PassOneKeys() []string {
 	return []string{KEY_SERVICE_LOGS}
 }
 
-func (sw *NodeStatsProcessor) PassTwoKeys(rawMetrics map[string]string) []string {
+func (sw *NodeStatsProcessor) PassTwoKeys(passOneStats map[string]string) []string {
 	// we need to fetch both configs and stat
 
 	// if Logs are configure/present, send individual sink log commands
-	sinkCmds := sw.parseLogSinkDetails(rawMetrics)
+	sinkCmds := sw.parseLogSinkDetails(passOneStats)
 
 	passTwoKeys := []string{KEY_SERVICE_CONFIG, KEY_SERVICE_STATISTICS}
 	passTwoKeys = append(passTwoKeys, sinkCmds...)
 
 	// add user-agents command if build version is >= 8.1.0.0
-	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "8.1.0.0")
+	ge, err := isBuildVersionGreaterThanOrEqual(passOneStats["build"], "8.1.0.0")
 
 	if err != nil {
 		return passTwoKeys
@@ -103,9 +103,9 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	return allMetricsToSend, nil
 }
 
-func (sw *NodeStatsProcessor) handleRefresh(nodeRawMetrics string) []AerospikeStat {
+func (sw *NodeStatsProcessor) handleRefresh(rawMetrics string) []AerospikeStat {
 
-	stats := commons.ParseStats(nodeRawMetrics, ";")
+	stats := commons.ParseStats(rawMetrics, ";")
 
 	var refreshMetricsToSend = []AerospikeStat{}
 

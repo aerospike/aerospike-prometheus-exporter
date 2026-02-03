@@ -15,7 +15,7 @@ func Refresh() ([]AerospikeStat, error) {
 	log.Debugf("Refreshing node %s", fullHost)
 
 	// array to accumulate all metrics, which later will be dispatched by various observers
-	var allMetricsToSend = []AerospikeStat{}
+	var allStatsToSend = []AerospikeStat{}
 
 	// list of all the StatsProcessor
 	allStatsprocessorList := GetStatsProcessors()
@@ -63,33 +63,33 @@ func Refresh() ([]AerospikeStat, error) {
 	}
 
 	// info request for second set of info keys, this retrieves all the stats from server
-	rawMetrics, err := dataprovider.GetProvider().RequestInfo(infoKeys)
+	passTwoResponse, err := dataprovider.GetProvider().RequestInfo(infoKeys)
 	if err != nil {
-		return allMetricsToSend, err
+		return allStatsToSend, err
 	}
 
 	// set global values
-	ClusterName, Service, Build = rawMetrics[Infokey_ClusterName], rawMetrics[Infokey_Service], rawMetrics[Infokey_Build]
+	ClusterName, Service, Build = passTwoResponse[Infokey_ClusterName], passTwoResponse[Infokey_Service], passTwoResponse[Infokey_Build]
 	if config.Cfg.Agent.IsKubernetes {
 		Service = config.Cfg.Agent.KubernetesPodName
 	}
 
 	// sanitize the utf8 strings before sending them to watchers
-	for k, v := range rawMetrics {
-		rawMetrics[k] = commons.SanitizeUTF8(v)
+	for k, v := range passTwoResponse {
+		passTwoResponse[k] = commons.SanitizeUTF8(v)
 	}
 
 	// sanitize the utf8 strings before sending them to watchers
 	for i, c := range allStatsprocessorList {
 
-		tmpRefreshedMetrics, err := c.Refresh(statprocessorInfoKeys[i], rawMetrics)
+		tmpRefreshedMetrics, err := c.Refresh(statprocessorInfoKeys[i], passTwoResponse)
 		if err != nil {
-			return allMetricsToSend, err
+			return allStatsToSend, err
 		}
-		allMetricsToSend = append(allMetricsToSend, tmpRefreshedMetrics...)
+		allStatsToSend = append(allStatsToSend, tmpRefreshedMetrics...)
 	}
 
 	log.Debugf("Refreshing node was successful")
 
-	return allMetricsToSend, nil
+	return allStatsToSend, nil
 }
