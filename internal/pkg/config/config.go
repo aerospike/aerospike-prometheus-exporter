@@ -190,47 +190,50 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 	}
 
 	// key-file and cert-file either exist or not-exist together
-	if len(Cfg.Aerospike.KeyFile) == 0 && len(Cfg.Aerospike.CertFile) != 0 {
+	if len(c.Aerospike.KeyFile) == 0 && len(c.Aerospike.CertFile) > 0 {
 		log.Fatalf("In Aerospike section, key_file is not present")
 	}
 
-	if len(Cfg.Aerospike.KeyFile) != 0 && len(Cfg.Aerospike.CertFile) == 0 {
+	if len(c.Aerospike.KeyFile) > 0 && len(c.Aerospike.CertFile) == 0 {
 		log.Fatalf("In Aerospike section, cert_file is not present")
 	}
 
 	// validate Aerospike root-ca and cert-file configs
-	if len(Cfg.Aerospike.RootCA) == 0 && len(Cfg.Aerospike.CertFile) != 0 {
+	if len(c.Aerospike.RootCA) == 0 && len(c.Aerospike.CertFile) > 0 {
 		log.Fatalf("In Aerospike section, root_ca cannot be null when cert_file and key_file are configured")
 	}
 
-	if Cfg.Agent.OtelEnabled {
+	if c.Agent.OtelEnabled {
 		c.validateOtelConfigs()
+
+		// not validation, if not defined default to true
+		if !md.IsDefined("Agent", "OpenTelemetry", "all_metrics_as_gauges") {
+			c.Agent.Otel.AllMetricsAsGauge = true
+		}
 	}
 
-	if !md.IsDefined("Agent", "OpenTelemetry", "all_metrics_as_gauges") {
-		Cfg.Agent.Otel.AllMetricsAsGauge = true
-	}
 }
 
 func (c *Config) validateOtelConfigs() {
 	// validate Otel endpoint and grpc_endpoint configs
-	if len(Cfg.Agent.Otel.Endpoint) > 0 && len(Cfg.Agent.Otel.GrpcEndpoint) > 0 {
+	if len(c.Agent.Otel.Endpoint) > 0 && len(c.Agent.Otel.GrpcEndpoint) > 0 {
+		log.Fatalf("endpoint is deprecated, using grpc_endpoint instead.")
 		log.Fatalf("In OpenTelemetry section, ONLY  endpoint or grpc_endpoint can be configured, not both")
-	} else if len(Cfg.Agent.Otel.Endpoint) > 0 && len(Cfg.Agent.Otel.GrpcEndpoint) == 0 {
+	} else if len(c.Agent.Otel.Endpoint) > 0 && len(c.Agent.Otel.GrpcEndpoint) == 0 {
 		log.Infof("In OpenTelemetry section, endpoint configured will be used as grpc_endpoint")
-		Cfg.Agent.Otel.GrpcEndpoint = Cfg.Agent.Otel.Endpoint
+		c.Agent.Otel.GrpcEndpoint = c.Agent.Otel.Endpoint
 	}
 
-	if len(Cfg.Agent.Otel.GrpcEndpoint) != 0 && len(Cfg.Agent.Otel.HttpEndpoint) != 0 {
+	if len(c.Agent.Otel.GrpcEndpoint) > 0 && len(c.Agent.Otel.HttpEndpoint) > 0 {
 		log.Fatalf("In OpenTelemetry section, grpc_endpoint and http_endpoint can be configured, not both")
-	} else if len(Cfg.Agent.Otel.GrpcEndpoint) == 0 && len(Cfg.Agent.Otel.HttpEndpoint) == 0 {
+	} else if len(c.Agent.Otel.GrpcEndpoint) == 0 && len(c.Agent.Otel.HttpEndpoint) == 0 {
 		log.Fatalf("In OpenTelemetry section, Grpc  or Http neither is configured")
 	}
 
-	if len(Cfg.Agent.Otel.CounterTemporality) == 0 {
+	if len(c.Agent.Otel.CounterTemporality) == 0 {
 		// Delta is default as many Datadog and Dynatrace customers. which accept only Delta's
-		Cfg.Agent.Otel.CounterTemporality = "delta"
-	} else if Cfg.Agent.Otel.CounterTemporality != "delta" && Cfg.Agent.Otel.CounterTemporality != "cumulative" {
+		c.Agent.Otel.CounterTemporality = "delta"
+	} else if c.Agent.Otel.CounterTemporality != "delta" && c.Agent.Otel.CounterTemporality != "cumulative" {
 		log.Fatalf("In OpenTelemetry section, counter_temporality must be either delta or cumulative")
 	}
 
@@ -241,7 +244,7 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 		return
 	}
 
-	if Cfg.Agent.CloudProvider != "" && len(strings.Trim(Cfg.Agent.CloudProvider, " ")) > 0 {
+	if c.Agent.CloudProvider != "" && len(strings.Trim(c.Agent.CloudProvider, " ")) > 0 {
 		cloudLabels := CollectCloudDetails()
 		log.Debug("Adding Cloud Info to Metric Labels ", cloudLabels)
 
@@ -249,7 +252,7 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 			if v == "" || len(v) == 0 {
 				v = "null"
 			}
-			Cfg.Agent.MetricLabels[k] = v
+			c.Agent.MetricLabels[k] = v
 		}
 	}
 }
@@ -258,15 +261,16 @@ func (c *Config) FetchKubernetesInfo(md toml.MetaData) {
 	// use kubectl to fetch required Kubernetes context and find the required Kubenetes environment variables
 	envKubeServiceHost := os.Getenv("KUBERNETES_SERVICE_HOST")
 
-	Cfg.Agent.IsKubernetes = false
+	c.Agent.IsKubernetes = false
 
 	if envKubeServiceHost != "" && len(strings.TrimSpace(envKubeServiceHost)) > 0 {
-		Cfg.Agent.IsKubernetes = true
+		c.Agent.IsKubernetes = true
 		log.Info("Exporter is running in Kubernetes")
 
 		// get host-name
 		var err error
-		Cfg.Agent.KubernetesPodName, err = os.Hostname()
+		c.Agent.KubernetesPodName, err = os.Hostname()
+
 		if err != nil {
 			log.Errorln(err)
 			return

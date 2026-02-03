@@ -75,12 +75,12 @@
       endpoint = ""
 
       # OTel Endpoint
-      # NOTE: Only endpoint does not include protocol http/https
-      # NOTE: if endpoint and grpc_endpoint are configured grpc_endpoint takes precedence
+      # NOTE: Only url, does not include protocol http/https
+      # NOTE: configure either grpc_endpoint or endpoint (DEPRECATED), both cannot be configured
       grpc_endpoint = ""
 
       # OTel Endpoint URL Path 
-      # provide entire http url
+      # provide entire url, including http/https protocol
       http_endpoint = ""
 
       # OTel headers, 
