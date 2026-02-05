@@ -217,9 +217,9 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 func (c *Config) validateOtelConfigs() {
 	// validate Otel endpoint and grpc_endpoint configs
 	if len(c.Agent.Otel.Endpoint) > 0 && len(c.Agent.Otel.GrpcEndpoint) > 0 {
-		log.Fatalf("endpoint is deprecated, using grpc_endpoint instead.")
 		log.Fatalf("In OpenTelemetry section, ONLY  endpoint or grpc_endpoint can be configured, not both")
-	} else if len(c.Agent.Otel.Endpoint) > 0 && len(c.Agent.Otel.GrpcEndpoint) == 0 {
+	} else if len(c.Agent.Otel.Endpoint) > 0 {
+		log.Warnf("In OpenTelemetry section, endpoint is deprecated, use grpc_endpoint instead")
 		log.Infof("In OpenTelemetry section, endpoint configured will be used as grpc_endpoint")
 		c.Agent.Otel.GrpcEndpoint = c.Agent.Otel.Endpoint
 	}
