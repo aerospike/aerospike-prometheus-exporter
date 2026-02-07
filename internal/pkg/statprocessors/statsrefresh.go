@@ -7,9 +7,47 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// public and utility functions
+type StatsRefresher struct {
+	ExecutorMode string
 
-func Refresh() ([]AerospikeStat, error) {
+	NamespaceStatsProcessor *NamespaceStatsProcessor
+	NodeStatsProcessor      *NodeStatsProcessor
+	SetsStatsProcessor      *SetsStatsProcessor
+	SindexStatsProcessor    *SindexStatsProcessor
+	XdrStatsProcessor       *XdrStatsProcessor
+	LatencyStatsProcessor   *LatencyStatsProcessor
+
+	UserStatsProcessor *UserStatsProcessor
+}
+
+func NewStatsRefresher(executorMode string) *StatsRefresher {
+
+	return &StatsRefresher{
+		ExecutorMode:            executorMode,
+		NamespaceStatsProcessor: &NamespaceStatsProcessor{},
+		NodeStatsProcessor:      &NodeStatsProcessor{},
+		SetsStatsProcessor:      &SetsStatsProcessor{},
+		SindexStatsProcessor:    &SindexStatsProcessor{},
+		XdrStatsProcessor:       &XdrStatsProcessor{},
+		LatencyStatsProcessor:   &LatencyStatsProcessor{},
+		UserStatsProcessor:      &UserStatsProcessor{ShouldFetchUserStatistics: true},
+	}
+}
+
+func (sr *StatsRefresher) GetStatsProcessors() []StatProcessor {
+	var statprocessors = []StatProcessor{
+		sr.NamespaceStatsProcessor,
+		sr.NodeStatsProcessor,
+		sr.SetsStatsProcessor,
+		sr.SindexStatsProcessor,
+		sr.XdrStatsProcessor,
+		sr.LatencyStatsProcessor,
+	}
+
+	return statprocessors
+}
+
+func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 
 	fullHost := commons.GetFullHost()
 	log.Debugf("Refreshing node %s", fullHost)
@@ -18,7 +56,7 @@ func Refresh() ([]AerospikeStat, error) {
 	var allStatsToSend = []AerospikeStat{}
 
 	// list of all the StatsProcessor
-	allStatsprocessorList := GetStatsProcessors()
+	allStatsprocessorList := sr.GetStatsProcessors()
 
 	// fetch first set of info keys
 	var infoKeys []string
@@ -34,7 +72,7 @@ func Refresh() ([]AerospikeStat, error) {
 	// info request for first set of info keys, this retrives configs from server
 	//   from namespaces,server/node-stats, xdr
 	//   if for any context (like jobs, latencies etc.,) no configs, they are not sent to server
-	passOneOutput, err := dataprovider.GetProvider().RequestInfo(infoKeys)
+	passOneOutput, err := dataprovider.GetProvider(sr.ExecutorMode).RequestInfo(infoKeys)
 
 	if err != nil {
 		return nil, err
@@ -63,7 +101,8 @@ func Refresh() ([]AerospikeStat, error) {
 	}
 
 	// info request for second set of info keys, this retrieves all the stats from server
-	passTwoResponse, err := dataprovider.GetProvider().RequestInfo(infoKeys)
+	passTwoResponse, err := dataprovider.GetProvider(sr.ExecutorMode).RequestInfo(infoKeys)
+
 	if err != nil {
 		return allStatsToSend, err
 	}
@@ -88,6 +127,15 @@ func Refresh() ([]AerospikeStat, error) {
 		}
 		allStatsToSend = append(allStatsToSend, tmpRefreshedMetrics...)
 	}
+
+	// Get User metrics
+	userMetrics, err := sr.UserStatsProcessor.Refresh(infoKeys, passTwoResponse, sr.ExecutorMode)
+
+	if err != nil {
+		return allStatsToSend, err
+	}
+
+	allStatsToSend = append(allStatsToSend, userMetrics...)
 
 	log.Debugf("Refreshing node was successful")
 

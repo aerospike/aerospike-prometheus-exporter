@@ -48,6 +48,8 @@ type OtelExecutor struct {
 	// metricExporter sdkmetric.Exporter
 
 	refreshCounter atomic.Int64
+
+	statsRefresher *statprocessors.StatsRefresher
 }
 
 // sdkmetric.Exporter interface implementation
@@ -70,6 +72,9 @@ func (oe *OtelExecutor) Initialize() error {
 	log.Infof("*** Initializing Otel Exporter... ")
 	log.Debug("** OTel endpoint ", config.Cfg.Agent.Otel.Endpoint)
 	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.ServiceName)
+
+	// Initialize the stats refresher
+	oe.statsRefresher = statprocessors.NewStatsRefresher(commons.EXECUTOR_MODE_OTEL)
 
 	// initialize the metric caches
 	oe.gauges = make(map[string]*GaugeMetrics)
@@ -241,7 +246,7 @@ func (oe *OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.Instrume
 }
 
 func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
-	asRefreshStats, err := statprocessors.Refresh()
+	asRefreshStats, err := oe.statsRefresher.Refresh()
 
 	if err != nil {
 		log.Errorf("Error while refreshing Aerospike Metrics, error: %v", err)

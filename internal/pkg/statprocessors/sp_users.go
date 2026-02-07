@@ -9,11 +9,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	shouldFetchUserStatistics bool = true
-)
-
-type UserStatsProcessor struct{}
+type UserStatsProcessor struct {
+	ShouldFetchUserStatistics bool
+}
 
 func (uw *UserStatsProcessor) PassOneKeys() []string {
 	// "build" info key should be returned here,
@@ -28,7 +26,7 @@ func (uw *UserStatsProcessor) PassTwoKeys(passOneStats map[string]string) []stri
 	return nil
 }
 
-func (uw *UserStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
+func (uw *UserStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string, executorMode string) ([]AerospikeStat, error) {
 
 	// check if security configurations are enabled
 	if config.Cfg.Aerospike.AuthMode != "pki" &&
@@ -37,7 +35,7 @@ func (uw *UserStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	}
 
 	// check if we should fetch user metrics
-	if !shouldFetchUserStatistics {
+	if !uw.ShouldFetchUserStatistics {
 		log.Debug("Fetching user statistics is disabled")
 		return nil, nil
 	}
@@ -53,14 +51,15 @@ func (uw *UserStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	if !ge {
 		// disable user statisitcs if build version is not >= 5.6.0.0
 		log.Debug("Aerospike version doesn't support user statistics")
-		shouldFetchUserStatistics = false
+		uw.ShouldFetchUserStatistics = false
 		return nil, nil
 	}
 
 	// read the data from Aerospike Server
 	var users []*aero.UserRoles
 
-	shouldFetchUserStatistics, users, err = dataprovider.GetProvider().FetchUsersDetails()
+	uw.ShouldFetchUserStatistics, users, err = dataprovider.GetProvider(executorMode).FetchUsersDetails()
+
 	if err != nil {
 		log.Warn("Error while fetching user statistics: ", err)
 		return nil, nil

@@ -36,7 +36,7 @@ func Test_Sets_PassTwoKeys(t *testing.T) {
 	// Check passoneKeys
 	setsWatcher := &statprocessors.SetsStatsProcessor{}
 	nwPassOneKeys := setsWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	fmt.Println("Test_Sets_PassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := setsWatcher.PassTwoKeys(passOneOutput)
 
@@ -72,7 +72,7 @@ func sets_runTestcase(t *testing.T) {
 	// Check passoneKeys
 	setsWatcher := &statprocessors.SetsStatsProcessor{}
 	nwPassOneKeys := setsWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := setsWatcher.PassTwoKeys(passOneOutput)
 
@@ -80,7 +80,7 @@ func sets_runTestcase(t *testing.T) {
 	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
 
-	arrRawMetrics, err := dataprovider.GetProvider().RequestInfo(passTwoOutputs)
+	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(passTwoOutputs)
 	assert.Nil(t, err, "Error while setsWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while setsWatcher.PassTwokeys, RawMetrics is EMPTY ")
 

@@ -116,7 +116,7 @@ func makeHttpCallToPromProcessor(t *testing.T, asMetrics []statprocessors.Aerosp
 
 func initializePromProcessor() {
 	metric_processors := executors.GetExecutors()
-	processor := metric_processors[executors.PROMETHEUS]
+	processor := metric_processors[commons.EXECUTOR_MODE_PROM]
 
 	// run Prom as a separate process
 	go func() {

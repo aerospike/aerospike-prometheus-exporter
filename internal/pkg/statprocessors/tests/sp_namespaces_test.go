@@ -41,7 +41,7 @@ func Test_Namespace_PassTwoKeys(t *testing.T) {
 
 	// simulate, as if we are sending requestInfo to AS and get the namespaces, these are coming from mock-data-generator
 	passOneKeys := nsWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(passOneKeys)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(passOneKeys)
 	fmt.Println("Test_Namespace_PassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
 
@@ -82,14 +82,14 @@ func namespace_runTestcase(t *testing.T) {
 
 	// simulate, as if we are sending requestInfo to AS and get the namespaces, these are coming from mock-data-generator
 	passOneKeys := nsWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(passOneKeys)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(passOneKeys)
 	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
 	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
 	passTwokeyOutputs = append(passTwokeyOutputs, infoKeys...)
 
-	arrRawMetrics, err := dataprovider.GetProvider().RequestInfo(passTwokeyOutputs)
+	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(passTwokeyOutputs)
 	assert.Nil(t, err, "Error while NamespaceWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while NamespaceWatcher.PassTwokeys, RawMetrics is EMPTY ")
 

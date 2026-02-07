@@ -36,7 +36,7 @@ func Test_Latency_PassTwoKeys(t *testing.T) {
 	// Check passoneKeys
 	latencyStatsProcessor := &statprocessors.LatencyStatsProcessor{}
 	nwPassOneKeys := latencyStatsProcessor.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	fmt.Println("Test_Latency_PassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := latencyStatsProcessor.PassTwoKeys(passOneOutput)
 
@@ -72,7 +72,7 @@ func latency_runTestcase(t *testing.T) {
 	// Check passoneKeys
 	latencyWatcher := &statprocessors.LatencyStatsProcessor{}
 	nwPassOneKeys := latencyWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := latencyWatcher.PassTwoKeys(passOneOutput)
 
@@ -80,7 +80,7 @@ func latency_runTestcase(t *testing.T) {
 	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
 
-	arrRawMetrics, err := dataprovider.GetProvider().RequestInfo(passTwoOutputs)
+	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(passTwoOutputs)
 	assert.Nil(t, err, "Error while latencyWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while latencyWatcher.PassTwokeys, RawMetrics is EMPTY ")
 

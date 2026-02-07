@@ -71,3 +71,8 @@ const (
 	DELTA_TEMPORALITY      = "delta"
 	CUMULATIVE_TEMPORALITY = "cumulative"
 )
+
+const (
+	EXECUTOR_MODE_PROM = "prometheus"
+	EXECUTOR_MODE_OTEL = "otel"
+)

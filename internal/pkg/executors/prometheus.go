@@ -5,6 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	log "github.com/sirupsen/logrus"
@@ -12,7 +13,8 @@ import (
 
 // PrometheusImpl communicates with Aerospike and helps collecting metrices
 type PrometheusImpl struct {
-	ticks prometheus.Counter
+	ticks          prometheus.Counter
+	statsRefresher *statprocessors.StatsRefresher
 }
 
 var (
@@ -40,6 +42,8 @@ func NewPrometheusImpl() (o *PrometheusImpl) {
 			}),
 	}
 
+	o.statsRefresher = statprocessors.NewStatsRefresher(commons.EXECUTOR_MODE_PROM)
+
 	return o
 }
 
@@ -57,7 +61,7 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 
 	// refresh metrics from various statprocessors,
 	log.Errorln("PrometheusImpl: Refreshing metrics from various statprocessors")
-	refreshedMetrics, err := statprocessors.Refresh()
+	refreshedMetrics, err := o.statsRefresher.Refresh()
 
 	if err != nil {
 		log.Errorln(err)

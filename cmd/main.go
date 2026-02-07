@@ -37,11 +37,11 @@ func main() {
 	commons.HandleSignals()
 
 	if config.Cfg.Agent.PrometheusEnabled {
-		startExecutor("prometheus")
+		startExecutor(commons.EXECUTOR_MODE_PROM)
 	}
 
 	if config.Cfg.Agent.OtelEnabled {
-		startExecutor("otel")
+		startExecutor(commons.EXECUTOR_MODE_OTEL)
 	}
 
 	select {}
@@ -56,6 +56,7 @@ func startExecutor(mode string) {
 	if processor != nil {
 		// start processor in a separate thread
 		go func() {
+
 			err := processor.Initialize()
 
 			if err != nil {

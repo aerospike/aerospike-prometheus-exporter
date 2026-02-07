@@ -39,7 +39,7 @@ func Test_Sindex_PassTwoKeys(t *testing.T) {
 	// Check passoneKeys
 	sindexWatcher := &statprocessors.SindexStatsProcessor{}
 	nwPassOneKeys := sindexWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	fmt.Println("Test_Sindex_PassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := sindexWatcher.PassTwoKeys(passOneOutput)
 
@@ -78,14 +78,14 @@ func sindex_runTestcase(t *testing.T) {
 	// Check passoneKeys
 	sindexWatcher := &statprocessors.SindexStatsProcessor{}
 	nwPassOneKeys := sindexWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	fmt.Println("sindex_runTestcase: passOneOutput: ", passOneOutput)
 	passTwoOutputs := sindexWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
 
-	arrRawMetrics, err := dataprovider.GetProvider().RequestInfo(passTwoOutputs)
+	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(passTwoOutputs)
 	assert.Nil(t, err, "Error while sindexMetrics.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while sindexMetrics.PassTwokeys, RawMetrics is EMPTY ")
 

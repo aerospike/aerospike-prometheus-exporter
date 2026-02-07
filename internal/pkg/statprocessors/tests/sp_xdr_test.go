@@ -43,7 +43,7 @@ func Test_Xdr_PassTwoKeys(t *testing.T) {
 	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build, "namespaces"}
 	xdrPassOneKeys = append(xdrPassOneKeys, infoKeys...)
 
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(xdrPassOneKeys)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(xdrPassOneKeys)
 	fmt.Println("Test_Xdr_PassTwoKeys: passOneOutput: ", passOneOutput)
 
 	passTwoOutputs := xdrWatcher.PassTwoKeys(passOneOutput)
@@ -84,11 +84,11 @@ func xdr_runTestcase(t *testing.T) {
 	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build, "namespaces"}
 	xdrPassOneKeys = append(xdrPassOneKeys, infoKeys...)
 
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(xdrPassOneKeys)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(xdrPassOneKeys)
 	passTwoOutputs := xdrWatcher.PassTwoKeys(passOneOutput)
 
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
-	arrRawMetrics, err := dataprovider.GetProvider().RequestInfo(passTwoOutputs)
+	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(passTwoOutputs)
 
 	statprocessors.ClusterName = passOneOutput[statprocessors.Infokey_ClusterName]
 	statprocessors.Build = passOneOutput[statprocessors.Infokey_Build]
