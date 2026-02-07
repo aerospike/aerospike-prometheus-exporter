@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
@@ -22,12 +21,9 @@ type AerospikeServer struct {
 	aeroConnection *aero.Connection
 	clientPolicy   *aero.ClientPolicy
 	serverHost     *aero.Host
-	mutex          sync.Mutex
 }
 
 func (as *AerospikeServer) RequestInfo(infoKeys []string) (map[string]string, error) {
-	as.mutex.Lock()
-	defer as.mutex.Unlock()
 
 	return as.fetchRequestInfoFromAerospike(infoKeys)
 }
@@ -51,6 +47,8 @@ var (
 )
 
 func (as *AerospikeServer) initializeAndConnectAerospikeServer() (*aero.Connection, error) {
+
+	fmt.Println("initializing and connecting to aerospike server ")
 
 	fullHost = commons.GetFullHost()
 
@@ -163,7 +161,7 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 			as.aeroConnection, err = as.initializeAndConnectAerospikeServer()
 
 			if err != nil {
-				log.Debug("Error while connecting to aerospike server: ", err)
+				log.Debugf("Error while connecting to aerospike server: %v", err)
 				continue
 			}
 
@@ -173,7 +171,7 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 			err = as.setUserAgent()
 
 			if err != nil {
-				log.Debug("Error while setting user-agent: ", err)
+				log.Debugf("Error while setting user-agent: %v", err)
 				continue
 			}
 		}
@@ -185,7 +183,7 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 		log.Debugf("RequestInfo took %v", time.Since(callStartTime))
 
 		if err != nil {
-			log.Error("Error while requestInfo ( infoKeys...), closing connection : Error is: ", err, " and infoKeys: ", infoKeys)
+			log.Errorf("Error while requestInfo ( infoKeys...), closing connection : Error is: %v and infoKeys: %v", err, infoKeys)
 			as.aeroConnection.Close()
 			// making nil, to force a connection, if any n/w disruption happen between my connection call
 			//   and requestinfo call, -- it internall will fail because of n/w disruption
@@ -225,7 +223,7 @@ func (as *AerospikeServer) fetchUsersRoles() (bool, []*aero.UserRoles, error) {
 			// Create new connection
 			as.aeroConnection, err = as.initializeAndConnectAerospikeServer()
 			if err != nil {
-				log.Debug(err)
+				log.Debugf("Error while initializing and connecting to aerospike server: %s", err)
 				continue
 			}
 		}
