@@ -137,6 +137,7 @@ func (oe *OtelExecutor) Initialize() error {
 				// Ticker drops events from channel buffer if previous event is still in-progress
 				log.Debugf("\t *** ticker.C: %s", t.Format(time.RFC3339))
 
+				log.Debug("OTelExecutor: Refreshing metrics from various statprocessors")
 				// Aerospike Refresh stats
 				oe.handleAerospikeMetrics(meter, defaultCtx, commonLabels)
 
