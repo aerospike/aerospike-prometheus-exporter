@@ -56,7 +56,7 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 	ch <- o.ticks
 
 	// refresh metrics from various statprocessors,
-	log.Debug("PrometheusImpl: Refreshing metrics from various statprocessors")
+	log.Errorln("PrometheusImpl: Refreshing metrics from various statprocessors")
 	refreshedMetrics, err := statprocessors.Refresh()
 
 	if err != nil {
