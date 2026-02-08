@@ -55,6 +55,7 @@ func (siw *SindexStatsProcessor) getSindexCommands(sindexesMeta []string) (sinde
 
 	for _, sindex := range sindexesMeta {
 		stats := commons.ParseStats(sindex, ":")
+
 		if stats["ns"] != "" {
 			sindexCommands = append(sindexCommands, "sindex-stat:namespace="+stats["ns"]+";indexname="+stats["indexname"])
 		}

@@ -2,6 +2,7 @@ package statprocessors
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -21,7 +22,6 @@ func Test_Sindex_PassOneKeys(t *testing.T) {
 	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sindex")
 	passOneOutputs := ndv.GetPassOneKeys()
-
 	var expectedOutputs []string
 	expectedOutputs = append(expectedOutputs, passOneOutputs["sindex"])
 
@@ -40,7 +40,6 @@ func Test_Sindex_PassTwoKeys(t *testing.T) {
 	sindexWatcher := &statprocessors.SindexStatsProcessor{}
 	nwPassOneKeys := sindexWatcher.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
-	fmt.Println("Test_Sindex_PassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := sindexWatcher.PassTwoKeys(passOneOutput)
 
 	udh := &UnittestDataHandler{}
@@ -52,7 +51,7 @@ func Test_Sindex_PassTwoKeys(t *testing.T) {
 
 	for idx := range expectedPassTwoOutputs {
 		// assert each element returned by NamespaceWatcher exists in expected outputs
-		assert.Contains(t, passTwoOutputs, expectedPassTwoOutputs[idx], " value exists!")
+		assert.Contains(t, passTwoOutputs, strings.TrimSpace(expectedPassTwoOutputs[idx]), " value exists!")
 	}
 
 }
@@ -79,7 +78,6 @@ func sindex_runTestcase(t *testing.T) {
 	sindexWatcher := &statprocessors.SindexStatsProcessor{}
 	nwPassOneKeys := sindexWatcher.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
-	fmt.Println("sindex_runTestcase: passOneOutput: ", passOneOutput)
 	passTwoOutputs := sindexWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
@@ -93,8 +91,15 @@ func sindex_runTestcase(t *testing.T) {
 	statprocessors.Build = arrRawMetrics[statprocessors.Infokey_Build]
 	statprocessors.Service = arrRawMetrics[statprocessors.Infokey_Service]
 
+	var keys = []string{}
+	for _, v := range passTwoOutputs {
+		if v != statprocessors.Infokey_ClusterName && v != statprocessors.Infokey_Build && v != statprocessors.Infokey_Service {
+			keys = append(keys, v)
+		}
+	}
+
 	// check the output with sindexWatcher
-	sindexMetrics, err := sindexWatcher.Refresh(passTwoOutputs, arrRawMetrics)
+	sindexMetrics, err := sindexWatcher.Refresh(keys, arrRawMetrics)
 	assert.Nil(t, err, "Error while sindexMetrics.Refresh with passTwoOutputs ")
 	assert.NotEmpty(t, sindexMetrics, "Error while sindexMetrics.Refresh, sindexMetrics is EMPTY ")
 

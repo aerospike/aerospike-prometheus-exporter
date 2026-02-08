@@ -37,7 +37,6 @@ func Test_Sets_PassTwoKeys(t *testing.T) {
 	setsWatcher := &statprocessors.SetsStatsProcessor{}
 	nwPassOneKeys := setsWatcher.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
-	fmt.Println("Test_Sets_PassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := setsWatcher.PassTwoKeys(passOneOutput)
 
 	udh := &UnittestDataHandler{}
@@ -73,7 +72,6 @@ func sets_runTestcase(t *testing.T) {
 	setsWatcher := &statprocessors.SetsStatsProcessor{}
 	nwPassOneKeys := setsWatcher.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
-	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := setsWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys

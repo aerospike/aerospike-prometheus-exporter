@@ -53,13 +53,15 @@ type MockAerospikeServer struct {
 	Xdr_stats        []string
 	Node_stats       []string
 	Latencies_stats  []string
-	Sindex_stats     []string
+	Logs_stats       []string
+	Log_0_stats      []string
+	Sindex_lists     []string
 
 	Build               []string
 	Cluster_name        []string
 	Service_clear_std   []string
 	Namespaces          []string
-	Sindexes            []string
+	Sindex_Stats        []string
 	XdrContext          []string
 	Users               []string
 	Passone_output_str  string
@@ -77,16 +79,23 @@ const (
 	MOCK_IK_GET_CONFIG_CONTEXT_SERVICE string = "get-config:context=service"
 	MOCK_IK_SETS                       string = "sets"
 	MOCK_IK_NAMESPACES                 string = "namespaces"
-	MOCK_IK_SINDEX                     string = "sindex"
+	MOCK_IK_SINDEX_LIST                string = "sindex-list"
 	MOCK_IK_NAMESPACE_SLASH            string = "namespace/"
-	MOCK_IK_SINDEX_SLASH               string = "sindex/"
+	MOCK_IK_SINDEX_STAT                string = "sindex-stat"
 	MOCK_IK_XDR_CONFIG                 string = "get-config:context=xdr"
 	MOCK_IK_XDR_STATS_DC               string = "get-stats:context=xdr;dc"
 	MOCK_IK_XDR_CONFIG_DC              string = "get-config:context=xdr;dc"
 	MOCK_IK_LATENCIES                  string = "latencies"
+	MOCK_IK_LOGS                       string = "logs"
+	MOCK_IK_LOG_SLASH_0                string = "log/0"
 )
 
 func (md *MockAerospikeServer) Initialize() {
+
+	if Is_Mock_Initialized == 1 {
+		fmt.Println("Mock Aerospike Server is already initialized")
+		return
+	}
 
 	base_folder := commons.GetExporterBaseFolder()
 	filePath := base_folder + "/internal/pkg/dataprovider/mockdata/" + MOCK_DATA_FILE
@@ -139,6 +148,10 @@ func (md *MockAerospikeServer) internalInitialize(filePath string) {
 				md.Sets_stats = append(md.Sets_stats, line)
 			} else if strings.HasPrefix(line, "latencies-stats") {
 				md.Latencies_stats = append(md.Latencies_stats, line)
+			} else if strings.HasPrefix(line, "logs:") {
+				md.Logs_stats = append(md.Logs_stats, line)
+			} else if strings.HasPrefix(line, "logs-stats-passtwo") {
+				md.Log_0_stats = append(md.Log_0_stats, line)
 			} else if strings.HasPrefix(line, "node-") {
 				md.Node_stats = append(md.Node_stats, line)
 			} else if strings.HasPrefix(line, "xdr-") {
@@ -147,10 +160,10 @@ func (md *MockAerospikeServer) internalInitialize(filePath string) {
 				md.Users = append(md.Users, line)
 			} else if strings.HasPrefix(line, "get-config:context=xdr") { // Xdr configs
 				md.XdrContext = append(md.XdrContext, line)
-			} else if strings.HasPrefix(line, "sindex-stats:") {
-				md.Sindex_stats = append(md.Sindex_stats, line)
-			} else if strings.HasPrefix(line, "sindex:") {
-				md.Sindexes = append(md.Sindexes, line)
+			} else if strings.HasPrefix(line, "sindex-list:") {
+				md.Sindex_lists = append(md.Sindex_lists, line)
+			} else if strings.HasPrefix(line, "sindex-stat:") {
+				md.Sindex_Stats = append(md.Sindex_Stats, line)
 			} else if strings.HasPrefix(line, "build") {
 				md.Build = append(md.Build, line)
 			} else if strings.HasPrefix(line, "service-clear-std") {
@@ -185,6 +198,9 @@ func (md *MockAerospikeServer) internalInitialize(filePath string) {
 
 func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[string]string {
 	var l_mock_data_map = make(map[string]string)
+	l_mock_data_map[MOCK_IK_BUILD] = md.getBuild(MOCK_IK_BUILD)
+	l_mock_data_map[MOCK_IK_CLUSTER_NAME] = md.getClusterName(MOCK_IK_CLUSTER_NAME)
+	l_mock_data_map[MOCK_IK_SERVICE_CLEAR_STD] = md.getServiceClearStd(MOCK_IK_SERVICE_CLEAR_STD)
 
 	for _, k := range infokeys {
 
@@ -205,9 +221,9 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 			l_mock_data_map[k] = md.getNodeStatistics(k)
 		case strings.HasPrefix(k, MOCK_IK_SETS):
 			l_mock_data_map[k] = md.getSetsStatistics(k)
-		case (strings.HasPrefix(k, MOCK_IK_SINDEX) && !strings.Contains(k, "/")):
-			l_mock_data_map[k] = md.getSindex(k)
-		case strings.HasPrefix(k, MOCK_IK_SINDEX_SLASH):
+		case (strings.HasPrefix(k, MOCK_IK_SINDEX_LIST) && !strings.Contains(k, "/")):
+			l_mock_data_map[k] = md.getSindexList(k)
+		case strings.HasPrefix(k, MOCK_IK_SINDEX_STAT):
 			l_mock_data_map[k] = md.getSingleSindexStatistics(k)
 		case strings.HasPrefix(k, MOCK_IK_XDR_CONFIG):
 			l_mock_data_map[k] = md.getXdrConfigsContext(k)
@@ -217,6 +233,10 @@ func (md *MockAerospikeServer) fetchRequestInfoFromFile(infokeys []string) map[s
 			l_mock_data_map[k] = md.getSingleXdrKeys(k)
 		case strings.HasPrefix(k, MOCK_IK_LATENCIES):
 			l_mock_data_map[k] = md.getLatenciesStats(k)
+		case strings.HasPrefix(k, MOCK_IK_LOGS):
+			l_mock_data_map[k] = md.getLogStatsP1(k)
+		case strings.HasPrefix(k, MOCK_IK_LOG_SLASH_0):
+			l_mock_data_map[k] = md.getLogSlash0Stats(k)
 		}
 	}
 	return l_mock_data_map
@@ -296,15 +316,13 @@ func (md *MockAerospikeServer) getSetsStatistics(key string) string {
 
 }
 
-func (md *MockAerospikeServer) getSindex(key string) string {
+func (md *MockAerospikeServer) getSindexList(key string) string {
 	rawMetrics := ""
 	// sindex
-	for _, entry := range md.Sindexes {
-		if strings.HasPrefix(key, "sindex") && strings.HasPrefix(entry, "sindex:") {
+	for _, entry := range md.Sindex_lists {
+		if strings.HasPrefix(key, "sindex-list") {
 			// set-stats:<node-configs>
-			elements := strings.Replace(entry, "sindex:", "", 1)
-
-			// key := "sets"
+			elements := strings.Replace(entry, "sindex-list:", "", 1)
 			rawMetrics = elements
 		}
 	}
@@ -316,12 +334,11 @@ func (md *MockAerospikeServer) getSindex(key string) string {
 func (md *MockAerospikeServer) getSingleSindexStatistics(key string) string {
 	rawMetrics := ""
 	// sindex-stats
-	for _, entry := range md.Sindex_stats {
-		elements := strings.Split(entry, ":")
+	for _, entry := range md.Sindex_Stats {
 
-		if strings.HasPrefix(entry, "sindex-stats") && strings.HasPrefix(elements[1], key) {
-			// key := "sindex"
-			rawMetrics = elements[2]
+		if strings.Contains(entry, key) {
+			upto_indexname := strings.SplitN(entry, ":entries=", 2)
+			rawMetrics = "entries=" + upto_indexname[1]
 		}
 	}
 
@@ -375,6 +392,38 @@ func (md *MockAerospikeServer) getLatenciesStats(latenciesKey string) string {
 		if strings.Contains(entry, ("latencies-stats:")) {
 			// key := "latencies-stats:"
 			elements := strings.Replace(entry, "latencies-stats:", "", 1)
+			rawMetrics = elements
+		}
+	}
+
+	return rawMetrics
+}
+
+func (md *MockAerospikeServer) getLogStatsP1(logsKey string) string {
+	rawMetrics := ""
+
+	// Latencies
+	for _, entry := range md.Logs_stats {
+		// format: latencies-stats:
+		if strings.Contains(entry, ("logs:")) {
+			// key := "latencies-stats:"
+			elements := strings.Replace(entry, "logs:", "", 1)
+			rawMetrics = elements
+		}
+	}
+
+	return rawMetrics
+}
+
+func (md *MockAerospikeServer) getLogSlash0Stats(logsKey string) string {
+	rawMetrics := ""
+
+	// Latencies
+	for _, entry := range md.Log_0_stats {
+		// format: latencies-stats:
+		if strings.Contains(entry, ("logs-stats-passtwo:")) {
+			// key := "latencies-stats:"
+			elements := strings.Replace(entry, "logs-stats-passtwo:", "", 1)
 			rawMetrics = elements
 		}
 	}

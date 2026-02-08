@@ -37,7 +37,6 @@ func Test_Latency_PassTwoKeys(t *testing.T) {
 	latencyStatsProcessor := &statprocessors.LatencyStatsProcessor{}
 	nwPassOneKeys := latencyStatsProcessor.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
-	fmt.Println("Test_Latency_PassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := latencyStatsProcessor.PassTwoKeys(passOneOutput)
 
 	udh := &UnittestDataHandler{}
@@ -73,7 +72,6 @@ func latency_runTestcase(t *testing.T) {
 	latencyWatcher := &statprocessors.LatencyStatsProcessor{}
 	nwPassOneKeys := latencyWatcher.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
-	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := latencyWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys

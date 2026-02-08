@@ -22,7 +22,10 @@ func Test_Node_PassOneKeys(t *testing.T) {
 	ndv := udh.GetUnittestValidator("node")
 	passOneOutputs := ndv.GetPassOneKeys()
 
-	assert.Nil(t, nwPassOneKeys, passOneOutputs)
+	var expectedOutputs []string
+	expectedOutputs = append(expectedOutputs, passOneOutputs["node"])
+
+	assert.Equal(t, nwPassOneKeys, expectedOutputs)
 
 }
 
@@ -37,7 +40,6 @@ func Test_Node_PassTwoKeys(t *testing.T) {
 	nodeWatcher := &statprocessors.NodeStatsProcessor{}
 	nwPassOneKeys := nodeWatcher.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
-	fmt.Println("Test_Node_PassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := nodeWatcher.PassTwoKeys(passOneOutput)
 
 	udh := &UnittestDataHandler{}
@@ -73,7 +75,6 @@ func node_runTestcase(t *testing.T) {
 	nodeWatcher := &statprocessors.NodeStatsProcessor{}
 	nwPassOneKeys := nodeWatcher.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
-	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
 	passTwoOutputs := nodeWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys

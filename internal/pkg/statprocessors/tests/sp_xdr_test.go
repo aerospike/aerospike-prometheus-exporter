@@ -44,7 +44,6 @@ func Test_Xdr_PassTwoKeys(t *testing.T) {
 	xdrPassOneKeys = append(xdrPassOneKeys, infoKeys...)
 
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(xdrPassOneKeys)
-	fmt.Println("Test_Xdr_PassTwoKeys: passOneOutput: ", passOneOutput)
 
 	passTwoOutputs := xdrWatcher.PassTwoKeys(passOneOutput)
 
