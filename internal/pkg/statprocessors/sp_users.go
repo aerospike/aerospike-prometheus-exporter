@@ -63,7 +63,8 @@ func (uw *UserStatsProcessor) refreshUserStats(users []*aero.UserRoles) ([]Aeros
 	allowedUsersList := make(map[string]struct{})
 	blockedUsersList := make(map[string]struct{})
 
-	// let us not cache the user-info (like user-role, any permisison etc.,), as this can be changed at server-level without any restarts
+	// let us not cache the user-info (like user-role, any permisison etc.,), as this can be changed at
+	// server-level without any restarts
 	//
 	if config.Cfg.Aerospike.UserMetricsUsersAllowlistEnabled {
 		for _, allowedUser := range config.Cfg.Aerospike.UserMetricsUsersAllowlist {
@@ -99,21 +100,21 @@ func (uw *UserStatsProcessor) refreshUserStats(users []*aero.UserRoles) ([]Aeros
 		readInfoStats := []string{"read_quota", "read_single_record_tps", "read_scan_query_rps", "limitless_read_scan_query"}
 		writeInfoStats := []string{"write_quota", "write_single_record_tps", "write_scan_query_rps", "limitless_write_scan_query"}
 
-		asMetric, labels, labelValues := internalCreateLocalAerospikeStat("conns_in_use", user.User)
+		asMetric, labels, labelValues := uw.makeAerospikeStat("conns_in_use", user.User)
 		asMetric.updateValues(float64(user.ConnsInUse), labels, labelValues)
 		allMetricsToSend = append(allMetricsToSend, asMetric)
 
 		if len(user.ReadInfo) >= 4 && len(user.WriteInfo) >= 4 {
 
 			for idxReadinfo := 0; idxReadinfo < len(user.ReadInfo); idxReadinfo++ {
-				riAeroMetric, riLabels, riLabelValues := internalCreateLocalAerospikeStat(readInfoStats[idxReadinfo], user.User)
+				riAeroMetric, riLabels, riLabelValues := uw.makeAerospikeStat(readInfoStats[idxReadinfo], user.User)
 				riAeroMetric.updateValues(float64(user.ReadInfo[idxReadinfo]), riLabels, riLabelValues)
 
 				allMetricsToSend = append(allMetricsToSend, riAeroMetric)
 
 			}
 			for idxWriteinfo := 0; idxWriteinfo < len(user.WriteInfo); idxWriteinfo++ {
-				wiAeroMetric, wiLabels, wiLabelValues := internalCreateLocalAerospikeStat(writeInfoStats[idxWriteinfo], user.User)
+				wiAeroMetric, wiLabels, wiLabelValues := uw.makeAerospikeStat(writeInfoStats[idxWriteinfo], user.User)
 				wiAeroMetric.updateValues(float64(user.WriteInfo[idxWriteinfo]), wiLabels, wiLabelValues)
 				allMetricsToSend = append(allMetricsToSend, wiAeroMetric)
 
@@ -124,7 +125,7 @@ func (uw *UserStatsProcessor) refreshUserStats(users []*aero.UserRoles) ([]Aeros
 	return allMetricsToSend, nil
 }
 
-func internalCreateLocalAerospikeStat(pStatName string, username string) (AerospikeStat, []string, []string) {
+func (uw *UserStatsProcessor) makeAerospikeStat(pStatName string, username string) (AerospikeStat, []string, []string) {
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER}
 	labelValues := []string{ClusterName, Service, username}
 	allowed := isMetricAllowed(commons.CTX_USERS, pStatName)
