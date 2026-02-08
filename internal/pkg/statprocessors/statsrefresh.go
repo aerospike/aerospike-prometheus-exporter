@@ -25,6 +25,7 @@ type StatsRefresher struct {
 func NewStatsRefresher(executorMode string) *StatsRefresher {
 
 	return &StatsRefresher{
+		dataProvider:            dataprovider.GetProvider(executorMode),
 		ExecutorMode:            executorMode,
 		namespaceStatsProcessor: &NamespaceStatsProcessor{},
 		nodeStatsProcessor:      &NodeStatsProcessor{},
