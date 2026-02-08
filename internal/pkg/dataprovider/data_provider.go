@@ -18,6 +18,7 @@ var dpPromAerospikeServer = &AerospikeServer{}
 var dpOtelAerospikeServer = &AerospikeServer{}
 
 var dpMockServer = &MockAerospikeServer{}
+
 var dpSysInfoProvider = &SystemInfoProvider{}
 
 func GetProvider(executorMode string) DataProvider {

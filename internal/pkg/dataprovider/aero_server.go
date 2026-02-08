@@ -18,6 +18,10 @@ import (
 
 // Inherits DataProvider interface
 type AerospikeServer struct {
+	fullHost string
+	user     string
+	pass     string
+
 	aeroConnection *aero.Connection
 	clientPolicy   *aero.ClientPolicy
 	serverHost     *aero.Host
@@ -35,39 +39,35 @@ func (as *AerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, error) 
 // Aerospike server interaction related code
 
 const (
-	GO_CLIENT_LIBRARY_PATH         = "github.com/aerospike/aerospike-client-go/v8"
-	AERO_EXPORTER_LIBRARY_PATH     = "github.com/aerospike/aerospike-prometheus-exporter"
-	RETRY_COUNT                int = 3
-)
-
-var (
-	fullHost string
-	user     string
-	pass     string
+	GO_CLIENT_LIBRARY_PATH     = "github.com/aerospike/aerospike-client-go/v8"
+	AERO_EXPORTER_LIBRARY_PATH = "github.com/aerospike/aerospike-prometheus-exporter"
+	RETRY_COUNT                = 3
 )
 
 func (as *AerospikeServer) initializeAndConnectAerospikeServer() (*aero.Connection, error) {
 
 	fmt.Println("initializing and connecting to aerospike server ")
 
-	fullHost = commons.GetFullHost()
+	as.fullHost = commons.GetFullHost()
 
-	log.Debugf("Connecting to host %s ", fullHost)
+	log.Debugf("Connecting to host %s ", as.fullHost)
 
 	as.serverHost = aero.NewHost(config.Cfg.Aerospike.Host, int(config.Cfg.Aerospike.Port))
 
 	as.serverHost.TLSName = config.Cfg.Aerospike.NodeTLSName
-	user = config.Cfg.Aerospike.User
-	pass = config.Cfg.Aerospike.Password
+	as.user = config.Cfg.Aerospike.User
+	as.pass = config.Cfg.Aerospike.Password
 
 	// Get aerospike auth username
-	username, err := commons.GetSecret(user)
+	username, err := commons.GetSecret(as.user)
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Get aerospike auth password
-	password, err := commons.GetSecret(pass)
+	password, err := commons.GetSecret(as.pass)
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -218,10 +218,12 @@ func (as *AerospikeServer) fetchUsersRoles() (bool, []*aero.UserRoles, error) {
 	var err error
 
 	for i := 0; i < RETRY_COUNT; i++ {
+
 		// Validate existing connection
 		if as.aeroConnection == nil || !as.aeroConnection.IsConnected() {
 			// Create new connection
 			as.aeroConnection, err = as.initializeAndConnectAerospikeServer()
+
 			if err != nil {
 				log.Debugf("Error while initializing and connecting to aerospike server: %s", err)
 				continue

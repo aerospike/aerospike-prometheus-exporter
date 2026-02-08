@@ -1,6 +1,7 @@
 package statprocessors
 
 import (
+	aero "github.com/aerospike/aerospike-client-go/v8"
 	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
@@ -8,40 +9,41 @@ import (
 )
 
 type StatsRefresher struct {
+	dataProvider dataprovider.DataProvider
 	ExecutorMode string
 
-	NamespaceStatsProcessor *NamespaceStatsProcessor
-	NodeStatsProcessor      *NodeStatsProcessor
-	SetsStatsProcessor      *SetsStatsProcessor
-	SindexStatsProcessor    *SindexStatsProcessor
-	XdrStatsProcessor       *XdrStatsProcessor
-	LatencyStatsProcessor   *LatencyStatsProcessor
+	namespaceStatsProcessor *NamespaceStatsProcessor
+	nodeStatsProcessor      *NodeStatsProcessor
+	setsStatsProcessor      *SetsStatsProcessor
+	sindexStatsProcessor    *SindexStatsProcessor
+	xdrStatsProcessor       *XdrStatsProcessor
+	latencyStatsProcessor   *LatencyStatsProcessor
 
-	UserStatsProcessor *UserStatsProcessor
+	userStatsProcessor *UserStatsProcessor
 }
 
 func NewStatsRefresher(executorMode string) *StatsRefresher {
 
 	return &StatsRefresher{
 		ExecutorMode:            executorMode,
-		NamespaceStatsProcessor: &NamespaceStatsProcessor{},
-		NodeStatsProcessor:      &NodeStatsProcessor{},
-		SetsStatsProcessor:      &SetsStatsProcessor{},
-		SindexStatsProcessor:    &SindexStatsProcessor{},
-		XdrStatsProcessor:       &XdrStatsProcessor{},
-		LatencyStatsProcessor:   &LatencyStatsProcessor{},
-		UserStatsProcessor:      &UserStatsProcessor{ShouldFetchUserStatistics: true},
+		namespaceStatsProcessor: &NamespaceStatsProcessor{},
+		nodeStatsProcessor:      &NodeStatsProcessor{},
+		setsStatsProcessor:      &SetsStatsProcessor{},
+		sindexStatsProcessor:    &SindexStatsProcessor{},
+		xdrStatsProcessor:       &XdrStatsProcessor{},
+		latencyStatsProcessor:   &LatencyStatsProcessor{},
+		userStatsProcessor:      &UserStatsProcessor{ShouldFetchUserStatistics: true},
 	}
 }
 
 func (sr *StatsRefresher) GetStatsProcessors() []StatProcessor {
 	var statprocessors = []StatProcessor{
-		sr.NamespaceStatsProcessor,
-		sr.NodeStatsProcessor,
-		sr.SetsStatsProcessor,
-		sr.SindexStatsProcessor,
-		sr.XdrStatsProcessor,
-		sr.LatencyStatsProcessor,
+		sr.namespaceStatsProcessor,
+		sr.nodeStatsProcessor,
+		sr.setsStatsProcessor,
+		sr.sindexStatsProcessor,
+		sr.xdrStatsProcessor,
+		sr.latencyStatsProcessor,
 	}
 
 	return statprocessors
@@ -72,7 +74,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	// info request for first set of info keys, this retrives configs from server
 	//   from namespaces,server/node-stats, xdr
 	//   if for any context (like jobs, latencies etc.,) no configs, they are not sent to server
-	passOneOutput, err := dataprovider.GetProvider(sr.ExecutorMode).RequestInfo(infoKeys)
+	passOneOutput, err := sr.dataProvider.RequestInfo(infoKeys)
 
 	if err != nil {
 		return nil, err
@@ -101,7 +103,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// info request for second set of info keys, this retrieves all the stats from server
-	passTwoResponse, err := dataprovider.GetProvider(sr.ExecutorMode).RequestInfo(infoKeys)
+	passTwoResponse, err := sr.dataProvider.RequestInfo(infoKeys)
 
 	if err != nil {
 		return allStatsToSend, err
@@ -122,22 +124,49 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	for i, c := range allStatsprocessorList {
 
 		tmpRefreshedMetrics, err := c.Refresh(statprocessorInfoKeys[i], passTwoResponse)
+
 		if err != nil {
 			return allStatsToSend, err
 		}
+
 		allStatsToSend = append(allStatsToSend, tmpRefreshedMetrics...)
 	}
 
-	// Get User metrics
-	userMetrics, err := sr.UserStatsProcessor.Refresh(infoKeys, passTwoResponse, sr.ExecutorMode)
+	// Refresh user info if supported by the server
+	if sr.userStatsProcessor.canRefreshUserStats(passTwoResponse) {
+		userMetrics, err := sr.RefreshUserStats()
 
-	if err != nil {
-		return allStatsToSend, err
+		if err != nil {
+			return allStatsToSend, err
+		}
+
+		allStatsToSend = append(allStatsToSend, userMetrics...)
 	}
 
-	allStatsToSend = append(allStatsToSend, userMetrics...)
-
+	// Get User metrics
 	log.Debugf("Refreshing node was successful")
 
 	return allStatsToSend, nil
+}
+
+// User stats are not different stats, metrics are creating using the user info
+// user-role info are normalized as aerospike-stats
+func (sr *StatsRefresher) RefreshUserStats() ([]AerospikeStat, error) {
+
+	var err error
+	var users []*aero.UserRoles
+
+	sr.userStatsProcessor.ShouldFetchUserStatistics, users, err = sr.dataProvider.FetchUsersDetails()
+
+	if err != nil {
+		return nil, err
+	}
+
+	userMetrics, err := sr.userStatsProcessor.Refresh(users)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return userMetrics, nil
 }
