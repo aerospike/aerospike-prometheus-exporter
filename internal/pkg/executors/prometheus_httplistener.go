@@ -3,7 +3,6 @@ package executors
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -199,7 +198,5 @@ func PushToPrometheus(asMetric statprocessors.AerospikeStat, ch chan<- prometheu
 		desc, valueType := makePromMetric(asMetric, asMetric.Labels...)
 		ch <- prometheus.MustNewConstMetric(desc, valueType, asMetric.Value, asMetric.LabelValues...)
 
-		// fmt.Printf("**** PushToPrometheus: asMetric %+v\n", asMetric)
-		fmt.Printf("**** PushToPrometheus: asMetric %#v\n", asMetric)
 	}
 }
