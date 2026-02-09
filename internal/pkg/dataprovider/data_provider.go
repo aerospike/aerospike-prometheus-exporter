@@ -28,8 +28,6 @@ func GetProvider(executorMode string) DataProvider {
 		// initialize, internally it will check if already initialized
 		dpMockServer.Initialize()
 
-		// a := &FakeDataProvider{}
-
 		return dpMockServer
 	}
 

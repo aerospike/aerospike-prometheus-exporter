@@ -48,9 +48,9 @@ func main() {
 }
 
 func startExecutor(mode string) {
-	metric_handlers := executors.GetExecutors()
+	metricHandlers := executors.GetExecutors()
 
-	processor := metric_handlers[mode]
+	processor := metricHandlers[mode]
 	log.Infof("Starting metrics serving mode with '%s'", mode)
 
 	if processor != nil {

@@ -19,8 +19,6 @@ import (
 // Inherits DataProvider interface
 type AerospikeServer struct {
 	fullHost string
-	user     string
-	pass     string
 
 	aeroConnection *aero.Connection
 	clientPolicy   *aero.ClientPolicy
@@ -44,9 +42,16 @@ const (
 	RETRY_COUNT                = 3
 )
 
+const (
+	AUTH_MODE_INTERNAL = "internal"
+	AUTH_MODE_EXTERNAL = "external"
+	AUTH_MODE_PKI      = "pki"
+	AUTH_MODE_EMPTY    = ""
+)
+
 func (as *AerospikeServer) initializeAndConnectAerospikeServer() (*aero.Connection, error) {
 
-	fmt.Println("initializing and connecting to aerospike server ")
+	log.Info("Initializing and Connecting to aerospike server ")
 
 	as.fullHost = commons.GetFullHost()
 
@@ -55,18 +60,16 @@ func (as *AerospikeServer) initializeAndConnectAerospikeServer() (*aero.Connecti
 	as.serverHost = aero.NewHost(config.Cfg.Aerospike.Host, int(config.Cfg.Aerospike.Port))
 
 	as.serverHost.TLSName = config.Cfg.Aerospike.NodeTLSName
-	as.user = config.Cfg.Aerospike.User
-	as.pass = config.Cfg.Aerospike.Password
 
 	// Get aerospike auth username
-	username, err := commons.GetSecret(as.user)
+	username, err := commons.GetSecret(config.Cfg.Aerospike.User)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Get aerospike auth password
-	password, err := commons.GetSecret(as.pass)
+	password, err := commons.GetSecret(config.Cfg.Aerospike.Password)
 
 	if err != nil {
 		log.Fatal(err)
@@ -77,14 +80,16 @@ func (as *AerospikeServer) initializeAndConnectAerospikeServer() (*aero.Connecti
 	as.clientPolicy.Password = string(password)
 
 	switch config.Cfg.Aerospike.AuthMode {
-	case "internal", "":
+	case AUTH_MODE_INTERNAL, AUTH_MODE_EMPTY:
 		as.clientPolicy.AuthMode = aero.AuthModeInternal
-	case "external":
+	case AUTH_MODE_EXTERNAL:
 		as.clientPolicy.AuthMode = aero.AuthModeExternal
-	case "pki":
+	case AUTH_MODE_PKI:
+
 		if len(config.Cfg.Aerospike.CertFile) == 0 || len(config.Cfg.Aerospike.KeyFile) == 0 {
 			log.Fatalln("Invalid certificate configuration when using auth mode PKI: cert_file and key_file must be set")
 		}
+
 		as.clientPolicy.AuthMode = aero.AuthModePKI
 	default:
 		log.Fatalln("Invalid auth mode: only `internal`, `external`, `pki` values are accepted.")
