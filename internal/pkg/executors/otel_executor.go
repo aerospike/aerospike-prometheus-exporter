@@ -3,6 +3,7 @@ package executors
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"sync/atomic"
 
 	"time"
@@ -65,7 +66,8 @@ func (oe *OtelExecutor) Export(ctx context.Context, rm *metricdata.ResourceMetri
 	}
 
 	if !oe.dataProvider.IsServerConnected() {
-		log.Debugf("%s OtelExecutor, Server is not connected, ignoring metrics", time.Now().Format(time.RFC3339))
+		log.Warnf("%s OtelExecutor, Server is not connected, ignoring metrics", time.Now().Format(time.RFC3339))
+		fmt.Printf("%s OtelExecutor, Server is not connected, ignoring metrics", time.Now().Format(time.RFC3339))
 		return nil
 	}
 

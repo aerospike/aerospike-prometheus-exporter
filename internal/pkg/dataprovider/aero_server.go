@@ -174,6 +174,7 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 
 			if err != nil {
 				log.Debugf("Error while connecting to aerospike server: %v", err)
+				fmt.Printf("Error while connecting to aerospike server: ")
 				as.isServerConnected.Store(false)
 				continue
 			}
@@ -209,6 +210,8 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 
 		// we are healthy only when we finished the RefreshInfo operation successfully
 		as.isServerConnected.Store(true)
+
+		fmt.Println("Server is connected and healthy")
 
 		break
 	}
