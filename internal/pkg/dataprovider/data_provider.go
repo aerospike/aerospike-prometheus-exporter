@@ -12,6 +12,7 @@ import (
 type DataProvider interface {
 	RequestInfo(infokeys []string) (map[string]string, error)
 	FetchUsersDetails() (bool, []*aero.UserRoles, error)
+	IsServerConnected() bool
 }
 
 // pre-create the instances

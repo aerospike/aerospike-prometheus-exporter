@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
@@ -23,6 +24,8 @@ type AerospikeServer struct {
 	aeroConnection *aero.Connection
 	clientPolicy   *aero.ClientPolicy
 	serverHost     *aero.Host
+
+	isServerConnected atomic.Bool
 }
 
 func (as *AerospikeServer) RequestInfo(infoKeys []string) (map[string]string, error) {
@@ -32,6 +35,10 @@ func (as *AerospikeServer) RequestInfo(infoKeys []string) (map[string]string, er
 
 func (as *AerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
 	return as.fetchUsersRoles()
+}
+
+func (as *AerospikeServer) IsServerConnected() bool {
+	return as.isServerConnected.Load()
 }
 
 // Aerospike server interaction related code
@@ -167,6 +174,7 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 
 			if err != nil {
 				log.Debugf("Error while connecting to aerospike server: %v", err)
+				as.isServerConnected.Store(false)
 				continue
 			}
 
@@ -177,6 +185,7 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 
 			if err != nil {
 				log.Debugf("Error while setting user-agent: %v", err)
+				as.isServerConnected.Store(false)
 				continue
 			}
 		}
@@ -193,8 +202,13 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 			// making nil, to force a connection, if any n/w disruption happen between my connection call
 			//   and requestinfo call, -- it internall will fail because of n/w disruption
 			as.aeroConnection = nil
+			as.isServerConnected.Store(false)
+
 			continue
 		}
+
+		// we are healthy only when we finished the RefreshInfo operation successfully
+		as.isServerConnected.Store(true)
 
 		break
 	}

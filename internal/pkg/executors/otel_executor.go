@@ -9,6 +9,7 @@ import (
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
@@ -49,6 +50,7 @@ type OtelExecutor struct {
 
 	refreshCounter atomic.Int64
 
+	dataProvider   dataprovider.DataProvider
 	statsRefresher *statprocessors.StatsRefresher
 }
 
@@ -59,6 +61,11 @@ func (oe *OtelExecutor) Export(ctx context.Context, rm *metricdata.ResourceMetri
 	if oe.refreshCounter.Load() <= 2 {
 		// Return nil to simulate a successful export without actually sending data
 		log.Debugf("%s OtelExecutor, Ignoring refresh of metrics export %d", time.Now().Format(time.RFC3339), oe.refreshCounter.Load())
+		return nil
+	}
+
+	if !oe.dataProvider.IsServerConnected() {
+		log.Debugf("%s OtelExecutor, Server is not connected, ignoring metrics", time.Now().Format(time.RFC3339))
 		return nil
 	}
 
@@ -74,7 +81,8 @@ func (oe *OtelExecutor) Initialize() error {
 	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.ServiceName)
 
 	// Initialize the stats refresher
-	oe.statsRefresher = statprocessors.NewStatsRefresher(commons.EXECUTOR_MODE_OTEL)
+	oe.dataProvider = dataprovider.GetProvider(commons.EXECUTOR_MODE_OTEL)
+	oe.statsRefresher = statprocessors.NewStatsRefresher(oe.dataProvider)
 
 	// initialize the metric caches
 	oe.gauges = make(map[string]*GaugeMetrics)

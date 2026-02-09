@@ -22,11 +22,12 @@ type StatsRefresher struct {
 	userStatsProcessor *UserStatsProcessor
 }
 
-func NewStatsRefresher(executorMode string) *StatsRefresher {
+func NewStatsRefresher(dataProvider dataprovider.DataProvider) *StatsRefresher {
+
+	log.Info("Creating new StatsRefresher with dataProvider: ", dataProvider)
 
 	return &StatsRefresher{
-		dataProvider:            dataprovider.GetProvider(executorMode),
-		ExecutorMode:            executorMode,
+		dataProvider:            dataProvider,
 		namespaceStatsProcessor: &NamespaceStatsProcessor{},
 		nodeStatsProcessor:      &NodeStatsProcessor{},
 		setsStatsProcessor:      &SetsStatsProcessor{},

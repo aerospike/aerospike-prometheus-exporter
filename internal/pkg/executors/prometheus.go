@@ -7,13 +7,17 @@ import (
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	log "github.com/sirupsen/logrus"
 )
 
 // PrometheusImpl communicates with Aerospike and helps collecting metrices
 type PrometheusImpl struct {
-	ticks          prometheus.Counter
+	ticks prometheus.Counter
+
+	// Data Providers and Metrics Refresher
+	dataProvider   dataprovider.DataProvider
 	statsRefresher *statprocessors.StatsRefresher
 }
 
@@ -42,7 +46,8 @@ func NewPrometheusImpl() (o *PrometheusImpl) {
 			}),
 	}
 
-	o.statsRefresher = statprocessors.NewStatsRefresher(commons.EXECUTOR_MODE_PROM)
+	o.dataProvider = dataprovider.GetProvider(commons.EXECUTOR_MODE_PROM)
+	o.statsRefresher = statprocessors.NewStatsRefresher(o.dataProvider)
 
 	return o
 }

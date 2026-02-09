@@ -28,6 +28,10 @@ func (mas MockAerospikeServer) RequestInfo(infokeys []string) (map[string]string
 	return mas.fetchRequestInfoFromFile(infokeys), nil
 }
 
+func (mas MockAerospikeServer) IsServerConnected() bool {
+	return true
+}
+
 func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
 
 	var aero_users []*aero.UserRoles
