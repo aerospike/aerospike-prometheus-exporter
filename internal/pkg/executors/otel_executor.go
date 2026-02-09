@@ -132,8 +132,6 @@ func (oe *OtelExecutor) Initialize() error {
 		),
 	)
 
-	otel.SetMeterProvider(oe.meterProvider)
-
 	log.Infof("*** Starting Otel Metrics Push thread... ")
 
 	// Start metric collection loop in a goroutine
@@ -141,7 +139,8 @@ func (oe *OtelExecutor) Initialize() error {
 		ticker := time.NewTicker(time.Duration(config.Cfg.Agent.Otel.ServerStatFetchInterval) * time.Second)
 		defer ticker.Stop()
 
-		meter := otel.Meter(config.Cfg.Agent.Otel.ServiceName + "_Meter")
+		meter := oe.meterProvider.Meter(config.Cfg.Agent.Otel.ServiceName + "_Meter")
+
 		defaultCtx := context.Background()
 		commonLabels := oe.getCommonLabels()
 
