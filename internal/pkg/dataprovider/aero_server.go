@@ -211,8 +211,6 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 		// we are healthy only when we finished the RefreshInfo operation successfully
 		as.isServerConnected.Store(true)
 
-		fmt.Println("Server is connected and healthy")
-
 		break
 	}
 
