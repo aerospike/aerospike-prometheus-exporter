@@ -17,16 +17,6 @@ var regexToExtractArrayStats = map[string]string{
 }
 
 // index-pressure related variables
-var (
-	// dont fetch 1st iteration, this is made true after reading the metrics once from server and if index-type=false is enabled
-	isFlashStatSentByServer bool = false
-
-	// time interval to fetch index-pressure
-	idxPressureFetchInterval = 10.0
-
-	// Time when Index Pressure last-fetched
-	idxPressurePreviousFetchTime = time.Now()
-)
 
 const (
 	KEY_NS_METADATA       = "namespaces"
@@ -40,6 +30,25 @@ const (
 
 type NamespaceStatsProcessor struct {
 	namespaceStats map[string]AerospikeStat
+	sharedState    *StatProcessorSharedState
+
+	// dont fetch 1st iteration, this is made true after reading the metrics once from server and if index-type=false is enabled
+	isFlashStatSentByServer bool
+
+	// time interval to fetch index-pressure
+	idxPressureFetchInterval float64
+
+	// Time when Index Pressure last-fetched
+	idxPressurePreviousFetchTime time.Time
+}
+
+func NewNamespaceStatsProcessor(state *StatProcessorSharedState) *NamespaceStatsProcessor {
+	return &NamespaceStatsProcessor{
+		isFlashStatSentByServer:      false,
+		idxPressureFetchInterval:     10.0,
+		idxPressurePreviousFetchTime: time.Now(),
+		sharedState:                  state,
+	}
 }
 
 func (nw *NamespaceStatsProcessor) PassOneKeys() []string {
@@ -58,14 +67,14 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 	for _, ns := range nsList {
 		// infoKey ==> namespace/test, namespace/bar
 		infoKeys = append(infoKeys, KEY_NS_NAMESPACE+"/"+ns)
-		if NamespaceLatencyBenchmarks[ns] == nil {
-			NamespaceLatencyBenchmarks[ns] = make(map[string]string)
+		if nw.sharedState.NamespaceLatencyBenchmarks[ns] == nil {
+			nw.sharedState.NamespaceLatencyBenchmarks[ns] = make(map[string]string)
 		}
 	}
 
 	if nw.canSendIndexPressureInfoKey() {
 		infoKeys = append(infoKeys, KEY_NS_INDEX_PRESSURE)
-		idxPressurePreviousFetchTime = time.Now()
+		nw.idxPressurePreviousFetchTime = time.Now()
 	}
 
 	log.Tracef("namespace-passtwokeys:%s", infoKeys)
@@ -243,16 +252,16 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 				if strings.Contains(latencySubcommand, "hist-") {
 					latencySubcommand = strings.ReplaceAll(latencySubcommand, "hist-", "")
 				}
-				NamespaceLatencyBenchmarks[nsName][stat] = latencySubcommand
+				nw.sharedState.NamespaceLatencyBenchmarks[nsName][stat] = latencySubcommand
 			} else {
 				// pv==0 means histogram is disabled
-				delete(NamespaceLatencyBenchmarks[nsName], stat)
+				delete(nw.sharedState.NamespaceLatencyBenchmarks[nsName], stat)
 			}
 		}
 
 	}
 	// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
-	NamespaceLatencyBenchmarks[nsName]["re-repl"] = "{" + nsName + "}-" + "re-repl"
+	nw.sharedState.NamespaceLatencyBenchmarks[nsName]["re-repl"] = "{" + nsName + "}-" + "re-repl"
 
 	return nsMetricsToSend
 }
@@ -319,13 +328,13 @@ func (nw *NamespaceStatsProcessor) checkStatPersistanceType(statToProcess string
 func (nw *NamespaceStatsProcessor) canSendIndexPressureInfoKey() bool {
 
 	// difference between current-time and last-fetch, if its > defined-value, then true
-	timeDiff := time.Since(idxPressurePreviousFetchTime)
+	timeDiff := time.Since(nw.idxPressurePreviousFetchTime)
 
 	// if index-type=false or sindex-type=flash is returned by server
 	//    and every N seconds - where N is mentioned "indexPressureFetchIntervalInSeconds"
-	isTimeOk := timeDiff.Minutes() >= idxPressureFetchInterval
+	isTimeOk := timeDiff.Minutes() >= nw.idxPressureFetchInterval
 
-	return (isFlashStatSentByServer && isTimeOk)
+	return (nw.isFlashStatSentByServer && isTimeOk)
 
 }
 
@@ -335,8 +344,8 @@ func (nw *NamespaceStatsProcessor) setFlagFlashStatSentByServer(idxType string) 
 	// this check is required only if bool-fetch-indexpressure is false, because
 	//      we can have different values for each namespace, so once this flag is set, no need to change this further
 	//
-	if len(idxType) > 0 && !isFlashStatSentByServer {
-		isFlashStatSentByServer = !isFlashStatSentByServer && strings.Contains(idxType, TYPE_FLASH)
+	if len(idxType) > 0 && !nw.isFlashStatSentByServer {
+		nw.isFlashStatSentByServer = !nw.isFlashStatSentByServer && strings.Contains(idxType, TYPE_FLASH)
 	}
 
 }

@@ -10,6 +10,11 @@ import (
 )
 
 type LatencyStatsProcessor struct {
+	sharedState *StatProcessorSharedState
+}
+
+func NewLatencyStatsProcessor(state *StatProcessorSharedState) *LatencyStatsProcessor {
+	return &LatencyStatsProcessor{sharedState: state}
 }
 
 func (lw *LatencyStatsProcessor) PassOneKeys() []string {
@@ -53,14 +58,14 @@ func (lw *LatencyStatsProcessor) getLatenciesCommands(passOneStats map[string]st
 	//      latencies:hist={NAMESPACE}-proxy / latencies:hist={NAMESPACE}-benchmarks-read
 	//      latencies:hist=info
 
-	for nsName := range NamespaceLatencyBenchmarks {
-		for _, latencyCommand := range NamespaceLatencyBenchmarks[nsName] {
+	for nsName := range lw.sharedState.NamespaceLatencyBenchmarks {
+		for _, latencyCommand := range lw.sharedState.NamespaceLatencyBenchmarks[nsName] {
 			histCommand := "latencies:hist=" + latencyCommand
 			commands = append(commands, histCommand)
 		}
 	}
 
-	for _, latencyCommand := range ServiceLatencyBenchmarks {
+	for _, latencyCommand := range lw.sharedState.ServiceLatencyBenchmarks {
 		histCommand := "latencies:hist=" + latencyCommand
 		commands = append(commands, histCommand)
 	}

@@ -15,7 +15,12 @@ const (
 )
 
 type XdrStatsProcessor struct {
-	xdrMetrics map[string]AerospikeStat
+	xdrMetrics  map[string]AerospikeStat
+	sharedState *StatProcessorSharedState
+}
+
+func NewXdrStatsProcessor(state *StatProcessorSharedState) *XdrStatsProcessor {
+	return &XdrStatsProcessor{sharedState: state}
 }
 
 func (xw *XdrStatsProcessor) PassOneKeys() []string {

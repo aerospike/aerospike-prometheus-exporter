@@ -10,6 +10,11 @@ import (
 
 type UserStatsProcessor struct {
 	ShouldFetchUserStatistics bool
+	sharedState               *StatProcessorSharedState
+}
+
+func NewUserStatsProcessor(state *StatProcessorSharedState) *UserStatsProcessor {
+	return &UserStatsProcessor{ShouldFetchUserStatistics: true, sharedState: state}
 }
 
 func (uw *UserStatsProcessor) canRefreshUserStats(rawMetrics map[string]string) bool {

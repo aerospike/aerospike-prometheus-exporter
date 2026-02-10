@@ -16,7 +16,8 @@ func Test_Sindex_PassOneKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sindex_PassOneKeys")
 
 	// Check passoneKeys
-	sindexWatcher := &statprocessors.SindexStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	sindexWatcher := statprocessors.NewSindexStatsProcessor(sharedState)
 	nwPassOneKeys := sindexWatcher.PassOneKeys()
 
 	udh := &UnittestDataHandler{}
@@ -37,7 +38,8 @@ func Test_Sindex_PassTwoKeys(t *testing.T) {
 	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
-	sindexWatcher := &statprocessors.SindexStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	sindexWatcher := statprocessors.NewSindexStatsProcessor(sharedState)
 	nwPassOneKeys := sindexWatcher.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := sindexWatcher.PassTwoKeys(passOneOutput)
@@ -75,7 +77,8 @@ func sindex_runTestcase(t *testing.T) {
 	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
 
 	// Check passoneKeys
-	sindexWatcher := &statprocessors.SindexStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	sindexWatcher := statprocessors.NewSindexStatsProcessor(sharedState)
 	nwPassOneKeys := sindexWatcher.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := sindexWatcher.PassTwoKeys(passOneOutput)

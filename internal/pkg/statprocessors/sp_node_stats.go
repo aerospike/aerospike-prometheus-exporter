@@ -18,7 +18,12 @@ const (
 
 type NodeStatsProcessor struct {
 	nodeMetrics  map[string]AerospikeStat
+	sharedState  *StatProcessorSharedState
 	logSinkCount int
+}
+
+func NewNodeStatsProcessor(state *StatProcessorSharedState) *NodeStatsProcessor {
+	return &NodeStatsProcessor{sharedState: state}
 }
 
 func (sw *NodeStatsProcessor) PassOneKeys() []string {
@@ -143,10 +148,10 @@ func (sw *NodeStatsProcessor) handleRefresh(rawMetrics string) []AerospikeStat {
 					latencySubcommand = strings.ReplaceAll(latencySubcommand, "hist-", "")
 				}
 
-				ServiceLatencyBenchmarks[stat] = latencySubcommand
+				sw.sharedState.ServiceLatencyBenchmarks[stat] = latencySubcommand
 			} else {
 				// pv==0 means histogram is disabled
-				delete(ServiceLatencyBenchmarks, stat)
+				delete(sw.sharedState.ServiceLatencyBenchmarks, stat)
 			}
 		}
 	}

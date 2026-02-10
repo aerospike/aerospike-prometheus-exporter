@@ -8,9 +8,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// StatsRefresher is the main struct that refreshes the stats from the server
+// responsible for refreshing the stats from the server and dispatching them to the appropriate processors
+// uses shared state to store the latency benchmarks and namespace latency benchmarks
 type StatsRefresher struct {
 	dataProvider dataprovider.DataProvider
-	ExecutorMode string
+	sharedState  *StatProcessorSharedState
 
 	namespaceStatsProcessor *NamespaceStatsProcessor
 	nodeStatsProcessor      *NodeStatsProcessor
@@ -26,16 +29,19 @@ func NewStatsRefresher(dataProvider dataprovider.DataProvider) *StatsRefresher {
 
 	log.Info("Creating new StatsRefresher with dataProvider: ", dataProvider)
 
-	return &StatsRefresher{
-		dataProvider:            dataProvider,
-		namespaceStatsProcessor: &NamespaceStatsProcessor{},
-		nodeStatsProcessor:      &NodeStatsProcessor{},
-		setsStatsProcessor:      &SetsStatsProcessor{},
-		sindexStatsProcessor:    &SindexStatsProcessor{},
-		xdrStatsProcessor:       &XdrStatsProcessor{},
-		latencyStatsProcessor:   &LatencyStatsProcessor{},
-		userStatsProcessor:      &UserStatsProcessor{ShouldFetchUserStatistics: true},
-	}
+	statsRefresher := &StatsRefresher{}
+
+	statsRefresher.sharedState = NewStatProcessorSharedState()
+
+	statsRefresher.namespaceStatsProcessor = NewNamespaceStatsProcessor(statsRefresher.sharedState)
+	statsRefresher.nodeStatsProcessor = NewNodeStatsProcessor(statsRefresher.sharedState)
+	statsRefresher.setsStatsProcessor = NewSetsStatsProcessor(statsRefresher.sharedState)
+	statsRefresher.sindexStatsProcessor = NewSindexStatsProcessor(statsRefresher.sharedState)
+	statsRefresher.xdrStatsProcessor = NewXdrStatsProcessor(statsRefresher.sharedState)
+	statsRefresher.latencyStatsProcessor = NewLatencyStatsProcessor(statsRefresher.sharedState)
+	statsRefresher.userStatsProcessor = NewUserStatsProcessor(statsRefresher.sharedState)
+
+	return statsRefresher
 }
 
 func (sr *StatsRefresher) GetStatsProcessors() []StatProcessor {
@@ -46,6 +52,7 @@ func (sr *StatsRefresher) GetStatsProcessors() []StatProcessor {
 		sr.sindexStatsProcessor,
 		sr.xdrStatsProcessor,
 		sr.latencyStatsProcessor,
+		// Did not include users processor, as it process UserRoles directly and not the stats from server
 	}
 
 	return statprocessors

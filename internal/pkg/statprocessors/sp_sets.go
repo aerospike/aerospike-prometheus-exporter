@@ -9,7 +9,12 @@ import (
 )
 
 type SetsStatsProcessor struct {
-	setMetrics map[string]AerospikeStat
+	setMetrics  map[string]AerospikeStat
+	sharedState *StatProcessorSharedState
+}
+
+func NewSetsStatsProcessor(state *StatProcessorSharedState) *SetsStatsProcessor {
+	return &SetsStatsProcessor{sharedState: state}
 }
 
 const (

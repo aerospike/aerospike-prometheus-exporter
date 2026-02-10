@@ -14,8 +14,9 @@ func Test_Node_PassOneKeys(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Node_PassOneKeys")
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
 	// Check passoneKeys
-	nodeWatcher := &statprocessors.NodeStatsProcessor{}
+	nodeWatcher := statprocessors.NewNodeStatsProcessor(sharedState)
 	nwPassOneKeys := nodeWatcher.PassOneKeys()
 
 	udh := &UnittestDataHandler{}
@@ -36,8 +37,9 @@ func Test_Node_PassTwoKeys(t *testing.T) {
 	// initialize config and gauge-lists
 	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
 	// Check passoneKeys
-	nodeWatcher := &statprocessors.NodeStatsProcessor{}
+	nodeWatcher := statprocessors.NewNodeStatsProcessor(sharedState)
 	nwPassOneKeys := nodeWatcher.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := nodeWatcher.PassTwoKeys(passOneOutput)
@@ -72,7 +74,8 @@ func Test_Node_RefreshDefault(t *testing.T) {
 func node_runTestcase(t *testing.T) {
 
 	// Check passoneKeys
-	nodeWatcher := &statprocessors.NodeStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	nodeWatcher := statprocessors.NewNodeStatsProcessor(sharedState)
 	nwPassOneKeys := nodeWatcher.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := nodeWatcher.PassTwoKeys(passOneOutput)

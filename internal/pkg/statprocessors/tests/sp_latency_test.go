@@ -14,8 +14,10 @@ func Test_Latency_PassOneKeys(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Latency_PassOneKeys")
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
+
 	// Check passoneKeys
-	latencyStatsProcessor := &statprocessors.LatencyStatsProcessor{}
+	latencyStatsProcessor := statprocessors.NewLatencyStatsProcessor(sharedState)
 	nwPassOneKeys := latencyStatsProcessor.PassOneKeys()
 
 	udh := &UnittestDataHandler{}
@@ -33,8 +35,10 @@ func Test_Latency_PassTwoKeys(t *testing.T) {
 	// initialize config and gauge-lists
 	commons.InitConfigurations(commons.TESTS_DEFAULT_CONFIG_FILE)
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
+
 	// Check passoneKeys
-	latencyStatsProcessor := &statprocessors.LatencyStatsProcessor{}
+	latencyStatsProcessor := statprocessors.NewLatencyStatsProcessor(sharedState)
 	nwPassOneKeys := latencyStatsProcessor.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := latencyStatsProcessor.PassTwoKeys(passOneOutput)
@@ -68,8 +72,10 @@ func Test_Latency_RefreshDefault(t *testing.T) {
  */
 func latency_runTestcase(t *testing.T) {
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
+
 	// Check passoneKeys
-	latencyWatcher := &statprocessors.LatencyStatsProcessor{}
+	latencyWatcher := statprocessors.NewLatencyStatsProcessor(sharedState)
 	nwPassOneKeys := latencyWatcher.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := latencyWatcher.PassTwoKeys(passOneOutput)

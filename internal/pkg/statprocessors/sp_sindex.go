@@ -11,6 +11,11 @@ import (
 
 type SindexStatsProcessor struct {
 	sindexMetrics map[string]AerospikeStat
+	sharedState   *StatProcessorSharedState
+}
+
+func NewSindexStatsProcessor(state *StatProcessorSharedState) *SindexStatsProcessor {
+	return &SindexStatsProcessor{sharedState: state}
 }
 
 const (

@@ -26,7 +26,8 @@ func Test_Users_RefreshDefault(t *testing.T) {
 func users_runTestcase(t *testing.T) {
 
 	// Check passoneKeys
-	usersWatcher := &statprocessors.UserStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	usersWatcher := statprocessors.NewUserStatsProcessor(sharedState)
 
 	// append common keys
 	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
@@ -80,7 +81,8 @@ func Test_Users_Not_Configured(t *testing.T) {
 	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
-	usersWatcher := &statprocessors.UserStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	usersWatcher := statprocessors.NewUserStatsProcessor(sharedState)
 
 	// append common keys
 	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}

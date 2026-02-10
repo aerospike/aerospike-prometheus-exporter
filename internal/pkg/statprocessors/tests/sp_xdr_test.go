@@ -15,7 +15,8 @@ func Test_Xdr_PassOneKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Xdr_PassOneKeys")
 
 	// Check passoneKeys
-	xdrWatcher := &statprocessors.XdrStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	xdrWatcher := statprocessors.NewXdrStatsProcessor(sharedState)
 	xdrPassOneKeys := xdrWatcher.PassOneKeys()
 
 	udh := &UnittestDataHandler{}
@@ -37,7 +38,8 @@ func Test_Xdr_PassTwoKeys(t *testing.T) {
 	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
-	xdrWatcher := &statprocessors.XdrStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	xdrWatcher := statprocessors.NewXdrStatsProcessor(sharedState)
 	xdrPassOneKeys := xdrWatcher.PassOneKeys()
 	// append common keys
 	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build, "namespaces"}
@@ -77,7 +79,8 @@ func Test_Xdr_RefreshDefault(t *testing.T) {
 func xdr_runTestcase(t *testing.T) {
 
 	// Check passoneKeys
-	xdrWatcher := &statprocessors.XdrStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	xdrWatcher := statprocessors.NewXdrStatsProcessor(sharedState)
 	xdrPassOneKeys := xdrWatcher.PassOneKeys()
 	// append common keys
 	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build, "namespaces"}

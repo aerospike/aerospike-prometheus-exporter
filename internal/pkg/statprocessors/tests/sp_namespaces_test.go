@@ -14,8 +14,9 @@ func Test_Namespace_PassOneKeys(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Namespace_PassOneKeys")
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
 	// Check passoneKeys
-	nsWatcher := &statprocessors.NamespaceStatsProcessor{}
+	nsWatcher := statprocessors.NewNamespaceStatsProcessor(sharedState)
 	nsPassOneKeys := nsWatcher.PassOneKeys()
 
 	udh := &UnittestDataHandler{}
@@ -36,8 +37,10 @@ func Test_Namespace_PassTwoKeys(t *testing.T) {
 	// initialize config and gauge-lists
 	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
+
 	// rawMetrics := getRawMetrics()
-	nsWatcher := &statprocessors.NamespaceStatsProcessor{}
+	nsWatcher := statprocessors.NewNamespaceStatsProcessor(sharedState)
 
 	// simulate, as if we are sending requestInfo to AS and get the namespaces, these are coming from mock-data-generator
 	passOneKeys := nsWatcher.PassOneKeys()
@@ -77,7 +80,8 @@ func Test_Namespace_RefreshDefault(t *testing.T) {
 func namespace_runTestcase(t *testing.T) {
 
 	// rawMetrics := getRawMetrics()
-	nsWatcher := &statprocessors.NamespaceStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	nsWatcher := statprocessors.NewNamespaceStatsProcessor(sharedState)
 
 	// simulate, as if we are sending requestInfo to AS and get the namespaces, these are coming from mock-data-generator
 	passOneKeys := nsWatcher.PassOneKeys()
