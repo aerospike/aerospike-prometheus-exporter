@@ -132,7 +132,7 @@ func (uw *UserStatsProcessor) refreshUserStats(users []*aero.UserRoles) ([]Aeros
 
 func (uw *UserStatsProcessor) makeAerospikeStat(pStatName string, username string) (AerospikeStat, []string, []string) {
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER}
-	labelValues := []string{ClusterName, Service, username}
+	labelValues := []string{uw.sharedState.ClusterName, uw.sharedState.Service, username}
 	allowed := isMetricAllowed(commons.CTX_USERS, pStatName)
 	asMetric := NewAerospikeStat(commons.CTX_USERS, pStatName, allowed)
 

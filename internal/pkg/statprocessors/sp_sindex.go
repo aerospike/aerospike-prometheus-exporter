@@ -106,7 +106,7 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 			}
 
 			labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_SINDEX}
-			labelValues := []string{ClusterName, Service, nsName, sindexName}
+			labelValues := []string{siw.sharedState.ClusterName, siw.sharedState.Service, nsName, sindexName}
 
 			asMetric.updateValues(pv, labels, labelValues)
 			allMetricsToSend = append(allMetricsToSend, asMetric)

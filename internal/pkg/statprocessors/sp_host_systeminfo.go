@@ -10,27 +10,33 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 )
 
-func RefreshSystemInfo() ([]AerospikeStat, error) {
+type HostSystemInfoProcessor struct {
+	sharedState *StatProcessorSharedState
+}
+
+func NewHostSystemInfoProcessor(sharedState *StatProcessorSharedState) *HostSystemInfoProcessor {
+	return &HostSystemInfoProcessor{sharedState: sharedState}
+}
+
+func (hsi *HostSystemInfoProcessor) RefreshSystemInfo() ([]AerospikeStat, error) {
 	arrSysInfoStats := []AerospikeStat{}
 
 	if !config.Cfg.Agent.RefreshSystemStats {
 		return arrSysInfoStats, nil
 	}
 
-	arrSysInfoStats = append(arrSysInfoStats, getFDInfo()...)
-	arrSysInfoStats = append(arrSysInfoStats, getMemInfo()...)
-	arrSysInfoStats = append(arrSysInfoStats, getNetStatInfo()...)
-	arrSysInfoStats = append(arrSysInfoStats, getNetworkInfo()...)
+	arrSysInfoStats = append(arrSysInfoStats, hsi.getFDInfo()...)
+	arrSysInfoStats = append(arrSysInfoStats, hsi.getMemInfo()...)
+	arrSysInfoStats = append(arrSysInfoStats, hsi.getNetStatInfo()...)
+	arrSysInfoStats = append(arrSysInfoStats, hsi.getNetworkInfo()...)
 
 	return arrSysInfoStats, nil
 }
 
-func getFDInfo() []AerospikeStat {
+func (hsi *HostSystemInfoProcessor) getFDInfo() []AerospikeStat {
 	arrSysInfoStats := []AerospikeStat{}
-	clusterName := ClusterName
-	service := Service
 
-	labelValues := []string{clusterName, service}
+	labelValues := []string{hsi.sharedState.ClusterName, hsi.sharedState.Service}
 	fileStatLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
 
 	fileFDStats := dataprovider.GetSystemProvider().GetFileFD()
@@ -54,22 +60,20 @@ func getFDInfo() []AerospikeStat {
 	return arrSysInfoStats
 }
 
-func getMemInfo() []AerospikeStat {
+func (hsi *HostSystemInfoProcessor) getMemInfo() []AerospikeStat {
 	arrSysInfoStats := []AerospikeStat{}
 
 	memStats := dataprovider.GetSystemProvider().GetMemInfoStats()
 
 	memInfoLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
 	for statName, statValue := range memStats {
-		clusterName := ClusterName
-		service := Service
 		value, err := commons.TryConvert(statValue)
 		if err != nil {
 			log.Error("Error while converting value of stat: ", statName, " and converted value is ", statValue)
 			continue
 		}
 
-		labelValues := []string{clusterName, service}
+		labelValues := []string{hsi.sharedState.ClusterName, hsi.sharedState.Service}
 
 		metricName := strings.ToLower(statName) + "_bytes"
 		allowed := isMetricAllowed(commons.CTX_SYSINFO_MEMORY_STATS, statName)
@@ -84,7 +88,7 @@ func getMemInfo() []AerospikeStat {
 	return arrSysInfoStats
 }
 
-func getNetStatInfo() []AerospikeStat {
+func (hsi *HostSystemInfoProcessor) getNetStatInfo() []AerospikeStat {
 	arrSysInfoStats := []AerospikeStat{}
 
 	netStatInfoLabels := []string{}
@@ -93,9 +97,7 @@ func getNetStatInfo() []AerospikeStat {
 	snmpStats := dataprovider.GetSystemProvider().GetNetStatInfo()
 
 	//Net SNMP - includes TCP metrics like active_conn, established, retransmit etc.,
-	clusterName := ClusterName
-	service := Service
-	labelValues := []string{clusterName, service}
+	labelValues := []string{hsi.sharedState.ClusterName, hsi.sharedState.Service}
 
 	for statName, statValue := range snmpStats {
 
@@ -117,7 +119,7 @@ func getNetStatInfo() []AerospikeStat {
 	return arrSysInfoStats
 }
 
-func getNetworkInfo() []AerospikeStat {
+func (hsi *HostSystemInfoProcessor) getNetworkInfo() []AerospikeStat {
 
 	arrSysInfoStats := []AerospikeStat{}
 
@@ -135,7 +137,7 @@ func getNetworkInfo() []AerospikeStat {
 			continue
 		}
 
-		labelValues := []string{ClusterName, Service, deviceName}
+		labelValues := []string{hsi.sharedState.ClusterName, hsi.sharedState.Service, deviceName}
 
 		allowed := isMetricAllowed(commons.CTX_SYSINFO_NETWORK_STATS, statName)
 		sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_NETWORK_STATS, statName, allowed)
@@ -157,7 +159,7 @@ func getNetworkInfo() []AerospikeStat {
 			continue
 		}
 
-		labelValues := []string{ClusterName, Service, deviceName}
+		labelValues := []string{hsi.sharedState.ClusterName, hsi.sharedState.Service, deviceName}
 		allowed := isMetricAllowed(commons.CTX_SYSINFO_NETWORK_STATS, statName)
 		sysMetric := NewAerospikeStat(commons.CTX_SYSINFO_NETWORK_STATS, statName, allowed)
 		sysMetric.Labels = networkLabels

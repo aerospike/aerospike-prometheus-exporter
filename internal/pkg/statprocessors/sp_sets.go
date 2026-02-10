@@ -61,7 +61,7 @@ func (sw *SetsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 			}
 
 			labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_SET}
-			labelValues := []string{ClusterName, Service, stats["ns"], stats["set"]}
+			labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, stats["ns"], stats["set"]}
 
 			// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
 			asMetric.updateValues(pv, labels, labelValues)

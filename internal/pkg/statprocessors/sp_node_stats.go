@@ -128,7 +128,7 @@ func (sw *NodeStatsProcessor) handleRefresh(rawMetrics string) []AerospikeStat {
 		}
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
-		labelValues := []string{ClusterName, Service}
+		labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service}
 
 		// pushToPrometheus(asMetric, pv, labels, labelsValues)
 		asMetric.updateValues(pv, labels, labelValues)
@@ -196,7 +196,7 @@ func (sw *NodeStatsProcessor) createLogSinkMetric(statName string, statValue flo
 	}
 
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
-	labelValues := []string{ClusterName, Service}
+	labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service}
 
 	asMetric.updateValues(statValue, labels, labelValues)
 
@@ -242,7 +242,7 @@ func (sw *NodeStatsProcessor) handleUserAgentsStats(rawMetrics map[string]string
 		}
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_UA_CLIENT_LIBRARY_VERSION, commons.METRIC_LABEL_UA_CLIENT_APP_ID}
-		labelValues := []string{ClusterName, Service, clientLibraryVersion, appId}
+		labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, clientLibraryVersion, appId}
 
 		asMetric.updateValues(pv, labels, labelValues)
 		refreshMetricsToSend = append(refreshMetricsToSend, asMetric)

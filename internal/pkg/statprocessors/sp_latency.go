@@ -105,14 +105,14 @@ func (lw *LatencyStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 
 	// loop all the latency infokeys
 	for ik := range infoKeys {
-		latencyMetricsToSend := parseSingleLatenciesKey(infoKeys[ik], rawMetrics, allowedLatenciesList, blockedLatenciessList)
+		latencyMetricsToSend := lw.parseSingleLatenciesKey(infoKeys[ik], rawMetrics, allowedLatenciesList, blockedLatenciessList)
 		allMetricsToSend = append(allMetricsToSend, latencyMetricsToSend...)
 	}
 
 	return allMetricsToSend, nil
 }
 
-func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]string,
+func (lw *LatencyStatsProcessor) parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]string,
 	allowedLatenciesList map[string]struct{}, blockedLatenciessList map[string]struct{}) []AerospikeStat {
 
 	var latencyStats map[string]LatencyStatsMap
@@ -147,8 +147,10 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 			for i, labelValue := range opLatencyStats.(LatencyStatsMap)["bucketLabels"].([]string) {
 				// aerospike_latencies_<operation>_<timeunit>_bucket metric - Less than or equal to histogram buckets
 
-				labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_LE}
-				labelValues := []string{ClusterName, Service, namespaceName, labelValue}
+				labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE,
+					commons.METRIC_LABEL_NS, commons.METRIC_LABEL_LE}
+				labelValues := []string{lw.sharedState.ClusterName, lw.sharedState.Service, namespaceName, labelValue}
+
 				pv := opLatencyStats.(LatencyStatsMap)["bucketValues"].([]float64)[i]
 
 				statName := operation + "_" + opLatencyStats.(LatencyStatsMap)["timeUnit"].(string) + "_bucket"
@@ -161,7 +163,7 @@ func parseSingleLatenciesKey(singleLatencyKey string, rawMetrics map[string]stri
 				// aerospike_latencies_<operation>_<timeunit>_count metric
 				if i == 0 {
 					labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS}
-					labelValues := []string{ClusterName, Service, namespaceName}
+					labelValues := []string{lw.sharedState.ClusterName, lw.sharedState.Service, namespaceName}
 					pv := opLatencyStats.(LatencyStatsMap)["bucketValues"].([]float64)[i]
 
 					statName := operation + "_" + opLatencyStats.(LatencyStatsMap)["timeUnit"].(string) + "_count"

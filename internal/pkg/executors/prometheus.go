@@ -17,8 +17,10 @@ type PrometheusImpl struct {
 	ticks prometheus.Counter
 
 	// Data Providers and Metrics Refresher
-	dataProvider   dataprovider.DataProvider
-	statsRefresher *statprocessors.StatsRefresher
+	dataProvider            dataprovider.DataProvider
+	sharedState             *statprocessors.StatProcessorSharedState
+	statsRefresher          *statprocessors.StatsRefresher
+	hostSystemInfoProcessor *statprocessors.HostSystemInfoProcessor
 }
 
 var (
@@ -47,7 +49,10 @@ func NewPrometheusImpl() (o *PrometheusImpl) {
 	}
 
 	o.dataProvider = dataprovider.GetProvider(commons.EXECUTOR_MODE_PROM)
-	o.statsRefresher = statprocessors.NewStatsRefresher(o.dataProvider)
+	o.sharedState = statprocessors.NewStatProcessorSharedState()
+
+	o.statsRefresher = statprocessors.NewStatsRefresher(o.dataProvider, o.sharedState)
+	o.hostSystemInfoProcessor = statprocessors.NewHostSystemInfoProcessor(o.sharedState)
 
 	return o
 }
@@ -69,22 +74,26 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 
 	if err != nil {
 		log.Errorln(err)
-		ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 0.0, statprocessors.ClusterName, statprocessors.Service, statprocessors.Build)
+		ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 0.0,
+			o.sharedState.ClusterName, o.sharedState.Service, o.sharedState.Build)
+
 		return
 	}
 
 	// if kubernetes then send host-name/pod-name else send server-ip as-isnh
 	if config.Cfg.Agent.IsKubernetes {
-		statprocessors.Service = config.Cfg.Agent.KubernetesPodName
+		o.sharedState.Service = config.Cfg.Agent.KubernetesPodName
 	}
-	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, statprocessors.ClusterName, statprocessors.Service, statprocessors.Build)
+
+	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0,
+		o.sharedState.ClusterName, o.sharedState.Service, o.sharedState.Build)
 
 	for _, wm := range refreshedMetrics {
 		PushToPrometheus(wm, ch)
 	}
 
 	// System Metrics - Memory, Disk and Filesystem - push the fetched metrics to prometheus
-	systemMetrics, err := statprocessors.RefreshSystemInfo()
+	systemMetrics, err := o.hostSystemInfoProcessor.RefreshSystemInfo()
 
 	if err != nil {
 		log.Errorln("Error while refreshing SystemInfo Stats, error: ", err)

@@ -1,10 +1,5 @@
 package statprocessors
 
-var (
-	// Node service endpoint, cluster name and build version
-	Service, ClusterName, Build string
-)
-
 type StatProcessor interface {
 	PassOneKeys() []string
 	PassTwoKeys(passOneStats map[string]string) []string
@@ -13,8 +8,9 @@ type StatProcessor interface {
 
 // Struct to store shared state and values between various processors in a thread-safe manner
 type StatProcessorSharedState struct {
-	ServiceLatencyBenchmarks   map[string]string
-	NamespaceLatencyBenchmarks map[string]map[string]string
+	Service, ClusterName, Build string
+	ServiceLatencyBenchmarks    map[string]string
+	NamespaceLatencyBenchmarks  map[string]map[string]string
 }
 
 func NewStatProcessorSharedState() *StatProcessorSharedState {

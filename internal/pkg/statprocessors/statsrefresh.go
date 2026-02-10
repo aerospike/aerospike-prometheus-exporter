@@ -25,14 +25,15 @@ type StatsRefresher struct {
 	userStatsProcessor *UserStatsProcessor
 }
 
-func NewStatsRefresher(dataProvider dataprovider.DataProvider) *StatsRefresher {
+func NewStatsRefresher(dataProvider dataprovider.DataProvider,
+	sharedState *StatProcessorSharedState) *StatsRefresher {
 
 	log.Info("Creating new StatsRefresher with dataProvider: ", dataProvider)
 
 	statsRefresher := &StatsRefresher{}
 
 	statsRefresher.dataProvider = dataProvider
-	statsRefresher.sharedState = NewStatProcessorSharedState()
+	statsRefresher.sharedState = sharedState
 
 	statsRefresher.namespaceStatsProcessor = NewNamespaceStatsProcessor(statsRefresher.sharedState)
 	statsRefresher.nodeStatsProcessor = NewNodeStatsProcessor(statsRefresher.sharedState)
@@ -120,9 +121,12 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// set global values
-	ClusterName, Service, Build = passTwoResponse[Infokey_ClusterName], passTwoResponse[Infokey_Service], passTwoResponse[Infokey_Build]
+	sr.sharedState.ClusterName = passTwoResponse[Infokey_ClusterName]
+	sr.sharedState.Service = passTwoResponse[Infokey_Service]
+	sr.sharedState.Build = passTwoResponse[Infokey_Build]
+
 	if config.Cfg.Agent.IsKubernetes {
-		Service = config.Cfg.Agent.KubernetesPodName
+		sr.sharedState.Service = config.Cfg.Agent.KubernetesPodName
 	}
 
 	// sanitize the utf8 strings before sending them to watchers

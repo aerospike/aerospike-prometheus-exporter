@@ -96,9 +96,9 @@ func namespace_runTestcase(t *testing.T) {
 	assert.Nil(t, err, "Error while NamespaceWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while NamespaceWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
-	statprocessors.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
-	statprocessors.Build = arrRawMetrics[statprocessors.Infokey_Build]
-	statprocessors.Service = arrRawMetrics[statprocessors.Infokey_Service]
+	sharedState.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
+	sharedState.Build = arrRawMetrics[statprocessors.Infokey_Build]
+	sharedState.Service = arrRawMetrics[statprocessors.Infokey_Service]
 
 	// check the output with NamespaceWatcher
 	nsMetrics, err := nsWatcher.Refresh(passTwokeyOutputs, arrRawMetrics)
