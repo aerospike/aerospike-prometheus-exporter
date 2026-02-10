@@ -28,7 +28,9 @@ type StatsRefresher struct {
 func NewStatsRefresher(dataProvider dataprovider.DataProvider,
 	sharedState *StatProcessorSharedState) *StatsRefresher {
 
-	log.Info("Creating new StatsRefresher with dataProvider: ", dataProvider)
+	if dp, ok := dataProvider.(*dataprovider.AerospikeServer); ok {
+		log.Infof("Creating new StatsRefresher with dataProvider: %p", dp)
+	}
 
 	statsRefresher := &StatsRefresher{}
 

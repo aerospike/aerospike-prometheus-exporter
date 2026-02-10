@@ -67,6 +67,7 @@ func (oe *OtelExecutor) Export(ctx context.Context, rm *metricdata.ResourceMetri
 	}
 
 	if !oe.dataProvider.IsServerConnected() {
+		//TODO: discuss with Sunil as even health metric node.up is not sent.
 		log.Warnf("%s OtelExecutor, Server is not connected, ignoring metrics", time.Now().Format(time.RFC3339))
 		return nil
 	}
