@@ -93,16 +93,16 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 
 	// fetch second second set of info keys
 	// check and load this only once, to avoid multiple file-reads, so this Infokey assignment will happen only once during restart
-	if Infokey_Service != INFOKEY_SERVICE_TLS_STD {
+	if sr.sharedState.Infokey_Service != INFOKEY_SERVICE_TLS_STD {
 		serverPool, clientPool := commons.LoadServerOrClientCertificates()
 		// we need to have atleast one certificate configured and read successfully
 		if serverPool != nil || clientPool != nil {
-			Infokey_Service = INFOKEY_SERVICE_TLS_STD
+			sr.sharedState.Infokey_Service = INFOKEY_SERVICE_TLS_STD
 			log.Debugf("TLS Mode is enabled, setting infokey-service as  'service-tls-std' for further fetching from server.")
 		}
 	}
 
-	infoKeys = []string{Infokey_ClusterName, Infokey_Service, Infokey_Build}
+	infoKeys = []string{sr.sharedState.Infokey_ClusterName, sr.sharedState.Infokey_Service, sr.sharedState.Infokey_Build}
 	statprocessorInfoKeys := make([][]string, len(allStatsprocessorList))
 
 	for i, c := range allStatsprocessorList {
@@ -121,9 +121,9 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// set global values
-	sr.sharedState.ClusterName = passTwoResponse[Infokey_ClusterName]
-	sr.sharedState.Service = passTwoResponse[Infokey_Service]
-	sr.sharedState.Build = passTwoResponse[Infokey_Build]
+	sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
+	sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
+	sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
 
 	if config.Cfg.Agent.IsKubernetes {
 		sr.sharedState.Service = config.Cfg.Agent.KubernetesPodName

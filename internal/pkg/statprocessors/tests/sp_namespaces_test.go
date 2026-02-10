@@ -89,16 +89,16 @@ func namespace_runTestcase(t *testing.T) {
 	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
-	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
+	infoKeys := []string{sharedState.Infokey_ClusterName, sharedState.Infokey_Service, sharedState.Infokey_Build}
 	passTwokeyOutputs = append(passTwokeyOutputs, infoKeys...)
 
 	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(passTwokeyOutputs)
 	assert.Nil(t, err, "Error while NamespaceWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while NamespaceWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
-	sharedState.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
-	sharedState.Build = arrRawMetrics[statprocessors.Infokey_Build]
-	sharedState.Service = arrRawMetrics[statprocessors.Infokey_Service]
+	sharedState.ClusterName = arrRawMetrics[sharedState.Infokey_ClusterName]
+	sharedState.Build = arrRawMetrics[sharedState.Infokey_Build]
+	sharedState.Service = arrRawMetrics[sharedState.Infokey_Service]
 
 	// check the output with NamespaceWatcher
 	nsMetrics, err := nsWatcher.Refresh(passTwokeyOutputs, arrRawMetrics)

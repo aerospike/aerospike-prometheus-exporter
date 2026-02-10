@@ -30,15 +30,15 @@ func users_runTestcase(t *testing.T) {
 	usersWatcher := statprocessors.NewUserStatsProcessor(sharedState)
 
 	// append common keys
-	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
+	infoKeys := []string{sharedState.Infokey_ClusterName, sharedState.Infokey_Service, sharedState.Infokey_Build}
 
 	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(infoKeys)
 	assert.Nil(t, err, "Error while usersWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while usersWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
-	sharedState.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
-	sharedState.Build = arrRawMetrics[statprocessors.Infokey_Build]
-	sharedState.Service = arrRawMetrics[statprocessors.Infokey_Service]
+	sharedState.ClusterName = arrRawMetrics[sharedState.Infokey_ClusterName]
+	sharedState.Build = arrRawMetrics[sharedState.Infokey_Build]
+	sharedState.Service = arrRawMetrics[sharedState.Infokey_Service]
 
 	canFetchUsers, users, err := dataprovider.GetProvider("mock").FetchUsersDetails()
 	assert.True(t, canFetchUsers, "Error while usersWatcher.FetchUsersDetails ")
@@ -85,15 +85,15 @@ func Test_Users_Not_Configured(t *testing.T) {
 	usersWatcher := statprocessors.NewUserStatsProcessor(sharedState)
 
 	// append common keys
-	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
+	infoKeys := []string{sharedState.Infokey_ClusterName, sharedState.Infokey_Service, sharedState.Infokey_Build}
 
 	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(infoKeys)
 	assert.Nil(t, err, "Error while usersWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while usersWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
-	sharedState.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
-	sharedState.Build = arrRawMetrics[statprocessors.Infokey_Build]
-	sharedState.Service = arrRawMetrics[statprocessors.Infokey_Service]
+	sharedState.ClusterName = arrRawMetrics[sharedState.Infokey_ClusterName]
+	sharedState.Build = arrRawMetrics[sharedState.Infokey_Build]
+	sharedState.Service = arrRawMetrics[sharedState.Infokey_Service]
 
 	// check the output with usersWatcher
 	canFetchUsers, users, err := dataprovider.GetProvider("mock").FetchUsersDetails()

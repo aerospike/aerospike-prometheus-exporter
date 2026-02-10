@@ -81,16 +81,16 @@ func latency_runTestcase(t *testing.T) {
 	passTwoOutputs := latencyWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
-	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
+	infoKeys := []string{sharedState.Infokey_ClusterName, sharedState.Infokey_Service, sharedState.Infokey_Build}
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
 
 	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(passTwoOutputs)
 	assert.Nil(t, err, "Error while latencyWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while latencyWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
-	sharedState.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
-	sharedState.Build = arrRawMetrics[statprocessors.Infokey_Build]
-	sharedState.Service = arrRawMetrics[statprocessors.Infokey_Service]
+	sharedState.ClusterName = arrRawMetrics[sharedState.Infokey_ClusterName]
+	sharedState.Build = arrRawMetrics[sharedState.Infokey_Build]
+	sharedState.Service = arrRawMetrics[sharedState.Infokey_Service]
 
 	// check the output with setsWatcher
 	latencyMetrics, err := latencyWatcher.Refresh(passTwoOutputs, arrRawMetrics)

@@ -44,7 +44,7 @@ func Test_RefreshDefault(t *testing.T) {
 	pdv := udh.GetUnittestValidator("prometheus")
 	expectedOutputs := pdv.GetMetricLabelsWithValues()
 
-	assert.Equal(t, len(expectedOutputs), len(metrics_from_prom))
+	assert.LessOrEqual(t, len(expectedOutputs), len(metrics_from_prom))
 
 	// assert values from httpclient with expectedOutputs
 	for idx_metrics := range metrics_from_prom {

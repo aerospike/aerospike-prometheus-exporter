@@ -73,15 +73,15 @@ func Test_Sindex_RefreshDefault(t *testing.T) {
  */
 func sindex_runTestcase(t *testing.T) {
 
-	// common keys
-	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
-
 	// Check passoneKeys
 	sharedState := statprocessors.NewStatProcessorSharedState()
 	sindexWatcher := statprocessors.NewSindexStatsProcessor(sharedState)
 	nwPassOneKeys := sindexWatcher.PassOneKeys()
 	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := sindexWatcher.PassTwoKeys(passOneOutput)
+
+	// common keys
+	infoKeys := []string{sharedState.Infokey_ClusterName, sharedState.Infokey_Service, sharedState.Infokey_Build}
 
 	// append common keys
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
@@ -90,13 +90,13 @@ func sindex_runTestcase(t *testing.T) {
 	assert.Nil(t, err, "Error while sindexMetrics.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while sindexMetrics.PassTwokeys, RawMetrics is EMPTY ")
 
-	sharedState.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
-	sharedState.Build = arrRawMetrics[statprocessors.Infokey_Build]
-	sharedState.Service = arrRawMetrics[statprocessors.Infokey_Service]
+	sharedState.ClusterName = arrRawMetrics[sharedState.Infokey_ClusterName]
+	sharedState.Build = arrRawMetrics[sharedState.Infokey_Build]
+	sharedState.Service = arrRawMetrics[sharedState.Infokey_Service]
 
 	var keys = []string{}
 	for _, v := range passTwoOutputs {
-		if v != statprocessors.Infokey_ClusterName && v != statprocessors.Infokey_Build && v != statprocessors.Infokey_Service {
+		if v != sharedState.Infokey_ClusterName && v != sharedState.Infokey_Build && v != sharedState.Infokey_Service {
 			keys = append(keys, v)
 		}
 	}
