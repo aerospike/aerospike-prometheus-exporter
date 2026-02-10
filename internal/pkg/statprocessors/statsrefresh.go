@@ -31,6 +31,7 @@ func NewStatsRefresher(dataProvider dataprovider.DataProvider) *StatsRefresher {
 
 	statsRefresher := &StatsRefresher{}
 
+	statsRefresher.dataProvider = dataProvider
 	statsRefresher.sharedState = NewStatProcessorSharedState()
 
 	statsRefresher.namespaceStatsProcessor = NewNamespaceStatsProcessor(statsRefresher.sharedState)
