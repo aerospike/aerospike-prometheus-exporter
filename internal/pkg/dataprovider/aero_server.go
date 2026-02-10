@@ -179,7 +179,7 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 				continue
 			}
 
-			log.Debugf("Connection to Server took %v", time.Since(callStartTime))
+			log.Debugf("Connection to Server %s took %v, AerospikeServer reference=%p", as.fullHost, time.Since(callStartTime), as)
 
 			// Set user-agent
 			err = as.setUserAgent()
