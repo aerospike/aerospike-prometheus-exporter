@@ -43,12 +43,15 @@ type NamespaceStatsProcessor struct {
 }
 
 func NewNamespaceStatsProcessor(state *StatProcessorSharedState) *NamespaceStatsProcessor {
-	return &NamespaceStatsProcessor{
+	processor := &NamespaceStatsProcessor{
+		namespaceStats:               make(map[string]AerospikeStat),
 		isFlashStatSentByServer:      false,
 		idxPressureFetchInterval:     10.0,
 		idxPressurePreviousFetchTime: time.Now(),
 		sharedState:                  state,
 	}
+
+	return processor
 }
 
 func (nw *NamespaceStatsProcessor) PassOneKeys() []string {
@@ -83,10 +86,6 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 }
 
 func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
-
-	if nw.namespaceStats == nil {
-		nw.namespaceStats = make(map[string]AerospikeStat)
-	}
 
 	var allMetricsToSend = []AerospikeStat{}
 	for _, infoKey := range infoKeys {

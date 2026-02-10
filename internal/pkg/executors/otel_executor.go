@@ -3,7 +3,6 @@ package executors
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"sync/atomic"
 
 	"time"
@@ -51,8 +50,10 @@ type OtelExecutor struct {
 
 	refreshCounter atomic.Int64
 
-	dataProvider   dataprovider.DataProvider
-	statsRefresher *statprocessors.StatsRefresher
+	dataProvider            dataprovider.DataProvider
+	sharedState             *statprocessors.StatProcessorSharedState
+	statsRefresher          *statprocessors.StatsRefresher
+	hostSystemInfoProcessor *statprocessors.HostSystemInfoProcessor
 }
 
 // sdkmetric.Exporter interface implementation
@@ -67,7 +68,6 @@ func (oe *OtelExecutor) Export(ctx context.Context, rm *metricdata.ResourceMetri
 
 	if !oe.dataProvider.IsServerConnected() {
 		log.Warnf("%s OtelExecutor, Server is not connected, ignoring metrics", time.Now().Format(time.RFC3339))
-		fmt.Printf("%s OtelExecutor, Server is not connected, ignoring metrics", time.Now().Format(time.RFC3339))
 		return nil
 	}
 
@@ -84,7 +84,10 @@ func (oe *OtelExecutor) Initialize() error {
 
 	// Initialize the stats refresher
 	oe.dataProvider = dataprovider.GetProvider(commons.EXECUTOR_MODE_OTEL)
-	oe.statsRefresher = statprocessors.NewStatsRefresher(oe.dataProvider)
+	oe.sharedState = statprocessors.NewStatProcessorSharedState()
+
+	oe.statsRefresher = statprocessors.NewStatsRefresher(oe.dataProvider, oe.sharedState)
+	oe.hostSystemInfoProcessor = statprocessors.NewHostSystemInfoProcessor(oe.sharedState)
 
 	// initialize the metric caches
 	oe.gauges = make(map[string]*GaugeMetrics)
@@ -255,17 +258,17 @@ func (oe *OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.Instrume
 func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
 	asRefreshStats, err := oe.statsRefresher.Refresh()
 
+	labels := []attribute.KeyValue{
+		attribute.String("aerospike_cluster", oe.sharedState.ClusterName),
+		attribute.String("aerospike_service", oe.sharedState.Service),
+		attribute.String("build", oe.sharedState.Build),
+	}
+
 	if err != nil {
 		log.Errorf("Error while refreshing Aerospike Metrics, error: %v", err)
 		// aerospike server is down, send common labels
-		oe.sendNodeUp(meter, commonLabels, 0)
+		oe.sendNodeUp(meter, append(commonLabels, labels...), 0)
 		return
-	}
-
-	labels := []attribute.KeyValue{
-		attribute.String("aerospike_cluster", statprocessors.ClusterName),
-		attribute.String("aerospike_service", statprocessors.Service),
-		attribute.String("build", statprocessors.Build),
 	}
 
 	// aerospike server is up and we are able to fetch data, send common + server labels
@@ -281,7 +284,7 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 }
 
 func (oe *OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
-	sysInfoRefreshStats, err := statprocessors.RefreshSystemInfo()
+	sysInfoRefreshStats, err := oe.hostSystemInfoProcessor.RefreshSystemInfo()
 
 	if err != nil {
 		log.Errorln("Error while refreshing SystemInfo, error: ", err)

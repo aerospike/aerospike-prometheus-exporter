@@ -20,7 +20,10 @@ type XdrStatsProcessor struct {
 }
 
 func NewXdrStatsProcessor(state *StatProcessorSharedState) *XdrStatsProcessor {
-	return &XdrStatsProcessor{sharedState: state}
+	return &XdrStatsProcessor{
+		sharedState: state,
+		xdrMetrics:  make(map[string]AerospikeStat),
+	}
 }
 
 func (xw *XdrStatsProcessor) PassOneKeys() []string {
@@ -61,10 +64,6 @@ func (xw *XdrStatsProcessor) PassTwoKeys(passOneStats map[string]string) []strin
 
 // refresh prom metrics - parse the given rawMetrics (both config and stats ) and push to given channel
 func (xw *XdrStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
-
-	if xw.xdrMetrics == nil {
-		xw.xdrMetrics = make(map[string]AerospikeStat)
-	}
 
 	var allMetricsToSend = []AerospikeStat{}
 

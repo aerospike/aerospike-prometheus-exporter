@@ -23,7 +23,11 @@ type NodeStatsProcessor struct {
 }
 
 func NewNodeStatsProcessor(state *StatProcessorSharedState) *NodeStatsProcessor {
-	return &NodeStatsProcessor{sharedState: state}
+	return &NodeStatsProcessor{
+		sharedState:  state,
+		nodeMetrics:  make(map[string]AerospikeStat),
+		logSinkCount: 0,
+	}
 }
 
 func (sw *NodeStatsProcessor) PassOneKeys() []string {
@@ -79,10 +83,6 @@ func (sw *NodeStatsProcessor) parseLogSinkDetails(rawMetrics map[string]string) 
 // var nodeMetrics = make(map[string]AerospikeStat)
 
 func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
-
-	if sw.nodeMetrics == nil {
-		sw.nodeMetrics = make(map[string]AerospikeStat)
-	}
 
 	log.Tracef("node-configs:%s", rawMetrics[KEY_SERVICE_CONFIG])
 	log.Tracef("node-stats:%s", rawMetrics[KEY_SERVICE_STATISTICS])

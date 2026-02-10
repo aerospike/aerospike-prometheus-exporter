@@ -15,7 +15,10 @@ type SindexStatsProcessor struct {
 }
 
 func NewSindexStatsProcessor(state *StatProcessorSharedState) *SindexStatsProcessor {
-	return &SindexStatsProcessor{sharedState: state}
+	return &SindexStatsProcessor{
+		sharedState:   state,
+		sindexMetrics: make(map[string]AerospikeStat),
+	}
 }
 
 const (
@@ -73,10 +76,6 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 	if config.Cfg.Aerospike.DisableSindexMetrics {
 		// disabled
 		return nil, nil
-	}
-
-	if siw.sindexMetrics == nil {
-		siw.sindexMetrics = make(map[string]AerospikeStat)
 	}
 
 	var allMetricsToSend = []AerospikeStat{}

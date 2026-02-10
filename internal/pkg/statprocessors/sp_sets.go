@@ -14,7 +14,10 @@ type SetsStatsProcessor struct {
 }
 
 func NewSetsStatsProcessor(state *StatProcessorSharedState) *SetsStatsProcessor {
-	return &SetsStatsProcessor{sharedState: state}
+	return &SetsStatsProcessor{
+		sharedState: state,
+		setMetrics:  make(map[string]AerospikeStat),
+	}
 }
 
 const (
@@ -38,10 +41,6 @@ func (sw *SetsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	setStats := strings.Split(rawMetrics[KEY_SETS], ";")
 
 	log.Tracef("set-stats:%v", rawMetrics[KEY_SETS])
-
-	if sw.setMetrics == nil {
-		sw.setMetrics = make(map[string]AerospikeStat)
-	}
 
 	var allMetricsToSend = []AerospikeStat{}
 
