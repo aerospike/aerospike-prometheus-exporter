@@ -125,6 +125,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
 	sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
 
+	// Servce is IP of Aerospike Server, in Kubernetes we need pod-name instead of IP.
 	if config.Cfg.Agent.IsKubernetes {
 		sr.sharedState.Service = config.Cfg.Agent.KubernetesPodName
 	}

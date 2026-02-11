@@ -80,11 +80,6 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	// if kubernetes then send host-name/pod-name else send server-ip as-isnh
-	if config.Cfg.Agent.IsKubernetes {
-		o.sharedState.Service = config.Cfg.Agent.KubernetesPodName
-	}
-
 	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0,
 		o.sharedState.ClusterName, o.sharedState.Service, o.sharedState.Build)
 
