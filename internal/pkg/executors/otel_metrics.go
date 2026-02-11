@@ -34,8 +34,7 @@ func (oe *OtelExecutor) sendNodeUp(meter metric.Meter,
 	labels []attribute.KeyValue, value int64) {
 
 	metricKey := oe.constructMetricKey(AEROSPIKE_NODE_UP, labels)
-
-	nodeUpGauge := oe.getGaugeMetric(metricKey, meter, AEROSPIKE_NODE_UP, "Aerospike node active status", labels)
+	nodeUpGauge := oe.getSendUpGaugeMetric(metricKey, meter, AEROSPIKE_NODE_UP, "Aerospike node active status", labels)
 	nodeUpGauge.value.Store(value)
 }
 
@@ -148,8 +147,10 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 
 	// Register callback ONCE
 	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-		v := gd.value.Load()
-		o.ObserveInt64(gd.instrument, v, metric.WithAttributes(labels...))
+
+		if oe.dataProvider.IsServerConnected() {
+			o.ObserveInt64(gd.instrument, gd.value.Load(), metric.WithAttributes(labels...))
+		}
 
 		return nil
 	}, og)
@@ -189,8 +190,11 @@ func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricN
 
 	// Register callback ONCE for this instrument
 	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-		v := cd.value.Load()
-		o.ObserveInt64(cd.instrument, v, metric.WithAttributes(cd.labels...))
+
+		if oe.dataProvider.IsServerConnected() {
+			o.ObserveInt64(cd.instrument, cd.value.Load(), metric.WithAttributes(cd.labels...))
+		}
+
 		return nil
 	}, oc)
 
@@ -200,4 +204,45 @@ func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricN
 
 	oe.counters[key] = cd
 	return cd
+}
+
+// Send-up, this metric will have to be send irrespective of Aerospike Server is available or not.
+func (oe *OtelExecutor) getSendUpGaugeMetric(key string, meter metric.Meter, metricName string,
+	desc string, labels []attribute.KeyValue) *GaugeMetrics {
+
+	// Fast path
+	if gd, ok := oe.gauges[key]; ok {
+		return gd
+	}
+
+	// Create
+	og, err := meter.Int64ObservableGauge(metricName, metric.WithDescription(desc))
+
+	if err != nil {
+		log.Fatalf("Error while creating object for gauge stat %s: %v", metricName, err)
+		return nil
+	}
+
+	gd := &GaugeMetrics{
+		instrument: og,
+		labels:     labels,
+	}
+
+	// Initialize the value to 0
+	gd.value.Store(0)
+
+	// Register callback ONCE
+	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+
+		o.ObserveInt64(gd.instrument, gd.value.Load(), metric.WithAttributes(labels...))
+
+		return nil
+	}, og)
+
+	if err != nil {
+		log.Fatalf("Error while RegisterCallback for Gauge stat %s: %v", metricName, err)
+	}
+
+	oe.gauges[key] = gd
+	return gd
 }
