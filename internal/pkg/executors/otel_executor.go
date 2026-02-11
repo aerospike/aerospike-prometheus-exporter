@@ -261,6 +261,9 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 
 	if err != nil {
 		log.Errorf("Error while refreshing Aerospike Metrics, error: %v", err)
+
+		// Reset counter, so when server comes back we do not send large counter value again
+		oe.refreshCounter.Store(0)
 		// aerospike server is down, send common labels
 		oe.sendNodeUp(meter, append(commonLabels, labels...), 0)
 		return
