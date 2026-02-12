@@ -3,10 +3,14 @@ package statprocessors
 import (
 	"strings"
 
-	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
-	config "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 
 	log "github.com/sirupsen/logrus"
+)
+
+const (
+	KEY_SINDEX_COMMAND = "sindex-list:"
 )
 
 type SindexStatsProcessor struct {
@@ -20,10 +24,6 @@ func NewSindexStatsProcessor(state *StatProcessorSharedState) *SindexStatsProces
 		sindexMetrics: make(map[string]AerospikeStat),
 	}
 }
-
-const (
-	KEY_SINDEX_COMMAND = "sindex-list:"
-)
 
 func (siw *SindexStatsProcessor) PassOneKeys() []string {
 

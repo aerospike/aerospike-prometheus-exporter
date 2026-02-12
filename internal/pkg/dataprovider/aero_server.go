@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
@@ -16,32 +15,6 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	log "github.com/sirupsen/logrus"
 )
-
-// Inherits DataProvider interface
-type AerospikeServer struct {
-	fullHost string
-
-	aeroConnection *aero.Connection
-	clientPolicy   *aero.ClientPolicy
-	serverHost     *aero.Host
-
-	isServerConnected atomic.Bool
-}
-
-func (as *AerospikeServer) RequestInfo(infoKeys []string) (map[string]string, error) {
-
-	return as.fetchRequestInfoFromAerospike(infoKeys)
-}
-
-func (as *AerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
-	return as.fetchUsersRoles()
-}
-
-func (as *AerospikeServer) IsServerConnected() bool {
-	return as.isServerConnected.Load()
-}
-
-// Aerospike server interaction related code
 
 const (
 	GO_CLIENT_LIBRARY_PATH     = "github.com/aerospike/aerospike-client-go/v8"
@@ -56,16 +29,42 @@ const (
 	AUTH_MODE_EMPTY    = ""
 )
 
+// Inherits DataProvider interface
+type AerospikeServer struct {
+	aeroConnection *aero.Connection
+	clientPolicy   *aero.ClientPolicy
+	serverHost     *aero.Host
+}
+
+func (as *AerospikeServer) RequestInfo(infoKeys []string) (map[string]string, error) {
+
+	return as.fetchRequestInfoFromAerospike(infoKeys)
+}
+
+func (as *AerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
+	return as.fetchUsersRoles()
+}
+
+func (as *AerospikeServer) IsServerConnected() bool {
+	return (as.aeroConnection != nil && as.aeroConnection.IsConnected())
+}
+
+// Aerospike server interaction related code
+
 func (as *AerospikeServer) initializeAndConnectAerospikeServer() (*aero.Connection, error) {
 
-	log.Info("Initializing and Connecting to aerospike server ")
+	log.Infof("Initializing and Connecting to aerospike server %s", commons.GetFullHost())
 
-	as.fullHost = commons.GetFullHost()
+	if as.clientPolicy == nil {
+		as.createClientPolicy()
+	}
 
-	log.Debugf("Connecting to host %s ", as.fullHost)
+	return as.createNewConnection()
+}
+
+func (as *AerospikeServer) createClientPolicy() {
 
 	as.serverHost = aero.NewHost(config.Cfg.Aerospike.Host, int(config.Cfg.Aerospike.Port))
-
 	as.serverHost.TLSName = config.Cfg.Aerospike.NodeTLSName
 
 	// Get aerospike auth username
@@ -107,8 +106,6 @@ func (as *AerospikeServer) initializeAndConnectAerospikeServer() (*aero.Connecti
 	as.clientPolicy.Timeout = time.Duration(config.Cfg.Aerospike.Timeout) * time.Second
 
 	as.clientPolicy.TlsConfig = as.initAerospikeTLS()
-
-	return as.createNewConnection()
 }
 
 func (as *AerospikeServer) initAerospikeTLS() *tls.Config {
@@ -159,6 +156,8 @@ func (as *AerospikeServer) createNewConnection() (*aero.Connection, error) {
 	return as.aeroConnection, nil
 }
 
+// data read and write operations to aerospike server
+
 func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error) {
 	var err error
 	requestInfoResponse := make(map[string]string)
@@ -167,35 +166,26 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 	// including errors from RequestInfo()
 	for i := 0; i < RETRY_COUNT; i++ {
 		// Validate existing connection
-		var callStartTime = time.Now()
 		if as.aeroConnection == nil || !as.aeroConnection.IsConnected() {
 			// Create new connection
 			as.aeroConnection, err = as.initializeAndConnectAerospikeServer()
 
 			if err != nil {
 				log.Debugf("Error while connecting to aerospike server: %v", err)
-				fmt.Printf("Error while connecting to aerospike server: ")
-				as.isServerConnected.Store(false)
 				continue
 			}
-
-			log.Debugf("Connection to Server %s took %v, AerospikeServer reference=%p", as.fullHost, time.Since(callStartTime), as)
 
 			// Set user-agent
 			err = as.setUserAgent()
 
 			if err != nil {
 				log.Debugf("Error while setting user-agent: %v", err)
-				as.isServerConnected.Store(false)
 				continue
 			}
 		}
 
 		// Info request
-		callStartTime = time.Now()
 		requestInfoResponse, err = as.aeroConnection.RequestInfo(infoKeys...)
-
-		log.Debugf("RequestInfo took %v", time.Since(callStartTime))
 
 		if err != nil {
 			log.Errorf("Error while requestInfo ( infoKeys...), closing connection : Error is: %v and infoKeys: %v", err, infoKeys)
@@ -203,13 +193,9 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 			// making nil, to force a connection, if any n/w disruption happen between my connection call
 			//   and requestinfo call, -- it internall will fail because of n/w disruption
 			as.aeroConnection = nil
-			as.isServerConnected.Store(false)
 
 			continue
 		}
-
-		// we are healthy only when we finished the RefreshInfo operation successfully
-		as.isServerConnected.Store(true)
 
 		break
 	}
@@ -271,7 +257,7 @@ func (as *AerospikeServer) fetchUsersRoles() (bool, []*aero.UserRoles, error) {
 		break
 	}
 
-	return shouldFetchUserStatistics, users, nil
+	return shouldFetchUserStatistics, users, err
 }
 
 func (as *AerospikeServer) setUserAgent() error {

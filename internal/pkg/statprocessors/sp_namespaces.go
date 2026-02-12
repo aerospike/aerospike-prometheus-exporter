@@ -5,18 +5,10 @@ import (
 	"strings"
 	"time"
 
-	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 
 	log "github.com/sirupsen/logrus"
 )
-
-var regexToExtractArrayStats = map[string]string{
-	commons.STORAGE_ENGINE: "storage\\-engine\\.(?P<type>file|device|stripe)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
-	commons.INDEX_TYPE:     "index\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
-	commons.SINDEX_TYPE:    "sindex\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
-}
-
-// index-pressure related variables
 
 const (
 	KEY_NS_METADATA       = "namespaces"
@@ -27,6 +19,14 @@ const (
 	// values to compare while checking if refresh index-pressure or not
 	TYPE_FLASH = "flash"
 )
+
+var regexToExtractArrayStats = map[string]string{
+	commons.STORAGE_ENGINE: "storage\\-engine\\.(?P<type>file|device|stripe)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
+	commons.INDEX_TYPE:     "index\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
+	commons.SINDEX_TYPE:    "sindex\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
+}
+
+// index-pressure related variables
 
 type NamespaceStatsProcessor struct {
 	namespaceStats map[string]AerospikeStat

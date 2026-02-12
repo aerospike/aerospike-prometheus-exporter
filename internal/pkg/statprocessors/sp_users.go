@@ -1,7 +1,7 @@
 package statprocessors
 
 import (
-	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"

@@ -3,9 +3,13 @@ package statprocessors
 import (
 	"strings"
 
-	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 
 	log "github.com/sirupsen/logrus"
+)
+
+const (
+	KEY_SETS = "sets"
 )
 
 type SetsStatsProcessor struct {
@@ -19,10 +23,6 @@ func NewSetsStatsProcessor(state *StatProcessorSharedState) *SetsStatsProcessor 
 		setMetrics:  make(map[string]AerospikeStat),
 	}
 }
-
-const (
-	KEY_SETS = "sets"
-)
 
 func (sw *SetsStatsProcessor) PassOneKeys() []string {
 	log.Tracef("sets-passonekeys:nil")
