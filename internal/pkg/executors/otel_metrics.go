@@ -2,6 +2,7 @@ package executors
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -57,8 +58,13 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 	// create the required metered objectes
 	for _, stat := range refreshStats {
 
-		qualifiedName := statprocessors.PREFIX_AEROSPIKE_OTEL + "." + string(stat.Context)
-		qualifiedName = qualifiedName + "." + NormalizeMetric(stat.Name)
+		// OTEL all contexts have '.' separated names and actual stat can have _ etc.,
+		//  Example: aerospike.server.namespace.master_objects
+		qualifiedName := fmt.Sprintf("%s.%s.%s",
+			statprocessors.PREFIX_AEROSPIKE_OTEL,
+			string(stat.Context),
+			NormalizeMetric(stat.Name),
+		)
 
 		desc := NormalizeMetric("description_" + stat.Name)
 

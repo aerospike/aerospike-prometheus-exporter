@@ -62,8 +62,7 @@ func (sr *StatsRefresher) GetStatsProcessors() []StatProcessor {
 
 func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 
-	fullHost := commons.GetFullHost()
-	log.Debugf("Refreshing node %s", fullHost)
+	log.Debugf("Refreshing node %s", commons.GetFullHost())
 
 	// array to accumulate all metrics, which later will be dispatched by various observers
 	var allStatsToSend = []AerospikeStat{}
@@ -93,6 +92,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 
 	// fetch second second set of info keys
 	// check and load this only once, to avoid multiple file-reads, so this Infokey assignment will happen only once during restart
+	// TODO: check if this logic can be done only 1 before the Refresh call
 	if sr.sharedState.Infokey_Service != INFOKEY_SERVICE_TLS_STD {
 		serverPool, clientPool := commons.LoadServerOrClientCertificates()
 		// we need to have atleast one certificate configured and read successfully
@@ -114,16 +114,16 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// info request for second set of info keys, this retrieves all the stats from server
-	passTwoResponse, err := sr.dataProvider.RequestInfo(infoKeys)
+	passTwoOutput, err := sr.dataProvider.RequestInfo(infoKeys)
 
 	if err != nil {
 		return allStatsToSend, err
 	}
 
 	// set global values
-	sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
-	sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
-	sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
+	sr.sharedState.ClusterName = passTwoOutput[sr.sharedState.Infokey_ClusterName]
+	sr.sharedState.Service = passTwoOutput[sr.sharedState.Infokey_Service]
+	sr.sharedState.Build = passTwoOutput[sr.sharedState.Infokey_Build]
 
 	// Servce is IP of Aerospike Server, in Kubernetes we need pod-name instead of IP.
 	if config.Cfg.Agent.IsKubernetes {
@@ -131,14 +131,14 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// sanitize the utf8 strings before sending them to watchers
-	for k, v := range passTwoResponse {
-		passTwoResponse[k] = commons.SanitizeUTF8(v)
+	for k, v := range passTwoOutput {
+		passTwoOutput[k] = commons.SanitizeUTF8(v)
 	}
 
 	// sanitize the utf8 strings before sending them to watchers
 	for i, c := range allStatsprocessorList {
 
-		tmpRefreshedMetrics, err := c.Refresh(statprocessorInfoKeys[i], passTwoResponse)
+		tmpRefreshedMetrics, err := c.Refresh(statprocessorInfoKeys[i], passTwoOutput)
 
 		if err != nil {
 			return allStatsToSend, err
@@ -148,7 +148,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// Refresh user info if supported by the server
-	if sr.userStatsProcessor.canRefreshUserStats(passTwoResponse) {
+	if sr.userStatsProcessor.canRefreshUserStats(passTwoOutput) {
 		userMetrics, err := sr.RefreshUserStats()
 
 		if err != nil {
@@ -158,7 +158,6 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		allStatsToSend = append(allStatsToSend, userMetrics...)
 	}
 
-	// Get User metrics
 	log.Debugf("Refreshing node was successful")
 
 	return allStatsToSend, nil

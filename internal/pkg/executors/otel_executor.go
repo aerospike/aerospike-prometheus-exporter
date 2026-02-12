@@ -12,6 +12,7 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	log "github.com/sirupsen/logrus"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
@@ -82,7 +83,7 @@ func (oe *OtelExecutor) Initialize() error {
 	oe.sharedState = statprocessors.NewStatProcessorSharedState()
 
 	oe.statsRefresher = statprocessors.NewStatsRefresher(oe.dataProvider, oe.sharedState)
-	oe.hostSystemInfoProcessor = statprocessors.NewHostSystemInfoProcessor(oe.sharedState)
+	oe.hostSystemInfoProcessor = statprocessors.NewHostSystemInfoProcessor(dataprovider.GetSystemProvider(), oe.sharedState)
 
 	// initialize the metric caches
 	oe.gauges = make(map[string]*GaugeMetrics)

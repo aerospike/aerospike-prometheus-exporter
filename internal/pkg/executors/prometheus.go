@@ -52,7 +52,7 @@ func NewPrometheusImpl() (o *PrometheusImpl) {
 	o.sharedState = statprocessors.NewStatProcessorSharedState()
 
 	o.statsRefresher = statprocessors.NewStatsRefresher(o.dataProvider, o.sharedState)
-	o.hostSystemInfoProcessor = statprocessors.NewHostSystemInfoProcessor(o.sharedState)
+	o.hostSystemInfoProcessor = statprocessors.NewHostSystemInfoProcessor(dataprovider.GetSystemProvider(), o.sharedState)
 
 	return o
 }

@@ -11,11 +11,17 @@ import (
 )
 
 type HostSystemInfoProcessor struct {
-	sharedState *StatProcessorSharedState
+	sharedState    *StatProcessorSharedState
+	systemProvider *dataprovider.SystemInfoProvider
 }
 
-func NewHostSystemInfoProcessor(sharedState *StatProcessorSharedState) *HostSystemInfoProcessor {
-	return &HostSystemInfoProcessor{sharedState: sharedState}
+func NewHostSystemInfoProcessor(systemProvider *dataprovider.SystemInfoProvider,
+	sharedState *StatProcessorSharedState) *HostSystemInfoProcessor {
+
+	hostSystemInfoProcessor := &HostSystemInfoProcessor{sharedState: sharedState}
+	hostSystemInfoProcessor.systemProvider = dataprovider.GetSystemProvider()
+
+	return hostSystemInfoProcessor
 }
 
 func (hsi *HostSystemInfoProcessor) RefreshSystemInfo() ([]AerospikeStat, error) {
@@ -39,7 +45,7 @@ func (hsi *HostSystemInfoProcessor) getFDInfo() []AerospikeStat {
 	labelValues := []string{hsi.sharedState.ClusterName, hsi.sharedState.Service}
 	fileStatLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
 
-	fileFDStats := dataprovider.GetSystemProvider().GetFileFD()
+	fileFDStats := hsi.systemProvider.GetFileFD()
 
 	statName := "allocated"
 	statValue := fileFDStats[statName]
@@ -63,7 +69,7 @@ func (hsi *HostSystemInfoProcessor) getFDInfo() []AerospikeStat {
 func (hsi *HostSystemInfoProcessor) getMemInfo() []AerospikeStat {
 	arrSysInfoStats := []AerospikeStat{}
 
-	memStats := dataprovider.GetSystemProvider().GetMemInfoStats()
+	memStats := hsi.systemProvider.GetMemInfoStats()
 
 	memInfoLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
 	for statName, statValue := range memStats {
@@ -94,7 +100,7 @@ func (hsi *HostSystemInfoProcessor) getNetStatInfo() []AerospikeStat {
 	netStatInfoLabels := []string{}
 	netStatInfoLabels = append(netStatInfoLabels, commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE)
 
-	snmpStats := dataprovider.GetSystemProvider().GetNetStatInfo()
+	snmpStats := hsi.systemProvider.GetNetStatInfo()
 
 	//Net SNMP - includes TCP metrics like active_conn, established, retransmit etc.,
 	labelValues := []string{hsi.sharedState.ClusterName, hsi.sharedState.Service}
@@ -125,7 +131,7 @@ func (hsi *HostSystemInfoProcessor) getNetworkInfo() []AerospikeStat {
 
 	networkLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DEVICE}
 
-	arrReceiveStats, arrTransferStats := dataprovider.GetSystemProvider().GetNetDevStats()
+	arrReceiveStats, arrTransferStats := hsi.systemProvider.GetNetDevStats()
 
 	// netdev receive
 	for _, stats := range arrReceiveStats {
