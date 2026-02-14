@@ -39,7 +39,6 @@ type AerospikeServer struct {
 // Create and initializes instances and policy
 func NewAerospikeProvider() DataProvider {
 	aeroServer := &AerospikeServer{}
-	aeroServer.createClientPolicy()
 
 	return aeroServer
 }
@@ -129,7 +128,12 @@ func (as *AerospikeServer) initAerospikeTLS() *tls.Config {
 
 func (as *AerospikeServer) createNewConnection() (*aero.Connection, error) {
 
-	log.Infof("Initializing and Connecting to aerospike server %s", commons.GetFullHost())
+	log.Infof("Initializing and Connecting to aerospike server %s", as.serverHost)
+
+	// Create client policy only once, and shared across all connections
+	if as.clientPolicy == nil {
+		as.createClientPolicy()
+	}
 
 	var err error
 	as.aeroConnection, err = aero.NewConnection(as.clientPolicy, as.serverHost)
