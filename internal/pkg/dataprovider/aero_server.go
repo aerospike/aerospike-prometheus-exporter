@@ -128,12 +128,12 @@ func (as *AerospikeServer) initAerospikeTLS() *tls.Config {
 
 func (as *AerospikeServer) createNewConnection() (*aero.Connection, error) {
 
-	log.Infof("Initializing and Connecting to aerospike server %s", as.serverHost)
-
 	// Create client policy only once, and shared across all connections
 	if as.clientPolicy == nil {
 		as.createClientPolicy()
 	}
+
+	log.Infof("Initializing and Connecting to aerospike server %s", as.serverHost)
 
 	var err error
 	as.aeroConnection, err = aero.NewConnection(as.clientPolicy, as.serverHost)
