@@ -58,7 +58,6 @@ func (as *AerospikeServer) IsServerConnected() bool {
 // Aerospike server interaction related code
 
 func (as *AerospikeServer) createClientPolicy() {
-
 	as.serverHost = aero.NewHost(config.Cfg.Aerospike.Host, int(config.Cfg.Aerospike.Port))
 	as.serverHost.TLSName = config.Cfg.Aerospike.NodeTLSName
 
@@ -66,14 +65,14 @@ func (as *AerospikeServer) createClientPolicy() {
 	username, err := commons.GetSecret(config.Cfg.Aerospike.User)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to get aerospike auth username: %s", err)
 	}
 
 	// Get aerospike auth password
 	password, err := commons.GetSecret(config.Cfg.Aerospike.Password)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to get aerospike auth password: %s", err)
 	}
 
 	as.clientPolicy = aero.NewClientPolicy()
@@ -167,7 +166,7 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 
 	// Retry for connection, timeout, network errors
 	// including errors from RequestInfo()
-	for i := 0; i < RETRY_COUNT; i++ {
+	for range RETRY_COUNT {
 		// Validate existing connection
 		if as.aeroConnection == nil || !as.aeroConnection.IsConnected() {
 			// Create new connection
@@ -205,6 +204,7 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 
 	if len(requestInfoResponse) == 1 {
 		for k := range requestInfoResponse {
+
 			if strings.HasPrefix(strings.ToUpper(k), "ERROR:") {
 				return nil, errors.New(k)
 			}
@@ -226,7 +226,7 @@ func (as *AerospikeServer) fetchUsersRoles() (bool, []*aero.UserRoles, error) {
 	var aeroErr aero.Error
 	var err error
 
-	for i := 0; i < RETRY_COUNT; i++ {
+	for range RETRY_COUNT {
 
 		// Validate existing connection
 		if as.aeroConnection == nil || !as.aeroConnection.IsConnected() {
@@ -277,7 +277,7 @@ func (as *AerospikeServer) setUserAgent() error {
 
 	command := []string{userAgentCommand}
 
-	log.Debug("Setting User-Agent in Server: infoKeys: ", command)
+	log.Debugf("Setting User-Agent in Server: infoKeys: %s", command)
 	_, err := as.aeroConnection.RequestInfo(command...)
 
 	if err != nil {

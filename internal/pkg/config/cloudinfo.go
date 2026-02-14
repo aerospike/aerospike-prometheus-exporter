@@ -33,11 +33,11 @@ func CollectCloudDetails() map[string]string {
 	case "azure":
 		getAzureCloudDetails()
 	default:
-		log.Debug("Configured 'cloud_provider' ", cloudProvider, " is NOT supported, ignoring")
+		log.Debugf("Configured 'cloud_provider' %s is NOT supported, ignoring", cloudProvider)
 	}
 
 	totalTimeTaken := time.Since(startTime)
-	log.Debug("Total time taken to get Cloud params ", totalTimeTaken)
+	log.Debugf("Total time taken to get Cloud params %s", totalTimeTaken)
 
 	return cloudInfo
 }
@@ -105,6 +105,7 @@ func getGoogleCloudDetails() {
 	var tokenHeaders = make(map[string]string)
 	tokenHeaders["Metadata-Flavor"] = "Google"
 	gcpZone, ok := callUrl("GET", BASE_CLOUD_METADATA_URL+"/computeMetadata/v1/instance/zone", tokenHeaders)
+
 	if !ok {
 		return
 	}
@@ -114,8 +115,9 @@ func getGoogleCloudDetails() {
 
 func callUrl(method string, url string, headers map[string]string) (string, bool) {
 	request, err := http.NewRequest(method, url, nil)
+
 	if err != nil {
-		log.Debug("Error while creating new-http-request, Error ", err)
+		log.Debugf("Error while creating new-http-request, Error %s", err)
 		return "", false
 	}
 
@@ -129,14 +131,14 @@ func callUrl(method string, url string, headers map[string]string) (string, bool
 	response, err := client.Do(request)
 
 	if err != nil {
-		log.Debug("Call failed to URL ", url, " Error ", err)
+		log.Debugf("Call failed to URL %s, Error %s", url, err)
 		return "", false
 	}
 
 	esponseBodyBytes, err := io.ReadAll(response.Body)
 
 	if err != nil {
-		log.Debug("Error while reading response-bytes from URL ", url, " Error ", err)
+		log.Debugf("Error while reading response-bytes from URL %s, Error %s", url, err)
 		return "", false
 	}
 
@@ -144,7 +146,7 @@ func callUrl(method string, url string, headers map[string]string) (string, bool
 
 	// ignore, if response body is having any 404 kind of error, this responsebody starts with <?xml version
 	if strings.Contains(responseBody, "xml version=") {
-		log.Debug("Received unexpected response from server, ignoring, responseBody: ", responseBody)
+		log.Debugf("Received unexpected response from server, ignoring, responseBody: %s", responseBody)
 		return "", false
 	}
 

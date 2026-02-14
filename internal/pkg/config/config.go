@@ -239,12 +239,14 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 
 	if c.Agent.CloudProvider != "" && len(strings.Trim(c.Agent.CloudProvider, " ")) > 0 {
 		cloudLabels := CollectCloudDetails()
-		log.Debug("Adding Cloud Info to Metric Labels ", cloudLabels)
+		log.Debugf("Adding Cloud Info to Metric Labels %s", cloudLabels)
 
 		for k, v := range cloudLabels {
+
 			if v == "" || len(v) == 0 {
 				v = "null"
 			}
+
 			c.Agent.MetricLabels[k] = v
 		}
 	}
@@ -258,7 +260,7 @@ func (c *Config) FetchKubernetesInfo(md toml.MetaData) {
 
 	if envKubeServiceHost != "" && len(strings.TrimSpace(envKubeServiceHost)) > 0 {
 		c.Agent.IsKubernetes = true
-		log.Info("Exporter is running in Kubernetes")
+		log.Infof("Exporter is running in Kubernetes")
 
 		// get host-name
 		var err error

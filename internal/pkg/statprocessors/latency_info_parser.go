@@ -135,6 +135,7 @@ func parseLatencyInfoLegacy(s string, latencyBucketsCount int) map[string]Latenc
 
 		bucketLabels[0] = "+Inf"
 		bucketValuesFloat[0], err = strconv.ParseFloat(bucketValues[0], 64)
+
 		if err != nil {
 			log.Error(err)
 			break
@@ -142,6 +143,7 @@ func parseLatencyInfoLegacy(s string, latencyBucketsCount int) map[string]Latenc
 
 		for i := 1; i < len(bucketValues); i++ {
 			val, err := strconv.ParseFloat(bucketValues[i], 64)
+
 			if err != nil {
 				log.Error(err)
 				break
@@ -207,9 +209,11 @@ func readNamespaceAndOperation(ip *LatencyInfoParser) (string, string, error) {
 
 	// Get operation (read, write etc.)
 	operation, err := ip.ReadUntil(':')
+
 	if err != nil {
 		return "", "", err
 	}
+
 	return namespaceName, operation, err
 }
 

@@ -48,6 +48,7 @@ func (sw *SetsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 		stats := commons.ParseStats(setStats[i], ":")
 		for stat, value := range stats {
 			pv, err := commons.TryConvert(value)
+
 			if err != nil {
 				continue
 			}

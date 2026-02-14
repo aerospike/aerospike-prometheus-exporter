@@ -50,8 +50,9 @@ func (hsi *HostSystemInfoProcessor) getFDInfo() []AerospikeStat {
 	statName := "allocated"
 	statValue := fileFDStats[statName]
 	value, err := commons.TryConvert(statValue)
+
 	if err != nil {
-		log.Error("Error while converting value of stat: ", statName, " and converted value is ", statValue)
+		log.Errorf("Error while converting value of stat: %s and converted value is %s", statName, statValue)
 		return arrSysInfoStats
 	}
 
@@ -70,8 +71,8 @@ func (hsi *HostSystemInfoProcessor) getMemInfo() []AerospikeStat {
 	arrSysInfoStats := []AerospikeStat{}
 
 	memStats := hsi.systemProvider.GetMemInfoStats()
-
 	memInfoLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
+
 	for statName, statValue := range memStats {
 		value, err := commons.TryConvert(statValue)
 		if err != nil {
@@ -108,6 +109,7 @@ func (hsi *HostSystemInfoProcessor) getNetStatInfo() []AerospikeStat {
 	for statName, statValue := range snmpStats {
 
 		value, err := commons.TryConvert(statValue)
+
 		if err != nil {
 			log.Error("Error while converting value of stat: ", statName, " and converted value is ", statValue)
 			continue
@@ -138,8 +140,9 @@ func (hsi *HostSystemInfoProcessor) getNetworkInfo() []AerospikeStat {
 		deviceName := stats["device_name"]
 		statName := "receive_bytes_total"
 		value, err := commons.TryConvert(stats[statName])
+
 		if err != nil {
-			log.Debug("Error while converting value of stat: ", statName, " and converted value is ", stats[statName])
+			log.Debugf("Error while converting value of stat: %s and converted value is %s", statName, stats[statName])
 			continue
 		}
 
@@ -160,8 +163,9 @@ func (hsi *HostSystemInfoProcessor) getNetworkInfo() []AerospikeStat {
 		deviceName := stats["device_name"]
 		statName := "transfer_bytes_total"
 		value, err := commons.TryConvert(stats[statName])
+
 		if err != nil {
-			log.Debug("Error while converting value of stat: ", statName, " and converted value is ", stats[statName])
+			log.Debugf("Error while converting value of stat: %s and converted value is %s", statName, stats[statName])
 			continue
 		}
 

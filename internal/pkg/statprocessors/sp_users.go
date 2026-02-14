@@ -26,7 +26,7 @@ func (uw *UserStatsProcessor) canRefreshUserStats(rawMetrics map[string]string) 
 
 	// check if we should fetch user metrics
 	if !uw.ShouldFetchUserStatistics {
-		log.Debug("Fetching user statistics is disabled")
+		log.Debugf("Fetching user statistics is disabled")
 		return false
 	}
 
@@ -40,7 +40,7 @@ func (uw *UserStatsProcessor) canRefreshUserStats(rawMetrics map[string]string) 
 
 	if !ge {
 		// disable user statisitcs if build version is not >= 5.6.0.0
-		log.Debug("Aerospike version doesn't support user statistics")
+		log.Debugf("Aerospike version doesn't support user statistics")
 		uw.ShouldFetchUserStatistics = false
 		return false
 	}
@@ -53,8 +53,9 @@ func (uw *UserStatsProcessor) Refresh(users []*aero.UserRoles) ([]AerospikeStat,
 	var allMetricsToSend = []AerospikeStat{}
 	// Push metrics to Prometheus or Observability tool
 	lUserMetricsToSend, err := uw.refreshUserStats(users)
+
 	if err != nil {
-		log.Warn("Error while preparing and pushing metrics: ", err)
+		log.Warnf("Error while preparing and pushing user metrics: %s", err)
 		return nil, nil
 
 	}

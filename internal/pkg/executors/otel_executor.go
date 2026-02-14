@@ -74,8 +74,8 @@ func (oe *OtelExecutor) Export(ctx context.Context, rm *metricdata.ResourceMetri
 // Initializes an OTLP exporter, and configures the corresponding metric providers
 func (oe *OtelExecutor) Initialize() error {
 	log.Infof("*** Initializing Otel Exporter... ")
-	log.Debug("** OTel endpoint ", config.Cfg.Agent.Otel.Endpoint)
-	log.Debug("** OTel service name ", config.Cfg.Agent.Otel.ServiceName)
+	log.Debugf("** OTel endpoint %s", config.Cfg.Agent.Otel.Endpoint)
+	log.Debugf("** OTel service name %s", config.Cfg.Agent.Otel.ServiceName)
 
 	// Initialize the stats refresher
 	oe.dataProvider = dataprovider.GetProvider(commons.EXECUTOR_MODE_OTEL)
@@ -200,8 +200,8 @@ func (oe *OtelExecutor) BuildGrpcExporter(ctx context.Context) (sdkmetric.Export
 }
 
 func (oe *OtelExecutor) BuildHttpExporter(ctx context.Context) (sdkmetric.Exporter, error) {
-
 	headers := oe.readHeaders()
+
 	var err error
 	var exporter *otlpmetrichttp.Exporter
 
@@ -297,12 +297,13 @@ func (oe *OtelExecutor) readHeaders() map[string]string {
 	headers := make(map[string]string)
 	// headers["api-key"] = "abcdefghijklmnopqrstuvwxyz"
 	headerPairs := config.Cfg.Agent.Otel.Headers
+
 	if len(headerPairs) > 0 {
 		for k, v := range headerPairs {
 			headers[k] = v
 		}
 	}
-	log.Debug("** OTel header count ", len(headers))
+	log.Debugf("** OTel header count %d", len(headers))
 
 	return headers
 }

@@ -141,6 +141,7 @@ func (nw *NamespaceStatsProcessor) refreshIndexPressure(singleInfoKey string, in
 		for index := 1; index < len(values); index++ {
 
 			pv, err := commons.TryConvert(values[index])
+
 			if err != nil {
 				continue
 			}
@@ -148,12 +149,12 @@ func (nw *NamespaceStatsProcessor) refreshIndexPressure(singleInfoKey string, in
 			statName := indexPressureMetricNames[index]
 
 			asMetric, exists := nw.namespaceStats[statName]
+
 			if !exists {
 				allowed := isMetricAllowed(commons.CTX_NAMESPACE, statName)
 				asMetric = NewAerospikeStat(commons.CTX_NAMESPACE, statName, allowed)
 				nw.namespaceStats[statName] = asMetric
 			}
-			// asMetric.resetValues() // resetting values, labels & label-values to nil to avoid any old values re-used/ re-shared
 
 			// push to prom-channel
 			// commons.PushToPrometheus(asMetric, pv, labels, labelValues, ch)
@@ -183,6 +184,7 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 	for stat, value := range stats {
 
 		pv, err := commons.TryConvert(value)
+
 		if err != nil {
 			continue
 		}
