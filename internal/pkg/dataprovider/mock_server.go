@@ -42,6 +42,34 @@ const (
 
 var MOCK_DATA_FILE = "mock_test_data.txt"
 
+type MockAerospikeServer struct {
+	Namespaces_stats []string
+	Sets_stats       []string
+	Xdr_stats        []string
+	Node_stats       []string
+	Latencies_stats  []string
+	Logs_stats       []string
+	Log_0_stats      []string
+	Sindex_lists     []string
+
+	Build               []string
+	Cluster_name        []string
+	Service_clear_std   []string
+	Namespaces          []string
+	Sindex_Stats        []string
+	XdrContext          []string
+	Users               []string
+	Passone_output_str  string
+	Passone_outputs_map map[string]string
+}
+
+func NewMockAerospikeServer() *MockAerospikeServer {
+	mockServer := &MockAerospikeServer{}
+	mockServer.Initialize()
+
+	return mockServer
+}
+
 func (mas MockAerospikeServer) RequestInfo(infokeys []string) (map[string]string, error) {
 
 	return mas.fetchRequestInfoFromFile(infokeys), nil
@@ -70,26 +98,6 @@ func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, err
 }
 
 // Mock Data Provider related code, Inherits DataProvider interface
-type MockAerospikeServer struct {
-	Namespaces_stats []string
-	Sets_stats       []string
-	Xdr_stats        []string
-	Node_stats       []string
-	Latencies_stats  []string
-	Logs_stats       []string
-	Log_0_stats      []string
-	Sindex_lists     []string
-
-	Build               []string
-	Cluster_name        []string
-	Service_clear_std   []string
-	Namespaces          []string
-	Sindex_Stats        []string
-	XdrContext          []string
-	Users               []string
-	Passone_output_str  string
-	Passone_outputs_map map[string]string
-}
 
 // read mock test data from a file
 var Is_Mock_Initialized = 0

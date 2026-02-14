@@ -3,7 +3,6 @@ package dataprovider
 import (
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 )
 
 // //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -16,27 +15,22 @@ type DataProvider interface {
 }
 
 // pre-create the instances
-var dpPromAerospikeServer = &AerospikeServer{}
-var dpOtelAerospikeServer = &AerospikeServer{}
+var dpPromAerospikeServer = NewAerospikeProvider()
+var dpOtelAerospikeServer = NewAerospikeProvider()
 
-var dpMockServer = &MockAerospikeServer{}
+var dpMockServer = NewMockAerospikeServer()
 
 var dpSysInfoProvider = &SystemInfoProvider{}
 
 func GetProvider(executorMode string) DataProvider {
-
-	if config.Cfg.Agent.UseMockDatasource {
-		// initialize, internally it will check if already initialized
-		dpMockServer.Initialize()
-
-		return dpMockServer
-	}
 
 	switch executorMode {
 	case commons.EXECUTOR_MODE_PROM:
 		return dpPromAerospikeServer
 	case commons.EXECUTOR_MODE_OTEL:
 		return dpOtelAerospikeServer
+	case "mock":
+		return dpMockServer
 	default:
 		return dpPromAerospikeServer
 	}

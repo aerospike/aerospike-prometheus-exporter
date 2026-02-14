@@ -36,8 +36,15 @@ type AerospikeServer struct {
 	serverHost     *aero.Host
 }
 
-func (as *AerospikeServer) RequestInfo(infoKeys []string) (map[string]string, error) {
+// Create and initializes instances and policy
+func NewAerospikeProvider() DataProvider {
+	aeroServer := &AerospikeServer{}
+	aeroServer.createClientPolicy()
 
+	return aeroServer
+}
+
+func (as *AerospikeServer) RequestInfo(infoKeys []string) (map[string]string, error) {
 	return as.fetchRequestInfoFromAerospike(infoKeys)
 }
 
@@ -50,17 +57,6 @@ func (as *AerospikeServer) IsServerConnected() bool {
 }
 
 // Aerospike server interaction related code
-
-func (as *AerospikeServer) initializeAndConnectAerospikeServer() (*aero.Connection, error) {
-
-	log.Infof("Initializing and Connecting to aerospike server %s", commons.GetFullHost())
-
-	if as.clientPolicy == nil {
-		as.createClientPolicy()
-	}
-
-	return as.createNewConnection()
-}
 
 func (as *AerospikeServer) createClientPolicy() {
 
@@ -132,6 +128,9 @@ func (as *AerospikeServer) initAerospikeTLS() *tls.Config {
 }
 
 func (as *AerospikeServer) createNewConnection() (*aero.Connection, error) {
+
+	log.Infof("Initializing and Connecting to aerospike server %s", commons.GetFullHost())
+
 	var err error
 	as.aeroConnection, err = aero.NewConnection(as.clientPolicy, as.serverHost)
 
@@ -168,7 +167,7 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 		// Validate existing connection
 		if as.aeroConnection == nil || !as.aeroConnection.IsConnected() {
 			// Create new connection
-			as.aeroConnection, err = as.initializeAndConnectAerospikeServer()
+			as.aeroConnection, err = as.createNewConnection()
 
 			if err != nil {
 				log.Debugf("Error while connecting to aerospike server: %v", err)
@@ -228,7 +227,7 @@ func (as *AerospikeServer) fetchUsersRoles() (bool, []*aero.UserRoles, error) {
 		// Validate existing connection
 		if as.aeroConnection == nil || !as.aeroConnection.IsConnected() {
 			// Create new connection
-			as.aeroConnection, err = as.initializeAndConnectAerospikeServer()
+			as.aeroConnection, err = as.createNewConnection()
 
 			if err != nil {
 				log.Debugf("Error while initializing and connecting to aerospike server: %s", err)

@@ -25,9 +25,8 @@ type Config struct {
 		RefreshSystemStats bool   `toml:"refresh_system_stats"`
 		CloudProvider      string `toml:"cloud_provider"`
 
-		LogFile           string `toml:"log_file"`
-		LogLevel          string `toml:"log_level"`
-		UseMockDatasource bool   `toml:"use_mock_datasource"`
+		LogFile  string `toml:"log_file"`
+		LogLevel string `toml:"log_level"`
 
 		Bind              string `toml:"bind"`
 		CertFile          string `toml:"cert_file"`
@@ -164,12 +163,6 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 
 	if c.Aerospike.Timeout == 0 {
 		c.Aerospike.Timeout = 5
-	}
-
-	if md.IsDefined("Agent", "use_mock_datasource") && c.Agent.UseMockDatasource {
-		c.Agent.UseMockDatasource = true
-	} else {
-		c.Agent.UseMockDatasource = false
 	}
 
 	if len(c.Agent.Otel.ServiceName) == 0 {
