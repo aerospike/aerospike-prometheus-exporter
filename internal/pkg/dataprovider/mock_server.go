@@ -64,14 +64,10 @@ type MockAerospikeServer struct {
 }
 
 func NewMockAerospikeServer() *MockAerospikeServer {
-	mockServer := &MockAerospikeServer{}
-	mockServer.Initialize()
-
-	return mockServer
+	return &MockAerospikeServer{}
 }
 
 func (mas MockAerospikeServer) RequestInfo(infokeys []string) (map[string]string, error) {
-
 	return mas.fetchRequestInfoFromFile(infokeys), nil
 }
 
@@ -80,7 +76,6 @@ func (mas MockAerospikeServer) IsServerConnected() bool {
 }
 
 func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
-
 	var aero_users []*aero.UserRoles
 
 	users := mas.getUsersDetails("")

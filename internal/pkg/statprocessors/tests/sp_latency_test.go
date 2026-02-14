@@ -2,6 +2,7 @@ package statprocessors
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -9,6 +10,26 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	"github.com/stretchr/testify/assert"
 )
+
+// This function execute before all tests starts
+func TestMain(t *testing.M) {
+	// before all tests
+	fmt.Println("Initializing global mock server")
+
+	dp := dataprovider.GetProvider("mock")
+	mockServer, ok := dp.(*dataprovider.MockAerospikeServer)
+
+	if !ok {
+		fmt.Println("expected MockAerospikeServer")
+	}
+
+	mockServer.Initialize()
+
+	code := t.Run()
+
+	// after all tests
+	os.Exit(code)
+}
 
 func Test_Latency_PassOneKeys(t *testing.T) {
 
