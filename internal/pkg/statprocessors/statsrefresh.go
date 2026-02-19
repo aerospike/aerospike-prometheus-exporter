@@ -29,7 +29,8 @@ func Refresh() ([]AerospikeStat, error) {
 	}
 
 	// append infoKey "build" - this is removed from LatenciesStatsProcessor to avoid forced StatsProcessor sequence during refresh
-	infoKeys = append(infoKeys, "build")
+	infoKeys = append(infoKeys, Infokey_Build)
+	infoKeys = append(infoKeys, Infokey_NodeId)
 
 	// info request for first set of info keys, this retrives configs from server
 	//   from namespaces,server/node-stats, xdr
@@ -69,7 +70,9 @@ func Refresh() ([]AerospikeStat, error) {
 	}
 
 	// set global values
-	ClusterName, Service, Build = passTwoResponse[Infokey_ClusterName], passTwoResponse[Infokey_Service], passTwoResponse[Infokey_Build]
+	ClusterName, Service = passTwoResponse[Infokey_ClusterName], passTwoResponse[Infokey_Service]
+	Build, NodeId = passTwoResponse[Infokey_Build], passTwoResponse[Infokey_NodeId]
+
 	if config.Cfg.Agent.IsKubernetes {
 		Service = config.Cfg.Agent.KubernetesPodName
 	}
