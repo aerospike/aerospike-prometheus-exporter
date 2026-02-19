@@ -387,7 +387,6 @@ func (nw *NamespaceStatsProcessor) refreshRoster(singleInfoKey string, infoKeys 
 
 // Utility to parse and construct with roster related metric using given metric name
 func (nw *NamespaceStatsProcessor) refreshRosterCount(str string, metricName string) (AerospikeStat, float64) {
-	elements := strings.Split(str, "=")[1]
 
 	asMetric, exists := nw.namespaceStats[metricName]
 
@@ -397,8 +396,10 @@ func (nw *NamespaceStatsProcessor) refreshRosterCount(str string, metricName str
 		nw.namespaceStats[metricName] = asMetric
 	}
 
-	// if manage recluster is not performed, value can be empty for pending_roster
-	if len(elements) < 2 {
+	elements := strings.Split(str, "=")[1]
+
+	// if manage recluster is not performed, value can be empty or 'null' for roster or pending_roster
+	if strings.TrimSpace(str) == "null" || len(elements) < 2 {
 		log.Tracef("namespace-roster-count: empty value for roster element: %s", str)
 		return asMetric, 0.0
 	}
