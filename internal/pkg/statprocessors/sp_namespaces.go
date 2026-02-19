@@ -31,6 +31,7 @@ var (
 const (
 	KEY_NS_METADATA       = "namespaces"
 	KEY_NS_INDEX_PRESSURE = "index-pressure"
+	KEY_NS_ROSTER         = "roster"
 
 	KEY_NS_NAMESPACE = "namespace"
 
@@ -58,6 +59,7 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 	for _, ns := range nsList {
 		// infoKey ==> namespace/test, namespace/bar
 		infoKeys = append(infoKeys, KEY_NS_NAMESPACE+"/"+ns)
+		infoKeys = append(infoKeys, KEY_NS_ROSTER+":namespace="+ns)
 		if NamespaceLatencyBenchmarks[ns] == nil {
 			NamespaceLatencyBenchmarks[ns] = make(map[string]string)
 		}
@@ -90,6 +92,9 @@ func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[str
 		} else if strings.HasPrefix(infoKey, KEY_NS_INDEX_PRESSURE) {
 			// namespace/<ns> will be multiple times according to the # of namespaces configured in the server
 			tempNsMetricsToSend := nw.refreshIndexPressure(infoKey, infoKeys, rawMetrics)
+			allMetricsToSend = append(allMetricsToSend, tempNsMetricsToSend...)
+		} else if strings.HasPrefix(infoKey, KEY_NS_ROSTER) {
+			tempNsMetricsToSend := nw.refreshRoster(infoKey, infoKeys, rawMetrics)
 			allMetricsToSend = append(allMetricsToSend, tempNsMetricsToSend...)
 		}
 
@@ -339,4 +344,64 @@ func (nw *NamespaceStatsProcessor) setFlagFlashStatSentByServer(idxType string) 
 		isFlashStatSentByServer = !isFlashStatSentByServer && strings.Contains(idxType, TYPE_FLASH)
 	}
 
+}
+
+// parse the roster stats and construct the metrics= roster, pending_roster, observed_nodes
+func (nw *NamespaceStatsProcessor) refreshRoster(singleInfoKey string, infoKeys []string,
+	rawMetrics map[string]string) []AerospikeStat {
+
+	var nsMetricsToSend = []AerospikeStat{}
+
+	rosterStats := rawMetrics[singleInfoKey]
+	nsName := strings.Split(singleInfoKey, "=")[1]
+
+	log.Tracef("namespace-roster-stats:%s:%s", singleInfoKey, rosterStats)
+
+	// roster=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2:
+	//   pending_roster=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2:
+	//   observed_nodes=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
+	rosterInfos := strings.Split(rosterStats, ":")
+
+	// roster=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
+	rosterStat, rosterCount := nw.refreshRosterCount(rosterInfos[0], "roster_size")
+
+	// pending_roster=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
+	pendingRosterStat, pendingRosterCount := nw.refreshRosterCount(rosterInfos[1], "roster_pending_size")
+
+	// observed_nodes=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
+	observedNodesStat, observedNodesCount := nw.refreshRosterCount(rosterInfos[2], "roster_observed_size")
+
+	// append all the stats to the nsMetricsToSend
+	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS}
+	labelValues := []string{ClusterName, Service, nsName}
+
+	rosterStat.updateValues(rosterCount, labels, labelValues)
+	pendingRosterStat.updateValues(pendingRosterCount, labels, labelValues)
+	observedNodesStat.updateValues(observedNodesCount, labels, labelValues)
+
+	// append all 3 metrics to the nsMetricsToSend
+	nsMetricsToSend = append(nsMetricsToSend, rosterStat, pendingRosterStat, observedNodesStat)
+
+	return nsMetricsToSend
+}
+
+// Utility to parse and construct with roster related metric using given metric name
+func (nw *NamespaceStatsProcessor) refreshRosterCount(str string, metricName string) (AerospikeStat, float64) {
+	elements := strings.Split(str, "=")[1]
+
+	asMetric, exists := nw.namespaceStats[metricName]
+
+	if !exists {
+		allowed := isMetricAllowed(commons.CTX_NAMESPACE, metricName)
+		asMetric = NewAerospikeStat(commons.CTX_NAMESPACE, metricName, allowed)
+		nw.namespaceStats[metricName] = asMetric
+	}
+
+	// if manage recluster is not performed, value can be empty for pending_roster
+	if len(elements) < 2 {
+		log.Tracef("namespace-roster-count: empty value for roster element: %s", str)
+		return asMetric, 0.0
+	}
+
+	return asMetric, float64(len(strings.Split(elements, ",")))
 }
