@@ -30,7 +30,6 @@ func Refresh() ([]AerospikeStat, error) {
 
 	// append infoKey "build" - this is removed from LatenciesStatsProcessor to avoid forced StatsProcessor sequence during refresh
 	infoKeys = append(infoKeys, Infokey_Build)
-	infoKeys = append(infoKeys, Infokey_NodeId)
 
 	// info request for first set of info keys, this retrives configs from server
 	//   from namespaces,server/node-stats, xdr
@@ -52,7 +51,7 @@ func Refresh() ([]AerospikeStat, error) {
 		}
 	}
 
-	infoKeys = []string{Infokey_ClusterName, Infokey_Service, Infokey_Build}
+	infoKeys = []string{Infokey_ClusterName, Infokey_Service, Infokey_Build, Infokey_NodeId}
 	statprocessorInfoKeys := make([][]string, len(allStatsprocessorList))
 
 	for i, c := range allStatsprocessorList {
