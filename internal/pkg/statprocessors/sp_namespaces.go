@@ -26,6 +26,9 @@ var (
 
 	// Time when Index Pressure last-fetched
 	idxPressurePreviousFetchTime = time.Now()
+
+	// to check if strong consistency is enabled or not
+	namespaceSCstatus map[string]bool = make(map[string]bool)
 )
 
 const (
@@ -59,9 +62,13 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 	for _, ns := range nsList {
 		// infoKey ==> namespace/test, namespace/bar
 		infoKeys = append(infoKeys, KEY_NS_NAMESPACE+"/"+ns)
-		infoKeys = append(infoKeys, KEY_NS_ROSTER+":namespace="+ns)
 		if NamespaceLatencyBenchmarks[ns] == nil {
 			NamespaceLatencyBenchmarks[ns] = make(map[string]string)
+		}
+
+		// fetch roster command only	if strong consistency is enabled for the namespace.
+		if _, ok := namespaceSCstatus[ns]; ok {
+			infoKeys = append(infoKeys, KEY_NS_ROSTER+":namespace="+ns)
 		}
 	}
 
@@ -255,7 +262,10 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 			}
 		}
 
+		// check if strong_consistency stat is coming and value
+		namespaceSCstatus[nsName] = strings.Contains(stat, "strong_consistency")
 	}
+
 	// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
 	NamespaceLatencyBenchmarks[nsName]["re-repl"] = "{" + nsName + "}-" + "re-repl"
 
