@@ -66,7 +66,8 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 			NamespaceLatencyBenchmarks[ns] = make(map[string]string)
 		}
 
-		// fetch roster command only	if strong consistency is enabled for the namespace.
+		// fetch roster command only if strong consistency is enabled for the namespace.
+		//  so roster stats and metrics are send only from 2nd refresh cycle.
 		if _, ok := namespaceSCstatus[ns]; ok {
 			infoKeys = append(infoKeys, KEY_NS_ROSTER+":namespace="+ns)
 		}
