@@ -102,7 +102,7 @@ func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[str
 			tempNsMetricsToSend := nw.refreshIndexPressure(infoKey, infoKeys, rawMetrics)
 			allMetricsToSend = append(allMetricsToSend, tempNsMetricsToSend...)
 		} else if strings.HasPrefix(infoKey, KEY_NS_ROSTER) {
-			tempNsMetricsToSend := nw.refreshRoster(infoKey, infoKeys, rawMetrics)
+			tempNsMetricsToSend := nw.refreshRosterStats(infoKey, infoKeys, rawMetrics)
 			allMetricsToSend = append(allMetricsToSend, tempNsMetricsToSend...)
 		}
 
@@ -358,12 +358,18 @@ func (nw *NamespaceStatsProcessor) setFlagFlashStatSentByServer(idxType string) 
 }
 
 // parse the roster stats and construct the metrics= roster, pending_roster, observed_nodes
-func (nw *NamespaceStatsProcessor) refreshRoster(singleInfoKey string, infoKeys []string,
+func (nw *NamespaceStatsProcessor) refreshRosterStats(singleInfoKey string, infoKeys []string,
 	rawMetrics map[string]string) []AerospikeStat {
 
 	var nsMetricsToSend = []AerospikeStat{}
 
 	rosterStats := rawMetrics[singleInfoKey]
+
+	if rosterStats == "" {
+		log.Errorf("namespace-roster-stats: empty value for roster stat: %s", singleInfoKey)
+		return nsMetricsToSend
+	}
+
 	nsName := strings.Split(singleInfoKey, "=")[1]
 
 	log.Tracef("namespace-roster-stats:%s:%s", singleInfoKey, rosterStats)
@@ -373,14 +379,20 @@ func (nw *NamespaceStatsProcessor) refreshRoster(singleInfoKey string, infoKeys 
 	//   observed_nodes=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
 	rosterInfos := strings.Split(rosterStats, ":")
 
+	// issue observed once, unable to reproeuce again, hence defensive check.
+	if len(rosterInfos) != 3 {
+		log.Errorf("namespace-roster-stats: unexpected number of roster infos: %s", rosterStats)
+		return nsMetricsToSend
+	}
+
 	// roster=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
-	rosterStat, rosterCount := nw.refreshRosterCount(rosterInfos[0], "roster_size")
+	rosterStat, rosterCount := nw.constructRosterStat(rosterInfos[0], "roster_size")
 
 	// pending_roster=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
-	pendingRosterStat, pendingRosterCount := nw.refreshRosterCount(rosterInfos[1], "roster_pending_size")
+	pendingRosterStat, pendingRosterCount := nw.constructRosterStat(rosterInfos[1], "roster_pending_size")
 
 	// observed_nodes=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
-	observedNodesStat, observedNodesCount := nw.refreshRosterCount(rosterInfos[2], "roster_observed_size")
+	observedNodesStat, observedNodesCount := nw.constructRosterStat(rosterInfos[2], "roster_observed_size")
 
 	// append all the stats to the nsMetricsToSend
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS}
@@ -397,7 +409,7 @@ func (nw *NamespaceStatsProcessor) refreshRoster(singleInfoKey string, infoKeys 
 }
 
 // Utility to parse and construct with roster related metric using given metric name
-func (nw *NamespaceStatsProcessor) refreshRosterCount(str string, metricName string) (AerospikeStat, float64) {
+func (nw *NamespaceStatsProcessor) constructRosterStat(str string, metricName string) (AerospikeStat, float64) {
 
 	asMetric, exists := nw.namespaceStats[metricName]
 
