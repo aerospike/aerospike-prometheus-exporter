@@ -30,7 +30,7 @@ jobs:
           egress-policy: audit
 
       - name: Checkout code
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
@@ -39,7 +39,7 @@ jobs:
         uses: actions-ecosystem/action-get-latest-tag@b7c32daec3395a9616f88548363a42652b22d435 # v1.6.0
 
       - name: Set up Snyk CLI
-        uses: snyk/actions/setup@cdb760004ba9ea4d525f2e043745dfe85bb9077e
+        uses: snyk/actions/setup@9adf32b1121593767fc3c057af55b55db032dc04
         with:
           snyk-version: v1.1297.3
 
