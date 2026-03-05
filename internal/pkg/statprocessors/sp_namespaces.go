@@ -26,11 +26,15 @@ var (
 
 	// Time when Index Pressure last-fetched
 	idxPressurePreviousFetchTime = time.Now()
+
+	// to check if strong consistency is enabled or not
+	namespaceSCstatus map[string]bool = make(map[string]bool)
 )
 
 const (
 	KEY_NS_METADATA       = "namespaces"
 	KEY_NS_INDEX_PRESSURE = "index-pressure"
+	KEY_NS_ROSTER         = "roster"
 
 	KEY_NS_NAMESPACE = "namespace"
 
@@ -61,6 +65,12 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 		if NamespaceLatencyBenchmarks[ns] == nil {
 			NamespaceLatencyBenchmarks[ns] = make(map[string]string)
 		}
+
+		// fetch roster command only if strong consistency is enabled for the namespace.
+		//  so roster stats and metrics are send only from 2nd refresh cycle.
+		if _, ok := namespaceSCstatus[ns]; ok {
+			infoKeys = append(infoKeys, KEY_NS_ROSTER+":namespace="+ns)
+		}
 	}
 
 	if nw.canSendIndexPressureInfoKey() {
@@ -90,6 +100,9 @@ func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[str
 		} else if strings.HasPrefix(infoKey, KEY_NS_INDEX_PRESSURE) {
 			// namespace/<ns> will be multiple times according to the # of namespaces configured in the server
 			tempNsMetricsToSend := nw.refreshIndexPressure(infoKey, infoKeys, rawMetrics)
+			allMetricsToSend = append(allMetricsToSend, tempNsMetricsToSend...)
+		} else if strings.HasPrefix(infoKey, KEY_NS_ROSTER) {
+			tempNsMetricsToSend := nw.refreshRosterStats(infoKey, infoKeys, rawMetrics)
 			allMetricsToSend = append(allMetricsToSend, tempNsMetricsToSend...)
 		}
 
@@ -250,7 +263,10 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 			}
 		}
 
+		// check if strong_consistency stat is coming and value
+		namespaceSCstatus[nsName] = strings.Contains(stat, "strong_consistency")
 	}
+
 	// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
 	NamespaceLatencyBenchmarks[nsName]["re-repl"] = "{" + nsName + "}-" + "re-repl"
 
@@ -339,4 +355,77 @@ func (nw *NamespaceStatsProcessor) setFlagFlashStatSentByServer(idxType string) 
 		isFlashStatSentByServer = !isFlashStatSentByServer && strings.Contains(idxType, TYPE_FLASH)
 	}
 
+}
+
+// parse the roster stats and construct the metrics= roster, pending_roster, observed_nodes
+func (nw *NamespaceStatsProcessor) refreshRosterStats(singleInfoKey string, infoKeys []string,
+	rawMetrics map[string]string) []AerospikeStat {
+
+	var nsMetricsToSend = []AerospikeStat{}
+
+	rosterStats := rawMetrics[singleInfoKey]
+
+	if rosterStats == "" {
+		log.Errorf("namespace-roster-stats: empty value for roster stat: %s", singleInfoKey)
+		return nsMetricsToSend
+	}
+
+	nsName := strings.Split(singleInfoKey, "=")[1]
+
+	log.Tracef("namespace-roster-stats:%s:%s", singleInfoKey, rosterStats)
+
+	// roster=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2:
+	//   pending_roster=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2:
+	//   observed_nodes=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
+	rosterInfos := strings.Split(rosterStats, ":")
+
+	// issue observed once, unable to reproeuce again, hence defensive check.
+	if len(rosterInfos) != 3 {
+		log.Errorf("namespace-roster-stats: unexpected number of roster infos: %s", rosterStats)
+		return nsMetricsToSend
+	}
+
+	// roster=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
+	rosterStat, rosterCount := nw.constructRosterStat(rosterInfos[0], "roster_size")
+
+	// pending_roster=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
+	pendingRosterStat, pendingRosterCount := nw.constructRosterStat(rosterInfos[1], "roster_pending_size")
+
+	// observed_nodes=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
+	observedNodesStat, observedNodesCount := nw.constructRosterStat(rosterInfos[2], "roster_observed_size")
+
+	// append all the stats to the nsMetricsToSend
+	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS}
+	labelValues := []string{ClusterName, Service, nsName}
+
+	rosterStat.updateValues(rosterCount, labels, labelValues)
+	pendingRosterStat.updateValues(pendingRosterCount, labels, labelValues)
+	observedNodesStat.updateValues(observedNodesCount, labels, labelValues)
+
+	// append all 3 metrics to the nsMetricsToSend
+	nsMetricsToSend = append(nsMetricsToSend, rosterStat, pendingRosterStat, observedNodesStat)
+
+	return nsMetricsToSend
+}
+
+// Utility to parse and construct with roster related metric using given metric name
+func (nw *NamespaceStatsProcessor) constructRosterStat(str string, metricName string) (AerospikeStat, float64) {
+
+	asMetric, exists := nw.namespaceStats[metricName]
+
+	if !exists {
+		allowed := isMetricAllowed(commons.CTX_NAMESPACE, metricName)
+		asMetric = NewAerospikeStat(commons.CTX_NAMESPACE, metricName, allowed)
+		nw.namespaceStats[metricName] = asMetric
+	}
+
+	elements := strings.Split(str, "=")[1]
+
+	// if manage recluster is not performed, value can be empty or 'null' for roster or pending_roster
+	if elements == "null" || len(elements) < 2 {
+		log.Tracef("namespace-roster-count: empty value for roster element: %s", str)
+		return asMetric, 0.0
+	}
+
+	return asMetric, float64(len(strings.Split(elements, ",")))
 }

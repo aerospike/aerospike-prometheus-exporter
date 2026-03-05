@@ -23,6 +23,7 @@ var (
 	Infokey_ClusterName = "cluster-name"
 	Infokey_Service     = INFOKEY_SERVICE_CLEAR_STD
 	Infokey_Build       = "build"
+	Infokey_NodeId      = "node:"
 )
 
 var (
