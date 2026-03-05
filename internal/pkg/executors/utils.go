@@ -1,7 +1,6 @@
 package executors
 
 import (
-	"log"
 	"strings"
 )
 
@@ -19,10 +18,4 @@ func NormalizeDesc(s string) string {
 
 func NormalizeMetric(s string) string {
 	return metricReplacerFunc.Replace(s)
-}
-
-func handleErr(err error, message string) {
-	if err != nil {
-		log.Fatalf("%s: %v", message, err)
-	}
 }

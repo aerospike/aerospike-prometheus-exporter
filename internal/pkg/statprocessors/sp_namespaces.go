@@ -5,27 +5,9 @@ import (
 	"strings"
 	"time"
 
-	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 
 	log "github.com/sirupsen/logrus"
-)
-
-var regexToExtractArrayStats = map[string]string{
-	commons.STORAGE_ENGINE: "storage\\-engine\\.(?P<type>file|device|stripe)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
-	commons.INDEX_TYPE:     "index\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
-	commons.SINDEX_TYPE:    "sindex\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
-}
-
-// index-pressure related variables
-var (
-	// dont fetch 1st iteration, this is made true after reading the metrics once from server and if index-type=false is enabled
-	isFlashStatSentByServer bool = false
-
-	// time interval to fetch index-pressure
-	idxPressureFetchInterval = 10.0
-
-	// Time when Index Pressure last-fetched
-	idxPressurePreviousFetchTime = time.Now()
 )
 
 const (
@@ -38,8 +20,38 @@ const (
 	TYPE_FLASH = "flash"
 )
 
+var regexToExtractArrayStats = map[string]string{
+	commons.STORAGE_ENGINE: "storage\\-engine\\.(?P<type>file|device|stripe)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
+	commons.INDEX_TYPE:     "index\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
+	commons.SINDEX_TYPE:    "sindex\\-type\\.(?P<type>mount)\\[(?P<idx>\\d+)\\]\\.(?P<metric>.+)",
+}
+
+// index-pressure related variables
+
 type NamespaceStatsProcessor struct {
 	namespaceStats map[string]AerospikeStat
+	sharedState    *StatProcessorSharedState
+
+	// dont fetch 1st iteration, this is made true after reading the metrics once from server and if index-type=false is enabled
+	isFlashStatSentByServer bool
+
+	// time interval to fetch index-pressure
+	idxPressureFetchInterval float64
+
+	// Time when Index Pressure last-fetched
+	idxPressurePreviousFetchTime time.Time
+}
+
+func NewNamespaceStatsProcessor(state *StatProcessorSharedState) *NamespaceStatsProcessor {
+	processor := &NamespaceStatsProcessor{
+		namespaceStats:               make(map[string]AerospikeStat),
+		isFlashStatSentByServer:      false,
+		idxPressureFetchInterval:     10.0,
+		idxPressurePreviousFetchTime: time.Now(),
+		sharedState:                  state,
+	}
+
+	return processor
 }
 
 func (nw *NamespaceStatsProcessor) PassOneKeys() []string {
@@ -58,14 +70,14 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 	for _, ns := range nsList {
 		// infoKey ==> namespace/test, namespace/bar
 		infoKeys = append(infoKeys, KEY_NS_NAMESPACE+"/"+ns)
-		if NamespaceLatencyBenchmarks[ns] == nil {
-			NamespaceLatencyBenchmarks[ns] = make(map[string]string)
+		if nw.sharedState.NamespaceLatencyBenchmarks[ns] == nil {
+			nw.sharedState.NamespaceLatencyBenchmarks[ns] = make(map[string]string)
 		}
 	}
 
 	if nw.canSendIndexPressureInfoKey() {
 		infoKeys = append(infoKeys, KEY_NS_INDEX_PRESSURE)
-		idxPressurePreviousFetchTime = time.Now()
+		nw.idxPressurePreviousFetchTime = time.Now()
 	}
 
 	log.Tracef("namespace-passtwokeys:%s", infoKeys)
@@ -74,10 +86,6 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 }
 
 func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
-
-	if nw.namespaceStats == nil {
-		nw.namespaceStats = make(map[string]AerospikeStat)
-	}
 
 	var allMetricsToSend = []AerospikeStat{}
 	for _, infoKey := range infoKeys {
@@ -126,13 +134,14 @@ func (nw *NamespaceStatsProcessor) refreshIndexPressure(singleInfoKey string, in
 		nsName := values[0]
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS}
-		labelValues := []string{ClusterName, Service, nsName}
+		labelValues := []string{nw.sharedState.ClusterName, nw.sharedState.Service, nsName}
 
 		// Server index-pressure output: test:0:0;bar_device:0:0;materials:0:0
 		//  ignore first element - namespace
 		for index := 1; index < len(values); index++ {
 
 			pv, err := commons.TryConvert(values[index])
+
 			if err != nil {
 				continue
 			}
@@ -140,12 +149,12 @@ func (nw *NamespaceStatsProcessor) refreshIndexPressure(singleInfoKey string, in
 			statName := indexPressureMetricNames[index]
 
 			asMetric, exists := nw.namespaceStats[statName]
+
 			if !exists {
 				allowed := isMetricAllowed(commons.CTX_NAMESPACE, statName)
 				asMetric = NewAerospikeStat(commons.CTX_NAMESPACE, statName, allowed)
 				nw.namespaceStats[statName] = asMetric
 			}
-			// asMetric.resetValues() // resetting values, labels & label-values to nil to avoid any old values re-used/ re-shared
 
 			// push to prom-channel
 			// commons.PushToPrometheus(asMetric, pv, labels, labelValues, ch)
@@ -175,6 +184,7 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 	for stat, value := range stats {
 
 		pv, err := commons.TryConvert(value)
+
 		if err != nil {
 			continue
 		}
@@ -185,7 +195,7 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 		// default: aerospike_namespace_<stat-name>
 		constructedStatname = stat
 		labels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS}
-		labelValues = []string{ClusterName, Service, nsName}
+		labelValues = []string{nw.sharedState.ClusterName, nw.sharedState.Service, nsName}
 
 		if isArrayType {
 			constructedStatname, labels, labelValues = nw.handleArrayStats(nsName, stat, pv, stats, deviceType, rawMetrics)
@@ -243,16 +253,16 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 				if strings.Contains(latencySubcommand, "hist-") {
 					latencySubcommand = strings.ReplaceAll(latencySubcommand, "hist-", "")
 				}
-				NamespaceLatencyBenchmarks[nsName][stat] = latencySubcommand
+				nw.sharedState.NamespaceLatencyBenchmarks[nsName][stat] = latencySubcommand
 			} else {
 				// pv==0 means histogram is disabled
-				delete(NamespaceLatencyBenchmarks[nsName], stat)
+				delete(nw.sharedState.NamespaceLatencyBenchmarks[nsName], stat)
 			}
 		}
 
 	}
 	// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
-	NamespaceLatencyBenchmarks[nsName]["re-repl"] = "{" + nsName + "}-" + "re-repl"
+	nw.sharedState.NamespaceLatencyBenchmarks[nsName]["re-repl"] = "{" + nsName + "}-" + "re-repl"
 
 	return nsMetricsToSend
 }
@@ -285,8 +295,9 @@ func (nw *NamespaceStatsProcessor) handleArrayStats(nsName string, statToProcess
 
 	compositeStatName := deviceType + "_" + statType + "_" + statName
 	deviceOrFileName := allNamespaceStats[deviceType+"."+statType+"["+statIndex+"]"]
-	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, statType + "_index", statType}
-	labelValues := []string{ClusterName, Service, nsName, statIndex, deviceOrFileName}
+	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE,
+		commons.METRIC_LABEL_NS, statType + "_index", statType}
+	labelValues := []string{nw.sharedState.ClusterName, nw.sharedState.Service, nsName, statIndex, deviceOrFileName}
 
 	return compositeStatName, labels, labelValues
 
@@ -319,13 +330,13 @@ func (nw *NamespaceStatsProcessor) checkStatPersistanceType(statToProcess string
 func (nw *NamespaceStatsProcessor) canSendIndexPressureInfoKey() bool {
 
 	// difference between current-time and last-fetch, if its > defined-value, then true
-	timeDiff := time.Since(idxPressurePreviousFetchTime)
+	timeDiff := time.Since(nw.idxPressurePreviousFetchTime)
 
 	// if index-type=false or sindex-type=flash is returned by server
 	//    and every N seconds - where N is mentioned "indexPressureFetchIntervalInSeconds"
-	isTimeOk := timeDiff.Minutes() >= idxPressureFetchInterval
+	isTimeOk := timeDiff.Minutes() >= nw.idxPressureFetchInterval
 
-	return (isFlashStatSentByServer && isTimeOk)
+	return (nw.isFlashStatSentByServer && isTimeOk)
 
 }
 
@@ -335,8 +346,8 @@ func (nw *NamespaceStatsProcessor) setFlagFlashStatSentByServer(idxType string) 
 	// this check is required only if bool-fetch-indexpressure is false, because
 	//      we can have different values for each namespace, so once this flag is set, no need to change this further
 	//
-	if len(idxType) > 0 && !isFlashStatSentByServer {
-		isFlashStatSentByServer = !isFlashStatSentByServer && strings.Contains(idxType, TYPE_FLASH)
+	if len(idxType) > 0 && !nw.isFlashStatSentByServer {
+		nw.isFlashStatSentByServer = !nw.isFlashStatSentByServer && strings.Contains(idxType, TYPE_FLASH)
 	}
 
 }

@@ -11,14 +11,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	PROC_PATH         = procfs.DefaultMountPoint
-	SYS_PATH          = "/sys"
-	ROOTFS_PATH       = "/"
-	NET_STAT_PATH     = "net/netstat"
-	NET_DEV_STAT_PATH = "/proc/net/dev"
-)
-
 const (
 	// DISK_IGNORE_NAME_LIST = "^(z?ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\\d+n\\d+p)\\d$"
 	DISK_IGNORE_NAME_LIST = "^(z?ram|loop|fd|(h|s|xv)d[a-z]|nvme\\d+n\\d+p)\\d$"
@@ -27,6 +19,14 @@ const (
 
 	// NET_STAT_ACCEPT_LIST = "^(.*_(inerrors|inerrs)|ip_forwarding|ip(6|ext)_(inoctets|outoctets)|icmp6?_(inmsgs|outmsgs)|tcpext_(listen.*|syncookies.*|tcpsynretrans|tcptimeouts|tcpofoqueue)|tcp_(activeopens|insegs|outsegs|outrsts|passiveopens|retranssegs|currestab)|udp6?_(indatagrams|outdatagrams|noports|rcvbuferrors|sndbuferrors))$"
 	NET_STAT_ACCEPT_LIST = "tcp_(activeopens|retranssegs|currestab)"
+)
+
+var (
+	PROC_PATH         = procfs.DefaultMountPoint
+	SYS_PATH          = "/sys"
+	ROOTFS_PATH       = "/"
+	NET_STAT_PATH     = "net/netstat"
+	NET_DEV_STAT_PATH = "/proc/net/dev"
 )
 
 const (

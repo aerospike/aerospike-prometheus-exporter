@@ -10,45 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Users_PassOneKeys(t *testing.T) {
-
-	fmt.Println("initializing config ... Test_Users_PassOneKeys")
-
-	// Check passoneKeys
-	usersWatcher := &statprocessors.UserStatsProcessor{}
-	nwPassOneKeys := usersWatcher.PassOneKeys()
-
-	udh := &UnittestDataHandler{}
-	ndv := udh.GetUnittestValidator("users")
-	passOneOutputs := ndv.GetPassOneKeys()
-
-	assert.Nil(t, nwPassOneKeys, passOneOutputs)
-
-}
-
-func Test_Users_PassTwoKeys(t *testing.T) {
-
-	fmt.Println("initializing config ... Test_Users_PassTwoKeys")
-
-	// initialize config and gauge-lists
-	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_USERS_CONFIG_FILE))
-
-	// Check passoneKeys
-	usersWatcher := &statprocessors.UserStatsProcessor{}
-	nwPassOneKeys := usersWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("Test_Users_PassTwoKeys: passOneOutput: ", passOneOutput)
-	passTwoOutputs := usersWatcher.PassTwoKeys(passOneOutput)
-
-	udh := &UnittestDataHandler{}
-	ndv := udh.GetUnittestValidator("users")
-	expectedPassTwoOutputs := ndv.GetPassTwoKeys()
-
-	assert.Nil(t, passTwoOutputs)
-	assert.Nil(t, expectedPassTwoOutputs)
-
-}
-
 func Test_Users_RefreshDefault(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Users_RefreshDefault")
@@ -65,26 +26,27 @@ func Test_Users_RefreshDefault(t *testing.T) {
 func users_runTestcase(t *testing.T) {
 
 	// Check passoneKeys
-	usersWatcher := &statprocessors.UserStatsProcessor{}
-	nwPassOneKeys := usersWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("users_runTestcase: passOneOutput: ", passOneOutput)
-	passTwoOutputs := usersWatcher.PassTwoKeys(passOneOutput)
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	usersWatcher := statprocessors.NewUserStatsProcessor(sharedState)
 
 	// append common keys
-	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
-	passTwoOutputs = append(passTwoOutputs, infoKeys...)
+	infoKeys := []string{sharedState.Infokey_ClusterName, sharedState.Infokey_Service, sharedState.Infokey_Build}
 
-	arrRawMetrics, err := dataprovider.GetProvider().RequestInfo(passTwoOutputs)
+	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(infoKeys)
 	assert.Nil(t, err, "Error while usersWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while usersWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
-	statprocessors.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
-	statprocessors.Build = arrRawMetrics[statprocessors.Infokey_Build]
-	statprocessors.Service = arrRawMetrics[statprocessors.Infokey_Service]
+	sharedState.ClusterName = arrRawMetrics[sharedState.Infokey_ClusterName]
+	sharedState.Build = arrRawMetrics[sharedState.Infokey_Build]
+	sharedState.Service = arrRawMetrics[sharedState.Infokey_Service]
+
+	canFetchUsers, users, err := dataprovider.GetProvider("mock").FetchUsersDetails()
+	assert.True(t, canFetchUsers, "Error while usersWatcher.FetchUsersDetails ")
+	assert.Nil(t, err, "Error while usersWatcher.FetchUsersDetails ")
+	assert.NotEmpty(t, users, "Error while usersWatcher.FetchUsersDetails, users is EMPTY ")
 
 	// check the output with usersWatcher
-	usersMetrics, err := usersWatcher.Refresh(passTwoOutputs, arrRawMetrics)
+	usersMetrics, err := usersWatcher.Refresh(users)
 	assert.Nil(t, err, "Error while usersWatcher.Refresh with passTwoOutputs ")
 	assert.NotEmpty(t, usersMetrics, "Error while usersWatcher.Refresh, usersWatcher is EMPTY ")
 
@@ -119,27 +81,28 @@ func Test_Users_Not_Configured(t *testing.T) {
 	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
-	usersWatcher := &statprocessors.UserStatsProcessor{}
-	nwPassOneKeys := usersWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("users_runTestcase: passOneOutput: ", passOneOutput)
-	passTwoOutputs := usersWatcher.PassTwoKeys(passOneOutput)
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	usersWatcher := statprocessors.NewUserStatsProcessor(sharedState)
 
 	// append common keys
-	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
-	passTwoOutputs = append(passTwoOutputs, infoKeys...)
+	infoKeys := []string{sharedState.Infokey_ClusterName, sharedState.Infokey_Service, sharedState.Infokey_Build}
 
-	arrRawMetrics, err := dataprovider.GetProvider().RequestInfo(passTwoOutputs)
+	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(infoKeys)
 	assert.Nil(t, err, "Error while usersWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while usersWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
-	statprocessors.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
-	statprocessors.Build = arrRawMetrics[statprocessors.Infokey_Build]
-	statprocessors.Service = arrRawMetrics[statprocessors.Infokey_Service]
+	sharedState.ClusterName = arrRawMetrics[sharedState.Infokey_ClusterName]
+	sharedState.Build = arrRawMetrics[sharedState.Infokey_Build]
+	sharedState.Service = arrRawMetrics[sharedState.Infokey_Service]
 
 	// check the output with usersWatcher
-	usersMetrics, err := usersWatcher.Refresh(passTwoOutputs, arrRawMetrics)
-	assert.Nil(t, err, "Error while usersWatcher.Refresh with passTwoOutputs ")
-	assert.Empty(t, usersMetrics, "Error while usersWatcher.Refresh, usersWatcher is EMPTY ")
+	canFetchUsers, users, err := dataprovider.GetProvider("mock").FetchUsersDetails()
+	assert.True(t, canFetchUsers, "Error while usersWatcher.FetchUsersDetails ")
+	assert.Nil(t, err, "Error while usersWatcher.FetchUsersDetails ")
+	assert.NotEmpty(t, users, "Error while usersWatcher.FetchUsersDetails, users is EMPTY ")
+
+	usersMetrics, err := usersWatcher.Refresh(users)
+	assert.Nil(t, err, "Error while usersWatcher.Refresh with user-roles ")
+	assert.NotEmpty(t, usersMetrics, "Error while usersWatcher.Refresh, usersWatcher is EMPTY ")
 
 }

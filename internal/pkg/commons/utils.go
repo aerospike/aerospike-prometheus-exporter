@@ -135,14 +135,16 @@ func LoadServerOrClientCertificates() (*x509.CertPool, []tls.Certificate) {
 	var err error
 
 	serverPool, err = LoadCACert(config.Cfg.Aerospike.RootCA)
+
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to load CA certificate: %s", err)
 	}
 
 	if len(config.Cfg.Aerospike.CertFile) > 0 || len(config.Cfg.Aerospike.KeyFile) > 0 {
 		clientPool, err = LoadServerCertAndKey(config.Cfg.Aerospike.CertFile, config.Cfg.Aerospike.KeyFile, config.Cfg.Aerospike.KeyFilePassphrase)
+
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Failed to load server certificate and key: %s", err)
 		}
 	}
 	return serverPool, clientPool

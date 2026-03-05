@@ -3,7 +3,7 @@ package statprocessors
 import (
 	"strings"
 
-	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -15,7 +15,15 @@ const (
 )
 
 type XdrStatsProcessor struct {
-	xdrMetrics map[string]AerospikeStat
+	xdrMetrics  map[string]AerospikeStat
+	sharedState *StatProcessorSharedState
+}
+
+func NewXdrStatsProcessor(state *StatProcessorSharedState) *XdrStatsProcessor {
+	return &XdrStatsProcessor{
+		sharedState: state,
+		xdrMetrics:  make(map[string]AerospikeStat),
+	}
 }
 
 func (xw *XdrStatsProcessor) PassOneKeys() []string {
@@ -56,10 +64,6 @@ func (xw *XdrStatsProcessor) PassTwoKeys(passOneStats map[string]string) []strin
 
 // refresh prom metrics - parse the given rawMetrics (both config and stats ) and push to given channel
 func (xw *XdrStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
-
-	if xw.xdrMetrics == nil {
-		xw.xdrMetrics = make(map[string]AerospikeStat)
-	}
 
 	var allMetricsToSend = []AerospikeStat{}
 
@@ -126,12 +130,12 @@ func (xw *XdrStatsProcessor) handleRefresh(infoKeyToProcess string, xdrRawMetric
 		}
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DC_NAME}
-		labelValues := []string{ClusterName, Service, dcName}
+		labelValues := []string{xw.sharedState.ClusterName, xw.sharedState.Service, dcName}
 
 		// if namespace exists, add it to the label and label-values array
 		if len(ns) > 0 {
 			labels = []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_DC_NAME, commons.METRIC_LABEL_NS}
-			labelValues = []string{ClusterName, Service, dcName, ns}
+			labelValues = []string{xw.sharedState.ClusterName, xw.sharedState.Service, dcName, ns}
 		}
 
 		// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)

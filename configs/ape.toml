@@ -67,18 +67,25 @@
       basic_auth_password = ""
 
 [Agent.OpenTelemetry]
-      # NOTE: currently supports only gRPC endpoints
-
       # OTel service-name
       service_name = "aerospike-server-metrics-service"
 
       # OTel Endpoint
+      # DEPRECATED. Use grpc_endpoint
       endpoint = ""
 
-      # OTel SSL/TLS, for HTTPS endpoints
-      endpoint_tls_enabled = true
+      # OTel Endpoint
+      # NOTE: Only url, does not include protocol http/https
+      # NOTE: configure either grpc_endpoint or endpoint (DEPRECATED), both cannot be configured
+      grpc_endpoint = ""
 
-      # OTel headers
+      # OTel Endpoint URL Path 
+      # provide entire url, including http/https protocol
+      http_endpoint = ""
+
+      # OTel headers, 
+      # NOTE: Each header will be a "<key>"="<value>" pair and each header is comma separated
+      # Example: "api-key"="<api-key>","Authorization"="Api-Token <token>"
       headers = {}
 
       # OTel server-stat fetch interval (default 15, not recommended to to reduce this)
@@ -86,6 +93,13 @@
 
       # OTel metric push interval (default 60, not recommended to to reduce this)
       push_interval = 60
+
+      # Defines the temporality to be applied depending on end point treats
+      # supported values: delta (default), cumulative
+      # Why Delta is default, many customer use Datadog and Dynatrace.
+      # NOTE: Datadog and Dynatrace only support Delta's for monotonic-cumulative counters 
+      #       Newrelic accepts Delta and monotonic-sum
+      counter_temporality = "delta"
 
 [Aerospike]
       db_host = "localhost"

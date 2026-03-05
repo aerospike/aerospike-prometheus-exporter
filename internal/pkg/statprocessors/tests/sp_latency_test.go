@@ -2,6 +2,7 @@ package statprocessors
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -10,12 +11,34 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// This function execute before all tests starts
+func TestMain(t *testing.M) {
+	// before all tests
+	fmt.Println("Initializing global mock server")
+
+	dp := dataprovider.GetProvider("mock")
+	mockServer, ok := dp.(*dataprovider.MockAerospikeServer)
+
+	if !ok {
+		fmt.Println("expected MockAerospikeServer")
+	}
+
+	mockServer.Initialize()
+
+	code := t.Run()
+
+	// after all tests
+	os.Exit(code)
+}
+
 func Test_Latency_PassOneKeys(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Latency_PassOneKeys")
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
+
 	// Check passoneKeys
-	latencyStatsProcessor := &statprocessors.LatencyStatsProcessor{}
+	latencyStatsProcessor := statprocessors.NewLatencyStatsProcessor(sharedState)
 	nwPassOneKeys := latencyStatsProcessor.PassOneKeys()
 
 	udh := &UnittestDataHandler{}
@@ -33,11 +56,12 @@ func Test_Latency_PassTwoKeys(t *testing.T) {
 	// initialize config and gauge-lists
 	commons.InitConfigurations(commons.TESTS_DEFAULT_CONFIG_FILE)
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
+
 	// Check passoneKeys
-	latencyStatsProcessor := &statprocessors.LatencyStatsProcessor{}
+	latencyStatsProcessor := statprocessors.NewLatencyStatsProcessor(sharedState)
 	nwPassOneKeys := latencyStatsProcessor.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("Test_Latency_PassTwoKeys: passOneOutput: ", passOneOutput)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := latencyStatsProcessor.PassTwoKeys(passOneOutput)
 
 	udh := &UnittestDataHandler{}
@@ -69,24 +93,25 @@ func Test_Latency_RefreshDefault(t *testing.T) {
  */
 func latency_runTestcase(t *testing.T) {
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
+
 	// Check passoneKeys
-	latencyWatcher := &statprocessors.LatencyStatsProcessor{}
+	latencyWatcher := statprocessors.NewLatencyStatsProcessor(sharedState)
 	nwPassOneKeys := latencyWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := latencyWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
-	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
+	infoKeys := []string{sharedState.Infokey_ClusterName, sharedState.Infokey_Service, sharedState.Infokey_Build}
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
 
-	arrRawMetrics, err := dataprovider.GetProvider().RequestInfo(passTwoOutputs)
+	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(passTwoOutputs)
 	assert.Nil(t, err, "Error while latencyWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while latencyWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
-	statprocessors.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
-	statprocessors.Build = arrRawMetrics[statprocessors.Infokey_Build]
-	statprocessors.Service = arrRawMetrics[statprocessors.Infokey_Service]
+	sharedState.ClusterName = arrRawMetrics[sharedState.Infokey_ClusterName]
+	sharedState.Build = arrRawMetrics[sharedState.Infokey_Build]
+	sharedState.Service = arrRawMetrics[sharedState.Infokey_Service]
 
 	// check the output with setsWatcher
 	latencyMetrics, err := latencyWatcher.Refresh(passTwoOutputs, arrRawMetrics)
