@@ -68,7 +68,7 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 
 		// fetch roster command only if strong consistency is enabled for the namespace.
 		//  so roster stats and metrics are send only from 2nd refresh cycle.
-		if isSCenabled, ok := namespaceSCstatus[ns]; ok && isSCenabled {
+		if _, ok := namespaceSCstatus[ns]; ok {
 			infoKeys = append(infoKeys, KEY_NS_ROSTER+":namespace="+ns)
 		}
 	}
@@ -265,7 +265,9 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 
 		// check if strong_consistency stat is coming and enabled for the namespace
 		//   we may have combinations of SC and non-SC namespaces in the same cluster, always check for each namespace.
-		namespaceSCstatus[nsName] = strings.Contains(stat, "strong_consistency")
+		if strings.Contains(stat, "strong-consistency") {
+			namespaceSCstatus[nsName] = true
+		}
 	}
 
 	// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
@@ -378,55 +380,37 @@ func (nw *NamespaceStatsProcessor) refreshRosterStats(singleInfoKey string, info
 	// roster=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2:
 	//   pending_roster=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2:
 	//   observed_nodes=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
-	rosterInfos := strings.Split(rosterStats, ":")
 
-	// issue observed once, unable to reproeuce again, hence defensive check.
-	if len(rosterInfos) != 3 {
-		log.Errorf("namespace-roster-stats: unexpected number of roster infos: %s", rosterStats)
-		return nsMetricsToSend
-	}
-
-	// roster=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
-	rosterStat, rosterCount := nw.constructRosterStat(rosterInfos[0], "roster_size")
-
-	// pending_roster=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
-	pendingRosterStat, pendingRosterCount := nw.constructRosterStat(rosterInfos[1], "roster_pending_size")
-
-	// observed_nodes=BB9B1C407470982@2,BB979E2B6646C92@2,BB926123EBFF30A@2,BB91746B4741886@2,BB915BD7966240A@2
-	observedNodesStat, observedNodesCount := nw.constructRosterStat(rosterInfos[2], "roster_observed_size")
+	stats := commons.ParseStats(rosterStats, ":")
 
 	// append all the stats to the nsMetricsToSend
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS}
 	labelValues := []string{ClusterName, Service, nsName}
 
-	rosterStat.updateValues(rosterCount, labels, labelValues)
-	pendingRosterStat.updateValues(pendingRosterCount, labels, labelValues)
-	observedNodesStat.updateValues(observedNodesCount, labels, labelValues)
+	count := 0.0
+	for statName, value := range stats {
+		// metric-name: roster_size, pending_roster_size, observed_nodes_size
+		metricName := statName + "_size"
 
-	// append all 3 metrics to the nsMetricsToSend
-	nsMetricsToSend = append(nsMetricsToSend, rosterStat, pendingRosterStat, observedNodesStat)
+		asMetric, exists := nw.namespaceStats[metricName]
+
+		if !exists {
+			allowed := isMetricAllowed(commons.CTX_NAMESPACE, metricName)
+			asMetric = NewAerospikeStat(commons.CTX_NAMESPACE, metricName, allowed)
+			nw.namespaceStats[metricName] = asMetric
+		}
+
+		count = 0.0
+
+		if value != "null" && len(value) > 0 {
+			count = float64(len(strings.Split(value, ",")))
+		}
+
+		asMetric.updateValues(count, labels, labelValues)
+
+		nsMetricsToSend = append(nsMetricsToSend, asMetric)
+
+	}
 
 	return nsMetricsToSend
-}
-
-// Utility to parse and construct with roster related metric using given metric name
-func (nw *NamespaceStatsProcessor) constructRosterStat(str string, metricName string) (AerospikeStat, float64) {
-
-	asMetric, exists := nw.namespaceStats[metricName]
-
-	if !exists {
-		allowed := isMetricAllowed(commons.CTX_NAMESPACE, metricName)
-		asMetric = NewAerospikeStat(commons.CTX_NAMESPACE, metricName, allowed)
-		nw.namespaceStats[metricName] = asMetric
-	}
-
-	elements := strings.Split(str, "=")[1]
-
-	// if manage recluster is not performed, value can be empty or 'null' for roster or pending_roster
-	if elements == "null" || len(elements) < 2 {
-		log.Tracef("namespace-roster-count: empty value for roster element: %s", str)
-		return asMetric, 0.0
-	}
-
-	return asMetric, float64(len(strings.Split(elements, ",")))
 }
