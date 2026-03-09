@@ -391,7 +391,6 @@ func (nw *NamespaceStatsProcessor) refreshRosterStats(singleInfoKey string, info
 	for statName, value := range stats {
 		// metric-name: roster_size, pending_roster_size, observed_nodes_size
 		metricName := statName + "_size"
-
 		asMetric, exists := nw.namespaceStats[metricName]
 
 		if !exists {
@@ -407,7 +406,6 @@ func (nw *NamespaceStatsProcessor) refreshRosterStats(singleInfoKey string, info
 		}
 
 		asMetric.updateValues(count, labels, labelValues)
-
 		nsMetricsToSend = append(nsMetricsToSend, asMetric)
 
 	}
