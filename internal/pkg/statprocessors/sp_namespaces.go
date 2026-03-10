@@ -1,6 +1,7 @@
 package statprocessors
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -67,7 +68,7 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 		}
 
 		// fetch roster command only if strong consistency is enabled for the namespace.
-		//  so roster stats and metrics are send only from 2nd refresh cycle.
+		//  so roster stats and metrics are sent only from 2nd refresh cycle.
 		if _, ok := namespaceSCstatus[ns]; ok {
 			infoKeys = append(infoKeys, KEY_NS_ROSTER+":namespace="+ns)
 		}
@@ -265,7 +266,8 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 
 		// check if strong_consistency stat is coming and enabled for the namespace
 		//   we may have combinations of SC and non-SC namespaces in the same cluster, always check for each namespace.
-		if strings.Contains(stat, "strong-consistency") {
+		//   populate map only if enabled and required
+		if strings.Contains(stat, "strong-consistency") && pv == 1 {
 			namespaceSCstatus[nsName] = true
 		}
 	}
@@ -390,7 +392,7 @@ func (nw *NamespaceStatsProcessor) refreshRosterStats(singleInfoKey string, info
 	count := 0.0
 	for statName, value := range stats {
 		// metric-name: roster_size, pending_roster_size, observed_nodes_size
-		metricName := statName + "_size"
+		metricName := fmt.Sprintf("pseudo_%s_size", statName)
 		asMetric, exists := nw.namespaceStats[metricName]
 
 		if !exists {
