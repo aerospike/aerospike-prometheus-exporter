@@ -263,17 +263,17 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 				delete(NamespaceLatencyBenchmarks[nsName], stat)
 			}
 		}
-
-		// check if strong_consistency stat is coming and enabled for the namespace
-		//   we may have combinations of SC and non-SC namespaces in the same cluster, always check for each namespace.
-		//   populate map only if enabled and required
-		if strings.Contains(stat, "strong-consistency") && pv == 1 {
-			namespaceSCstatus[nsName] = true
-		}
 	}
 
 	// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
 	NamespaceLatencyBenchmarks[nsName]["re-repl"] = "{" + nsName + "}-" + "re-repl"
+
+	// check if strong_consistency stat is coming and enabled for the namespace
+	//   we may have combinations of SC and non-SC namespaces in the same cluster, always check for each namespace.
+	//   populate map only if enabled and required
+	if val, ok := stats["strong-consistency"]; ok {
+		namespaceSCstatus[nsName] = (strings.TrimSpace(val) == "true")
+	}
 
 	return nsMetricsToSend
 }
