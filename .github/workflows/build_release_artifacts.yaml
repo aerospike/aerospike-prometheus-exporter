@@ -25,7 +25,7 @@ jobs:
             tar_arch: aarch64
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2 # v2.13.3
+        uses: step-security/harden-runner@58077d3c7e43986b6b15fba718e8ea69e387dfcc # v2.15.1
         with:
           egress-policy: audit
 
@@ -71,7 +71,7 @@ jobs:
           done
 
       - name: Set up GPG for signing
-        uses: aerospike/shared-workflows/.github/actions/setup-gpg@dda8173aca1f1e73f95267572a7d3849cd00f1b8
+        uses: aerospike/shared-workflows/.github/actions/setup-gpg@7f633569d89f706899e6b8f2151a3b200576c1fd
         with:
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
           gpg-public-key: ${{ secrets.GPG_PUBLIC_KEY }}
