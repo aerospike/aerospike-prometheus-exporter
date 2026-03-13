@@ -7,7 +7,10 @@ import (
 )
 
 // this is used as a prefix to qualify a metric while pushing to Prometheus or something
-var PREFIX_AEROSPIKE = "aerospike_"
+const (
+	PREFIX_AEROSPIKE      = "aerospike_"
+	PREFIX_AEROSPIKE_OTEL = "aerospike.server"
+)
 
 type AerospikeStat struct {
 	// type of metric, name and allow/disallow

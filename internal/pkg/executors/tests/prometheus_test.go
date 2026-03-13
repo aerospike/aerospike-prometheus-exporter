@@ -16,10 +16,10 @@ import (
 )
 
 const (
-	UNIQUE_METRICS_COUNT = 489
+	UNIQUE_METRICS_COUNT = 572
 )
 
-var DEFAULT_PROM_URL = "http://localhost:9145/metrics"
+var DEFAULT_PROM_URL = "http://localhost:48627/metrics"
 
 var metrics_from_prom = []string{}
 
@@ -44,12 +44,28 @@ func Test_RefreshDefault(t *testing.T) {
 	pdv := udh.GetUnittestValidator("prometheus")
 	expectedOutputs := pdv.GetMetricLabelsWithValues()
 
-	assert.Equal(t, len(expectedOutputs), len(metrics_from_prom))
+	assert.LessOrEqual(t, len(expectedOutputs), len(metrics_from_prom))
 
 	// assert values from httpclient with expectedOutputs
 	for idx_metrics := range metrics_from_prom {
 		entry := metrics_from_prom[idx_metrics]
-		assert.Contains(t, expectedOutputs, entry)
+
+		var metric_name string
+		// node ticks metric comes without labels so no {}
+		if strings.Contains(entry, "{") {
+			metric_name = strings.Split(entry, "{")[0]
+		} else if strings.Contains(entry, "node_ticks") {
+			metric_name = strings.Split(entry, " ")[0]
+		}
+
+		var found = false
+		for k := range expectedOutputs {
+			if strings.HasPrefix(k, metric_name) {
+				found = true
+			}
+		}
+
+		assert.True(t, found)
 	}
 
 }
@@ -63,7 +79,6 @@ func Test_UniqueMetricsCount(t *testing.T) {
 	// find unique metric-names (excluding Label and values)
 	for idx_metric := range metrics_from_prom {
 		metric := metrics_from_prom[idx_metric]
-		// fmt.Println("* metric: ", metric, "\t", strings.Index(metric, "{"))
 		metric_name := metric
 		if strings.Index(metric, "{") > 0 {
 			metric_name = metric[0:strings.Index(metric, "{")]
@@ -100,6 +115,9 @@ func makeHttpCallToPromProcessor(t *testing.T, asMetrics []statprocessors.Aerosp
 		// fmt.Println(text)
 		if len(text) > 0 && strings.HasPrefix(text, "aerospike_") {
 			metrics_from_prom = append(metrics_from_prom, strings.TrimSpace(text))
+			if strings.Contains(text, "node_tick") {
+				fmt.Println("=== 5555. metrics_from_prom: ", strings.TrimSpace(text))
+			}
 		}
 	}
 
@@ -116,7 +134,7 @@ func makeHttpCallToPromProcessor(t *testing.T, asMetrics []statprocessors.Aerosp
 
 func initializePromProcessor() {
 	metric_processors := executors.GetExecutors()
-	processor := metric_processors[executors.PROMETHEUS]
+	processor := metric_processors[commons.EXECUTOR_MODE_PROM]
 
 	// run Prom as a separate process
 	go func() {

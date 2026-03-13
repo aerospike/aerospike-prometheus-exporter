@@ -229,7 +229,15 @@ func (unp NodeUnittestValidator) Initialize(data []string) {
 
 func (unp NodeUnittestValidator) GetPassOneKeys() map[string]string {
 
-	return nil
+	var outputs = make(map[string]string)
+	elements := unp.PassOneOutputs[0]
+	elements = strings.Replace(elements, "node-passonekeys:", "", 1)
+	elements = strings.Replace(elements, "]", "", 1)
+	elements = strings.Replace(elements, "[", "", 1)
+
+	outputs["node"] = elements
+
+	return outputs
 }
 
 func (unp NodeUnittestValidator) GetPassTwoKeys() map[string]string {
@@ -449,6 +457,8 @@ func (unp LatencyUnittestValidator) Initialize(data []string) {
 			if strings.HasPrefix(line, "latency-passonekeys:") {
 				latency_validator.PassOneOutputs = append(latency_validator.PassOneOutputs, line)
 			} else if strings.HasPrefix(line, "latency-passtwokeys:") {
+				latency_validator.PassTwoOutputs = append(latency_validator.PassTwoOutputs, line)
+			} else if strings.HasPrefix(line, "latency-getLatenciesCommands:") {
 				latency_validator.PassTwoOutputs = append(latency_validator.PassTwoOutputs, line)
 			} else if strings.HasPrefix(line, "statprocessors.AerospikeStat{Context:\"latencies\",") {
 				latency_validator.Metrics = append(latency_validator.Metrics, line)

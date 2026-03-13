@@ -3,19 +3,27 @@ package statprocessors
 import (
 	"strings"
 
-	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
-	config "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 
 	log "github.com/sirupsen/logrus"
 )
 
-type SindexStatsProcessor struct {
-	sindexMetrics map[string]AerospikeStat
-}
-
 const (
 	KEY_SINDEX_COMMAND = "sindex-list:"
 )
+
+type SindexStatsProcessor struct {
+	sindexMetrics map[string]AerospikeStat
+	sharedState   *StatProcessorSharedState
+}
+
+func NewSindexStatsProcessor(state *StatProcessorSharedState) *SindexStatsProcessor {
+	return &SindexStatsProcessor{
+		sharedState:   state,
+		sindexMetrics: make(map[string]AerospikeStat),
+	}
+}
 
 func (siw *SindexStatsProcessor) PassOneKeys() []string {
 
@@ -55,6 +63,7 @@ func (siw *SindexStatsProcessor) getSindexCommands(sindexesMeta []string) (sinde
 
 	for _, sindex := range sindexesMeta {
 		stats := commons.ParseStats(sindex, ":")
+
 		if stats["ns"] != "" {
 			sindexCommands = append(sindexCommands, "sindex-stat:namespace="+stats["ns"]+";indexname="+stats["indexname"])
 		}
@@ -67,10 +76,6 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 	if config.Cfg.Aerospike.DisableSindexMetrics {
 		// disabled
 		return nil, nil
-	}
-
-	if siw.sindexMetrics == nil {
-		siw.sindexMetrics = make(map[string]AerospikeStat)
 	}
 
 	var allMetricsToSend = []AerospikeStat{}
@@ -100,7 +105,7 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 			}
 
 			labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_SINDEX}
-			labelValues := []string{ClusterName, Service, nsName, sindexName}
+			labelValues := []string{siw.sharedState.ClusterName, siw.sharedState.Service, nsName, sindexName}
 
 			asMetric.updateValues(pv, labels, labelValues)
 			allMetricsToSend = append(allMetricsToSend, asMetric)

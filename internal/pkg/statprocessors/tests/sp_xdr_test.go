@@ -15,7 +15,8 @@ func Test_Xdr_PassOneKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Xdr_PassOneKeys")
 
 	// Check passoneKeys
-	xdrWatcher := &statprocessors.XdrStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	xdrWatcher := statprocessors.NewXdrStatsProcessor(sharedState)
 	xdrPassOneKeys := xdrWatcher.PassOneKeys()
 
 	udh := &UnittestDataHandler{}
@@ -37,14 +38,14 @@ func Test_Xdr_PassTwoKeys(t *testing.T) {
 	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
-	xdrWatcher := &statprocessors.XdrStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	xdrWatcher := statprocessors.NewXdrStatsProcessor(sharedState)
 	xdrPassOneKeys := xdrWatcher.PassOneKeys()
 	// append common keys
-	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build, "namespaces"}
+	infoKeys := []string{sharedState.Infokey_ClusterName, sharedState.Infokey_Service, sharedState.Infokey_Build, "namespaces"}
 	xdrPassOneKeys = append(xdrPassOneKeys, infoKeys...)
 
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(xdrPassOneKeys)
-	fmt.Println("Test_Xdr_PassTwoKeys: passOneOutput: ", passOneOutput)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(xdrPassOneKeys)
 
 	passTwoOutputs := xdrWatcher.PassTwoKeys(passOneOutput)
 
@@ -78,21 +79,22 @@ func Test_Xdr_RefreshDefault(t *testing.T) {
 func xdr_runTestcase(t *testing.T) {
 
 	// Check passoneKeys
-	xdrWatcher := &statprocessors.XdrStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	xdrWatcher := statprocessors.NewXdrStatsProcessor(sharedState)
 	xdrPassOneKeys := xdrWatcher.PassOneKeys()
 	// append common keys
-	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build, "namespaces"}
+	infoKeys := []string{sharedState.Infokey_ClusterName, sharedState.Infokey_Service, sharedState.Infokey_Build, "namespaces"}
 	xdrPassOneKeys = append(xdrPassOneKeys, infoKeys...)
 
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(xdrPassOneKeys)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(xdrPassOneKeys)
 	passTwoOutputs := xdrWatcher.PassTwoKeys(passOneOutput)
 
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
-	arrRawMetrics, err := dataprovider.GetProvider().RequestInfo(passTwoOutputs)
+	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(passTwoOutputs)
 
-	statprocessors.ClusterName = passOneOutput[statprocessors.Infokey_ClusterName]
-	statprocessors.Build = passOneOutput[statprocessors.Infokey_Build]
-	statprocessors.Service = passOneOutput[statprocessors.Infokey_Service]
+	sharedState.ClusterName = passOneOutput[sharedState.Infokey_ClusterName]
+	sharedState.Build = passOneOutput[sharedState.Infokey_Build]
+	sharedState.Service = passOneOutput[sharedState.Infokey_Service]
 
 	assert.Nil(t, err, "Error while XdrWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while XdrWatcher.PassTwokeys, RawMetrics is EMPTY ")

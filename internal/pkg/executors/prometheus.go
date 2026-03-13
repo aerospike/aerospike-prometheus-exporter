@@ -5,7 +5,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	log "github.com/sirupsen/logrus"
 )
@@ -13,6 +15,12 @@ import (
 // PrometheusImpl communicates with Aerospike and helps collecting metrices
 type PrometheusImpl struct {
 	ticks prometheus.Counter
+
+	// Data Providers and Metrics Refresher
+	dataProvider            dataprovider.DataProvider
+	sharedState             *statprocessors.StatProcessorSharedState
+	statsRefresher          *statprocessors.StatsRefresher
+	hostSystemInfoProcessor *statprocessors.HostSystemInfoProcessor
 }
 
 var (
@@ -40,6 +48,12 @@ func NewPrometheusImpl() (o *PrometheusImpl) {
 			}),
 	}
 
+	o.dataProvider = dataprovider.GetProvider(commons.EXECUTOR_MODE_PROM)
+	o.sharedState = statprocessors.NewStatProcessorSharedState()
+
+	o.statsRefresher = statprocessors.NewStatsRefresher(o.dataProvider, o.sharedState)
+	o.hostSystemInfoProcessor = statprocessors.NewHostSystemInfoProcessor(dataprovider.GetSystemProvider(), o.sharedState)
+
 	return o
 }
 
@@ -56,26 +70,25 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 	ch <- o.ticks
 
 	// refresh metrics from various statprocessors,
-	refreshedMetrics, err := statprocessors.Refresh()
+	refreshedMetrics, err := o.statsRefresher.Refresh()
 
 	if err != nil {
 		log.Errorln(err)
-		ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 0.0, statprocessors.ClusterName, statprocessors.Service, statprocessors.Build, statprocessors.NodeId)
+		ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 0.0,
+			o.sharedState.ClusterName, o.sharedState.Service, o.sharedState.Build, o.sharedState.NodeId)
+
 		return
 	}
 
-	// if kubernetes then send host-name/pod-name else send server-ip as-isnh
-	if config.Cfg.Agent.IsKubernetes {
-		statprocessors.Service = config.Cfg.Agent.KubernetesPodName
-	}
-	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, statprocessors.ClusterName, statprocessors.Service, statprocessors.Build, statprocessors.NodeId)
+	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0,
+		o.sharedState.ClusterName, o.sharedState.Service, o.sharedState.Build, o.sharedState.NodeId)
 
 	for _, wm := range refreshedMetrics {
 		PushToPrometheus(wm, ch)
 	}
 
 	// System Metrics - Memory, Disk and Filesystem - push the fetched metrics to prometheus
-	systemMetrics, err := statprocessors.RefreshSystemInfo()
+	systemMetrics, err := o.hostSystemInfoProcessor.RefreshSystemInfo()
 
 	if err != nil {
 		log.Errorln("Error while refreshing SystemInfo Stats, error: ", err)

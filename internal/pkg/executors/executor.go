@@ -1,18 +1,15 @@
 package executors
 
+import "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+
 type Executor interface {
 	Initialize() error
 }
 
-const (
-	PROMETHEUS = "prometheus"
-	OTELGRPC   = "otel"
-)
-
 func GetExecutors() map[string]Executor {
 	executorsMap := map[string]Executor{
-		PROMETHEUS: &PrometheusHttpExecutor{},
-		OTELGRPC:   &OtelExecutor{},
+		commons.EXECUTOR_MODE_PROM: &PrometheusHttpExecutor{},
+		commons.EXECUTOR_MODE_OTEL: &OtelExecutor{},
 	}
 
 	return executorsMap

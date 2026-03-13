@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -14,91 +13,96 @@ import (
 	"github.com/aerospike/aerospike-client-go/v8/types"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
-
-// Inherits DataProvider interface
-type AerospikeServer struct {
-}
-
-func (asm AerospikeServer) RequestInfo(infoKeys []string) (map[string]string, error) {
-	return fetchRequestInfoFromAerospike(infoKeys)
-}
-
-func (asm AerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
-	return fetchUsersRoles()
-}
-
-// Aerospike server interaction related code
 
 const (
 	GO_CLIENT_LIBRARY_PATH     = "github.com/aerospike/aerospike-client-go/v8"
 	AERO_EXPORTER_LIBRARY_PATH = "github.com/aerospike/aerospike-prometheus-exporter"
+	RETRY_COUNT                = 3
 )
 
-var (
-	fullHost   string
-	user       string
-	pass       string
-	retryCount int = 3
-
-	asConnection *aero.Connection
-	clientPolicy *aero.ClientPolicy
-	asServerHost *aero.Host
+const (
+	AUTH_MODE_INTERNAL = "internal"
+	AUTH_MODE_EXTERNAL = "external"
+	AUTH_MODE_PKI      = "pki"
+	AUTH_MODE_EMPTY    = ""
 )
 
-func initializeAndConnectAerospikeServer() (*aero.Connection, error) {
+// Inherits DataProvider interface
+type AerospikeServer struct {
+	aeroConnection *aero.Connection
+	clientPolicy   *aero.ClientPolicy
+	serverHost     *aero.Host
+}
 
-	fullHost = commons.GetFullHost()
+// Create and initializes instances and policy
+func NewAerospikeProvider() DataProvider {
+	aeroServer := &AerospikeServer{}
 
-	logrus.Debugf("Connecting to host %s ", fullHost)
+	return aeroServer
+}
 
-	asServerHost = aero.NewHost(config.Cfg.Aerospike.Host, int(config.Cfg.Aerospike.Port))
+func (as *AerospikeServer) RequestInfo(infoKeys []string) (map[string]string, error) {
+	return as.fetchRequestInfoFromAerospike(infoKeys)
+}
 
-	asServerHost.TLSName = config.Cfg.Aerospike.NodeTLSName
-	user = config.Cfg.Aerospike.User
-	pass = config.Cfg.Aerospike.Password
+func (as *AerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
+	return as.fetchUsersRoles()
+}
+
+func (as *AerospikeServer) IsServerConnected() bool {
+	return (as.aeroConnection != nil && as.aeroConnection.IsConnected())
+}
+
+// Aerospike server interaction related code
+
+func (as *AerospikeServer) createClientPolicy() {
+	as.serverHost = aero.NewHost(config.Cfg.Aerospike.Host, int(config.Cfg.Aerospike.Port))
+	as.serverHost.TLSName = config.Cfg.Aerospike.NodeTLSName
 
 	// Get aerospike auth username
-	username, err := commons.GetSecret(user)
+	username, err := commons.GetSecret(config.Cfg.Aerospike.User)
+
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to get aerospike auth username: %s", err)
 	}
 
 	// Get aerospike auth password
-	password, err := commons.GetSecret(pass)
+	password, err := commons.GetSecret(config.Cfg.Aerospike.Password)
+
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to get aerospike auth password: %s", err)
 	}
 
-	clientPolicy = aero.NewClientPolicy()
-	clientPolicy.User = string(username)
-	clientPolicy.Password = string(password)
+	as.clientPolicy = aero.NewClientPolicy()
+	as.clientPolicy.User = string(username)
+	as.clientPolicy.Password = string(password)
 
 	switch config.Cfg.Aerospike.AuthMode {
-	case "internal", "":
-		clientPolicy.AuthMode = aero.AuthModeInternal
-	case "external":
-		clientPolicy.AuthMode = aero.AuthModeExternal
-	case "pki":
+	case AUTH_MODE_INTERNAL, AUTH_MODE_EMPTY:
+		as.clientPolicy.AuthMode = aero.AuthModeInternal
+	case AUTH_MODE_EXTERNAL:
+		as.clientPolicy.AuthMode = aero.AuthModeExternal
+	case AUTH_MODE_PKI:
+
 		if len(config.Cfg.Aerospike.CertFile) == 0 || len(config.Cfg.Aerospike.KeyFile) == 0 {
 			log.Fatalln("Invalid certificate configuration when using auth mode PKI: cert_file and key_file must be set")
 		}
-		clientPolicy.AuthMode = aero.AuthModePKI
+
+		as.clientPolicy.AuthMode = aero.AuthModePKI
 	default:
 		log.Fatalln("Invalid auth mode: only `internal`, `external`, `pki` values are accepted.")
 	}
 
 	// allow only ONE connection
-	clientPolicy.ConnectionQueueSize = 1
-	clientPolicy.Timeout = time.Duration(config.Cfg.Aerospike.Timeout) * time.Second
+	as.clientPolicy.ConnectionQueueSize = 1
+	as.clientPolicy.Timeout = time.Duration(config.Cfg.Aerospike.Timeout) * time.Second
 
-	clientPolicy.TlsConfig = initAerospikeTLS()
-
-	return createNewConnection()
+	as.clientPolicy.TlsConfig = as.initAerospikeTLS()
 }
 
-func initAerospikeTLS() *tls.Config {
+func (as *AerospikeServer) initAerospikeTLS() *tls.Config {
 	var clientPool []tls.Certificate
 	var serverPool *x509.CertPool
 
@@ -121,65 +125,77 @@ func initAerospikeTLS() *tls.Config {
 	return nil
 }
 
-func createNewConnection() (*aero.Connection, error) {
-	asConnection, err := aero.NewConnection(clientPolicy, asServerHost)
+func (as *AerospikeServer) createNewConnection() (*aero.Connection, error) {
+
+	// Create client policy only once, and shared across all connections
+	if as.clientPolicy == nil {
+		as.createClientPolicy()
+	}
+
+	log.Infof("Initializing and Connecting to aerospike server %s", as.serverHost)
+
+	var err error
+	as.aeroConnection, err = aero.NewConnection(as.clientPolicy, as.serverHost)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if clientPolicy.RequiresAuthentication() {
-		if err := asConnection.Login(clientPolicy); err != nil {
+	if as.clientPolicy.RequiresAuthentication() {
+		if err := as.aeroConnection.Login(as.clientPolicy); err != nil {
 			return nil, err
 		}
 	}
 
 	// Set no connection deadline to re-use connection, but socketTimeout will be in effect
 	var deadline time.Time
-	err = asConnection.SetTimeout(deadline, clientPolicy.Timeout)
+	err = as.aeroConnection.SetTimeout(deadline, as.clientPolicy.Timeout)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return asConnection, nil
+	return as.aeroConnection, nil
 }
 
-func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error) {
+// data read and write operations to aerospike server
+
+func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error) {
 	var err error
 	requestInfoResponse := make(map[string]string)
 
 	// Retry for connection, timeout, network errors
 	// including errors from RequestInfo()
-	for i := 0; i < retryCount; i++ {
+	for range RETRY_COUNT {
 		// Validate existing connection
-		if asConnection == nil || !asConnection.IsConnected() {
+		if as.aeroConnection == nil || !as.aeroConnection.IsConnected() {
 			// Create new connection
-			asConnection, err = initializeAndConnectAerospikeServer()
+			as.aeroConnection, err = as.createNewConnection()
 
 			if err != nil {
-				logrus.Debug("Error while connecting to aerospike server: ", err)
+				log.Debugf("Error while connecting to aerospike server: %v", err)
 				continue
 			}
 
 			// Set user-agent
-			err = setUserAgent()
+			err = as.setUserAgent()
 
 			if err != nil {
-				logrus.Debug("Error while setting user-agent: ", err)
+				log.Debugf("Error while setting user-agent: %v", err)
 				continue
 			}
 		}
 
 		// Info request
-		requestInfoResponse, err = asConnection.RequestInfo(infoKeys...)
+		requestInfoResponse, err = as.aeroConnection.RequestInfo(infoKeys...)
 
 		if err != nil {
-			logrus.Debug("Error while requestInfo ( infoKeys...), closing connection : Error is: ", err, " and infoKeys: ", infoKeys)
-			asConnection.Close()
+			log.Errorf("Error while requestInfo ( infoKeys...), closing connection : Error is: %v and infoKeys: %v", err, infoKeys)
+			as.aeroConnection.Close()
 			// making nil, to force a connection, if any n/w disruption happen between my connection call
 			//   and requestinfo call, -- it internall will fail because of n/w disruption
-			asConnection = nil
+			as.aeroConnection = nil
+
 			continue
 		}
 
@@ -188,6 +204,7 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 
 	if len(requestInfoResponse) == 1 {
 		for k := range requestInfoResponse {
+
 			if strings.HasPrefix(strings.ToUpper(k), "ERROR:") {
 				return nil, errors.New(k)
 			}
@@ -197,7 +214,7 @@ func fetchRequestInfoFromAerospike(infoKeys []string) (map[string]string, error)
 	return requestInfoResponse, err
 }
 
-func fetchUsersRoles() (bool, []*aero.UserRoles, error) {
+func (as *AerospikeServer) fetchUsersRoles() (bool, []*aero.UserRoles, error) {
 
 	shouldFetchUserStatistics := true
 
@@ -209,31 +226,33 @@ func fetchUsersRoles() (bool, []*aero.UserRoles, error) {
 	var aeroErr aero.Error
 	var err error
 
-	for i := 0; i < retryCount; i++ {
+	for range RETRY_COUNT {
+
 		// Validate existing connection
-		if asConnection == nil || !asConnection.IsConnected() {
+		if as.aeroConnection == nil || !as.aeroConnection.IsConnected() {
 			// Create new connection
-			asConnection, err = initializeAndConnectAerospikeServer()
+			as.aeroConnection, err = as.createNewConnection()
+
 			if err != nil {
-				logrus.Debug(err)
+				log.Debugf("Error while initializing and connecting to aerospike server: %s", err)
 				continue
 			}
 		}
 
 		// query users
-		users, aeroErr = admCmd.QueryUsers(asConnection, admPlcy)
+		users, aeroErr = admCmd.QueryUsers(as.aeroConnection, admPlcy)
 
 		if aeroErr != nil {
 			// Do not retry if there's role violation.
 			// This could be a permanent error leading to unnecessary errors on server end.
 			if aeroErr.Matches(types.ROLE_VIOLATION) {
 				shouldFetchUserStatistics = false
-				logrus.Debugf("Unable to fetch user statistics: %s", aeroErr.Error())
+				log.Debugf("Unable to fetch user statistics: %s", aeroErr.Error())
 				break
 			}
 
 			if len(aeroErr.Error()) > 0 {
-				logrus.Warnf("Error while querying users: %s", aeroErr.Error())
+				log.Warnf("Error while querying users: %s", aeroErr.Error())
 				continue
 			}
 		}
@@ -241,10 +260,10 @@ func fetchUsersRoles() (bool, []*aero.UserRoles, error) {
 		break
 	}
 
-	return shouldFetchUserStatistics, users, nil
+	return shouldFetchUserStatistics, users, err
 }
 
-func setUserAgent() error {
+func (as *AerospikeServer) setUserAgent() error {
 	// Server expected format "user-agent-version","client-library-version","exporter-version/app-id-info"
 
 	// Exporter version
@@ -258,8 +277,8 @@ func setUserAgent() error {
 
 	command := []string{userAgentCommand}
 
-	logrus.Debug("Setting User-Agent in Server: infoKeys: ", command)
-	_, err := asConnection.RequestInfo(command...)
+	log.Debugf("Setting User-Agent in Server: infoKeys: %s", command)
+	_, err := as.aeroConnection.RequestInfo(command...)
 
 	if err != nil {
 		return err

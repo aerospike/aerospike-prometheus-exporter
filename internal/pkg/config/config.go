@@ -25,9 +25,8 @@ type Config struct {
 		RefreshSystemStats bool   `toml:"refresh_system_stats"`
 		CloudProvider      string `toml:"cloud_provider"`
 
-		LogFile           string `toml:"log_file"`
-		LogLevel          string `toml:"log_level"`
-		UseMockDatasource bool   `toml:"use_mock_datasource"`
+		LogFile  string `toml:"log_file"`
+		LogLevel string `toml:"log_level"`
 
 		Bind              string `toml:"bind"`
 		CertFile          string `toml:"cert_file"`
@@ -40,12 +39,15 @@ type Config struct {
 		BasicAuthPassword string `toml:"basic_auth_password"`
 
 		Otel struct {
-			OtelServiceName             string            `toml:"service_name"`
-			OtelEndpoint                string            `toml:"endpoint"`
-			OtelTlsEnabled              bool              `toml:"endpoint_tls_enabled"`
-			OtelHeaders                 map[string]string `toml:"headers"`
-			OtelPushInterval            uint8             `toml:"push_interval"`
-			OtelServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
+			ServiceName             string            `toml:"service_name"`
+			Endpoint                string            `toml:"endpoint"` // DEPRECATED. Use grpc_endpoint
+			GrpcEndpoint            string            `toml:"grpc_endpoint"`
+			HttpEndpoint            string            `toml:"http_endpoint"`
+			Headers                 map[string]string `toml:"headers"`
+			PushInterval            uint8             `toml:"push_interval"`
+			ServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
+			CounterTemporality      string            `toml:"counter_temporality"`
+			AllMetricsAsGauge       bool              `toml:"all_metrics_as_gauges"`
 		} `toml:"OpenTelemetry"`
 
 		IsKubernetes      bool
@@ -163,22 +165,16 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		c.Aerospike.Timeout = 5
 	}
 
-	if md.IsDefined("Agent", "use_mock_datasource") && c.Agent.UseMockDatasource {
-		c.Agent.UseMockDatasource = true
-	} else {
-		c.Agent.UseMockDatasource = false
+	if len(c.Agent.Otel.ServiceName) == 0 {
+		c.Agent.Otel.ServiceName = "aerospike-server-metrics-service"
 	}
 
-	if len(c.Agent.Otel.OtelServiceName) == 0 {
-		c.Agent.Otel.OtelServiceName = "aerospike-server-metrics-service"
+	if c.Agent.Otel.PushInterval == 0 {
+		c.Agent.Otel.PushInterval = 60
 	}
 
-	if c.Agent.Otel.OtelPushInterval == 0 {
-		c.Agent.Otel.OtelPushInterval = 60
-	}
-
-	if c.Agent.Otel.OtelServerStatFetchInterval == 0 {
-		c.Agent.Otel.OtelPushInterval = 15
+	if c.Agent.Otel.ServerStatFetchInterval == 0 {
+		c.Agent.Otel.PushInterval = 15
 	}
 
 	if !md.IsDefined("Agent", "enable_prometheus") {
@@ -187,17 +183,51 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 	}
 
 	// key-file and cert-file either exist or not-exist together
-	if len(Cfg.Aerospike.KeyFile) == 0 && len(Cfg.Aerospike.CertFile) != 0 {
+	if len(c.Aerospike.KeyFile) == 0 && len(c.Aerospike.CertFile) > 0 {
 		log.Fatalf("In Aerospike section, key_file is not present")
 	}
 
-	if len(Cfg.Aerospike.KeyFile) != 0 && len(Cfg.Aerospike.CertFile) == 0 {
+	if len(c.Aerospike.KeyFile) > 0 && len(c.Aerospike.CertFile) == 0 {
 		log.Fatalf("In Aerospike section, cert_file is not present")
 	}
 
 	// validate Aerospike root-ca and cert-file configs
-	if len(Cfg.Aerospike.RootCA) == 0 && len(Cfg.Aerospike.CertFile) != 0 {
+	if len(c.Aerospike.RootCA) == 0 && len(c.Aerospike.CertFile) > 0 {
 		log.Fatalf("In Aerospike section, root_ca cannot be null when cert_file and key_file are configured")
+	}
+
+	if c.Agent.OtelEnabled {
+		c.validateOtelConfigs()
+
+		// not validation, if not defined default to true
+		if !md.IsDefined("Agent", "OpenTelemetry", "all_metrics_as_gauges") {
+			c.Agent.Otel.AllMetricsAsGauge = true
+		}
+	}
+
+}
+
+func (c *Config) validateOtelConfigs() {
+	// validate Otel endpoint and grpc_endpoint configs
+	if len(c.Agent.Otel.Endpoint) > 0 && len(c.Agent.Otel.GrpcEndpoint) > 0 {
+		log.Fatalf("In OpenTelemetry section, ONLY  endpoint or grpc_endpoint can be configured, not both")
+	} else if len(c.Agent.Otel.Endpoint) > 0 {
+		log.Warnf("In OpenTelemetry section, endpoint is deprecated, use grpc_endpoint instead")
+		log.Infof("In OpenTelemetry section, endpoint configured will be used as grpc_endpoint")
+		c.Agent.Otel.GrpcEndpoint = c.Agent.Otel.Endpoint
+	}
+
+	if len(c.Agent.Otel.GrpcEndpoint) > 0 && len(c.Agent.Otel.HttpEndpoint) > 0 {
+		log.Fatalf("In OpenTelemetry section, grpc_endpoint and http_endpoint can be configured, not both")
+	} else if len(c.Agent.Otel.GrpcEndpoint) == 0 && len(c.Agent.Otel.HttpEndpoint) == 0 {
+		log.Fatalf("In OpenTelemetry section, Grpc  or Http neither is configured")
+	}
+
+	if len(c.Agent.Otel.CounterTemporality) == 0 {
+		// Delta is default as many Datadog and Dynatrace customers. which accept only Delta's
+		c.Agent.Otel.CounterTemporality = "delta"
+	} else if c.Agent.Otel.CounterTemporality != "delta" && c.Agent.Otel.CounterTemporality != "cumulative" {
+		log.Fatalf("In OpenTelemetry section, counter_temporality must be either delta or cumulative")
 	}
 
 }
@@ -207,15 +237,17 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 		return
 	}
 
-	if Cfg.Agent.CloudProvider != "" && len(strings.Trim(Cfg.Agent.CloudProvider, " ")) > 0 {
+	if c.Agent.CloudProvider != "" && len(strings.Trim(c.Agent.CloudProvider, " ")) > 0 {
 		cloudLabels := CollectCloudDetails()
-		log.Debug("Adding Cloud Info to Metric Labels ", cloudLabels)
+		log.Debugf("Adding Cloud Info to Metric Labels %s", cloudLabels)
 
 		for k, v := range cloudLabels {
+
 			if v == "" || len(v) == 0 {
 				v = "null"
 			}
-			Cfg.Agent.MetricLabels[k] = v
+
+			c.Agent.MetricLabels[k] = v
 		}
 	}
 }
@@ -224,15 +256,16 @@ func (c *Config) FetchKubernetesInfo(md toml.MetaData) {
 	// use kubectl to fetch required Kubernetes context and find the required Kubenetes environment variables
 	envKubeServiceHost := os.Getenv("KUBERNETES_SERVICE_HOST")
 
-	Cfg.Agent.IsKubernetes = false
+	c.Agent.IsKubernetes = false
 
 	if envKubeServiceHost != "" && len(strings.TrimSpace(envKubeServiceHost)) > 0 {
-		Cfg.Agent.IsKubernetes = true
-		log.Info("Exporter is running in Kubernetes")
+		c.Agent.IsKubernetes = true
+		log.Infof("Exporter is running in Kubernetes")
 
 		// get host-name
 		var err error
-		Cfg.Agent.KubernetesPodName, err = os.Hostname()
+		c.Agent.KubernetesPodName, err = os.Hostname()
+
 		if err != nil {
 			log.Errorln(err)
 			return
@@ -248,11 +281,13 @@ func InitConfig(configFile string) {
 
 	log.Infof("Loading configuration file %s", configFile)
 	blob, err := os.ReadFile(configFile)
+
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	md, err := toml.Decode(string(blob), &Cfg)
+
 	if err != nil {
 		log.Fatalln(err)
 	}
