@@ -114,16 +114,17 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// info request for second set of info keys, this retrieves all the stats from server
-	passTwoOutput, err := sr.dataProvider.RequestInfo(infoKeys)
+	passTwoResponse, err := sr.dataProvider.RequestInfo(infoKeys)
 
 	if err != nil {
 		return allStatsToSend, err
 	}
 
 	// set global values
-	sr.sharedState.ClusterName = passTwoOutput[sr.sharedState.Infokey_ClusterName]
-	sr.sharedState.Service = passTwoOutput[sr.sharedState.Infokey_Service]
-	sr.sharedState.Build = passTwoOutput[sr.sharedState.Infokey_Build]
+	sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
+	sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
+	sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
+	sr.sharedState.NodeId = passTwoResponse[sr.sharedState.Infokey_NodeId]
 
 	// Servce is IP of Aerospike Server, in Kubernetes we need pod-name instead of IP.
 	if config.Cfg.Agent.IsKubernetes {
@@ -131,14 +132,14 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// sanitize the utf8 strings before sending them to watchers
-	for k, v := range passTwoOutput {
-		passTwoOutput[k] = commons.SanitizeUTF8(v)
+	for k, v := range passTwoResponse {
+		passTwoResponse[k] = commons.SanitizeUTF8(v)
 	}
 
 	// sanitize the utf8 strings before sending them to watchers
 	for i, c := range allStatsprocessorList {
 
-		tmpRefreshedMetrics, err := c.Refresh(statprocessorInfoKeys[i], passTwoOutput)
+		tmpRefreshedMetrics, err := c.Refresh(statprocessorInfoKeys[i], passTwoResponse)
 
 		if err != nil {
 			return allStatsToSend, err
@@ -148,7 +149,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// Refresh user info if supported by the server
-	if sr.userStatsProcessor.canRefreshUserStats(passTwoOutput) {
+	if sr.userStatsProcessor.canRefreshUserStats(passTwoResponse) {
 		userMetrics, err := sr.RefreshUserStats()
 
 		if err != nil {

@@ -8,11 +8,12 @@ type StatProcessor interface {
 
 // Struct to store shared state and values between various processors
 type StatProcessorSharedState struct {
-	Service, ClusterName, Build string
+	Service, ClusterName, Build, NodeId string
 
 	Infokey_ClusterName string
 	Infokey_Service     string
 	Infokey_Build       string
+	Infokey_NodeId      string
 
 	ServiceLatencyBenchmarks   map[string]string
 	NamespaceLatencyBenchmarks map[string]map[string]string
@@ -23,6 +24,7 @@ func NewStatProcessorSharedState() *StatProcessorSharedState {
 	sharedState := &StatProcessorSharedState{
 		Infokey_Build:       "build",
 		Infokey_ClusterName: "cluster-name",
+		Infokey_NodeId:      "node:",
 
 		// this value will be set depending on the server mode (tls or clear)
 		//   modified in the first Refresh call
