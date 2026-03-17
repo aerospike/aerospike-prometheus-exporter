@@ -1,6 +1,6 @@
 # GitHub Actions workflow to build Go project and package as DEB, RPM, and TGZ
 
-name: Build exporter deb, rpm and tgz artifacts
+name: Build exporter deb, rpm artifacts
 on:
   push:
     tags:
@@ -18,11 +18,13 @@ jobs:
           - arch: amd64
             make_target: package-linux-amd64
             goarch: amd64
-            tar_arch: x86_64
+            # OM-280, commented, if required we enable this in future/on-demand 
+            #tar_arch: x86_64
           - arch: arm64
             make_target: package-linux-arm64
             goarch: arm64
-            tar_arch: aarch64
+            # OM-280, commented, if required we enable this in future/on-demand 
+            #tar_arch: aarch64
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@58077d3c7e43986b6b15fba718e8ea69e387dfcc # v2.15.1
@@ -59,16 +61,18 @@ jobs:
       - name: Build packages for ${{ matrix.arch }}
         run: |
           make ${{ matrix.make_target }}
-          make tar GOOS=linux GOARCH=${{ matrix.goarch }} ARCH=${{ matrix.tar_arch }}
+          # make tar GOOS=linux GOARCH=${{ matrix.goarch }} ARCH=${{ matrix.tar_arch }}
+          make GOOS=linux GOARCH=${{ matrix.goarch }}
 
-      - name: Create TGZ archives
-        run: |
-          cd pkg/target
+      # OM-280, commented, if required we enable this in future/on-demand 
+      # - name: Create TGZ archives
+      #   run: |
+      #     cd pkg/target
           
-          gzip aerospike-prometheus-exporter*.tar
-          for f in *.tar.gz; do
-            mv "$f" "${f%.tar.gz}.tgz"
-          done
+      #     gzip aerospike-prometheus-exporter*.tar
+      #     for f in *.tar.gz; do
+      #       mv "$f" "${f%.tar.gz}.tgz"
+      #     done
 
       - name: Set up GPG for signing
         uses: aerospike/shared-workflows/.github/actions/setup-gpg@8f53b63b33d86e63aeb37d951283dd974574885b
@@ -109,20 +113,22 @@ jobs:
             fi
           done
 
-          # Generate checksums and GPG signatures for TGZ
-          for file in aerospike-prome*.tgz; do
-            if [ -f "$file" ]; then
-              echo "Generating sha256 and asc for $file"
-              sha256sum "$file" > "$file.sha256"
-              # asc for tgz
-              gpg --armour --detach-sign \
-                  --no-tty --batch --yes \
-                  --passphrase "$GPG_PASS" \
-                  --pinentry-mode loopback \
-                  --local-user aerospike-inc \
-                  --output "$file.asc" "$file"                    
-            fi
-          done
+
+          # OM-280, commented, if required we enable this in future/on-demand 
+          # # Generate checksums and GPG signatures for TGZ
+          # for file in aerospike-prome*.tgz; do
+          #   if [ -f "$file" ]; then
+          #     echo "Generating sha256 and asc for $file"
+          #     sha256sum "$file" > "$file.sha256"
+          #     # asc for tgz
+          #     gpg --armour --detach-sign \
+          #         --no-tty --batch --yes \
+          #         --passphrase "$GPG_PASS" \
+          #         --pinentry-mode loopback \
+          #         --local-user aerospike-inc \
+          #         --output "$file.asc" "$file"                    
+          #   fi
+          # done
 
       - name: Upload artifacts to release
         env:
@@ -131,8 +137,9 @@ jobs:
         run: |
           cd pkg/target
 
-          for file in aerospike-prome*; do
-            if [ -f "$file" ]; then
+          for file in aerospike-prome* ; do
+            # OM-280, commented, if required we enable this in future/on-demand 
+            if [ -f "$file" ] && [[ "$file" != *.tar && "$file" != *.tgz && "$file" != *.tgz.asc ]]; then
               echo "Uploading $file to release $TAG_NAME"
               gh release upload "$TAG_NAME" "$file"
             fi
