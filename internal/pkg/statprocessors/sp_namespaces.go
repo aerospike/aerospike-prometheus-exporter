@@ -272,7 +272,9 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 	//   we may have combinations of SC and non-SC namespaces in the same cluster, always check for each namespace.
 	//   populate map only if enabled and required
 	if val, ok := stats["strong-consistency"]; ok {
-		namespaceSCstatus[nsName] = (strings.TrimSpace(val) == "true")
+		if strings.TrimSpace(val) == "true" {
+			namespaceSCstatus[nsName] = true
+		}
 	}
 
 	return nsMetricsToSend
