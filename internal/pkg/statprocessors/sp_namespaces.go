@@ -104,15 +104,15 @@ func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[str
 
 		// we get 2 info-key Types - examples: index-pressure or namespace/test, namespace/materials
 		if strings.HasPrefix(infoKey, KEY_NS_NAMESPACE) {
-			tempNsMetricsToSend := nw.refreshNamespaceStats(infoKey, infoKeys, rawMetrics)
+			tempNsMetricsToSend := nw.refreshNamespaceStats(infoKey, rawMetrics)
 			allMetricsToSend = append(allMetricsToSend, tempNsMetricsToSend...)
 
 		} else if strings.HasPrefix(infoKey, KEY_NS_INDEX_PRESSURE) {
 			// namespace/<ns> will be multiple times according to the # of namespaces configured in the server
-			tempNsMetricsToSend := nw.refreshIndexPressure(infoKey, infoKeys, rawMetrics)
+			tempNsMetricsToSend := nw.refreshIndexPressure(infoKey, rawMetrics)
 			allMetricsToSend = append(allMetricsToSend, tempNsMetricsToSend...)
 		} else if strings.HasPrefix(infoKey, KEY_NS_ROSTER) {
-			tempNsMetricsToSend := nw.refreshRosterStats(infoKey, infoKeys, rawMetrics)
+			tempNsMetricsToSend := nw.refreshRosterStats(infoKey, rawMetrics)
 			allMetricsToSend = append(allMetricsToSend, tempNsMetricsToSend...)
 		}
 
@@ -122,7 +122,7 @@ func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[str
 }
 
 // handle IndexPressure infoKey
-func (nw *NamespaceStatsProcessor) refreshIndexPressure(singleInfoKey string, infoKeys []string, rawMetrics map[string]string) []AerospikeStat {
+func (nw *NamespaceStatsProcessor) refreshIndexPressure(singleInfoKey string, rawMetrics map[string]string) []AerospikeStat {
 
 	indexPresssureStats := rawMetrics[singleInfoKey]
 
@@ -182,7 +182,7 @@ func (nw *NamespaceStatsProcessor) refreshIndexPressure(singleInfoKey string, in
 }
 
 // all namespace stats (except index-pressure)
-func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, infoKeys []string, rawMetrics map[string]string) []AerospikeStat {
+func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, rawMetrics map[string]string) []AerospikeStat {
 
 	// extract namespace from info-command, construct: namespace/test, namespace/bar
 	nsName := strings.ReplaceAll(singleInfoKey, (KEY_NS_NAMESPACE + "/"), "")
@@ -205,7 +205,7 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 		}
 
 		// check persistance-type
-		deviceType, isArrayType := nw.checkStatPersistanceType(stat, stats)
+		deviceType, isArrayType := nw.checkStatPersistanceType(stat)
 
 		// default: aerospike_namespace_<stat-name>
 		constructedStatname = stat
@@ -213,7 +213,7 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 		labelValues = []string{nw.sharedState.ClusterName, nw.sharedState.Service, nsName}
 
 		if isArrayType {
-			constructedStatname, labels, labelValues = nw.handleArrayStats(nsName, stat, pv, stats, deviceType, rawMetrics)
+			constructedStatname, labels, labelValues = nw.handleArrayStats(nsName, stat, stats, deviceType)
 		}
 
 		// check and include persistance-type if they are defined/found
@@ -295,9 +295,8 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 // Each part of the stat is split into 4 groups using a regex,
 // each value of the 4 groups represents type like stats-type, index-number, sub-stat-name (like file[0].age)
 // - example: group[0]=<full-stat> , group[1]= stat-type, group[2]= array-index, group[3]= sub-stat-name
-func (nw *NamespaceStatsProcessor) handleArrayStats(nsName string, statToProcess string, pv float64,
-	allNamespaceStats map[string]string, deviceType string,
-	rawMetrics map[string]string) (string, []string, []string) {
+func (nw *NamespaceStatsProcessor) handleArrayStats(nsName string, statToProcess string,
+	allNamespaceStats map[string]string, deviceType string) (string, []string, []string) {
 
 	regexStr := regexToExtractArrayStats[deviceType]
 	dynamicExtractor := regexp.MustCompile(regexStr)
@@ -330,8 +329,7 @@ func (nw *NamespaceStatsProcessor) handleArrayStats(nsName string, statToProcess
 // checks if the given stat is a storage-engine or index-type, depending on which type we decide how to process
 //
 // multiple values are returnd by server example: storage-engine.file[0].<remaining-stat-name>
-func (nw *NamespaceStatsProcessor) checkStatPersistanceType(statToProcess string,
-	allNamespaceStats map[string]string) (string, bool) {
+func (nw *NamespaceStatsProcessor) checkStatPersistanceType(statToProcess string) (string, bool) {
 
 	// if starts-with "index-type", then
 	//    return index-type, <is-array-or-normal-stat>
@@ -375,8 +373,7 @@ func (nw *NamespaceStatsProcessor) setFlagFlashStatSentByServer(idxType string) 
 }
 
 // parse the roster stats and construct the metrics= roster, pending_roster, observed_nodes
-func (nw *NamespaceStatsProcessor) refreshRosterStats(singleInfoKey string, infoKeys []string,
-	rawMetrics map[string]string) []AerospikeStat {
+func (nw *NamespaceStatsProcessor) refreshRosterStats(singleInfoKey string, rawMetrics map[string]string) []AerospikeStat {
 
 	var nsMetricsToSend = []AerospikeStat{}
 

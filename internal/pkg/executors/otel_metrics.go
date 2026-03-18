@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-const AEROSPIKE_NODE_UP = "aerospike.server.node.up"
+const AEROSPIKE_NODE_UP = statprocessors.PREFIX_AEROSPIKE_OTEL + ".node.up"
 
 // this map is used to rename standard labels to OTEL suitable labels
 var OTEL_LABEL_NAME_MAPPING = map[string]string{
@@ -55,10 +55,10 @@ func (oe *OtelExecutor) getCommonLabels() []attribute.KeyValue {
 func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Context,
 	commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
 
-	// create the required metered objectes
+	// create the required metered objects
 	for _, stat := range refreshStats {
 
-		// OTEL all contexts have '.' separated names and actual stat can have _ etc.,
+		// In OTEL all contexts have '.' separated names and actual stat can have _ etc.,
 		//  Example: aerospike.server.namespace.master_objects
 		qualifiedName := fmt.Sprintf("%s.%s.%s",
 			statprocessors.PREFIX_AEROSPIKE_OTEL,
@@ -69,11 +69,17 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 		desc := NormalizeMetric("description_" + stat.Name)
 
 		labels := []attribute.KeyValue{}
+
 		// label name to value mapped using index
 		for idx, label := range stat.Labels {
-			//TODO: handle if label value is null or not present
-			renamedLabel := OTEL_LABEL_NAME_MAPPING[label]
-			labels = append(labels, attribute.String(renamedLabel, stat.LabelValues[idx]))
+
+			labelToSend := label
+
+			if value, ok := OTEL_LABEL_NAME_MAPPING[label]; ok {
+				labelToSend = value
+			}
+
+			labels = append(labels, attribute.String(labelToSend, stat.LabelValues[idx]))
 		}
 
 		// append common labels
