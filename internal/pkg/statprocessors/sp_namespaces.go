@@ -69,7 +69,7 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 
 		// fetch roster command only if strong consistency is enabled for the namespace.
 		//  so roster stats and metrics are sent only from 2nd refresh cycle.
-		if _, ok := namespaceSCstatus[ns]; ok {
+		if val, ok := namespaceSCstatus[ns]; ok && val {
 			infoKeys = append(infoKeys, KEY_NS_ROSTER+":namespace="+ns)
 		}
 	}
@@ -272,9 +272,7 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, i
 	//   we may have combinations of SC and non-SC namespaces in the same cluster, always check for each namespace.
 	//   populate map only if enabled and required
 	if val, ok := stats["strong-consistency"]; ok {
-		if strings.TrimSpace(val) == "true" {
-			namespaceSCstatus[nsName] = true
-		}
+		namespaceSCstatus[nsName] = (strings.TrimSpace(val) == "true")
 	}
 
 	return nsMetricsToSend
