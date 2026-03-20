@@ -26,7 +26,7 @@ func NewPrometheusImpl() (o *PrometheusImpl) {
 	nodeActiveDesc = prometheus.NewDesc(
 		"aerospike_node_up",
 		"Aerospike node active status",
-		[]string{"cluster_name", "service", "build"},
+		[]string{"cluster_name", "service", "build", "node_id"},
 		config.Cfg.Agent.MetricLabels,
 	)
 
@@ -60,7 +60,7 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 
 	if err != nil {
 		log.Errorln(err)
-		ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 0.0, statprocessors.ClusterName, statprocessors.Service, statprocessors.Build)
+		ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 0.0, statprocessors.ClusterName, statprocessors.Service, statprocessors.Build, statprocessors.NodeId)
 		return
 	}
 
@@ -68,7 +68,7 @@ func (o *PrometheusImpl) Collect(ch chan<- prometheus.Metric) {
 	if config.Cfg.Agent.IsKubernetes {
 		statprocessors.Service = config.Cfg.Agent.KubernetesPodName
 	}
-	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, statprocessors.ClusterName, statprocessors.Service, statprocessors.Build)
+	ch <- prometheus.MustNewConstMetric(nodeActiveDesc, prometheus.GaugeValue, 1.0, statprocessors.ClusterName, statprocessors.Service, statprocessors.Build, statprocessors.NodeId)
 
 	for _, wm := range refreshedMetrics {
 		PushToPrometheus(wm, ch)
