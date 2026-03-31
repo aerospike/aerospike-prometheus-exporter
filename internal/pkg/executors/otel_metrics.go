@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-const AEROSPIKE_NODE_UP = statprocessors.PREFIX_AEROSPIKE_OTEL + ".node.up"
+const AEROSPIKE_NODE_UP = statprocessors.PREFIX_AEROSPIKE_OTEL + ".node_up"
 
 // this map is used to rename standard labels to OTEL suitable labels
 var OTEL_LABEL_NAME_MAPPING = map[string]string{
