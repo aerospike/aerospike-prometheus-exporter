@@ -197,12 +197,20 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 	}
 
 	if c.Agent.OtelEnabled {
-		c.validateOtelConfigs()
+
+		// not validation, if not defined default to true
+		// Delta is default as many Datadog and Dynatrace customers. which accept only Delta's
+		if !md.IsDefined("Agent", "OpenTelemetry", "counter_temporality") {
+			c.Agent.Otel.CounterTemporality = "delta"
+		}
 
 		// not validation, if not defined default to true
 		if !md.IsDefined("Agent", "OpenTelemetry", "all_metrics_as_gauges") {
 			c.Agent.Otel.AllMetricsAsGauge = true
 		}
+
+		c.validateOtelConfigs()
+
 	}
 
 	// If both Prom and Otel are not enabled, then error out
@@ -223,15 +231,14 @@ func (c *Config) validateOtelConfigs() {
 	}
 
 	if len(c.Agent.Otel.GrpcEndpoint) > 0 && len(c.Agent.Otel.HttpEndpoint) > 0 {
-		log.Fatalf("In OpenTelemetry section, grpc_endpoint and http_endpoint can be configured, not both")
+		log.Fatalf("In OpenTelemetry section, grpc_endpoint or http_endpoint can be configured, not both")
 	} else if len(c.Agent.Otel.GrpcEndpoint) == 0 && len(c.Agent.Otel.HttpEndpoint) == 0 {
-		log.Fatalf("In OpenTelemetry section, Grpc  or Http neither is configured")
+		log.Fatalf("In OpenTelemetry section, Grpc or Http neither is configured")
 	}
 
-	if len(c.Agent.Otel.CounterTemporality) == 0 {
-		// Delta is default as many Datadog and Dynatrace customers. which accept only Delta's
-		c.Agent.Otel.CounterTemporality = "delta"
-	} else if c.Agent.Otel.CounterTemporality != "delta" && c.Agent.Otel.CounterTemporality != "cumulative" {
+	if strings.ToLower(c.Agent.Otel.CounterTemporality) != "delta" &&
+		strings.ToLower(c.Agent.Otel.CounterTemporality) != "cumulative" {
+
 		log.Fatalf("In OpenTelemetry section, counter_temporality must be either delta or cumulative")
 	}
 

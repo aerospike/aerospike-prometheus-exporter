@@ -2,6 +2,7 @@ package executors
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 
 	"time"
@@ -257,10 +258,12 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 		attribute.String("aerospike_cluster", oe.sharedState.ClusterName),
 		attribute.String("aerospike_service", oe.sharedState.Service),
 		attribute.String("build", oe.sharedState.Build),
+		attribute.String("node_id", oe.sharedState.NodeId),
 	}
 
 	if err != nil {
 		log.Errorf("Error while refreshing Aerospike Metrics, error: %v", err)
+		fmt.Println("Error while refreshing Aerospike Metrics, error: ", err)
 
 		// Reset counter, so when server comes back we do not send large counter value again
 		oe.refreshCounter.Store(0)

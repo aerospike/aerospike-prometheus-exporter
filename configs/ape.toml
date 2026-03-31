@@ -101,6 +101,9 @@
       #       Newrelic accepts Delta and monotonic-sum
       counter_temporality = "delta"
 
+      # Defines if all metrics to be treated as Gauges
+      all_metrics_as_gauges = true
+
 [Aerospike]
       db_host = "localhost"
       db_port = 3000
