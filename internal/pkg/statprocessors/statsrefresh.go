@@ -102,7 +102,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		}
 	}
 
-	infoKeys = []string{sr.sharedState.Infokey_ClusterName, sr.sharedState.Infokey_Service, sr.sharedState.Infokey_Build}
+	infoKeys = []string{sr.sharedState.Infokey_ClusterName, sr.sharedState.Infokey_Service, sr.sharedState.Infokey_Build, sr.sharedState.Infokey_NodeId}
 	statprocessorInfoKeys := make([][]string, len(allStatsprocessorList))
 
 	for i, c := range allStatsprocessorList {

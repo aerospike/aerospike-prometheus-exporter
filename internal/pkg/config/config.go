@@ -174,7 +174,7 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 	}
 
 	if c.Agent.Otel.ServerStatFetchInterval == 0 {
-		c.Agent.Otel.PushInterval = 15
+		c.Agent.Otel.ServerStatFetchInterval = 15
 	}
 
 	if !md.IsDefined("Agent", "enable_prometheus") {
