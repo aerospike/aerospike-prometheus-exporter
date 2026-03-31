@@ -207,7 +207,7 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 
 	// If both Prom and Otel are not enabled, then error out
 	if !c.Agent.PrometheusEnabled && !c.Agent.OtelEnabled {
-		log.Fatalf("Atleast one of Prometheus and OpenTelemetry should be enabled")
+		log.Fatalf("Atleast one of Prometheus or OpenTelemetry should be enabled")
 	}
 
 }
