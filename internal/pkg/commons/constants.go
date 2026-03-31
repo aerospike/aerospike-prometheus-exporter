@@ -58,15 +58,6 @@ const (
 	METRIC_LABEL_CPU_MODE    = "mode"
 )
 
-var (
-	PROC_PATH         = procfs.DefaultMountPoint
-	SYS_PATH          = "/sys"
-	ROOTFS_PATH       = "/"
-	UDEV_DATA_PATH    = "/run/udev/data"
-	NET_STAT_PATH     = "net/netstat"
-	NET_DEV_STAT_PATH = "/proc/net/dev"
-)
-
 const (
 	DELTA_TEMPORALITY      = "delta"
 	CUMULATIVE_TEMPORALITY = "cumulative"
@@ -75,4 +66,13 @@ const (
 const (
 	EXECUTOR_MODE_PROM = "prometheus"
 	EXECUTOR_MODE_OTEL = "otel"
+)
+
+var (
+	PROC_PATH         = procfs.DefaultMountPoint
+	SYS_PATH          = "/sys"
+	ROOTFS_PATH       = "/"
+	UDEV_DATA_PATH    = "/run/udev/data"
+	NET_STAT_PATH     = "net/netstat"
+	NET_DEV_STAT_PATH = "/proc/net/dev"
 )

@@ -178,22 +178,22 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 	}
 
 	if !md.IsDefined("Agent", "enable_prometheus") {
-		log.Infof("Defaulting to Prometheus Exporting mode")
+		log.Info("Defaulting to Prometheus Exporting mode")
 		c.Agent.PrometheusEnabled = true
 	}
 
 	// key-file and cert-file either exist or not-exist together
 	if len(c.Aerospike.KeyFile) == 0 && len(c.Aerospike.CertFile) > 0 {
-		log.Fatalf("In Aerospike section, key_file is not present")
+		log.Fatal("In Aerospike section, key_file is not present")
 	}
 
 	if len(c.Aerospike.KeyFile) > 0 && len(c.Aerospike.CertFile) == 0 {
-		log.Fatalf("In Aerospike section, cert_file is not present")
+		log.Fatal("In Aerospike section, cert_file is not present")
 	}
 
 	// validate Aerospike root-ca and cert-file configs
 	if len(c.Aerospike.RootCA) == 0 && len(c.Aerospike.CertFile) > 0 {
-		log.Fatalf("In Aerospike section, root_ca cannot be null when cert_file and key_file are configured")
+		log.Fatal("In Aerospike section, root_ca cannot be null when cert_file and key_file are configured")
 	}
 
 	if c.Agent.OtelEnabled {
@@ -215,7 +215,7 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 
 	// If both Prom and Otel are not enabled, then error out
 	if !c.Agent.PrometheusEnabled && !c.Agent.OtelEnabled {
-		log.Fatalf("Atleast one of Prometheus or OpenTelemetry should be enabled")
+		log.Fatal("Atleast one of Prometheus or OpenTelemetry should be enabled")
 	}
 
 }
@@ -223,23 +223,23 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 func (c *Config) validateOtelConfigs() {
 	// validate Otel endpoint and grpc_endpoint configs
 	if len(c.Agent.Otel.Endpoint) > 0 && len(c.Agent.Otel.GrpcEndpoint) > 0 {
-		log.Fatalf("In OpenTelemetry section, ONLY  endpoint or grpc_endpoint can be configured, not both")
+		log.Fatal("In OpenTelemetry section, ONLY  endpoint or grpc_endpoint can be configured, not both")
 	} else if len(c.Agent.Otel.Endpoint) > 0 {
-		log.Warnf("In OpenTelemetry section, endpoint is deprecated, use grpc_endpoint instead")
-		log.Infof("In OpenTelemetry section, endpoint configured will be used as grpc_endpoint")
+		log.Warn("In OpenTelemetry section, endpoint is deprecated, use grpc_endpoint instead")
+		log.Info("In OpenTelemetry section, endpoint configured will be used as grpc_endpoint")
 		c.Agent.Otel.GrpcEndpoint = c.Agent.Otel.Endpoint
 	}
 
 	if len(c.Agent.Otel.GrpcEndpoint) > 0 && len(c.Agent.Otel.HttpEndpoint) > 0 {
-		log.Fatalf("In OpenTelemetry section, grpc_endpoint or http_endpoint can be configured, not both")
+		log.Fatal("In OpenTelemetry section, grpc_endpoint or http_endpoint can be configured, not both")
 	} else if len(c.Agent.Otel.GrpcEndpoint) == 0 && len(c.Agent.Otel.HttpEndpoint) == 0 {
-		log.Fatalf("In OpenTelemetry section, Grpc or Http neither is configured")
+		log.Fatal("In OpenTelemetry section, Grpc or Http neither is configured")
 	}
 
 	if strings.ToLower(c.Agent.Otel.CounterTemporality) != "delta" &&
 		strings.ToLower(c.Agent.Otel.CounterTemporality) != "cumulative" {
 
-		log.Fatalf("In OpenTelemetry section, counter_temporality must be either delta or cumulative")
+		log.Fatal("In OpenTelemetry section, counter_temporality must be either delta or cumulative")
 	}
 
 }
@@ -255,7 +255,7 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 
 		for k, v := range cloudLabels {
 
-			if v == "" || len(v) == 0 {
+			if len(v) == 0 {
 				v = "null"
 			}
 
@@ -272,7 +272,7 @@ func (c *Config) FetchKubernetesInfo(md toml.MetaData) {
 
 	if envKubeServiceHost != "" && len(strings.TrimSpace(envKubeServiceHost)) > 0 {
 		c.Agent.IsKubernetes = true
-		log.Infof("Exporter is running in Kubernetes")
+		log.Info("Exporter is running in Kubernetes")
 
 		// get host-name
 		var err error
@@ -374,7 +374,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 	// Error out if both configurations are used at the same time.
 	if md.IsDefined("Aerospike", "namespace_metrics_whitelist") {
 		if Cfg.Aerospike.NamespaceMetricsAllowlistEnabled {
-			log.Fatalf("namespace_metrics_whitelist and namespace_metrics_allowlist are mutually exclusive!")
+			log.Fatal("namespace_metrics_whitelist and namespace_metrics_allowlist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.NamespaceMetricsAllowlistEnabled = true
@@ -383,7 +383,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 
 	if md.IsDefined("Aerospike", "set_metrics_whitelist") {
 		if Cfg.Aerospike.SetMetricsAllowlistEnabled {
-			log.Fatalf("set_metrics_whitelist and set_metrics_allowlist are mutually exclusive!")
+			log.Fatal("set_metrics_whitelist and set_metrics_allowlist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.SetMetricsAllowlistEnabled = true
@@ -392,7 +392,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 
 	if md.IsDefined("Aerospike", "node_metrics_whitelist") {
 		if Cfg.Aerospike.NodeMetricsAllowlistEnabled {
-			log.Fatalf("node_metrics_whitelist and node_metrics_allowlist are mutually exclusive!")
+			log.Fatal("node_metrics_whitelist and node_metrics_allowlist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.NodeMetricsAllowlistEnabled = true
@@ -401,7 +401,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 
 	if md.IsDefined("Aerospike", "xdr_metrics_whitelist") {
 		if Cfg.Aerospike.XdrMetricsAllowlistEnabled {
-			log.Fatalf("xdr_metrics_whitelist and xdr_metrics_allowlist are mutually exclusive!")
+			log.Fatal("xdr_metrics_whitelist and xdr_metrics_allowlist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.XdrMetricsAllowlistEnabled = true
@@ -410,7 +410,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 
 	if md.IsDefined("Aerospike", "namespace_metrics_blacklist") {
 		if len(Cfg.Aerospike.NamespaceMetricsBlocklist) > 0 {
-			log.Fatalf("namespace_metrics_blacklist and namespace_metrics_blocklist are mutually exclusive!")
+			log.Fatal("namespace_metrics_blacklist and namespace_metrics_blocklist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.NamespaceMetricsBlocklist = Cfg.Aerospike.NamespaceMetricsBlacklist
@@ -418,7 +418,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 
 	if md.IsDefined("Aerospike", "set_metrics_blacklist") {
 		if len(Cfg.Aerospike.SetMetricsBlocklist) > 0 {
-			log.Fatalf("set_metrics_blacklist and set_metrics_blocklist are mutually exclusive!")
+			log.Fatal("set_metrics_blacklist and set_metrics_blocklist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.SetMetricsBlocklist = Cfg.Aerospike.SetMetricsBlacklist
@@ -426,7 +426,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 
 	if md.IsDefined("Aerospike", "node_metrics_blacklist") {
 		if len(Cfg.Aerospike.NodeMetricsBlocklist) > 0 {
-			log.Fatalf("node_metrics_blacklist and node_metrics_blocklist are mutually exclusive!")
+			log.Fatal("node_metrics_blacklist and node_metrics_blocklist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.NodeMetricsBlocklist = Cfg.Aerospike.NodeMetricsBlacklist
@@ -434,7 +434,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 
 	if md.IsDefined("Aerospike", "xdr_metrics_blacklist") {
 		if len(Cfg.Aerospike.XdrMetricsBlocklist) > 0 {
-			log.Fatalf("xdr_metrics_blacklist and xdr_metrics_blocklist are mutually exclusive!")
+			log.Fatal("xdr_metrics_blacklist and xdr_metrics_blocklist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.XdrMetricsBlocklist = Cfg.Aerospike.XdrMetricsBlacklist

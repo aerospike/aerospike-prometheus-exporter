@@ -15,7 +15,7 @@ type HostSystemInfoProcessor struct {
 	systemProvider *dataprovider.SystemInfoProvider
 }
 
-func NewHostSystemInfoProcessor(systemProvider *dataprovider.SystemInfoProvider,
+func NewHostSystemInfoProcessor(
 	sharedState *StatProcessorSharedState) *HostSystemInfoProcessor {
 
 	hostSystemInfoProcessor := &HostSystemInfoProcessor{sharedState: sharedState}

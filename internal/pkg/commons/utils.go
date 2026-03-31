@@ -319,9 +319,9 @@ func HandleSignals() {
 
 			switch sig {
 			case syscall.SIGINT:
-				log.Infof("Received SIGINT. Shutting down...")
+				log.Info("Received SIGINT. Shutting down...")
 			case syscall.SIGTERM:
-				log.Infof("Received SIGTERM. Shutting down...")
+				log.Info("Received SIGTERM. Shutting down...")
 			default:
 				log.Infof("Received unexpected signal: %v", sig)
 			}

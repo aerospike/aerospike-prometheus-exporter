@@ -26,7 +26,7 @@ func (uw *UserStatsProcessor) canRefreshUserStats(rawMetrics map[string]string) 
 
 	// check if we should fetch user metrics
 	if !uw.ShouldFetchUserStatistics {
-		log.Debugf("Fetching user statistics is disabled")
+		log.Debug("Fetching user statistics is disabled")
 		return false
 	}
 
@@ -40,7 +40,7 @@ func (uw *UserStatsProcessor) canRefreshUserStats(rawMetrics map[string]string) 
 
 	if !ge {
 		// disable user statisitcs if build version is not >= 5.6.0.0
-		log.Debugf("Aerospike version doesn't support user statistics")
+		log.Debug("Aerospike version doesn't support user statistics")
 		uw.ShouldFetchUserStatistics = false
 		return false
 	}

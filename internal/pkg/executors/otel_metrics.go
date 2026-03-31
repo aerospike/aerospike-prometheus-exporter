@@ -34,8 +34,7 @@ var OTEL_LABEL_NAME_MAPPING = map[string]string{
 func (oe *OtelExecutor) sendNodeUp(meter metric.Meter,
 	labels []attribute.KeyValue, value int64) {
 
-	metricKey := oe.constructMetricKey(AEROSPIKE_NODE_UP, labels)
-	nodeUpGauge := oe.getSendUpGaugeMetric(metricKey, meter, AEROSPIKE_NODE_UP, "Aerospike node active status", labels)
+	nodeUpGauge := oe.getSendUpGaugeMetric(AEROSPIKE_NODE_UP, meter, AEROSPIKE_NODE_UP, "Aerospike node active status", labels)
 	nodeUpGauge.value.Store(value)
 }
 
@@ -163,6 +162,7 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 	// Register callback ONCE
 	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
 
+		// We send a value only if we are conected and correct value is available
 		if oe.dataProvider.IsServerConnected() {
 			o.ObserveInt64(gd.instrument, gd.value.Load(), metric.WithAttributes(labels...))
 		}
@@ -206,6 +206,7 @@ func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricN
 	// Register callback ONCE for this instrument
 	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
 
+		// We send a value only if we are conected and correct value is available
 		if oe.dataProvider.IsServerConnected() {
 			o.ObserveInt64(cd.instrument, cd.value.Load(), metric.WithAttributes(cd.labels...))
 		}

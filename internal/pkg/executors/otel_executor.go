@@ -2,7 +2,6 @@ package executors
 
 import (
 	"context"
-	"fmt"
 	"sync/atomic"
 
 	"time"
@@ -61,7 +60,7 @@ type OtelExecutor struct {
 func (oe *OtelExecutor) Export(ctx context.Context, rm *metricdata.ResourceMetrics) error {
 
 	// do not send metrics to end point to avoid large spikes in delta when exporter restarts
-	if oe.refreshCounter.Load() <= 2 {
+	if oe.dataProvider.IsServerConnected() && oe.refreshCounter.Load() <= 2 {
 		// Return nil to simulate a successful export without actually sending data
 		log.Debugf("%s OtelExecutor, Ignoring refresh of metrics export %d", time.Now().Format(time.RFC3339), oe.refreshCounter.Load())
 		return nil
@@ -74,7 +73,7 @@ func (oe *OtelExecutor) Export(ctx context.Context, rm *metricdata.ResourceMetri
 //
 // Initializes an OTLP exporter, and configures the corresponding metric providers
 func (oe *OtelExecutor) Initialize() error {
-	log.Infof("*** Initializing Otel Exporter... ")
+	log.Info("*** Initializing Otel Exporter... ")
 	log.Debugf("** OTel endpoint %s", config.Cfg.Agent.Otel.Endpoint)
 	log.Debugf("** OTel service name %s", config.Cfg.Agent.Otel.ServiceName)
 
@@ -83,7 +82,7 @@ func (oe *OtelExecutor) Initialize() error {
 	oe.sharedState = statprocessors.NewStatProcessorSharedState()
 
 	oe.statsRefresher = statprocessors.NewStatsRefresher(oe.dataProvider, oe.sharedState)
-	oe.hostSystemInfoProcessor = statprocessors.NewHostSystemInfoProcessor(dataprovider.GetSystemProvider(), oe.sharedState)
+	oe.hostSystemInfoProcessor = statprocessors.NewHostSystemInfoProcessor(oe.sharedState)
 
 	// initialize the metric caches
 	oe.gauges = make(map[string]*GaugeMetrics)
@@ -131,7 +130,7 @@ func (oe *OtelExecutor) Initialize() error {
 		),
 	)
 
-	log.Infof("*** Starting Otel Metrics Push thread... ")
+	log.Info("*** Starting Otel Metrics Push thread... ")
 
 	// Start metric collection loop in a goroutine
 	go func() {
@@ -140,7 +139,7 @@ func (oe *OtelExecutor) Initialize() error {
 
 		meter := oe.meterProvider.Meter(config.Cfg.Agent.Otel.ServiceName + "_Meter")
 
-		defaultCtx := context.Background()
+		// defaultCtx := context.Background()
 		commonLabels := oe.getCommonLabels()
 
 		for {
@@ -151,14 +150,14 @@ func (oe *OtelExecutor) Initialize() error {
 				log.Debugf("\t *** ticker.C: %s", t.Format(time.RFC3339))
 
 				// Aerospike Refresh stats
-				oe.handleAerospikeMetrics(meter, defaultCtx, commonLabels)
+				oe.handleAerospikeMetrics(meter, commonLabels)
 
 				// System metrics
-				oe.handleSystemInfoMetrics(meter, defaultCtx, commonLabels)
+				oe.handleSystemInfoMetrics(meter, commonLabels)
 
 			case <-commons.ProcessExit:
 				// Exit immediately if shutdown signal received
-				log.Infof("OTel executor received shutdown signal, shutting down...")
+				log.Info("OTel executor received shutdown signal, shutting down...")
 				cxt, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 				defer cancel()
 
@@ -250,7 +249,7 @@ func (oe *OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.Instrume
 	return metricdata.CumulativeTemporality
 }
 
-func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
+func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, commonLabels []attribute.KeyValue) {
 
 	asRefreshStats, err := oe.statsRefresher.Refresh()
 
@@ -263,12 +262,19 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 
 	if err != nil {
 		log.Errorf("Error while refreshing Aerospike Metrics, error: %v", err)
-		fmt.Println("Error while refreshing Aerospike Metrics, error: ", err)
 
 		// Reset counter, so when server comes back we do not send large counter value again
 		oe.refreshCounter.Store(0)
+
+		// some providers do not accept empty values for label-values,
+		//   if exporter starts and unable to connect server, NodeId will be null/empty
+		if oe.sharedState.NodeId != "" && oe.sharedState.ClusterName != "" && oe.sharedState.Service != "" {
+			oe.sendNodeUp(meter, append(commonLabels, labels...), 0)
+			return
+		}
+
 		// aerospike server is down, send common labels
-		oe.sendNodeUp(meter, append(commonLabels, labels...), 0)
+		oe.sendNodeUp(meter, commonLabels, 0)
 		return
 	}
 
@@ -284,7 +290,7 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 
 }
 
-func (oe *OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
+func (oe *OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, commonLabels []attribute.KeyValue) {
 	sysInfoRefreshStats, err := oe.hostSystemInfoProcessor.RefreshSystemInfo()
 
 	if err != nil {

@@ -95,11 +95,11 @@ func (mas MockAerospikeServer) FetchUsersDetails() (bool, []*aero.UserRoles, err
 // Mock Data Provider related code, Inherits DataProvider interface
 
 // read mock test data from a file
-var Is_Mock_Initialized = 0
+var is_Mock_Initialized = 0
 
 func (md *MockAerospikeServer) Initialize() {
 
-	if Is_Mock_Initialized == 1 {
+	if is_Mock_Initialized == 1 {
 		fmt.Println("Mock Aerospike Server is already initialized")
 		return
 	}
@@ -113,7 +113,7 @@ func (md *MockAerospikeServer) Initialize() {
 func (md *MockAerospikeServer) internalInitialize(filePath string) {
 
 	// avoid multiple initializations
-	if Is_Mock_Initialized == 1 {
+	if is_Mock_Initialized == 1 {
 		return
 	}
 	fmt.Println("************************************************************************************************************")
@@ -126,7 +126,7 @@ func (md *MockAerospikeServer) internalInitialize(filePath string) {
 	fmt.Println("************************************************************************************************************")
 
 	// Mark as initialized
-	Is_Mock_Initialized = 1
+	is_Mock_Initialized = 1
 
 	readFile, err := os.Open(filePath)
 

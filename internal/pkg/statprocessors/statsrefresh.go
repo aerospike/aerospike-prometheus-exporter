@@ -98,7 +98,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		// we need to have atleast one certificate configured and read successfully
 		if serverPool != nil || clientPool != nil {
 			sr.sharedState.Infokey_Service = INFOKEY_SERVICE_TLS_STD
-			log.Debugf("TLS Mode is enabled, setting infokey-service as  'service-tls-std' for further fetching from server.")
+			log.Debug("TLS Mode is enabled, setting infokey-service as  'service-tls-std' for further fetching from server.")
 		}
 	}
 
@@ -159,7 +159,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		allStatsToSend = append(allStatsToSend, userMetrics...)
 	}
 
-	log.Debugf("Refreshing node was successful")
+	log.Debug("Refreshing node was successful")
 
 	return allStatsToSend, nil
 }

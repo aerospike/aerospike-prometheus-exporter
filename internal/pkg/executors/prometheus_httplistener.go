@@ -21,7 +21,7 @@ type PrometheusHttpExecutor struct {
 }
 
 func (pm PrometheusHttpExecutor) Initialize() error {
-	log.Infof("*** Starting Prometheus HTTP Server... ")
+	log.Info("*** Starting Prometheus HTTP Server... ")
 
 	// Prometheus HTTP server implementation
 	mux := http.NewServeMux()
@@ -112,7 +112,7 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 		var serveErr error
 
 		if len(config.Cfg.Agent.CertFile) > 0 && len(config.Cfg.Agent.KeyFile) > 0 {
-			log.Infof("Enabling HTTPS ...")
+			log.Info("Enabling HTTPS ...")
 			promHttpServer.TLSConfig = initExporterTLS()
 			serveErr = promHttpServer.ListenAndServeTLS("", "")
 		} else {
@@ -124,12 +124,12 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 		}
 	}()
 
-	log.Infof("Prometheus HTTP server started")
+	log.Info("Prometheus HTTP server started")
 
 	// Wait for OS signal and shutdown gracefully to ensure exit code 0
 	go func() {
 		<-commons.ProcessExit
-		log.Infof("Prometheus executor received shutdown signal, shutting down HTTP server...")
+		log.Info("Prometheus executor received shutdown signal, shutting down HTTP server...")
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
