@@ -91,8 +91,8 @@
       # OTel server-stat fetch interval (default 15, not recommended to to reduce this)
       server_stat_fetch_interval = 15
 
-      # OTel metric push interval (default 60, not recommended to to reduce this)
-      push_interval = 60
+      # OTel metric push interval (default 15, not recommended to to reduce this)
+      push_interval = 15
 
       # Defines the temporality to be applied depending on end point treats
       # supported values: delta (default), cumulative
