@@ -52,7 +52,7 @@ func (oe *OtelExecutor) getCommonLabels() []attribute.KeyValue {
 	return attrkv
 }
 
-func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Context,
+func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 	commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
 
 	// create the required metered objects
@@ -91,6 +91,9 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter, ctx context.Cont
 		switch stat.MType {
 		case commons.MetricTypeCounter:
 
+			// some providers still not supporting counters in all approaches in same way,
+			// so we send them as gauges. example Datadog
+			//    Otel Collector cannot send dalta of Counters
 			if config.Cfg.Agent.Otel.AllMetricsAsGauge {
 				gMetric := oe.getGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
 

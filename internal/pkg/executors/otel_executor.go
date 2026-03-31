@@ -250,6 +250,7 @@ func (oe *OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.Instrume
 }
 
 func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.Context, commonLabels []attribute.KeyValue) {
+
 	asRefreshStats, err := oe.statsRefresher.Refresh()
 
 	labels := []attribute.KeyValue{
@@ -276,7 +277,7 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, ctx context.C
 	log.Debugf("%s Aerospike refreshCounter incremented to %d", time.Now().Format(time.RFC3339), oe.refreshCounter.Load())
 
 	// process metrics
-	oe.processAndPushStats(meter, ctx, commonLabels, asRefreshStats)
+	oe.processAndPushStats(meter, commonLabels, asRefreshStats)
 
 }
 
@@ -289,7 +290,7 @@ func (oe *OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, ctx context.
 	}
 
 	// process metrics
-	oe.processAndPushStats(meter, ctx, commonLabels, sysInfoRefreshStats)
+	oe.processAndPushStats(meter, commonLabels, sysInfoRefreshStats)
 }
 
 // Utility functions
