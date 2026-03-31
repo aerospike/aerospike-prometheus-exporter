@@ -205,6 +205,8 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		}
 	}
 
+	// If both Prom and Otel are not enabled, then error out
+
 }
 
 func (c *Config) validateOtelConfigs() {
