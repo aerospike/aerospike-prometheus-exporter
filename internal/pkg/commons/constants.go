@@ -59,7 +59,7 @@ const (
 )
 
 const (
-	DELTA_TEMPORALITY      = "delta"
+	TEMPORALITY_DELTA      = "delta"
 	CUMULATIVE_TEMPORALITY = "cumulative"
 )
 

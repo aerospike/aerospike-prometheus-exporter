@@ -241,7 +241,7 @@ func (oe *OtelExecutor) BuildHttpExporter(ctx context.Context) (sdkmetric.Export
 func (oe *OtelExecutor) getTemporalitySelector(instrumentKind sdkmetric.InstrumentKind) metricdata.Temporality {
 
 	if instrumentKind == sdkmetric.InstrumentKindObservableCounter &&
-		config.Cfg.Agent.Otel.CounterTemporality == commons.DELTA_TEMPORALITY {
+		config.Cfg.Agent.Otel.CounterTemporality == commons.TEMPORALITY_DELTA {
 
 		return metricdata.DeltaTemporality
 	}
