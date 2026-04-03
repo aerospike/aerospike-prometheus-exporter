@@ -31,6 +31,11 @@ var OTEL_LABEL_NAME_MAPPING = map[string]string{
 	commons.METRIC_LABEL_UA_CLIENT_APP_ID:          "client_app_id",
 }
 
+var METRIC_CONTEXT_SEPARATOR = map[string]string{
+	"period":     ".",
+	"underscore": "_",
+}
+
 func (oe *OtelExecutor) sendNodeUp(meter metric.Meter,
 	labels []attribute.KeyValue, value int64) {
 
@@ -59,9 +64,12 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 
 		// In OTEL all contexts have '.' separated names and actual stat can have _ etc.,
 		//  Example: aerospike.server.namespace.master_objects
-		qualifiedName := fmt.Sprintf("%s.%s.%s",
+		//  metric-context-separator is used to separate the context from the metric name
+		qualifiedName := fmt.Sprintf("%s%s%s%s%s",
 			statprocessors.PREFIX_AEROSPIKE_OTEL,
+			METRIC_CONTEXT_SEPARATOR[config.Cfg.Agent.Otel.MetricContextSeparator],
 			string(stat.Context),
+			METRIC_CONTEXT_SEPARATOR[config.Cfg.Agent.Otel.MetricContextSeparator],
 			NormalizeMetric(stat.Name),
 		)
 

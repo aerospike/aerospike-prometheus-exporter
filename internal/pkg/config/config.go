@@ -48,6 +48,8 @@ type Config struct {
 			ServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
 			CounterTemporality      string            `toml:"counter_temporality"`
 			AllMetricsAsGauge       bool              `toml:"all_metrics_as_gauges"`
+			MetricNamePrefix        string            `toml:"metric_name_prefix"`
+			MetricContextSeparator  string            `toml:"metric_context_separator"`
 		} `toml:"OpenTelemetry"`
 
 		IsKubernetes      bool
@@ -209,6 +211,14 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 			c.Agent.Otel.AllMetricsAsGauge = true
 		}
 
+		if !md.IsDefined("Agent", "OpenTelemetry", "metric_name_prefix") {
+			c.Agent.Otel.MetricNamePrefix = "aerospike.server"
+		}
+
+		if !md.IsDefined("Agent", "OpenTelemetry", "metric_context_separator") {
+			c.Agent.Otel.MetricContextSeparator = "period"
+		}
+
 		c.validateOtelConfigs()
 
 	}
@@ -240,6 +250,12 @@ func (c *Config) validateOtelConfigs() {
 		strings.ToLower(c.Agent.Otel.CounterTemporality) != "cumulative" {
 
 		log.Fatal("In OpenTelemetry section, counter_temporality must be either delta or cumulative")
+	}
+
+	if strings.ToLower(c.Agent.Otel.MetricContextSeparator) != "period" &&
+		strings.ToLower(c.Agent.Otel.MetricContextSeparator) != "underscore" {
+
+		log.Fatal("In OpenTelemetry section, metric_context_separator must be either period or underscore")
 	}
 
 }
