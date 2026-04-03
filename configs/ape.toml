@@ -105,11 +105,11 @@
       all_metrics_as_gauges = true
 
       # metric name prefix, defines the prefix before each metric before dispatching to endpoint
-      metric_name_prefix = aerospike.server
+      metric_name_prefix = "aerospike.server"
 
       # metric context seperator, suggests what seperator to use while constructing a metric from stat
       #   supported values "period" (default) or "underscore"
-      metric_context_separator = period
+      metric_context_separator = "period"
 
 [Aerospike]
       db_host = "localhost"
