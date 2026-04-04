@@ -2,6 +2,7 @@ package executors
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 
 	"time"
@@ -42,8 +43,9 @@ type OtelExecutor struct {
 	sdkmetric.Exporter
 	// KEY =  one metric + labels
 	// Each measurement/instrument = one metric + labels + latest value
-	gauges   map[string]*GaugeMetrics
-	counters map[string]*CounterMetrics
+	gauges           map[string]*GaugeMetrics
+	counters         map[string]*CounterMetrics
+	nodeUpMetricName string
 
 	meterProvider *sdkmetric.MeterProvider
 	// metricExporter sdkmetric.Exporter
@@ -141,6 +143,11 @@ func (oe *OtelExecutor) Initialize() error {
 
 		// defaultCtx := context.Background()
 		commonLabels := oe.getCommonLabels()
+
+		oe.nodeUpMetricName = fmt.Sprintf("%s%s%s",
+			config.Cfg.Agent.Otel.MetricNamePrefix,
+			METRIC_CONTEXT_SEPARATOR[config.Cfg.Agent.Otel.MetricContextSeparator],
+			"node_up")
 
 		for {
 			// Wait for next tick or shutdown signal

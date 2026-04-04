@@ -13,8 +13,6 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-const AEROSPIKE_NODE_UP = statprocessors.PREFIX_AEROSPIKE_OTEL + ".node_up"
-
 // this map is used to rename standard labels to OTEL suitable labels
 var OTEL_LABEL_NAME_MAPPING = map[string]string{
 	commons.METRIC_LABEL_CLUSTER_NAME:              "aerospike_cluster",
@@ -39,7 +37,10 @@ var METRIC_CONTEXT_SEPARATOR = map[string]string{
 func (oe *OtelExecutor) sendNodeUp(meter metric.Meter,
 	labels []attribute.KeyValue, value int64) {
 
-	nodeUpGauge := oe.getSendUpGaugeMetric(AEROSPIKE_NODE_UP, meter, AEROSPIKE_NODE_UP, "Aerospike node active status", labels)
+	var key = oe.constructMetricKey(oe.nodeUpMetricName, labels)
+	nodeUpGauge := oe.getNodeUpGaugeMetric(key, meter, oe.nodeUpMetricName,
+		"Aerospike node active status", labels)
+
 	nodeUpGauge.value.Store(value)
 }
 
@@ -66,7 +67,7 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 		//  Example: aerospike.server.namespace.master_objects
 		//  metric-context-separator is used to separate the context from the metric name
 		qualifiedName := fmt.Sprintf("%s%s%s%s%s",
-			statprocessors.PREFIX_AEROSPIKE_OTEL,
+			config.Cfg.Agent.Otel.MetricNamePrefix,
 			METRIC_CONTEXT_SEPARATOR[config.Cfg.Agent.Otel.MetricContextSeparator],
 			string(stat.Context),
 			METRIC_CONTEXT_SEPARATOR[config.Cfg.Agent.Otel.MetricContextSeparator],
@@ -231,7 +232,7 @@ func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricN
 }
 
 // Send-up, this metric will have to be send irrespective of Aerospike Server is available or not.
-func (oe *OtelExecutor) getSendUpGaugeMetric(key string, meter metric.Meter, metricName string,
+func (oe *OtelExecutor) getNodeUpGaugeMetric(key string, meter metric.Meter, metricName string,
 	desc string, labels []attribute.KeyValue) *GaugeMetrics {
 
 	// Fast path
