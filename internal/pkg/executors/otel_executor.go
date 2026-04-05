@@ -261,10 +261,10 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, commonLabels 
 	asRefreshStats, err := oe.statsRefresher.Refresh()
 
 	labels := []attribute.KeyValue{
-		attribute.String("aerospike_cluster", oe.sharedState.ClusterName),
-		attribute.String("aerospike_service", oe.sharedState.Service),
-		attribute.String("build", oe.sharedState.Build),
-		attribute.String("node_id", oe.sharedState.NodeId),
+		attribute.String(oe.getRenamedLabel("aerospike_cluster"), oe.sharedState.ClusterName),
+		attribute.String(oe.getRenamedLabel("aerospike_service"), oe.sharedState.Service),
+		attribute.String(oe.getRenamedLabel("build"), oe.sharedState.Build),
+		attribute.String(oe.getRenamedLabel("node_id"), oe.sharedState.NodeId),
 	}
 
 	if err != nil {

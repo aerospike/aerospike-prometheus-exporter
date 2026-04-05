@@ -13,22 +13,6 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-// this map is used to rename standard labels to OTEL suitable labels
-var OTEL_LABEL_NAME_MAPPING = map[string]string{
-	commons.METRIC_LABEL_CLUSTER_NAME:              "aerospike_cluster",
-	commons.METRIC_LABEL_SERVICE:                   "aerospike_service",
-	commons.METRIC_LABEL_NS:                        "ns",
-	commons.METRIC_LABEL_SET:                       "set",
-	commons.METRIC_LABEL_LE:                        "le",
-	commons.METRIC_LABEL_DC_NAME:                   "dc",
-	commons.METRIC_LABEL_INDEX:                     "index",
-	commons.METRIC_LABEL_SINDEX:                    "sindex",
-	commons.METRIC_LABEL_STORAGE_ENGINE:            "storage_engine",
-	commons.METRIC_LABEL_USER:                      "user",
-	commons.METRIC_LABEL_UA_CLIENT_LIBRARY_VERSION: "client_library_version",
-	commons.METRIC_LABEL_UA_CLIENT_APP_ID:          "client_app_id",
-}
-
 var METRIC_CONTEXT_SEPARATOR = map[string]string{
 	"period":     ".",
 	"underscore": "_",
@@ -80,14 +64,7 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 
 		// label name to value mapped using index
 		for idx, label := range stat.Labels {
-
-			labelToSend := label
-
-			if value, ok := config.Cfg.Agent.Otel.RenamedLabels[label]; ok {
-				labelToSend = value
-			}
-
-			labels = append(labels, attribute.String(labelToSend, stat.LabelValues[idx]))
+			labels = append(labels, attribute.String(oe.getRenamedLabel(label), stat.LabelValues[idx]))
 		}
 
 		// append common labels
@@ -270,4 +247,13 @@ func (oe *OtelExecutor) getNodeUpGaugeMetric(key string, meter metric.Meter, met
 
 	oe.gauges[key] = gd
 	return gd
+}
+
+func (oe *OtelExecutor) getRenamedLabel(label string) string {
+
+	if value, ok := config.Cfg.Agent.Otel.RenamedLabels[label]; ok {
+		return value
+	}
+
+	return label
 }
