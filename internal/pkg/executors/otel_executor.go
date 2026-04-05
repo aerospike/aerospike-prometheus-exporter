@@ -261,8 +261,9 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, commonLabels 
 	asRefreshStats, err := oe.statsRefresher.Refresh()
 
 	labels := []attribute.KeyValue{
-		attribute.String(oe.getRenamedLabel("aerospike_cluster"), oe.sharedState.ClusterName),
-		attribute.String(oe.getRenamedLabel("aerospike_service"), oe.sharedState.Service),
+		// we use standard labels always, which can be renamed using renamed_labels configuration
+		attribute.String(oe.getRenamedLabel("cluster"), oe.sharedState.ClusterName),
+		attribute.String(oe.getRenamedLabel("service"), oe.sharedState.Service),
 		attribute.String(oe.getRenamedLabel("build"), oe.sharedState.Build),
 		attribute.String(oe.getRenamedLabel("node_id"), oe.sharedState.NodeId),
 	}
