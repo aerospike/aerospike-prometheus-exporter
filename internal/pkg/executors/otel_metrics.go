@@ -83,7 +83,7 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 
 			labelToSend := label
 
-			if value, ok := OTEL_LABEL_NAME_MAPPING[label]; ok {
+			if value, ok := config.Cfg.Agent.Otel.RenamedLabels[label]; ok {
 				labelToSend = value
 			}
 

@@ -111,6 +111,9 @@
       #   supported values "period" (default) or "underscore"
       metric_context_separator = "period"
 
+      # renamed variables
+      renamed_labels = {cluster="aerospike_cluster",service="aerospike_service"}
+
 [Aerospike]
       db_host = "localhost"
       db_port = 3000
