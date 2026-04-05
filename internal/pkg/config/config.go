@@ -225,7 +225,7 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 			log.Debug("In OpenTelemetry section, renamed_labels are not configured, adding default values")
 
 			c.Agent.Otel.RenamedLabels = make(map[string]string)
-			c.Agent.Otel.RenamedLabels["cluster"] = "aerospike_cluster"
+			c.Agent.Otel.RenamedLabels["cluster_name"] = "aerospike_cluster"
 			c.Agent.Otel.RenamedLabels["service"] = "aerospike_service"
 		}
 

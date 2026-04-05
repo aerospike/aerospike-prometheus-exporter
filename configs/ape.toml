@@ -112,7 +112,7 @@
       metric_context_separator = "period"
 
       # renamed variables
-      renamed_labels = {cluster="aerospike_cluster",service="aerospike_service"}
+      renamed_labels = {cluster_name="aerospike_cluster",service="aerospike_service"}
 
 [Aerospike]
       db_host = "localhost"
