@@ -256,14 +256,18 @@ func (c *Config) validateOtelConfigs() {
 		log.Fatal("In OpenTelemetry section, Grpc or Http neither is configured")
 	}
 
-	if strings.ToLower(c.Agent.Otel.CounterTemporality) != "delta" &&
-		strings.ToLower(c.Agent.Otel.CounterTemporality) != "cumulative" {
+	// set configured values to lower-case
+	c.Agent.Otel.MetricContextSeparator = strings.ToLower(c.Agent.Otel.MetricContextSeparator)
+	c.Agent.Otel.CounterTemporality = strings.ToLower(c.Agent.Otel.CounterTemporality)
+
+	if c.Agent.Otel.CounterTemporality != "delta" &&
+		c.Agent.Otel.CounterTemporality != "cumulative" {
 
 		log.Fatal("In OpenTelemetry section, counter_temporality must be either delta or cumulative")
 	}
 
-	if strings.ToLower(c.Agent.Otel.MetricContextSeparator) != "period" &&
-		strings.ToLower(c.Agent.Otel.MetricContextSeparator) != "underscore" {
+	if c.Agent.Otel.MetricContextSeparator != "period" &&
+		c.Agent.Otel.MetricContextSeparator != "underscore" {
 
 		log.Fatal("In OpenTelemetry section, metric_context_separator must be either period or underscore")
 	}
