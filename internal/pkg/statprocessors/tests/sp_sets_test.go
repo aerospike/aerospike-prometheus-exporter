@@ -15,7 +15,8 @@ func Test_Sets_PassOneKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sets_PassOneKeys")
 
 	// Check passoneKeys
-	setsWatcher := &statprocessors.SetsStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	setsWatcher := statprocessors.NewSetsStatsProcessor(sharedState)
 	nwPassOneKeys := setsWatcher.PassOneKeys()
 
 	udh := &UnittestDataHandler{}
@@ -33,11 +34,11 @@ func Test_Sets_PassTwoKeys(t *testing.T) {
 	// initialize config and gauge-lists
 	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
 	// Check passoneKeys
-	setsWatcher := &statprocessors.SetsStatsProcessor{}
+	setsWatcher := statprocessors.NewSetsStatsProcessor(sharedState)
 	nwPassOneKeys := setsWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("Test_Sets_PassTwoKeys: passOneOutput: ", passOneOutput)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := setsWatcher.PassTwoKeys(passOneOutput)
 
 	udh := &UnittestDataHandler{}
@@ -70,23 +71,23 @@ func Test_Sets_RefreshDefault(t *testing.T) {
 func sets_runTestcase(t *testing.T) {
 
 	// Check passoneKeys
-	setsWatcher := &statprocessors.SetsStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	setsWatcher := statprocessors.NewSetsStatsProcessor(sharedState)
 	nwPassOneKeys := setsWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := setsWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
-	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
+	infoKeys := []string{sharedState.Infokey_ClusterName, sharedState.Infokey_Service, sharedState.Infokey_Build}
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
 
-	arrRawMetrics, err := dataprovider.GetProvider().RequestInfo(passTwoOutputs)
+	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(passTwoOutputs)
 	assert.Nil(t, err, "Error while setsWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while setsWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
-	statprocessors.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
-	statprocessors.Build = arrRawMetrics[statprocessors.Infokey_Build]
-	statprocessors.Service = arrRawMetrics[statprocessors.Infokey_Service]
+	sharedState.ClusterName = arrRawMetrics[sharedState.Infokey_ClusterName]
+	sharedState.Build = arrRawMetrics[sharedState.Infokey_Build]
+	sharedState.Service = arrRawMetrics[sharedState.Infokey_Service]
 
 	// check the output with setsWatcher
 	setsMetrics, err := setsWatcher.Refresh(passTwoOutputs, arrRawMetrics)

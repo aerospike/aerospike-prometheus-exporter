@@ -78,8 +78,10 @@ func InitGaugeStats(pGaugeStatsFile string) {
  */
 func (gm *GaugeStats) createMapFromArray(pArrStats []string) map[string]bool {
 	statsMap := make(map[string]bool)
+
 	for _, stat := range pArrStats {
 		statsMap[stat] = true
 	}
+
 	return statsMap
 }

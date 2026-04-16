@@ -67,25 +67,52 @@
       basic_auth_password = ""
 
 [Agent.OpenTelemetry]
-      # NOTE: currently supports only gRPC endpoints
-
       # OTel service-name
       service_name = "aerospike-server-metrics-service"
 
       # OTel Endpoint
+      # DEPRECATED. Use grpc_endpoint
       endpoint = ""
 
-      # OTel SSL/TLS, for HTTPS endpoints
-      endpoint_tls_enabled = true
+      # OTel Endpoint
+      # NOTE: Only url, does not include protocol http/https
+      # NOTE: configure either grpc_endpoint or endpoint (DEPRECATED), both cannot be configured
+      grpc_endpoint = ""
 
-      # OTel headers
+      # OTel Endpoint URL Path 
+      # provide entire url, including http/https protocol
+      http_endpoint = ""
+
+      # OTel headers, 
+      # NOTE: Each header will be a "<key>"="<value>" pair and each header is comma separated
+      # Example: "api-key"="<api-key>","Authorization"="Api-Token <token>"
       headers = {}
 
       # OTel server-stat fetch interval (default 15, not recommended to to reduce this)
       server_stat_fetch_interval = 15
 
-      # OTel metric push interval (default 60, not recommended to to reduce this)
-      push_interval = 60
+      # OTel metric push interval (default 15, not recommended to to reduce this)
+      push_interval = 15
+
+      # Defines the temporality to be applied depending on end point treats
+      # supported values: delta (default), cumulative
+      # Why Delta is default, many customer use Datadog and Dynatrace.
+      # NOTE: Datadog and Dynatrace only support Delta's for monotonic-cumulative counters 
+      #       Newrelic accepts Delta and monotonic-sum
+      counter_temporality = "delta"
+
+      # Defines if all metrics to be treated as Gauges
+      all_metrics_as_gauges = true
+
+      # metric name prefix, defines the prefix before each metric before dispatching to endpoint
+      metric_name_prefix = "aerospike.server"
+
+      # metric context seperator, suggests what seperator to use while constructing a metric from stat
+      #   supported values "period" (default) or "underscore"
+      metric_context_separator = "period"
+
+      # renamed variables
+      renamed_labels = {cluster_name="aerospike_cluster",service="aerospike_service"}
 
 [Aerospike]
       db_host = "localhost"

@@ -3,18 +3,26 @@ package statprocessors
 import (
 	"strings"
 
-	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 
 	log "github.com/sirupsen/logrus"
 )
 
-type SetsStatsProcessor struct {
-	setMetrics map[string]AerospikeStat
-}
-
 const (
 	KEY_SETS = "sets"
 )
+
+type SetsStatsProcessor struct {
+	setMetrics  map[string]AerospikeStat
+	sharedState *StatProcessorSharedState
+}
+
+func NewSetsStatsProcessor(state *StatProcessorSharedState) *SetsStatsProcessor {
+	return &SetsStatsProcessor{
+		sharedState: state,
+		setMetrics:  make(map[string]AerospikeStat),
+	}
+}
 
 func (sw *SetsStatsProcessor) PassOneKeys() []string {
 	log.Tracef("sets-passonekeys:nil")
@@ -34,16 +42,13 @@ func (sw *SetsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 
 	log.Tracef("set-stats:%v", rawMetrics[KEY_SETS])
 
-	if sw.setMetrics == nil {
-		sw.setMetrics = make(map[string]AerospikeStat)
-	}
-
 	var allMetricsToSend = []AerospikeStat{}
 
 	for i := range setStats {
 		stats := commons.ParseStats(setStats[i], ":")
 		for stat, value := range stats {
 			pv, err := commons.TryConvert(value)
+
 			if err != nil {
 				continue
 			}
@@ -56,7 +61,7 @@ func (sw *SetsStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 			}
 
 			labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_SET}
-			labelValues := []string{ClusterName, Service, stats["ns"], stats["set"]}
+			labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, stats["ns"], stats["set"]}
 
 			// pushToPrometheus(asMetric, pv, labels, labelsValues, ch)
 			asMetric.updateValues(pv, labels, labelValues)

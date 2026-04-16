@@ -1,22 +1,24 @@
 # Watchers - passOneKeys
 
 namespace-passonekeys:[namespaces]           
-node-passonekeys:nil                         
+node-passonekeys:logs                        
 sets-passonekeys:nil                         
-sindex-passonekeys:[sindex]                  
+sindex-passonekeys:[sindex-list:]  
 xdr-passonekeys:[get-config:context=xdr]     
 latency-passonekeys:nil                      
-users-passonekeys:nil                        
+users-passonekeys:nil
+
+node-passonekeys-logs:0:/var/log/aerospike.log
 
 # Watchers - passTwokeys
 
 namespace-passtwokeys:[namespace/test namespace/bar namespace/bar_pmem namespace/employees_flash] 
-node-passtwokeys:[get-config:context=service statistics] 
+node-passtwokeys:[get-config:context=service statistics log/0] 
 sets-passtwokeys:[sets]                      
 xdr-passtwokeys:[get-stats:context=xdr;dc=172.17.0.8:8901 get-config:context=xdr;dc=172.17.0.8:8901 get-config:context=xdr;dc=172.17.0.8:8901;namespace=test get-stats:context=xdr;dc=172.17.0.8:8901;namespace=test get-config:context=xdr;dc=172.17.0.8:8901;namespace=bar get-stats:context=xdr;dc=172.17.0.8:8901;namespace=bar get-config:context=xdr;dc=172.17.0.8:8901;namespace=bar_pmem get-stats:context=xdr;dc=172.17.0.8:8901;namespace=bar_pmem get-config:context=xdr;dc=172.17.0.8:8901;namespace=employees_flash get-stats:context=xdr;dc=172.17.0.8:8901;namespace=employees_flash get-stats:context=xdr;dc=64_asia_sng_dr_1 get-config:context=xdr;dc=64_asia_sng_dr_1 get-config:context=xdr;dc=64_asia_sng_dr_1;namespace=test get-stats:context=xdr;dc=64_asia_sng_dr_1;namespace=test get-config:context=xdr;dc=64_asia_sng_dr_1;namespace=bar get-stats:context=xdr;dc=64_asia_sng_dr_1;namespace=bar get-config:context=xdr;dc=64_asia_sng_dr_1;namespace=bar_pmem get-stats:context=xdr;dc=64_asia_sng_dr_1;namespace=bar_pmem get-config:context=xdr;dc=64_asia_sng_dr_1;namespace=employees_flash get-stats:context=xdr;dc=64_asia_sng_dr_1;namespace=employees_flash] 
-latency-passtwokeys:[latencies:]             
+latency-passtwokeys:[latencies:]   
 users-passtwokeys:nil                       
-sindex-passtwokeys:[sindex/test/test_sindex1 sindex/test/7x_sindex_1 sindex/bar/7x_sindex_bar_2] 
+sindex-passtwokeys:[sindex-stat:namespace=test;indexname=test_sindex1 sindex-stat:namespace=test;indexname=7x_sindex_1 sindex-stat:namespace=bar;indexname=7x_sindex_bar_2]
 
 ===============================================================================================================================================
 ## Namespace
@@ -1510,6 +1512,8 @@ statprocessors.AerospikeStat{Context:"node_stats", Name:"objects", MType:0x47, I
 statprocessors.AerospikeStat{Context:"node_stats", Name:"heartbeat_connections_opened", MType:0x43, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000"}}
 statprocessors.AerospikeStat{Context:"node_stats", Name:"heartbeat_received_self", MType:0x43, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000"}}
 statprocessors.AerospikeStat{Context:"node_stats", Name:"early_tsvc_ops_sub_error", MType:0x43, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000"}}
+statprocessors.AerospikeStat{Context:"node_stats", Name:"pseudo_log_debug", MType:0x43, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000"}}
+statprocessors.AerospikeStat{Context:"node_stats", Name:"pseudo_log_detail", MType:0x43, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000"}}
 
 ===============================================================================================================================================
 ## Xdr
@@ -1703,6 +1707,7 @@ statprocessors.AerospikeStat{Context:"xdr", Name:"retry_conn_reset", MType:0x43,
 statprocessors.AerospikeStat{Context:"xdr", Name:"retry_dest", MType:0x43, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service", "dc", "ns"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "64_asia_sng_dr_1", "employees_flash"}}
 statprocessors.AerospikeStat{Context:"xdr", Name:"hot_keys", MType:0x43, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service", "dc", "ns"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "64_asia_sng_dr_1", "employees_flash"}}
 statprocessors.AerospikeStat{Context:"xdr", Name:"in_queue", MType:0x47, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service", "dc", "ns"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "64_asia_sng_dr_1", "employees_flash"}}
+
 statprocessors.AerospikeStat{Context:"xdr", Name:"in_progress", MType:0x47, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service", "dc", "ns"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "64_asia_sng_dr_1", "employees_flash"}}
 statprocessors.AerospikeStat{Context:"xdr", Name:"success", MType:0x43, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service", "dc", "ns"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "64_asia_sng_dr_1", "employees_flash"}}
 statprocessors.AerospikeStat{Context:"xdr", Name:"abandoned", MType:0x43, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service", "dc", "ns"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "64_asia_sng_dr_1", "employees_flash"}}
@@ -1801,6 +1806,7 @@ statprocessors.AerospikeStat{Context:"sindex", Name:"load_pct", MType:0x47, IsAl
 statprocessors.AerospikeStat{Context:"sindex", Name:"load_time", MType:0x47, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service", "ns", "sindex"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "test", "7x_sindex_1"}}
 statprocessors.AerospikeStat{Context:"sindex", Name:"stat_gc_recs", MType:0x43, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service", "ns", "sindex"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "test", "7x_sindex_1"}}
 statprocessors.AerospikeStat{Context:"sindex", Name:"entries", MType:0x47, IsAllowed:true, IsConfig:false, Value:29932, Labels:[]string{"cluster_name", "service", "ns", "sindex"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "test", "7x_sindex_1"}}
+
 statprocessors.AerospikeStat{Context:"sindex", Name:"used_bytes", MType:0x47, IsAllowed:true, IsConfig:false, Value:1.6777216e+07, Labels:[]string{"cluster_name", "service", "ns", "sindex"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "test", "7x_sindex_1"}}
 statprocessors.AerospikeStat{Context:"sindex", Name:"entries_per_bval", MType:0x47, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service", "ns", "sindex"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "test", "7x_sindex_1"}}
 statprocessors.AerospikeStat{Context:"sindex", Name:"entries_per_rec", MType:0x47, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service", "ns", "sindex"}, LabelValues:[]string{"70_aus_perth_1", "172.17.0.6:3000", "test", "7x_sindex_1"}}

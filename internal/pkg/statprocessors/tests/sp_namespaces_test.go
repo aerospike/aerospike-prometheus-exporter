@@ -14,8 +14,9 @@ func Test_Namespace_PassOneKeys(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Namespace_PassOneKeys")
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
 	// Check passoneKeys
-	nsWatcher := &statprocessors.NamespaceStatsProcessor{}
+	nsWatcher := statprocessors.NewNamespaceStatsProcessor(sharedState)
 	nsPassOneKeys := nsWatcher.PassOneKeys()
 
 	udh := &UnittestDataHandler{}
@@ -36,13 +37,14 @@ func Test_Namespace_PassTwoKeys(t *testing.T) {
 	// initialize config and gauge-lists
 	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
+
 	// rawMetrics := getRawMetrics()
-	nsWatcher := &statprocessors.NamespaceStatsProcessor{}
+	nsWatcher := statprocessors.NewNamespaceStatsProcessor(sharedState)
 
 	// simulate, as if we are sending requestInfo to AS and get the namespaces, these are coming from mock-data-generator
 	passOneKeys := nsWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(passOneKeys)
-	fmt.Println("Test_Namespace_PassTwoKeys: passOneOutput: ", passOneOutput)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(passOneKeys)
 	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
 
 	// expectedOutputs := []string{"namespace/bar", "namespace/test"}
@@ -78,24 +80,25 @@ func Test_Namespace_RefreshDefault(t *testing.T) {
 func namespace_runTestcase(t *testing.T) {
 
 	// rawMetrics := getRawMetrics()
-	nsWatcher := &statprocessors.NamespaceStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	nsWatcher := statprocessors.NewNamespaceStatsProcessor(sharedState)
 
 	// simulate, as if we are sending requestInfo to AS and get the namespaces, these are coming from mock-data-generator
 	passOneKeys := nsWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(passOneKeys)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(passOneKeys)
 	passTwokeyOutputs := nsWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
-	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
+	infoKeys := []string{sharedState.Infokey_ClusterName, sharedState.Infokey_Service, sharedState.Infokey_Build}
 	passTwokeyOutputs = append(passTwokeyOutputs, infoKeys...)
 
-	arrRawMetrics, err := dataprovider.GetProvider().RequestInfo(passTwokeyOutputs)
+	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(passTwokeyOutputs)
 	assert.Nil(t, err, "Error while NamespaceWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while NamespaceWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
-	statprocessors.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
-	statprocessors.Build = arrRawMetrics[statprocessors.Infokey_Build]
-	statprocessors.Service = arrRawMetrics[statprocessors.Infokey_Service]
+	sharedState.ClusterName = arrRawMetrics[sharedState.Infokey_ClusterName]
+	sharedState.Build = arrRawMetrics[sharedState.Infokey_Build]
+	sharedState.Service = arrRawMetrics[sharedState.Infokey_Service]
 
 	// check the output with NamespaceWatcher
 	nsMetrics, err := nsWatcher.Refresh(passTwokeyOutputs, arrRawMetrics)

@@ -19,12 +19,6 @@ const (
 )
 
 // Default info commands
-var (
-	Infokey_ClusterName = "cluster-name"
-	Infokey_Service     = INFOKEY_SERVICE_CLEAR_STD
-	Infokey_Build       = "build"
-	Infokey_NodeId      = "node:"
-)
 
 var (
 	// Regex for indentifying globbing patterns (or standard wildcards) in the metrics allowlist and blocklist.

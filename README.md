@@ -18,7 +18,7 @@ For more details about Aerospike Server Config refer [Aerospike System Config re
 
 #### Pre Requisites
 
-- Install Go v1.20+
+- Install Go v1.25+
 
 #### Steps
 
@@ -256,12 +256,30 @@ make release-docker-multi-arch
     refresh_system_stats = true
     ```
 
-- Update exporter's OTel configuration to send metrics to a gRPC end-point (NOTE: only gRPC endpoint is supported for now)
+- Update exporter's OTel configuration to send metrics in OpenTelemetry format
     ```toml
     [Agent]
-        OPEN_TELEMETRY = true
+        enable_open_telemetry = true
 
     [Agen.OpenTelemetry]
+    ```
+
+- Update exporter's OTel grpc_endpoint configuration to send metrics to a gRPC end-point 
+    ```toml
+    [Agent.OpenTelemetry]
+        grpc_endpoint = <endpoint where to push exporter metrics>
+    ```
+
+- Update exporter's OTel http_endpoint configuration to send metrics to a HTTP end-point 
+    ```toml
+    [Agent.OpenTelemetry]
+        http_endpoint = <endpoint where to push exporter metrics>
+    ```
+
+- Update exporter's OTel headers configuration to send for authentication and additional headers
+    ```toml
+    [Agent.OpenTelemetry]
+        headers = {}
     ```
 
 - Use allowlist and blocklist to filter out required metrics (optional). The allowlist and blocklist supports standard wildcards (globbing patterns which include - `? (question mark)`, `* (asterisk)`, `[ ] (square brackets)`, `{ } (curly brackets)`, `[!]` and `\ (backslash)`) for bulk metrics filtering. For example,

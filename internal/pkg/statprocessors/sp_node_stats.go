@@ -18,7 +18,16 @@ const (
 
 type NodeStatsProcessor struct {
 	nodeMetrics  map[string]AerospikeStat
+	sharedState  *StatProcessorSharedState
 	logSinkCount int
+}
+
+func NewNodeStatsProcessor(state *StatProcessorSharedState) *NodeStatsProcessor {
+	return &NodeStatsProcessor{
+		sharedState:  state,
+		nodeMetrics:  make(map[string]AerospikeStat),
+		logSinkCount: 0,
+	}
 }
 
 func (sw *NodeStatsProcessor) PassOneKeys() []string {
@@ -75,10 +84,6 @@ func (sw *NodeStatsProcessor) parseLogSinkDetails(rawMetrics map[string]string) 
 
 func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
 
-	if sw.nodeMetrics == nil {
-		sw.nodeMetrics = make(map[string]AerospikeStat)
-	}
-
 	log.Tracef("node-configs:%s", rawMetrics[KEY_SERVICE_CONFIG])
 	log.Tracef("node-stats:%s", rawMetrics[KEY_SERVICE_STATISTICS])
 
@@ -123,7 +128,7 @@ func (sw *NodeStatsProcessor) handleRefresh(rawMetrics string) []AerospikeStat {
 		}
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
-		labelValues := []string{ClusterName, Service}
+		labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service}
 
 		// pushToPrometheus(asMetric, pv, labels, labelsValues)
 		asMetric.updateValues(pv, labels, labelValues)
@@ -143,10 +148,10 @@ func (sw *NodeStatsProcessor) handleRefresh(rawMetrics string) []AerospikeStat {
 					latencySubcommand = strings.ReplaceAll(latencySubcommand, "hist-", "")
 				}
 
-				ServiceLatencyBenchmarks[stat] = latencySubcommand
+				sw.sharedState.ServiceLatencyBenchmarks[stat] = latencySubcommand
 			} else {
 				// pv==0 means histogram is disabled
-				delete(ServiceLatencyBenchmarks, stat)
+				delete(sw.sharedState.ServiceLatencyBenchmarks, stat)
 			}
 		}
 	}
@@ -191,7 +196,7 @@ func (sw *NodeStatsProcessor) createLogSinkMetric(statName string, statValue flo
 	}
 
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
-	labelValues := []string{ClusterName, Service}
+	labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service}
 
 	asMetric.updateValues(statValue, labels, labelValues)
 
@@ -237,7 +242,7 @@ func (sw *NodeStatsProcessor) handleUserAgentsStats(rawMetrics map[string]string
 		}
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_UA_CLIENT_LIBRARY_VERSION, commons.METRIC_LABEL_UA_CLIENT_APP_ID}
-		labelValues := []string{ClusterName, Service, clientLibraryVersion, appId}
+		labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, clientLibraryVersion, appId}
 
 		asMetric.updateValues(pv, labels, labelValues)
 		refreshMetricsToSend = append(refreshMetricsToSend, asMetric)

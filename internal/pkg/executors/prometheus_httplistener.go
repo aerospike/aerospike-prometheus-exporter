@@ -21,7 +21,7 @@ type PrometheusHttpExecutor struct {
 }
 
 func (pm PrometheusHttpExecutor) Initialize() error {
-	log.Infof("*** Starting Prometheus HTTP Server... ")
+	log.Info("*** Starting Prometheus HTTP Server... ")
 
 	// Prometheus HTTP server implementation
 	mux := http.NewServeMux()
@@ -33,20 +33,24 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 
 	// Get http basic auth username
 	httpBasicAuthUsernameBytes, err := commons.GetSecret(config.Cfg.Agent.BasicAuthUsername)
+
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to get http basic auth username: %s", err)
 	}
+
 	httpBasicAuthUsername := string(httpBasicAuthUsernameBytes)
 
 	// Get http basic auth password
 	httpBasicAuthPasswordBytes, err := commons.GetSecret(config.Cfg.Agent.BasicAuthPassword)
+
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to get http basic auth password: %s", err)
 	}
 	httpBasicAuthPassword := string(httpBasicAuthPasswordBytes)
 
 	// Handle "/metrics" url
 	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+
 		if httpBasicAuthUsername != "" {
 			if commons.ValidateBasicAuth(r, httpBasicAuthUsername, httpBasicAuthPassword) {
 				promhttp.HandlerFor(promReg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
@@ -57,6 +61,7 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 			w.Header().Set("WWW-Authenticate", `Basic realm="AEROSPIKE-PROMETHEUS-EXPORTER-REALM"`)
 			w.WriteHeader(401)
 			_, err := w.Write([]byte("401 Unauthorized\n"))
+
 			if err != nil {
 				log.Warnf("failed to write http response data for /metrics: %s", err.Error())
 			}
@@ -68,6 +73,7 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 	// Handle "/health" url
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte(`OK`))
+
 		if err != nil {
 			log.Warnf("failed to write http response for /health: %s", err.Error())
 		}
@@ -83,6 +89,7 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 			</body>
 			</html>
 		`))
+
 		if err != nil {
 			log.Warnf("failed to write http response for root /: %s", err.Error())
 		}
@@ -103,6 +110,7 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 	// Without Shutdown(), the process gets killed with exit code 2.
 	go func() {
 		var serveErr error
+
 		if len(config.Cfg.Agent.CertFile) > 0 && len(config.Cfg.Agent.KeyFile) > 0 {
 			log.Info("Enabling HTTPS ...")
 			promHttpServer.TLSConfig = initExporterTLS()
@@ -116,14 +124,15 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 		}
 	}()
 
-	log.Infof("Prometheus HTTP server started")
+	log.Info("Prometheus HTTP server started")
 
 	// Wait for OS signal and shutdown gracefully to ensure exit code 0
 	go func() {
 		<-commons.ProcessExit
-		log.Infof("Prometheus executor received shutdown signal, shutting down HTTP server...")
+		log.Info("Prometheus executor received shutdown signal, shutting down HTTP server...")
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
+
 		if shutdownErr := promHttpServer.Shutdown(ctx); shutdownErr != nil {
 			log.Errorf("Error during server shutdown: %v", shutdownErr)
 		}
@@ -135,8 +144,9 @@ func (pm PrometheusHttpExecutor) Initialize() error {
 // initExporterTLS initializes and returns TLS config to be used to serve metrics over HTTPS
 func initExporterTLS() *tls.Config {
 	serverPool, err := commons.LoadServerCertAndKey(config.Cfg.Agent.CertFile, config.Cfg.Agent.KeyFile, config.Cfg.Agent.KeyFilePassphrase)
+
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to load server certificate and key: %s", err)
 	}
 
 	// Golang docs -- https://pkg.go.dev/crypto/tls#section-documentation
@@ -152,8 +162,9 @@ func initExporterTLS() *tls.Config {
 	// if root CA provided, client validation is enabled (mutual TLS)
 	if len(config.Cfg.Agent.RootCA) > 0 {
 		caPool, err := commons.LoadCACert(config.Cfg.Agent.RootCA)
+
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Failed to load CA certificate: %s", err)
 		}
 
 		tlsConfig.ClientCAs = caPool

@@ -25,9 +25,8 @@ type Config struct {
 		RefreshSystemStats bool   `toml:"refresh_system_stats"`
 		CloudProvider      string `toml:"cloud_provider"`
 
-		LogFile           string `toml:"log_file"`
-		LogLevel          string `toml:"log_level"`
-		UseMockDatasource bool   `toml:"use_mock_datasource"`
+		LogFile  string `toml:"log_file"`
+		LogLevel string `toml:"log_level"`
 
 		Bind              string `toml:"bind"`
 		CertFile          string `toml:"cert_file"`
@@ -40,12 +39,18 @@ type Config struct {
 		BasicAuthPassword string `toml:"basic_auth_password"`
 
 		Otel struct {
-			OtelServiceName             string            `toml:"service_name"`
-			OtelEndpoint                string            `toml:"endpoint"`
-			OtelTlsEnabled              bool              `toml:"endpoint_tls_enabled"`
-			OtelHeaders                 map[string]string `toml:"headers"`
-			OtelPushInterval            uint8             `toml:"push_interval"`
-			OtelServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
+			ServiceName             string            `toml:"service_name"`
+			Endpoint                string            `toml:"endpoint"` // DEPRECATED. Use grpc_endpoint
+			GrpcEndpoint            string            `toml:"grpc_endpoint"`
+			HttpEndpoint            string            `toml:"http_endpoint"`
+			Headers                 map[string]string `toml:"headers"`
+			PushInterval            uint8             `toml:"push_interval"`
+			ServerStatFetchInterval uint8             `toml:"server_stat_fetch_interval"`
+			CounterTemporality      string            `toml:"counter_temporality"`
+			AllMetricsAsGauge       bool              `toml:"all_metrics_as_gauges"`
+			MetricNamePrefix        string            `toml:"metric_name_prefix"`
+			MetricContextSeparator  string            `toml:"metric_context_separator"`
+			RenamedLabels           map[string]string `toml:"renamed_labels"`
 		} `toml:"OpenTelemetry"`
 
 		IsKubernetes      bool
@@ -163,41 +168,108 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		c.Aerospike.Timeout = 5
 	}
 
-	if md.IsDefined("Agent", "use_mock_datasource") && c.Agent.UseMockDatasource {
-		c.Agent.UseMockDatasource = true
-	} else {
-		c.Agent.UseMockDatasource = false
+	if len(c.Agent.Otel.ServiceName) == 0 {
+		c.Agent.Otel.ServiceName = "aerospike-server-metrics-service"
 	}
 
-	if len(c.Agent.Otel.OtelServiceName) == 0 {
-		c.Agent.Otel.OtelServiceName = "aerospike-server-metrics-service"
+	if c.Agent.Otel.PushInterval == 0 {
+		c.Agent.Otel.PushInterval = 60
 	}
 
-	if c.Agent.Otel.OtelPushInterval == 0 {
-		c.Agent.Otel.OtelPushInterval = 60
-	}
-
-	if c.Agent.Otel.OtelServerStatFetchInterval == 0 {
-		c.Agent.Otel.OtelPushInterval = 15
+	if c.Agent.Otel.ServerStatFetchInterval == 0 {
+		c.Agent.Otel.ServerStatFetchInterval = 15
 	}
 
 	if !md.IsDefined("Agent", "enable_prometheus") {
-		log.Infof("Defaulting to Prometheus Exporting mode")
+		log.Info("Defaulting to Prometheus Exporting mode")
 		c.Agent.PrometheusEnabled = true
 	}
 
 	// key-file and cert-file either exist or not-exist together
-	if len(Cfg.Aerospike.KeyFile) == 0 && len(Cfg.Aerospike.CertFile) != 0 {
-		log.Fatalf("In Aerospike section, key_file is not present")
+	if len(c.Aerospike.KeyFile) == 0 && len(c.Aerospike.CertFile) > 0 {
+		log.Fatal("In Aerospike section, key_file is not present")
 	}
 
-	if len(Cfg.Aerospike.KeyFile) != 0 && len(Cfg.Aerospike.CertFile) == 0 {
-		log.Fatalf("In Aerospike section, cert_file is not present")
+	if len(c.Aerospike.KeyFile) > 0 && len(c.Aerospike.CertFile) == 0 {
+		log.Fatal("In Aerospike section, cert_file is not present")
 	}
 
 	// validate Aerospike root-ca and cert-file configs
-	if len(Cfg.Aerospike.RootCA) == 0 && len(Cfg.Aerospike.CertFile) != 0 {
-		log.Fatalf("In Aerospike section, root_ca cannot be null when cert_file and key_file are configured")
+	if len(c.Aerospike.RootCA) == 0 && len(c.Aerospike.CertFile) > 0 {
+		log.Fatal("In Aerospike section, root_ca cannot be null when cert_file and key_file are configured")
+	}
+
+	if c.Agent.OtelEnabled {
+
+		// not validation, if not defined default to true
+		// Delta is default as many Datadog and Dynatrace customers. which accept only Delta's
+		if !md.IsDefined("Agent", "OpenTelemetry", "counter_temporality") {
+			c.Agent.Otel.CounterTemporality = "delta"
+		}
+
+		// not validation, if not defined default to true
+		if !md.IsDefined("Agent", "OpenTelemetry", "all_metrics_as_gauges") {
+			c.Agent.Otel.AllMetricsAsGauge = true
+		}
+
+		if !md.IsDefined("Agent", "OpenTelemetry", "metric_name_prefix") {
+			c.Agent.Otel.MetricNamePrefix = "aerospike.server"
+		}
+
+		if !md.IsDefined("Agent", "OpenTelemetry", "metric_context_separator") {
+			c.Agent.Otel.MetricContextSeparator = "period"
+		}
+
+		// if OTel renamed_labels are not configured, add default values
+		if !md.IsDefined("Agent", "OpenTelemetry", "renamed_labels") {
+			log.Debug("In OpenTelemetry section, renamed_labels are not configured, adding default values")
+
+			c.Agent.Otel.RenamedLabels = make(map[string]string)
+			c.Agent.Otel.RenamedLabels["cluster_name"] = "aerospike_cluster"
+			c.Agent.Otel.RenamedLabels["service"] = "aerospike_service"
+		}
+
+		c.validateOtelConfigs()
+
+	}
+
+	// If both Prom and Otel are not enabled, then error out
+	if !c.Agent.PrometheusEnabled && !c.Agent.OtelEnabled {
+		log.Fatal("Atleast one of Prometheus or OpenTelemetry should be enabled")
+	}
+
+}
+
+func (c *Config) validateOtelConfigs() {
+	// validate Otel endpoint and grpc_endpoint configs
+	if len(c.Agent.Otel.Endpoint) > 0 && len(c.Agent.Otel.GrpcEndpoint) > 0 {
+		log.Fatal("In OpenTelemetry section, ONLY  endpoint or grpc_endpoint can be configured, not both")
+	} else if len(c.Agent.Otel.Endpoint) > 0 {
+		log.Warn("In OpenTelemetry section, endpoint is deprecated, use grpc_endpoint instead")
+		log.Info("In OpenTelemetry section, endpoint configured will be used as grpc_endpoint")
+		c.Agent.Otel.GrpcEndpoint = c.Agent.Otel.Endpoint
+	}
+
+	if len(c.Agent.Otel.GrpcEndpoint) > 0 && len(c.Agent.Otel.HttpEndpoint) > 0 {
+		log.Fatal("In OpenTelemetry section, grpc_endpoint or http_endpoint can be configured, not both")
+	} else if len(c.Agent.Otel.GrpcEndpoint) == 0 && len(c.Agent.Otel.HttpEndpoint) == 0 {
+		log.Fatal("In OpenTelemetry section, Grpc or Http neither is configured")
+	}
+
+	// set configured values to lower-case
+	c.Agent.Otel.MetricContextSeparator = strings.ToLower(c.Agent.Otel.MetricContextSeparator)
+	c.Agent.Otel.CounterTemporality = strings.ToLower(c.Agent.Otel.CounterTemporality)
+
+	if c.Agent.Otel.CounterTemporality != "delta" &&
+		c.Agent.Otel.CounterTemporality != "cumulative" {
+
+		log.Fatal("In OpenTelemetry section, counter_temporality must be either delta or cumulative")
+	}
+
+	if c.Agent.Otel.MetricContextSeparator != "period" &&
+		c.Agent.Otel.MetricContextSeparator != "underscore" {
+
+		log.Fatal("In OpenTelemetry section, metric_context_separator must be either period or underscore")
 	}
 
 }
@@ -207,15 +279,17 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 		return
 	}
 
-	if Cfg.Agent.CloudProvider != "" && len(strings.Trim(Cfg.Agent.CloudProvider, " ")) > 0 {
+	if c.Agent.CloudProvider != "" && len(strings.Trim(c.Agent.CloudProvider, " ")) > 0 {
 		cloudLabels := CollectCloudDetails()
-		log.Debug("Adding Cloud Info to Metric Labels ", cloudLabels)
+		log.Debugf("Adding Cloud Info to Metric Labels %s", cloudLabels)
 
 		for k, v := range cloudLabels {
-			if v == "" || len(v) == 0 {
+
+			if len(v) == 0 {
 				v = "null"
 			}
-			Cfg.Agent.MetricLabels[k] = v
+
+			c.Agent.MetricLabels[k] = v
 		}
 	}
 }
@@ -224,15 +298,16 @@ func (c *Config) FetchKubernetesInfo(md toml.MetaData) {
 	// use kubectl to fetch required Kubernetes context and find the required Kubenetes environment variables
 	envKubeServiceHost := os.Getenv("KUBERNETES_SERVICE_HOST")
 
-	Cfg.Agent.IsKubernetes = false
+	c.Agent.IsKubernetes = false
 
 	if envKubeServiceHost != "" && len(strings.TrimSpace(envKubeServiceHost)) > 0 {
-		Cfg.Agent.IsKubernetes = true
+		c.Agent.IsKubernetes = true
 		log.Info("Exporter is running in Kubernetes")
 
 		// get host-name
 		var err error
-		Cfg.Agent.KubernetesPodName, err = os.Hostname()
+		c.Agent.KubernetesPodName, err = os.Hostname()
+
 		if err != nil {
 			log.Errorln(err)
 			return
@@ -248,11 +323,13 @@ func InitConfig(configFile string) {
 
 	log.Infof("Loading configuration file %s", configFile)
 	blob, err := os.ReadFile(configFile)
+
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	md, err := toml.Decode(string(blob), &Cfg)
+
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -327,7 +404,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 	// Error out if both configurations are used at the same time.
 	if md.IsDefined("Aerospike", "namespace_metrics_whitelist") {
 		if Cfg.Aerospike.NamespaceMetricsAllowlistEnabled {
-			log.Fatalf("namespace_metrics_whitelist and namespace_metrics_allowlist are mutually exclusive!")
+			log.Fatal("namespace_metrics_whitelist and namespace_metrics_allowlist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.NamespaceMetricsAllowlistEnabled = true
@@ -336,7 +413,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 
 	if md.IsDefined("Aerospike", "set_metrics_whitelist") {
 		if Cfg.Aerospike.SetMetricsAllowlistEnabled {
-			log.Fatalf("set_metrics_whitelist and set_metrics_allowlist are mutually exclusive!")
+			log.Fatal("set_metrics_whitelist and set_metrics_allowlist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.SetMetricsAllowlistEnabled = true
@@ -345,7 +422,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 
 	if md.IsDefined("Aerospike", "node_metrics_whitelist") {
 		if Cfg.Aerospike.NodeMetricsAllowlistEnabled {
-			log.Fatalf("node_metrics_whitelist and node_metrics_allowlist are mutually exclusive!")
+			log.Fatal("node_metrics_whitelist and node_metrics_allowlist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.NodeMetricsAllowlistEnabled = true
@@ -354,7 +431,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 
 	if md.IsDefined("Aerospike", "xdr_metrics_whitelist") {
 		if Cfg.Aerospike.XdrMetricsAllowlistEnabled {
-			log.Fatalf("xdr_metrics_whitelist and xdr_metrics_allowlist are mutually exclusive!")
+			log.Fatal("xdr_metrics_whitelist and xdr_metrics_allowlist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.XdrMetricsAllowlistEnabled = true
@@ -363,7 +440,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 
 	if md.IsDefined("Aerospike", "namespace_metrics_blacklist") {
 		if len(Cfg.Aerospike.NamespaceMetricsBlocklist) > 0 {
-			log.Fatalf("namespace_metrics_blacklist and namespace_metrics_blocklist are mutually exclusive!")
+			log.Fatal("namespace_metrics_blacklist and namespace_metrics_blocklist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.NamespaceMetricsBlocklist = Cfg.Aerospike.NamespaceMetricsBlacklist
@@ -371,7 +448,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 
 	if md.IsDefined("Aerospike", "set_metrics_blacklist") {
 		if len(Cfg.Aerospike.SetMetricsBlocklist) > 0 {
-			log.Fatalf("set_metrics_blacklist and set_metrics_blocklist are mutually exclusive!")
+			log.Fatal("set_metrics_blacklist and set_metrics_blocklist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.SetMetricsBlocklist = Cfg.Aerospike.SetMetricsBlacklist
@@ -379,7 +456,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 
 	if md.IsDefined("Aerospike", "node_metrics_blacklist") {
 		if len(Cfg.Aerospike.NodeMetricsBlocklist) > 0 {
-			log.Fatalf("node_metrics_blacklist and node_metrics_blocklist are mutually exclusive!")
+			log.Fatal("node_metrics_blacklist and node_metrics_blocklist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.NodeMetricsBlocklist = Cfg.Aerospike.NodeMetricsBlacklist
@@ -387,7 +464,7 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 
 	if md.IsDefined("Aerospike", "xdr_metrics_blacklist") {
 		if len(Cfg.Aerospike.XdrMetricsBlocklist) > 0 {
-			log.Fatalf("xdr_metrics_blacklist and xdr_metrics_blocklist are mutually exclusive!")
+			log.Fatal("xdr_metrics_blacklist and xdr_metrics_blocklist are mutually exclusive!")
 		}
 
 		Cfg.Aerospike.XdrMetricsBlocklist = Cfg.Aerospike.XdrMetricsBlacklist

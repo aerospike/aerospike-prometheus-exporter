@@ -1,45 +1,33 @@
 package statprocessors
 
 import (
-	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	shouldFetchUserStatistics bool = true
-)
-
-type UserStatsProcessor struct{}
-
-func (uw *UserStatsProcessor) PassOneKeys() []string {
-	// "build" info key should be returned here,
-	// but it is also being sent by LatencyStatsProcessor.passOneKeys(),
-	// hence skipping here.
-	log.Tracef("users-passonekeys:nil")
-	return nil
+type UserStatsProcessor struct {
+	ShouldFetchUserStatistics bool
+	sharedState               *StatProcessorSharedState
 }
 
-func (uw *UserStatsProcessor) PassTwoKeys(passOneStats map[string]string) []string {
-	log.Tracef("users-passtwokeys:nil")
-	return nil
+func NewUserStatsProcessor(state *StatProcessorSharedState) *UserStatsProcessor {
+	return &UserStatsProcessor{ShouldFetchUserStatistics: true, sharedState: state}
 }
 
-func (uw *UserStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
-
+func (uw *UserStatsProcessor) canRefreshUserStats(rawMetrics map[string]string) bool {
 	// check if security configurations are enabled
 	if config.Cfg.Aerospike.AuthMode != "pki" &&
 		(config.Cfg.Aerospike.User == "" && config.Cfg.Aerospike.Password == "") {
-		return nil, nil
+		return false
 	}
 
 	// check if we should fetch user metrics
-	if !shouldFetchUserStatistics {
+	if !uw.ShouldFetchUserStatistics {
 		log.Debug("Fetching user statistics is disabled")
-		return nil, nil
+		return false
 	}
 
 	// validate aerospike build version
@@ -47,31 +35,27 @@ func (uw *UserStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "5.6.0.0")
 
 	if err != nil {
-		return nil, nil
+		return false
 	}
 
 	if !ge {
 		// disable user statisitcs if build version is not >= 5.6.0.0
 		log.Debug("Aerospike version doesn't support user statistics")
-		shouldFetchUserStatistics = false
-		return nil, nil
+		uw.ShouldFetchUserStatistics = false
+		return false
 	}
 
-	// read the data from Aerospike Server
-	var users []*aero.UserRoles
+	return true
+}
 
-	shouldFetchUserStatistics, users, err = dataprovider.GetProvider().FetchUsersDetails()
-	if err != nil {
-		log.Warn("Error while fetching user statistics: ", err)
-		return nil, nil
-
-	}
+func (uw *UserStatsProcessor) Refresh(users []*aero.UserRoles) ([]AerospikeStat, error) {
 
 	var allMetricsToSend = []AerospikeStat{}
 	// Push metrics to Prometheus or Observability tool
-	lUserMetricsToSend, err := uw.refreshUserStats(infoKeys, rawMetrics, users)
+	lUserMetricsToSend, err := uw.refreshUserStats(users)
+
 	if err != nil {
-		log.Warn("Error while preparing and pushing metrics: ", err)
+		log.Warnf("Error while preparing and pushing user metrics: %s", err)
 		return nil, nil
 
 	}
@@ -81,11 +65,12 @@ func (uw *UserStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	return allMetricsToSend, err
 }
 
-func (uw *UserStatsProcessor) refreshUserStats(infoKeys []string, rawMetrics map[string]string, users []*aero.UserRoles) ([]AerospikeStat, error) {
+func (uw *UserStatsProcessor) refreshUserStats(users []*aero.UserRoles) ([]AerospikeStat, error) {
 	allowedUsersList := make(map[string]struct{})
 	blockedUsersList := make(map[string]struct{})
 
-	// let us not cache the user-info (like user-role, any permisison etc.,), as this can be changed at server-level without any restarts
+	// let us not cache the user-info (like user-role, any permisison etc.,), as this can be changed at
+	// server-level without any restarts
 	//
 	if config.Cfg.Aerospike.UserMetricsUsersAllowlistEnabled {
 		for _, allowedUser := range config.Cfg.Aerospike.UserMetricsUsersAllowlist {
@@ -121,21 +106,21 @@ func (uw *UserStatsProcessor) refreshUserStats(infoKeys []string, rawMetrics map
 		readInfoStats := []string{"read_quota", "read_single_record_tps", "read_scan_query_rps", "limitless_read_scan_query"}
 		writeInfoStats := []string{"write_quota", "write_single_record_tps", "write_scan_query_rps", "limitless_write_scan_query"}
 
-		asMetric, labels, labelValues := internalCreateLocalAerospikeStat("conns_in_use", user.User)
+		asMetric, labels, labelValues := uw.makeAerospikeStat("conns_in_use", user.User)
 		asMetric.updateValues(float64(user.ConnsInUse), labels, labelValues)
 		allMetricsToSend = append(allMetricsToSend, asMetric)
 
 		if len(user.ReadInfo) >= 4 && len(user.WriteInfo) >= 4 {
 
 			for idxReadinfo := 0; idxReadinfo < len(user.ReadInfo); idxReadinfo++ {
-				riAeroMetric, riLabels, riLabelValues := internalCreateLocalAerospikeStat(readInfoStats[idxReadinfo], user.User)
+				riAeroMetric, riLabels, riLabelValues := uw.makeAerospikeStat(readInfoStats[idxReadinfo], user.User)
 				riAeroMetric.updateValues(float64(user.ReadInfo[idxReadinfo]), riLabels, riLabelValues)
 
 				allMetricsToSend = append(allMetricsToSend, riAeroMetric)
 
 			}
 			for idxWriteinfo := 0; idxWriteinfo < len(user.WriteInfo); idxWriteinfo++ {
-				wiAeroMetric, wiLabels, wiLabelValues := internalCreateLocalAerospikeStat(writeInfoStats[idxWriteinfo], user.User)
+				wiAeroMetric, wiLabels, wiLabelValues := uw.makeAerospikeStat(writeInfoStats[idxWriteinfo], user.User)
 				wiAeroMetric.updateValues(float64(user.WriteInfo[idxWriteinfo]), wiLabels, wiLabelValues)
 				allMetricsToSend = append(allMetricsToSend, wiAeroMetric)
 
@@ -146,9 +131,9 @@ func (uw *UserStatsProcessor) refreshUserStats(infoKeys []string, rawMetrics map
 	return allMetricsToSend, nil
 }
 
-func internalCreateLocalAerospikeStat(pStatName string, username string) (AerospikeStat, []string, []string) {
+func (uw *UserStatsProcessor) makeAerospikeStat(pStatName string, username string) (AerospikeStat, []string, []string) {
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_USER}
-	labelValues := []string{ClusterName, Service, username}
+	labelValues := []string{uw.sharedState.ClusterName, uw.sharedState.Service, username}
 	allowed := isMetricAllowed(commons.CTX_USERS, pStatName)
 	asMetric := NewAerospikeStat(commons.CTX_USERS, pStatName, allowed)
 

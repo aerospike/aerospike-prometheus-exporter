@@ -2,6 +2,7 @@ package statprocessors
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -15,13 +16,13 @@ func Test_Sindex_PassOneKeys(t *testing.T) {
 	fmt.Println("initializing config ... Test_Sindex_PassOneKeys")
 
 	// Check passoneKeys
-	sindexWatcher := &statprocessors.SindexStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	sindexWatcher := statprocessors.NewSindexStatsProcessor(sharedState)
 	nwPassOneKeys := sindexWatcher.PassOneKeys()
 
 	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sindex")
 	passOneOutputs := ndv.GetPassOneKeys()
-
 	var expectedOutputs []string
 	expectedOutputs = append(expectedOutputs, passOneOutputs["sindex"])
 
@@ -37,10 +38,10 @@ func Test_Sindex_PassTwoKeys(t *testing.T) {
 	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
 	// Check passoneKeys
-	sindexWatcher := &statprocessors.SindexStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	sindexWatcher := statprocessors.NewSindexStatsProcessor(sharedState)
 	nwPassOneKeys := sindexWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("Test_Sindex_PassTwoKeys: passOneOutput: ", passOneOutput)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := sindexWatcher.PassTwoKeys(passOneOutput)
 
 	udh := &UnittestDataHandler{}
@@ -52,7 +53,7 @@ func Test_Sindex_PassTwoKeys(t *testing.T) {
 
 	for idx := range expectedPassTwoOutputs {
 		// assert each element returned by NamespaceWatcher exists in expected outputs
-		assert.Contains(t, passTwoOutputs, expectedPassTwoOutputs[idx], " value exists!")
+		assert.Contains(t, passTwoOutputs, strings.TrimSpace(expectedPassTwoOutputs[idx]), " value exists!")
 	}
 
 }
@@ -72,29 +73,36 @@ func Test_Sindex_RefreshDefault(t *testing.T) {
  */
 func sindex_runTestcase(t *testing.T) {
 
-	// common keys
-	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
-
 	// Check passoneKeys
-	sindexWatcher := &statprocessors.SindexStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	sindexWatcher := statprocessors.NewSindexStatsProcessor(sharedState)
 	nwPassOneKeys := sindexWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("sindex_runTestcase: passOneOutput: ", passOneOutput)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := sindexWatcher.PassTwoKeys(passOneOutput)
+
+	// common keys
+	infoKeys := []string{sharedState.Infokey_ClusterName, sharedState.Infokey_Service, sharedState.Infokey_Build}
 
 	// append common keys
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
 
-	arrRawMetrics, err := dataprovider.GetProvider().RequestInfo(passTwoOutputs)
+	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(passTwoOutputs)
 	assert.Nil(t, err, "Error while sindexMetrics.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while sindexMetrics.PassTwokeys, RawMetrics is EMPTY ")
 
-	statprocessors.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
-	statprocessors.Build = arrRawMetrics[statprocessors.Infokey_Build]
-	statprocessors.Service = arrRawMetrics[statprocessors.Infokey_Service]
+	sharedState.ClusterName = arrRawMetrics[sharedState.Infokey_ClusterName]
+	sharedState.Build = arrRawMetrics[sharedState.Infokey_Build]
+	sharedState.Service = arrRawMetrics[sharedState.Infokey_Service]
+
+	var keys = []string{}
+	for _, v := range passTwoOutputs {
+		if v != sharedState.Infokey_ClusterName && v != sharedState.Infokey_Build && v != sharedState.Infokey_Service {
+			keys = append(keys, v)
+		}
+	}
 
 	// check the output with sindexWatcher
-	sindexMetrics, err := sindexWatcher.Refresh(passTwoOutputs, arrRawMetrics)
+	sindexMetrics, err := sindexWatcher.Refresh(keys, arrRawMetrics)
 	assert.Nil(t, err, "Error while sindexMetrics.Refresh with passTwoOutputs ")
 	assert.NotEmpty(t, sindexMetrics, "Error while sindexMetrics.Refresh, sindexMetrics is EMPTY ")
 

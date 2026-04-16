@@ -64,25 +64,52 @@
         basic_auth_password = "${BASIC_AUTH_PASSWORD}"
 
 [Agent.OpenTelemetry]
-        # NOTE: currently supports only gRPC endpoints
-        
         # OTel service-name
         service_name = "${AGENT_OTEL_APP_SERVICE_NAME}"
 
         # OTel Endpoint
+        # DEPRECATED. Use grpc_endpoint
         endpoint = "${AGENT_OTEL_ENDPOINT}"
 
-        # OTel SSL/TLS, for HTTPS endpoints
-        endpoint_tls_enabled = ${AGENT_OTEL_TLS_ENABLED}
+        # OTel Endpoint
+        # NOTE: Only url, does not include protocol http/https
+        # NOTE: configure either grpc_endpoint or endpoint (DEPRECATED), both cannot be configured
+        grpc_endpoint = "${AGENT_OTEL_GRPC_ENDPOINT}"
 
-        # OTel headers
-        headers = "{${AGENT_OTEL_HEADERS}}"
+        # OTel Endpoint URL Path 
+        # provide entire url, including http/https protocol
+        http_endpoint = "${AGENT_OTEL_HTTP_ENDPOINT}"
+
+        # OTel headers, 
+        # NOTE: Each header will be a "<key>"="<value>" pair and each header is comma separated
+        # Example: "api-key"="<api-key>","Authorization"="Api-Token <token>"
+        headers = {${AGENT_OTEL_HEADERS}}
 
         # OTel server-stat fetch interval (default 15, not recommended to to reduce this)
         server_stat_fetch_interval = ${AGENT_OTEL_SERVER_STAT_FETCH_INTERVAL}
 
-        # OTel metric push interval (default 60, not recommended to to reduce this)
+        # OTel metric push interval (default 15, not recommended to to reduce this)
         push_interval = ${AGENT_OTEL_PUSH_INTERVAL}
+
+        # Defines the temporality to be applied depending on end point treats
+        # supported values: delta (default), cumulative
+        # Why Delta is default, many customer use Datadog and Dynatrace.
+        # NOTE: Datadog and Dynatrace only support Delta's for monotonic-cumulative counters 
+        #       Newrelic accepts Delta and monotonic-sum
+        counter_temporality = "${AGENT_OTEL_COUNTER_TEMPORALITY}"
+
+        # Defines if all metrics to be treated as Gauges
+        all_metrics_as_gauges = ${AGENT_OTEL_METRIC_AS_GAUGES}
+
+        # metric name prefix, defines the prefix before each metric before dispatching to endpoint
+        metric_name_prefix = "${AGENT_OTEL_METRIC_NAME_PREFIX}"
+
+        # metric context seperator, suggests what seperator to use while constructing a metric from stat
+        #   supported values "period" (default) or "underscore"
+        metric_context_separator = "${AGENT_OTEL_METRIC_CONTEXT_SEPARATOR}"
+
+        # renamed variables
+        renamed_labels = {${AGENT_OTEL_RENAMED_LABELS}}
 
 [Aerospike]
         db_host = "${AS_HOST}"

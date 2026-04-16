@@ -6,11 +6,13 @@ type LatencyStatsMap map[string]interface{}
 // this function never panics
 func (s LatencyStatsMap) TryString(name string, defValue string, aliases ...string) string {
 	field := s.Get(name, aliases...)
+
 	if field != nil {
 		if value, ok := field.(string); ok {
 			return value
 		}
 	}
+
 	return defValue
 }
 
@@ -32,6 +34,7 @@ func (s LatencyStatsMap) Get(name string, aliases ...string) interface{} {
 // this function never panics
 func (s LatencyStatsMap) TryFloat(name string, defValue float64, aliases ...string) float64 {
 	field := s.Get(name, aliases...)
+
 	if field != nil {
 		if value, ok := field.(float64); ok {
 			return value
@@ -40,5 +43,6 @@ func (s LatencyStatsMap) TryFloat(name string, defValue float64, aliases ...stri
 			return float64(value)
 		}
 	}
+
 	return defValue
 }

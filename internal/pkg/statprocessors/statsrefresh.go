@@ -1,24 +1,74 @@
 package statprocessors
 
 import (
-	commons "github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	aero "github.com/aerospike/aerospike-client-go/v8"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	log "github.com/sirupsen/logrus"
 )
 
-// public and utility functions
+// StatsRefresher is the main struct that refreshes the stats from the server
+// responsible for refreshing the stats from the server and dispatching them to the appropriate processors
+// uses shared state to store the latency benchmarks and namespace latency benchmarks
+type StatsRefresher struct {
+	dataProvider dataprovider.DataProvider
+	sharedState  *StatProcessorSharedState
 
-func Refresh() ([]AerospikeStat, error) {
+	namespaceStatsProcessor *NamespaceStatsProcessor
+	nodeStatsProcessor      *NodeStatsProcessor
+	setsStatsProcessor      *SetsStatsProcessor
+	sindexStatsProcessor    *SindexStatsProcessor
+	xdrStatsProcessor       *XdrStatsProcessor
+	latencyStatsProcessor   *LatencyStatsProcessor
 
-	fullHost := commons.GetFullHost()
-	log.Debugf("Refreshing node %s", fullHost)
+	userStatsProcessor *UserStatsProcessor
+}
+
+func NewStatsRefresher(dataProvider dataprovider.DataProvider,
+	sharedState *StatProcessorSharedState) *StatsRefresher {
+
+	log.Debugf("Creating new StatsRefresher with dataProvider: %p", dataProvider)
+
+	statsRefresher := &StatsRefresher{}
+
+	statsRefresher.dataProvider = dataProvider
+	statsRefresher.sharedState = sharedState
+
+	statsRefresher.namespaceStatsProcessor = NewNamespaceStatsProcessor(statsRefresher.sharedState)
+	statsRefresher.nodeStatsProcessor = NewNodeStatsProcessor(statsRefresher.sharedState)
+	statsRefresher.setsStatsProcessor = NewSetsStatsProcessor(statsRefresher.sharedState)
+	statsRefresher.sindexStatsProcessor = NewSindexStatsProcessor(statsRefresher.sharedState)
+	statsRefresher.xdrStatsProcessor = NewXdrStatsProcessor(statsRefresher.sharedState)
+	statsRefresher.latencyStatsProcessor = NewLatencyStatsProcessor(statsRefresher.sharedState)
+	statsRefresher.userStatsProcessor = NewUserStatsProcessor(statsRefresher.sharedState)
+
+	return statsRefresher
+}
+
+func (sr *StatsRefresher) GetStatsProcessors() []StatProcessor {
+	var statprocessors = []StatProcessor{
+		sr.namespaceStatsProcessor,
+		sr.nodeStatsProcessor,
+		sr.setsStatsProcessor,
+		sr.sindexStatsProcessor,
+		sr.xdrStatsProcessor,
+		sr.latencyStatsProcessor,
+		// Did not include users processor, as it process UserRoles directly and not the stats from server
+	}
+
+	return statprocessors
+}
+
+func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
+
+	log.Debugf("Refreshing node %s", commons.GetFullHost())
 
 	// array to accumulate all metrics, which later will be dispatched by various observers
 	var allStatsToSend = []AerospikeStat{}
 
 	// list of all the StatsProcessor
-	allStatsprocessorList := GetStatsProcessors()
+	allStatsprocessorList := sr.GetStatsProcessors()
 
 	// fetch first set of info keys
 	var infoKeys []string
@@ -29,12 +79,12 @@ func Refresh() ([]AerospikeStat, error) {
 	}
 
 	// append infoKey "build" - this is removed from LatenciesStatsProcessor to avoid forced StatsProcessor sequence during refresh
-	infoKeys = append(infoKeys, Infokey_Build)
+	infoKeys = append(infoKeys, "build")
 
 	// info request for first set of info keys, this retrives configs from server
 	//   from namespaces,server/node-stats, xdr
 	//   if for any context (like jobs, latencies etc.,) no configs, they are not sent to server
-	passOneOutput, err := dataprovider.GetProvider().RequestInfo(infoKeys)
+	passOneOutput, err := sr.dataProvider.RequestInfo(infoKeys)
 
 	if err != nil {
 		return nil, err
@@ -42,16 +92,17 @@ func Refresh() ([]AerospikeStat, error) {
 
 	// fetch second second set of info keys
 	// check and load this only once, to avoid multiple file-reads, so this Infokey assignment will happen only once during restart
-	if Infokey_Service != INFOKEY_SERVICE_TLS_STD {
+	// TODO: check if this logic can be done only 1 before the Refresh call
+	if sr.sharedState.Infokey_Service != INFOKEY_SERVICE_TLS_STD {
 		serverPool, clientPool := commons.LoadServerOrClientCertificates()
 		// we need to have atleast one certificate configured and read successfully
 		if serverPool != nil || clientPool != nil {
-			Infokey_Service = INFOKEY_SERVICE_TLS_STD
-			log.Debugf("TLS Mode is enabled, setting infokey-service as  'service-tls-std' for further fetching from server.")
+			sr.sharedState.Infokey_Service = INFOKEY_SERVICE_TLS_STD
+			log.Debug("TLS Mode is enabled, setting infokey-service as  'service-tls-std' for further fetching from server.")
 		}
 	}
 
-	infoKeys = []string{Infokey_ClusterName, Infokey_Service, Infokey_Build, Infokey_NodeId}
+	infoKeys = []string{sr.sharedState.Infokey_ClusterName, sr.sharedState.Infokey_Service, sr.sharedState.Infokey_Build, sr.sharedState.Infokey_NodeId}
 	statprocessorInfoKeys := make([][]string, len(allStatsprocessorList))
 
 	for i, c := range allStatsprocessorList {
@@ -63,17 +114,21 @@ func Refresh() ([]AerospikeStat, error) {
 	}
 
 	// info request for second set of info keys, this retrieves all the stats from server
-	passTwoResponse, err := dataprovider.GetProvider().RequestInfo(infoKeys)
+	passTwoResponse, err := sr.dataProvider.RequestInfo(infoKeys)
+
 	if err != nil {
 		return allStatsToSend, err
 	}
 
 	// set global values
-	ClusterName, Service = passTwoResponse[Infokey_ClusterName], passTwoResponse[Infokey_Service]
-	Build, NodeId = passTwoResponse[Infokey_Build], passTwoResponse[Infokey_NodeId]
+	sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
+	sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
+	sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
+	sr.sharedState.NodeId = passTwoResponse[sr.sharedState.Infokey_NodeId]
 
+	// Servce is IP of Aerospike Server, in Kubernetes we need pod-name instead of IP.
 	if config.Cfg.Agent.IsKubernetes {
-		Service = config.Cfg.Agent.KubernetesPodName
+		sr.sharedState.Service = config.Cfg.Agent.KubernetesPodName
 	}
 
 	// sanitize the utf8 strings before sending them to watchers
@@ -85,13 +140,48 @@ func Refresh() ([]AerospikeStat, error) {
 	for i, c := range allStatsprocessorList {
 
 		tmpRefreshedMetrics, err := c.Refresh(statprocessorInfoKeys[i], passTwoResponse)
+
 		if err != nil {
 			return allStatsToSend, err
 		}
+
 		allStatsToSend = append(allStatsToSend, tmpRefreshedMetrics...)
 	}
 
-	log.Debugf("Refreshing node was successful")
+	// Refresh user info if supported by the server
+	if sr.userStatsProcessor.canRefreshUserStats(passTwoResponse) {
+		userMetrics, err := sr.RefreshUserStats()
+
+		if err != nil {
+			return allStatsToSend, err
+		}
+
+		allStatsToSend = append(allStatsToSend, userMetrics...)
+	}
+
+	log.Debug("Refreshing node was successful")
 
 	return allStatsToSend, nil
+}
+
+// User stats are not different stats, metrics are creating using the user info
+// user-role info are normalized as aerospike-stats
+func (sr *StatsRefresher) RefreshUserStats() ([]AerospikeStat, error) {
+
+	var err error
+	var users []*aero.UserRoles
+
+	sr.userStatsProcessor.ShouldFetchUserStatistics, users, err = sr.dataProvider.FetchUsersDetails()
+
+	if err != nil {
+		return nil, err
+	}
+
+	userMetrics, err := sr.userStatsProcessor.Refresh(users)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return userMetrics, nil
 }

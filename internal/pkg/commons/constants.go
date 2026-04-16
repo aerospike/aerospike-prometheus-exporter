@@ -36,25 +36,24 @@ const (
 )
 
 const (
-	CTX_SYSINFO_MEMORY_STATS     ContextType = "sysinfo_memory_stats"
-	CTX_SYSINFO_DISK_STATS       ContextType = "sysinfo_disk_stats"
-	CTX_SYSINFO_FILESYSTEM_STATS ContextType = "sysinfo_filesystem_stats"
-	CTX_SYSINFO_CPU_STATS        ContextType = "sysinfo_cpu"
-	CTX_SYSINFO_NET_STATS        ContextType = "sysinfo_netstat"
-	CTX_SYSINFO_NET_DEV_STATS    ContextType = "sysinfo_net_dev"
-	CTX_SYSINFO_NETWORK_STATS    ContextType = "sysinfo_network"
-	CTX_SYSINFO_FILEFD_STATS     ContextType = "sysinfo_filefd"
-	CTX_SYSINFO_VM_STATS         ContextType = "sysinfo_vmstat"
+	CTX_SYSINFO_MEMORY_STATS  ContextType = "sysinfo_memory_stats"
+	CTX_SYSINFO_NET_STATS     ContextType = "sysinfo_netstat"
+	CTX_SYSINFO_NETWORK_STATS ContextType = "sysinfo_network"
+	CTX_SYSINFO_FILEFD_STATS  ContextType = "sysinfo_filefd"
 )
+
 const (
-	METRIC_LABEL_DEVICE      = "device"
-	METRIC_LABEL_MAJOR       = "major_version"
-	METRIC_LABEL_MINOR       = "minor_version"
-	METRIC_LABEL_SERIAL      = "serial"
-	METRIC_LABEL_MOUNT_POINT = "mountpoint"
-	METRIC_LABEL_FSTYPE      = "fstype"
-	METRIC_LABEL_CPU         = "cpu"
-	METRIC_LABEL_CPU_MODE    = "mode"
+	METRIC_LABEL_DEVICE = "device"
+)
+
+const (
+	TEMPORALITY_DELTA      = "delta"
+	TEMPORALITY_CUMULATIVE = "cumulative"
+)
+
+const (
+	EXECUTOR_MODE_PROM = "prometheus"
+	EXECUTOR_MODE_OTEL = "otel"
 )
 
 var (

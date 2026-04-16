@@ -14,15 +14,19 @@ func Test_Node_PassOneKeys(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Node_PassOneKeys")
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
 	// Check passoneKeys
-	nodeWatcher := &statprocessors.NodeStatsProcessor{}
+	nodeWatcher := statprocessors.NewNodeStatsProcessor(sharedState)
 	nwPassOneKeys := nodeWatcher.PassOneKeys()
 
 	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("node")
 	passOneOutputs := ndv.GetPassOneKeys()
 
-	assert.Nil(t, nwPassOneKeys, passOneOutputs)
+	var expectedOutputs []string
+	expectedOutputs = append(expectedOutputs, passOneOutputs["node"])
+
+	assert.Equal(t, nwPassOneKeys, expectedOutputs)
 
 }
 
@@ -33,11 +37,11 @@ func Test_Node_PassTwoKeys(t *testing.T) {
 	// initialize config and gauge-lists
 	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
 
+	sharedState := statprocessors.NewStatProcessorSharedState()
 	// Check passoneKeys
-	nodeWatcher := &statprocessors.NodeStatsProcessor{}
+	nodeWatcher := statprocessors.NewNodeStatsProcessor(sharedState)
 	nwPassOneKeys := nodeWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("Test_Node_PassTwoKeys: passOneOutput: ", passOneOutput)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := nodeWatcher.PassTwoKeys(passOneOutput)
 
 	udh := &UnittestDataHandler{}
@@ -70,23 +74,23 @@ func Test_Node_RefreshDefault(t *testing.T) {
 func node_runTestcase(t *testing.T) {
 
 	// Check passoneKeys
-	nodeWatcher := &statprocessors.NodeStatsProcessor{}
+	sharedState := statprocessors.NewStatProcessorSharedState()
+	nodeWatcher := statprocessors.NewNodeStatsProcessor(sharedState)
 	nwPassOneKeys := nodeWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider().RequestInfo(nwPassOneKeys)
-	fmt.Println("TestPassTwoKeys: passOneOutput: ", passOneOutput)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
 	passTwoOutputs := nodeWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys
-	infoKeys := []string{statprocessors.Infokey_ClusterName, statprocessors.Infokey_Service, statprocessors.Infokey_Build}
+	infoKeys := []string{sharedState.Infokey_ClusterName, sharedState.Infokey_Service, sharedState.Infokey_Build}
 	passTwoOutputs = append(passTwoOutputs, infoKeys...)
 
-	arrRawMetrics, err := dataprovider.GetProvider().RequestInfo(passTwoOutputs)
+	arrRawMetrics, err := dataprovider.GetProvider("mock").RequestInfo(passTwoOutputs)
 	assert.Nil(t, err, "Error while NodeStatsWatcher.PassTwokeys ")
 	assert.NotEmpty(t, arrRawMetrics, "Error while NamespaceWatcher.PassTwokeys, RawMetrics is EMPTY ")
 
-	statprocessors.ClusterName = arrRawMetrics[statprocessors.Infokey_ClusterName]
-	statprocessors.Build = arrRawMetrics[statprocessors.Infokey_Build]
-	statprocessors.Service = arrRawMetrics[statprocessors.Infokey_Service]
+	sharedState.ClusterName = arrRawMetrics[sharedState.Infokey_ClusterName]
+	sharedState.Build = arrRawMetrics[sharedState.Infokey_Build]
+	sharedState.Service = arrRawMetrics[sharedState.Infokey_Service]
 
 	// check the output with NodeStatsWatcher
 	nodeMetrics, err := nodeWatcher.Refresh(passTwoOutputs, arrRawMetrics)
