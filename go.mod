@@ -4,7 +4,7 @@ go 1.25.8
 
 require (
 	github.com/BurntSushi/toml v1.6.0
-	github.com/aerospike/aerospike-client-go/v8 v8.6.0
+	github.com/aerospike/aerospike-client-go/v8 v8.7.0
 	github.com/gobwas/glob v0.2.3
 	github.com/hashicorp/go-version v1.9.0
 	github.com/prometheus/client_golang v1.23.2
@@ -33,7 +33,7 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.66.1 // indirect
 	github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad // indirect
-	github.com/yuin/gopher-lua v1.1.1 // indirect
+	github.com/yuin/gopher-lua v1.1.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
