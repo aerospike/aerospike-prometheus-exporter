@@ -1,6 +1,7 @@
 package statprocessors
 
 import (
+	"fmt"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -35,6 +36,9 @@ func (hsi *HostSystemInfoProcessor) RefreshSystemInfo() ([]AerospikeStat, error)
 	arrSysInfoStats = append(arrSysInfoStats, hsi.getMemInfo()...)
 	arrSysInfoStats = append(arrSysInfoStats, hsi.getNetStatInfo()...)
 	arrSysInfoStats = append(arrSysInfoStats, hsi.getNetworkInfo()...)
+
+	fmt.Println("ICS Stats:")
+	fmt.Println(hsi.systemProvider.GetIcsStats())
 
 	return arrSysInfoStats, nil
 }
