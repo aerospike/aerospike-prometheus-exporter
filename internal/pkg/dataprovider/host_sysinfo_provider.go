@@ -67,6 +67,8 @@ func (sip SystemInfoProvider) GetMemInfoStats() map[string]string {
 	// All values are in KB, convert to bytes
 	memStats["Shmem"] = fmt.Sprint(getFloatValue(meminfo.Shmem) * ONE_KILO_BYTE)
 	memStats["Swap_Cached"] = fmt.Sprint(getFloatValue(meminfo.SwapCached) * ONE_KILO_BYTE)
+	memStats["MemTotal"] = fmt.Sprint(getFloatValue(meminfo.MemTotal) * ONE_KILO_BYTE)
+	// memStats["MemFree"] = fmt.Sprint(getFloatValue(meminfo.MemFree) * ONE_KILO_BYTE)
 
 	log.Debugf("MemInfo Stats - Count of return stats %d", len(memStats))
 	return memStats
