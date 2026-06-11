@@ -36,6 +36,7 @@ func (hsi *HostSystemInfoProcessor) RefreshSystemInfo() ([]AerospikeStat, error)
 	arrSysInfoStats = append(arrSysInfoStats, hsi.getMemInfo()...)
 	arrSysInfoStats = append(arrSysInfoStats, hsi.getNetStatInfo()...)
 	arrSysInfoStats = append(arrSysInfoStats, hsi.getNetworkInfo()...)
+	arrSysInfoStats = append(arrSysInfoStats, hsi.getSharedMemoryInfo()...)
 
 	fmt.Println("ICS Stats:")
 	fmt.Println(hsi.systemProvider.GetSharedMemoryStats())
@@ -181,6 +182,21 @@ func (hsi *HostSystemInfoProcessor) getNetworkInfo() []AerospikeStat {
 		sysMetric.Value = value
 
 		arrSysInfoStats = append(arrSysInfoStats, sysMetric)
+	}
+
+	return arrSysInfoStats
+}
+
+func (hsi *HostSystemInfoProcessor) getSharedMemoryInfo() []AerospikeStat {
+	arrSysInfoStats := []AerospikeStat{}
+
+	// sharedMemoryLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_HEXKEY}
+
+	sharedMemoryStats := hsi.systemProvider.GetSharedMemoryStats()
+
+	for _, stats := range sharedMemoryStats {
+		// labelValues := []string{hsi.sharedState.ClusterName, hsi.sharedState.Service, stats["hexKey"]}
+		fmt.Println(stats)
 	}
 
 	return arrSysInfoStats

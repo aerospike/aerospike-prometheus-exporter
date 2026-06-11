@@ -44,6 +44,7 @@ const (
 
 const (
 	METRIC_LABEL_DEVICE = "device"
+	METRIC_LABEL_HEXKEY = "hexkey"
 )
 
 const (
