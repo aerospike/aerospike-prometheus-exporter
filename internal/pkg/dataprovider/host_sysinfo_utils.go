@@ -2,9 +2,11 @@ package dataprovider
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/prometheus/procfs"
@@ -27,6 +29,7 @@ var (
 	ROOTFS_PATH       = "/"
 	NET_STAT_PATH     = "net/netstat"
 	NET_DEV_STAT_PATH = "/proc/net/dev"
+	ICS_SHM_PATH      = "sysvipc/shm" // actual path is /proc/sysvipc/shm
 )
 
 const (
@@ -36,6 +39,13 @@ const (
 	DISK_SECTOR_SIZE_IN_UNIX = 512.0
 
 	ONE_KILO_BYTE = 1024
+)
+
+const (
+	ICS_SHM_PI_BASE_PREFIX = "pi"
+	ICS_SHM_SINDEX_PREFIX  = "sindex"
+	ICS_SHM_DATA_PREFIX    = "data"
+	ICS_SHM_OTHER_PREFIX   = "other"
 )
 
 var (
@@ -87,5 +97,108 @@ func parseNetStats(fileName string) map[string]string {
 		}
 	}
 
+	if err := scanner.Err(); err != nil {
+		log.Error("Error while reading file,", fileName, " Error: ", err)
+		return arrSysInfoStats
+	}
+
 	return arrSysInfoStats
+}
+
+func parseIcsKey(icsShmFields []string) map[string]string {
+
+	fileIcsStats := make(map[string]string)
+
+	// key:-1392500736
+	// cat / proc / sysvipc / shm
+	// 	key      shmid perms                  size  cpid  lpid nattch   uid   gid  cuid  cgid      atime      dtime      ctime                   rss                  swap
+	// -1375727360          0   666            1073741824   152   288      1     0     0     0     0 1781083729 1781083717 1781083714                  4096                     0
+	// -1392504832          1   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
+	// -1392504831          2   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
+	// -1392504830          3   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
+	// -1392504829          4   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
+	// -1392504828          5   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
+	// -1392504827          6   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
+	// -1392504826          7   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
+	// -1392504825          8   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
+
+	// 0xae -> PI/base
+	// 0xa2 -> SI
+	// 0xad -> data
+
+	// for sindex its 0xa2 + 1 letter for instanceid + 2 letters for namespaceid + 3 digits for stages
+	// for data in shmem
+	// 0xad + 1 letter for instance id + 2 letters for namespaceID + 3 (last bit for stripe ids 0,1,2,3)
+
+	key, _ := strconv.ParseInt(icsShmFields[0], 10, 64)
+	shmid, _ := strconv.ParseInt(icsShmFields[1], 10, 64)
+	size, _ := strconv.ParseUint(icsShmFields[3], 10, 64)
+	cpid, _ := strconv.ParseInt(icsShmFields[4], 10, 64)
+	lpid, _ := strconv.ParseInt(icsShmFields[5], 10, 64)
+	nattch, _ := strconv.ParseUint(icsShmFields[6], 10, 64)
+	uid, _ := strconv.ParseUint(icsShmFields[7], 10, 64)
+	gid, _ := strconv.ParseUint(icsShmFields[8], 10, 64)
+	cuid, _ := strconv.ParseUint(icsShmFields[9], 10, 64)
+	cgid, _ := strconv.ParseUint(icsShmFields[10], 10, 64)
+	atime, _ := strconv.ParseInt(icsShmFields[11], 10, 64)
+	dtime, _ := strconv.ParseInt(icsShmFields[12], 10, 64)
+	ctime, _ := strconv.ParseInt(icsShmFields[13], 10, 64)
+	rss, _ := strconv.ParseUint(icsShmFields[14], 10, 64)
+	swap, _ := strconv.ParseUint(icsShmFields[15], 10, 64)
+
+	fileIcsStats["key"] = strconv.FormatInt(int64(key), 10)
+	fileIcsStats["shmid"] = strconv.FormatInt(int64(shmid), 10)
+	fileIcsStats["size"] = strconv.FormatUint(size, 10)
+	fileIcsStats["cpid"] = strconv.FormatInt(int64(cpid), 10)
+	fileIcsStats["lpid"] = strconv.FormatInt(int64(lpid), 10)
+	fileIcsStats["nattch"] = strconv.FormatUint(nattch, 10)
+	fileIcsStats["uid"] = strconv.FormatUint(uid, 10)
+	fileIcsStats["gid"] = strconv.FormatUint(gid, 10)
+	fileIcsStats["cuid"] = strconv.FormatUint(cuid, 10)
+	fileIcsStats["cgid"] = strconv.FormatUint(cgid, 10)
+	fileIcsStats["atime"] = strconv.FormatInt(atime, 10)
+	fileIcsStats["dtime"] = strconv.FormatInt(dtime, 10)
+	fileIcsStats["ctime"] = strconv.FormatInt(ctime, 10)
+	fileIcsStats["rss"] = strconv.FormatUint(rss, 10)
+	fileIcsStats["swap"] = strconv.FormatUint(swap, 10)
+
+	hexKey, prefix, kind, instanceID, namespaceID, suffix := decodeAerospikeShmKey(int32(key))
+
+	fileIcsStats["hexKey"] = hexKey
+	fileIcsStats["prefix"] = prefix
+	fileIcsStats["kind"] = kind
+	fileIcsStats["instanceID"] = instanceID
+	fileIcsStats["namespaceID"] = namespaceID
+	fileIcsStats["suffix"] = suffix
+
+	return fileIcsStats
+}
+
+func decodeAerospikeShmKey(raw int32) (string, string, string, string, string, string) {
+	u := uint32(raw)
+
+	prefix := byte(u >> 24)
+
+	var kind string
+
+	switch prefix {
+	case 0xae:
+		kind = ICS_SHM_PI_BASE_PREFIX
+	case 0xa2:
+		kind = ICS_SHM_SINDEX_PREFIX
+	case 0xad:
+		kind = ICS_SHM_DATA_PREFIX
+	default:
+		kind = ICS_SHM_OTHER_PREFIX
+	}
+
+	hexKey := fmt.Sprintf("0x%08x", u)
+	instanceID := strconv.FormatUint(uint64(((u >> 20) & 0xF)), 10)
+	namespaceID := strconv.FormatUint(uint64(((u >> 12) & 0xFF)), 10)
+	suffix := strconv.FormatUint(uint64((u & 0xFFF)), 10)
+
+	// rawKey = strconv.FormatInt(int64(raw), 10),
+	return hexKey, fmt.Sprintf("0x%02x", prefix),
+		kind, instanceID, namespaceID, suffix
+
 }

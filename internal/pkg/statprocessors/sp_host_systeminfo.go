@@ -38,7 +38,7 @@ func (hsi *HostSystemInfoProcessor) RefreshSystemInfo() ([]AerospikeStat, error)
 	arrSysInfoStats = append(arrSysInfoStats, hsi.getNetworkInfo()...)
 
 	fmt.Println("ICS Stats:")
-	fmt.Println(hsi.systemProvider.GetIcsStats())
+	fmt.Println(hsi.systemProvider.GetSharedMemoryStats())
 
 	return arrSysInfoStats, nil
 }

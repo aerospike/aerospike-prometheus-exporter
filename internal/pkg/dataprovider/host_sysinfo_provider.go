@@ -121,10 +121,10 @@ func (sip SystemInfoProvider) GetNetDevStats() ([]map[string]string, []map[strin
 	return arrNetReceiveStats, arrNetTransferStats
 }
 
-func (sip SystemInfoProvider) GetIcsStats() map[string]string {
-	fileIcsStats := make(map[string]string)
+func (sip SystemInfoProvider) GetSharedMemoryStats() []map[string]string {
+	fileIcsStats := []map[string]string{}
 
-	fileName := getProcFilePath("sysvipc/shm")
+	fileName := getProcFilePath(ICS_SHM_PATH)
 
 	file, err := os.Open(fileName)
 
@@ -143,47 +143,19 @@ func (sip SystemInfoProvider) GetIcsStats() map[string]string {
 		lineNo++
 		line := strings.TrimSpace(scanner.Text())
 
-		if line == "" {
-			continue
-		}
-
-		// skip header line
-		if lineNo == 1 && strings.HasPrefix(line, "key") {
+		//TODO: shall we stop if any error occurs while parsing the file?
+		if line == "" || lineNo == 1 || strings.HasPrefix(line, "key") {
+			log.Debugf("Skipping line %d: %s", lineNo, line)
 			continue
 		}
 
 		fieldsIcs := strings.Fields(line)
 		if len(fieldsIcs) < 16 {
 			log.Errorf("Error while reading file, bad shm line %d: got %d fields", lineNo, len(fieldsIcs))
-			return fileIcsStats
+			continue
 		}
 
-		// key, _ := strconv.ParseInt(f[0], 10, 64)
-		// shmid, _ := strconv.ParseInt(f[1], 10, 64)
-		// size, _ := strconv.ParseUint(f[3], 10, 64)
-		// cpid, _ := strconv.ParseInt(f[4], 10, 64)
-		// lpid, _ := strconv.ParseInt(f[5], 10, 64)
-		// nattch, _ := strconv.ParseUint(f[6], 10, 64)
-		// uid, _ := strconv.ParseUint(f[7], 10, 64)
-		// gid, _ := strconv.ParseUint(f[8], 10, 64)
-		// cuid, _ := strconv.ParseUint(f[9], 10, 64)
-		// cgid, _ := strconv.ParseUint(f[10], 10, 64)
-		// atime, _ := strconv.ParseInt(f[11], 10, 64)
-		// dtime, _ := strconv.ParseInt(f[12], 10, 64)
-		// ctime, _ := strconv.ParseInt(f[13], 10, 64)
-		// rss, _ := strconv.ParseUint(f[14], 10, 64)
-		// swap, _ := strconv.ParseUint(f[15], 10, 64)
-
-		fileIcsStats["key"] = fieldsIcs[0]
-		fileIcsStats["shmid"] = fieldsIcs[1]
-		fileIcsStats["size"] = fieldsIcs[3]
-		fileIcsStats["cpid"] = fieldsIcs[4]
-		fileIcsStats["lpid"] = fieldsIcs[5]
-		fileIcsStats["nattch"] = fieldsIcs[6]
-		fileIcsStats["uid"] = fieldsIcs[7]
-		fileIcsStats["gid"] = fieldsIcs[8]
-		fileIcsStats["cuid"] = fieldsIcs[9]
-
+		fileIcsStats = append(fileIcsStats, parseIcsKey(fieldsIcs))
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -191,7 +163,7 @@ func (sip SystemInfoProvider) GetIcsStats() map[string]string {
 		return fileIcsStats
 	}
 
-	log.Debugf("FileFD Stats - Count of return stats %d", len(fileIcsStats))
+	log.Debugf("SharedMemory Stats - Count of return stats %d", len(fileIcsStats))
 
 	return fileIcsStats
 }
