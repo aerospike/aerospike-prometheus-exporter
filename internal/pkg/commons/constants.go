@@ -51,6 +51,7 @@ const (
 	METRIC_LABEL_NAMESPACE_ID = "namespace_id"
 	METRIC_LABEL_CPID         = "cpid"
 	METRIC_LABEL_LPID         = "lpid"
+	METRIC_LABEL_SHMEM_ID     = "shmem_id"
 )
 
 const (
