@@ -43,7 +43,7 @@ const (
 
 const (
 	ICS_SHM_PI_BASE_PREFIX = "pi"
-	ICS_SHM_SINDEX_PREFIX  = "sindex"
+	ICS_SHM_SINDEX_PREFIX  = "si"
 	ICS_SHM_DATA_PREFIX    = "data"
 	ICS_SHM_OTHER_PREFIX   = "other"
 )

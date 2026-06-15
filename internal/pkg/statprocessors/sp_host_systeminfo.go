@@ -193,7 +193,7 @@ func (hsi *HostSystemInfoProcessor) getSharedMemoryInfo() []AerospikeStat {
 		commons.METRIC_LABEL_HEXKEY}
 
 	sharedMemoryLabels = append(sharedMemoryLabels, commons.METRIC_LABEL_NAMESPACE_ID, commons.METRIC_LABEL_INSTANCE_ID)
-	sharedMemoryLabels = append(sharedMemoryLabels, commons.METRIC_LABEL_PREFIX, commons.METRIC_LABEL_KIND)
+	sharedMemoryLabels = append(sharedMemoryLabels, commons.METRIC_LABEL_PREFIX, commons.METRIC_LABEL_TYPEID)
 	sharedMemoryLabels = append(sharedMemoryLabels, commons.METRIC_LABEL_CPID, commons.METRIC_LABEL_LPID)
 
 	sharedMemoryStats := hsi.systemProvider.GetSharedMemoryStats()
