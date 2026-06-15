@@ -203,8 +203,8 @@ func (hsi *HostSystemInfoProcessor) getSharedMemoryInfo() []AerospikeStat {
 
 	for _, stats := range sharedMemoryStats {
 		labelValues := []string{hsi.sharedState.ClusterName, hsi.sharedState.Service, stats["hexKey"]}
-		labelValues = append(labelValues, stats["namespaceID"], stats["instanceID"])
-		labelValues = append(labelValues, stats["prefix"], stats["kind"])
+		labelValues = append(labelValues, stats["namespaceid"], stats["instanceid"])
+		labelValues = append(labelValues, stats["prefix"], stats["typeid"])
 		labelValues = append(labelValues, stats["cpid"], stats["lpid"])
 
 		// size - Configured segment size in bytes. This is the segment capacity/reserved size.

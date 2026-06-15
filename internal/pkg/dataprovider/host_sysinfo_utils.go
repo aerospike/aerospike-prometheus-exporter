@@ -162,13 +162,13 @@ func parseIcsKey(icsShmFields []string) map[string]string {
 	fileIcsStats["rss"] = strconv.FormatUint(rss, 10)
 	fileIcsStats["swap"] = strconv.FormatUint(swap, 10)
 
-	hexKey, prefix, kind, instanceID, namespaceID, suffix := decodeAerospikeShmKey(int32(key))
+	hexKey, prefix, typeid, instanceID, namespaceID, suffix := decodeAerospikeShmKey(int32(key))
 
 	fileIcsStats["hexKey"] = hexKey
 	fileIcsStats["prefix"] = prefix
-	fileIcsStats["kind"] = kind
-	fileIcsStats["instanceID"] = instanceID
-	fileIcsStats["namespaceID"] = namespaceID
+	fileIcsStats["typeid"] = typeid
+	fileIcsStats["instanceid"] = instanceID
+	fileIcsStats["namespaceid"] = namespaceID
 	fileIcsStats["suffix"] = suffix
 
 	return fileIcsStats
@@ -179,17 +179,17 @@ func decodeAerospikeShmKey(raw int32) (string, string, string, string, string, s
 
 	prefix := byte(u >> 24)
 
-	var kind string
+	var typeid string
 
 	switch prefix {
 	case 0xae:
-		kind = ICS_SHM_PI_BASE_PREFIX
+		typeid = ICS_SHM_PI_BASE_PREFIX
 	case 0xa2:
-		kind = ICS_SHM_SINDEX_PREFIX
+		typeid = ICS_SHM_SINDEX_PREFIX
 	case 0xad:
-		kind = ICS_SHM_DATA_PREFIX
+		typeid = ICS_SHM_DATA_PREFIX
 	default:
-		kind = ICS_SHM_OTHER_PREFIX
+		typeid = ICS_SHM_OTHER_PREFIX
 	}
 
 	hexKey := fmt.Sprintf("0x%08x", u)
@@ -199,6 +199,6 @@ func decodeAerospikeShmKey(raw int32) (string, string, string, string, string, s
 
 	// rawKey = strconv.FormatInt(int64(raw), 10),
 	return hexKey, fmt.Sprintf("0x%02x", prefix),
-		kind, instanceID, namespaceID, suffix
+		typeid, instanceID, namespaceID, suffix
 
 }
