@@ -7,7 +7,7 @@ WORKDIR $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter
 RUN go build -ldflags="-X 'main.version=$VERSION'" -o aerospike-prometheus-exporter ./cmd \
 	&& cp aerospike-prometheus-exporter /aerospike-prometheus-exporter
 
-FROM alpine:3.23.4@sha256:5b10f432ef3da1b8d4c7eb6c487f2f5a8f096bc91145e68878dd4a5019afde11
+FROM alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
 
 COPY --from=builder /aerospike-prometheus-exporter /usr/bin/aerospike-prometheus-exporter
 COPY configs/ape.toml.template /etc/aerospike-prometheus-exporter/ape.toml.template
