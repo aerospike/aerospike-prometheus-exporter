@@ -46,8 +46,6 @@ const (
 	ICS_SHM_SINDEX_PREFIX  = "si"
 	ICS_SHM_DATA_PREFIX    = "data"
 	ICS_SHM_OTHER_PREFIX   = "other"
-
-	aerospikeDaemonName = "asd"
 )
 
 var (
@@ -70,67 +68,16 @@ func getFloatValue(addr *uint64) float64 {
 	return 0.0
 }
 
-// IsAerospikeDaemonName reports whether name refers to the Aerospike server binary (asd),
-// regardless of install path or container layout.
-func IsAerospikeDaemonName(name string) bool {
-	if name == "" {
+// IsAerospikeShmSegment reports whether a sysvipc shm key belongs to Aerospike,
+// based on the encoded key prefix (PI/base=0xae, sindex=0xa2, data=0xad).
+// This works across host, VM, Docker, and K8s sidecars without relying on cpid/lpid.
+func IsAerospikeShmSegment(key int32) bool {
+	switch byte(uint32(key) >> 24) {
+	case 0xae, 0xa2, 0xad:
+		return true
+	default:
 		return false
 	}
-
-	// Executable paths for deleted binaries look like "/usr/bin/asd (deleted)".
-	base := filepath.Base(strings.TrimSuffix(name, " (deleted)"))
-	return base == aerospikeDaemonName
-}
-
-// getAsdProcessIDs returns PIDs of running Aerospike server (asd) processes visible in procfs.
-func getAsdProcessIDs() map[int]struct{} {
-	asdPIDs := make(map[int]struct{})
-
-	fs, err := procfs.NewFS(PROC_PATH)
-	if err != nil {
-		log.Debugf("failed to read procfs for asd lookup: %s", err)
-		return asdPIDs
-	}
-
-	procs, err := fs.AllProcs()
-	if err != nil {
-		log.Debugf("failed to list processes for asd lookup: %s", err)
-		return asdPIDs
-	}
-
-	for _, proc := range procs {
-		if isAsdProcess(proc) {
-			asdPIDs[proc.PID] = struct{}{}
-		}
-	}
-
-	return asdPIDs
-}
-
-func isAsdProcess(proc procfs.Proc) bool {
-	if comm, err := proc.Comm(); err == nil && IsAerospikeDaemonName(comm) {
-		return true
-	}
-
-	if exe, err := proc.Executable(); err == nil && IsAerospikeDaemonName(exe) {
-		return true
-	}
-
-	if cmdline, err := proc.CmdLine(); err == nil && len(cmdline) > 0 && IsAerospikeDaemonName(cmdline[0]) {
-		return true
-	}
-
-	return false
-}
-
-func IsAsdShmSegment(cpid, lpid int, asdPIDs map[int]struct{}) bool {
-	if len(asdPIDs) == 0 {
-		return false
-	}
-
-	_, cpidIsAsd := asdPIDs[cpid]
-	_, lpidIsAsd := asdPIDs[lpid]
-	return cpidIsAsd || lpidIsAsd
 }
 
 func parseNetStats(fileName string) map[string]string {

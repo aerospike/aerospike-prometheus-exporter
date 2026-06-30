@@ -138,12 +138,6 @@ func (sip SystemInfoProvider) GetSharedMemoryStats() []map[string]string {
 
 	defer file.Close() //nolint:errcheck
 
-	asdPIDs := getAsdProcessIDs()
-	if len(asdPIDs) == 0 {
-		log.Debugf("no asd process found in %s, skipping shared memory stats", PROC_PATH)
-		return fileIcsStats
-	}
-
 	scanner := bufio.NewScanner(file)
 
 	lineNo := 0
@@ -164,20 +158,14 @@ func (sip SystemInfoProvider) GetSharedMemoryStats() []map[string]string {
 			continue
 		}
 
-		cpid, err := strconv.Atoi(fieldsIcs[4])
+		key, err := strconv.ParseInt(fieldsIcs[0], 10, 32)
 		if err != nil {
-			log.Debugf("Skipping line %d: invalid cpid %q", lineNo, fieldsIcs[4])
+			log.Debugf("Skipping line %d: invalid key %q", lineNo, fieldsIcs[0])
 			continue
 		}
 
-		lpid, err := strconv.Atoi(fieldsIcs[5])
-		if err != nil {
-			log.Debugf("Skipping line %d: invalid lpid %q", lineNo, fieldsIcs[5])
-			continue
-		}
-
-		if !IsAsdShmSegment(cpid, lpid, asdPIDs) {
-			log.Debugf("Skipping line %d: cpid=%d lpid=%d not owned by asd", lineNo, cpid, lpid)
+		if !IsAerospikeShmSegment(int32(key)) {
+			log.Debugf("Skipping line %d: key=%d is not an Aerospike shm segment", lineNo, key)
 			continue
 		}
 
