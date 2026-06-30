@@ -215,8 +215,8 @@ func (hsi *HostSystemInfoProcessor) getSharedMemoryInfo() []AerospikeStat {
 			continue
 		}
 
-		allowed := isMetricAllowed(commons.CTX_SYSINFO_NETWORK_STATS, sizeStatName)
-		sizeMetric := NewAerospikeStat(commons.CTX_SYSINFO_NETWORK_STATS, sizeStatName, allowed)
+		allowed := isMetricAllowed(commons.CTX_SYSINFO_MEMORY_STATS, sizeStatName)
+		sizeMetric := NewAerospikeStat(commons.CTX_SYSINFO_MEMORY_STATS, sizeStatName, allowed)
 		sizeMetric.Labels = sharedMemoryLabels
 		sizeMetric.LabelValues = labelValues
 		sizeMetric.Value = sizeValue
@@ -231,8 +231,8 @@ func (hsi *HostSystemInfoProcessor) getSharedMemoryInfo() []AerospikeStat {
 			continue
 		}
 
-		allowed = isMetricAllowed(commons.CTX_SYSINFO_NETWORK_STATS, rssStatName)
-		rssMetric := NewAerospikeStat(commons.CTX_SYSINFO_NETWORK_STATS, rssStatName, allowed)
+		allowed = isMetricAllowed(commons.CTX_SYSINFO_MEMORY_STATS, rssStatName)
+		rssMetric := NewAerospikeStat(commons.CTX_SYSINFO_MEMORY_STATS, rssStatName, allowed)
 		rssMetric.Labels = sharedMemoryLabels
 		rssMetric.LabelValues = labelValues
 		rssMetric.Value = rssValue
