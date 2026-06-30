@@ -125,7 +125,7 @@ func (sip SystemInfoProvider) GetNetDevStats() ([]map[string]string, []map[strin
 }
 
 func (sip SystemInfoProvider) GetSharedMemoryStats() []map[string]string {
-	fileIcsStats := []map[string]string{}
+	shmInfoStats := []map[string]string{}
 
 	fileName := getProcFilePath(ICS_SHM_PATH)
 
@@ -133,7 +133,7 @@ func (sip SystemInfoProvider) GetSharedMemoryStats() []map[string]string {
 
 	if err != nil {
 		log.Error("Error while opening file,", fileName, " Error: ", err)
-		return fileIcsStats
+		return shmInfoStats
 	}
 
 	defer file.Close() //nolint:errcheck
@@ -152,32 +152,38 @@ func (sip SystemInfoProvider) GetSharedMemoryStats() []map[string]string {
 			continue
 		}
 
-		fieldsIcs := strings.Fields(line)
-		if len(fieldsIcs) < 16 {
-			log.Errorf("Error while reading file, bad shm line %d: got %d fields", lineNo, len(fieldsIcs))
+		shmFields := strings.Fields(line)
+		if len(shmFields) == 0 {
+			log.Debugf("Skipping shm line %d: empty fields", lineNo)
 			continue
 		}
 
-		key, err := strconv.ParseInt(fieldsIcs[0], 10, 32)
+		key, err := strconv.ParseInt(shmFields[0], 10, 32)
 		if err != nil {
-			log.Debugf("Skipping line %d: invalid key %q", lineNo, fieldsIcs[0])
+			log.Debugf("Skipping shm line %d: invalid key %q: %v", lineNo, shmFields[0], err)
 			continue
 		}
 
 		if !IsAerospikeShmSegment(int32(key)) {
-			log.Debugf("Skipping line %d: key=%d is not an Aerospike shm segment", lineNo, key)
+			log.Debugf("Skipping shm line %d: key=%d is not an Aerospike shm segment", lineNo, key)
 			continue
 		}
 
-		fileIcsStats = append(fileIcsStats, parseIcsKey(fieldsIcs))
+		stats, err := parseSysVSharedMemInfo(shmFields)
+		if err != nil {
+			log.Debugf("Skipping shm line %d: %v", lineNo, err)
+			continue
+		}
+
+		shmInfoStats = append(shmInfoStats, stats)
 	}
 
 	if err := scanner.Err(); err != nil {
 		log.Error("Error while reading file,", fileName, " Error: ", err)
-		return fileIcsStats
+		return shmInfoStats
 	}
 
-	log.Debugf("SharedMemory Stats - Count of return stats %d", len(fileIcsStats))
+	log.Debugf("SharedMemory Stats - Count of return stats %d", len(shmInfoStats))
 
-	return fileIcsStats
+	return shmInfoStats
 }

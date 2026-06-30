@@ -117,73 +117,110 @@ func parseNetStats(fileName string) map[string]string {
 	return arrSysInfoStats
 }
 
-func parseIcsKey(icsShmFields []string) map[string]string {
+func parseSysVSharedMemInfo(shmFields []string) (map[string]string, error) {
 
-	fileIcsStats := make(map[string]string)
+	// parse each field, if any field is invalid, return an error
+	// total 16 fields - key,shmid,perms,size,cpid,lpid,nattch,uid,gid,cuid,cgid,atime,dtime,ctime,rss,swap
+	key, err := strconv.ParseInt(shmFields[0], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("key %q: %w", shmFields[0], err)
+	}
 
-	// key:-1392500736
-	// cat / proc / sysvipc / shm
-	// 	key      shmid perms                  size  cpid  lpid nattch   uid   gid  cuid  cgid      atime      dtime      ctime                   rss                  swap
-	// -1375727360          0   666            1073741824   152   288      1     0     0     0     0 1781083729 1781083717 1781083714                  4096                     0
-	// -1392504832          1   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
-	// -1392504831          2   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
-	// -1392504830          3   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
-	// -1392504829          4   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
-	// -1392504828          5   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
-	// -1392504827          6   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
-	// -1392504826          7   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
-	// -1392504825          8   666             536870912   152   288      1     0     0     0     0 1781083729 1781083717 1781083714               8388608                     0
+	shmid, err := strconv.ParseInt(shmFields[1], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("shmid %q: %w", shmFields[1], err)
+	}
 
-	// 0xae -> PI/base
-	// 0xa2 -> SI
-	// 0xad -> data
+	size, err := strconv.ParseUint(shmFields[3], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("size %q: %w", shmFields[3], err)
+	}
 
-	// for sindex its 0xa2 + 1 letter for instanceid + 2 letters for namespaceid + 3 digits for stages
-	// for data in shmem
-	// 0xad + 1 letter for instance id + 2 letters for namespaceID + 3 (last bit for stripe ids 0,1,2,3)
+	cpid, err := strconv.ParseInt(shmFields[4], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("cpid %q: %w", shmFields[4], err)
+	}
 
-	key, _ := strconv.ParseInt(icsShmFields[0], 10, 64)
-	shmid, _ := strconv.ParseInt(icsShmFields[1], 10, 64)
-	size, _ := strconv.ParseUint(icsShmFields[3], 10, 64)
-	cpid, _ := strconv.ParseInt(icsShmFields[4], 10, 64)
-	lpid, _ := strconv.ParseInt(icsShmFields[5], 10, 64)
-	nattch, _ := strconv.ParseUint(icsShmFields[6], 10, 64)
-	uid, _ := strconv.ParseUint(icsShmFields[7], 10, 64)
-	gid, _ := strconv.ParseUint(icsShmFields[8], 10, 64)
-	cuid, _ := strconv.ParseUint(icsShmFields[9], 10, 64)
-	cgid, _ := strconv.ParseUint(icsShmFields[10], 10, 64)
-	atime, _ := strconv.ParseInt(icsShmFields[11], 10, 64)
-	dtime, _ := strconv.ParseInt(icsShmFields[12], 10, 64)
-	ctime, _ := strconv.ParseInt(icsShmFields[13], 10, 64)
-	rss, _ := strconv.ParseUint(icsShmFields[14], 10, 64)
-	swap, _ := strconv.ParseUint(icsShmFields[15], 10, 64)
+	lpid, err := strconv.ParseInt(shmFields[5], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("lpid %q: %w", shmFields[5], err)
+	}
 
-	fileIcsStats["key"] = strconv.FormatInt(int64(key), 10)
-	fileIcsStats["shmid"] = strconv.FormatInt(int64(shmid), 10)
-	fileIcsStats["size"] = strconv.FormatUint(size, 10)
-	fileIcsStats["cpid"] = strconv.FormatInt(int64(cpid), 10)
-	fileIcsStats["lpid"] = strconv.FormatInt(int64(lpid), 10)
-	fileIcsStats["nattch"] = strconv.FormatUint(nattch, 10)
-	fileIcsStats["uid"] = strconv.FormatUint(uid, 10)
-	fileIcsStats["gid"] = strconv.FormatUint(gid, 10)
-	fileIcsStats["cuid"] = strconv.FormatUint(cuid, 10)
-	fileIcsStats["cgid"] = strconv.FormatUint(cgid, 10)
-	fileIcsStats["atime"] = strconv.FormatInt(atime, 10)
-	fileIcsStats["dtime"] = strconv.FormatInt(dtime, 10)
-	fileIcsStats["ctime"] = strconv.FormatInt(ctime, 10)
-	fileIcsStats["rss"] = strconv.FormatUint(rss, 10)
-	fileIcsStats["swap"] = strconv.FormatUint(swap, 10)
+	nattch, err := strconv.ParseUint(shmFields[6], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("nattch %q: %w", shmFields[6], err)
+	}
+
+	uid, err := strconv.ParseUint(shmFields[7], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("uid %q: %w", shmFields[7], err)
+	}
+
+	gid, err := strconv.ParseUint(shmFields[8], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("gid %q: %w", shmFields[8], err)
+	}
+
+	cuid, err := strconv.ParseUint(shmFields[9], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("cuid %q: %w", shmFields[9], err)
+	}
+
+	cgid, err := strconv.ParseUint(shmFields[10], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("cgid %q: %w", shmFields[10], err)
+	}
+
+	atime, err := strconv.ParseInt(shmFields[11], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("atime %q: %w", shmFields[11], err)
+	}
+
+	dtime, err := strconv.ParseInt(shmFields[12], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("dtime %q: %w", shmFields[12], err)
+	}
+
+	ctime, err := strconv.ParseInt(shmFields[13], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("ctime %q: %w", shmFields[13], err)
+	}
+
+	rss, err := strconv.ParseUint(shmFields[14], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("rss %q: %w", shmFields[14], err)
+	}
+
+	swap, err := strconv.ParseUint(shmFields[15], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("swap %q: %w", shmFields[15], err)
+	}
 
 	hexKey, prefix, typeid, instanceID, namespaceID, suffix := decodeAerospikeShmKey(int32(key))
 
-	fileIcsStats["hexKey"] = hexKey
-	fileIcsStats["prefix"] = prefix
-	fileIcsStats["typeid"] = typeid
-	fileIcsStats["instanceid"] = instanceID
-	fileIcsStats["namespaceid"] = namespaceID
-	fileIcsStats["suffix"] = suffix
-
-	return fileIcsStats
+	return map[string]string{
+		"key":         strconv.FormatInt(key, 10),
+		"shmid":       strconv.FormatInt(shmid, 10),
+		"size":        strconv.FormatUint(size, 10),
+		"cpid":        strconv.FormatInt(cpid, 10),
+		"lpid":        strconv.FormatInt(lpid, 10),
+		"nattch":      strconv.FormatUint(nattch, 10),
+		"uid":         strconv.FormatUint(uid, 10),
+		"gid":         strconv.FormatUint(gid, 10),
+		"cuid":        strconv.FormatUint(cuid, 10),
+		"cgid":        strconv.FormatUint(cgid, 10),
+		"atime":       strconv.FormatInt(atime, 10),
+		"dtime":       strconv.FormatInt(dtime, 10),
+		"ctime":       strconv.FormatInt(ctime, 10),
+		"rss":         strconv.FormatUint(rss, 10),
+		"swap":        strconv.FormatUint(swap, 10),
+		"hexKey":      hexKey,
+		"prefix":      prefix,
+		"typeid":      typeid,
+		"instanceid":  instanceID,
+		"namespaceid": namespaceID,
+		"suffix":      suffix,
+	}, nil
 }
 
 func decodeAerospikeShmKey(raw int32) (string, string, string, string, string, string) {
