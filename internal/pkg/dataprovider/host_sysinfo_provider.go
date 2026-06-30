@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/prometheus/procfs"
@@ -137,6 +138,12 @@ func (sip SystemInfoProvider) GetSharedMemoryStats() []map[string]string {
 
 	defer file.Close() //nolint:errcheck
 
+	asdPIDs := getAsdProcessIDs()
+	if len(asdPIDs) == 0 {
+		log.Debugf("no asd process found in %s, skipping shared memory stats", PROC_PATH)
+		return fileIcsStats
+	}
+
 	scanner := bufio.NewScanner(file)
 
 	lineNo := 0
@@ -154,6 +161,23 @@ func (sip SystemInfoProvider) GetSharedMemoryStats() []map[string]string {
 		fieldsIcs := strings.Fields(line)
 		if len(fieldsIcs) < 16 {
 			log.Errorf("Error while reading file, bad shm line %d: got %d fields", lineNo, len(fieldsIcs))
+			continue
+		}
+
+		cpid, err := strconv.Atoi(fieldsIcs[4])
+		if err != nil {
+			log.Debugf("Skipping line %d: invalid cpid %q", lineNo, fieldsIcs[4])
+			continue
+		}
+
+		lpid, err := strconv.Atoi(fieldsIcs[5])
+		if err != nil {
+			log.Debugf("Skipping line %d: invalid lpid %q", lineNo, fieldsIcs[5])
+			continue
+		}
+
+		if !IsAsdShmSegment(cpid, lpid, asdPIDs) {
+			log.Debugf("Skipping line %d: cpid=%d lpid=%d not owned by asd", lineNo, cpid, lpid)
 			continue
 		}
 
