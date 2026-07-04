@@ -57,7 +57,7 @@ var (
 
 	// index of int/uint keys in shmFields
 	//   ignore key index 0, as it is the key itself
-	shMemIntKeyIdx  = []int{1, 2, 4, 6, 11, 12, 13}
+	shMemIntKeyIdx  = []int{1, 2, 4, 5, 6, 11, 12, 13}
 	shMemUIntKeyIdx = []int{3, 7, 8, 9, 10, 14, 15}
 )
 
@@ -126,6 +126,16 @@ func parseNetStats(fileName string) map[string]string {
 	return arrSysInfoStats
 }
 
+// AerospikeShmKeyInfo holds the decoded fields of an Aerospike sysvipc shm key.
+type AerospikeShmKeyInfo struct {
+	HexKey      string
+	Prefix      string
+	TypeID      string
+	InstanceID  string
+	NamespaceID string
+	Suffix      string
+}
+
 func parseSysVSharedMemInfo(key int64, shmFields []string) map[string]string {
 	// parse each field, if any field is invalid, return an error
 	// total 16 fields - key,shmid,perms,size,cpid,lpid,nattch,uid,gid,cuid,cgid,atime,dtime,ctime,rss,swap
@@ -154,43 +164,43 @@ func parseSysVSharedMemInfo(key int64, shmFields []string) map[string]string {
 		arrSysInfoStats[shKeyNames[keyIdx]] = shmFields[keyIdx]
 	}
 
-	hexKey, prefix, typeid, instanceID, namespaceID, suffix := decodeAerospikeShmKey(key)
+	decoded := decodeAerospikeShmKey(key)
 
 	arrSysInfoStats["key"] = strconv.FormatInt(key, 10)
-	arrSysInfoStats["hexKey"] = hexKey
-	arrSysInfoStats["prefix"] = prefix
-	arrSysInfoStats["typeid"] = typeid
-	arrSysInfoStats["instanceid"] = instanceID
-	arrSysInfoStats["namespaceid"] = namespaceID
-	arrSysInfoStats["suffix"] = suffix
+	arrSysInfoStats["hexKey"] = decoded.HexKey
+	arrSysInfoStats["prefix"] = decoded.Prefix
+	arrSysInfoStats["typeid"] = decoded.TypeID
+	arrSysInfoStats["instanceid"] = decoded.InstanceID
+	arrSysInfoStats["namespaceid"] = decoded.NamespaceID
+	arrSysInfoStats["suffix"] = decoded.Suffix
 
 	return arrSysInfoStats
 }
 
-func decodeAerospikeShmKey(raw int64) (string, string, string, string, string, string) {
+func decodeAerospikeShmKey(raw int64) AerospikeShmKeyInfo {
 	u := uint32(raw)
 
 	prefix := byte(u >> 24)
 
-	var typeid string
+	var typeID string
 
 	switch prefix {
 	case 0xae:
-		typeid = ICS_SHM_PI_BASE_PREFIX
+		typeID = ICS_SHM_PI_BASE_PREFIX
 	case 0xa2:
-		typeid = ICS_SHM_SINDEX_PREFIX
+		typeID = ICS_SHM_SINDEX_PREFIX
 	case 0xad:
-		typeid = ICS_SHM_DATA_PREFIX
+		typeID = ICS_SHM_DATA_PREFIX
 	default:
-		typeid = ICS_SHM_OTHER_PREFIX
+		typeID = ICS_SHM_OTHER_PREFIX
 	}
 
-	hexKey := fmt.Sprintf("0x%08x", u)
-	instanceID := strconv.FormatUint(uint64(((u >> 20) & 0xF)), 10)
-	namespaceID := strconv.FormatUint(uint64(((u >> 12) & 0xFF)), 10)
-	suffix := strconv.FormatUint(uint64((u & 0xFFF)), 10)
-
-	// rawKey = strconv.FormatInt(int64(raw), 10),
-	return hexKey, fmt.Sprintf("0x%02x", prefix),
-		typeid, instanceID, namespaceID, suffix
+	return AerospikeShmKeyInfo{
+		HexKey:      fmt.Sprintf("0x%08x", u),
+		Prefix:      fmt.Sprintf("0x%02x", prefix),
+		TypeID:      typeID,
+		InstanceID:  strconv.FormatUint(uint64((u>>20)&0xF), 10),
+		NamespaceID: strconv.FormatUint(uint64((u>>12)&0xFF), 10),
+		Suffix:      strconv.FormatUint(uint64(u&0xFFF), 10),
+	}
 }
