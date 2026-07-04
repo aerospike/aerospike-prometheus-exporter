@@ -30,7 +30,7 @@ jobs:
           egress-policy: audit
 
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
 
@@ -72,7 +72,7 @@ jobs:
           done
 
       - name: Set up GPG for signing
-        uses: aerospike/shared-workflows/.github/actions/setup-gpg@610a9431704d7d385f0c13243025bcf2ae73e228
+        uses: aerospike/shared-workflows/.github/actions/setup-gpg@d70905d2259d746d19783ecfc0ea5f337c1d5176
         with:
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
           gpg-public-key: ${{ secrets.GPG_PUBLIC_KEY }}
