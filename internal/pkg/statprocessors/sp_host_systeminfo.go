@@ -187,11 +187,9 @@ func (hsi *HostSystemInfoProcessor) getSharedMemoryInfo() []AerospikeStat {
 	arrSysInfoStats := []AerospikeStat{}
 
 	sharedMemoryLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE,
-		commons.METRIC_LABEL_HEXKEY}
-
-	sharedMemoryLabels = append(sharedMemoryLabels, commons.METRIC_LABEL_NAMESPACE_ID, commons.METRIC_LABEL_INSTANCE_ID)
-	sharedMemoryLabels = append(sharedMemoryLabels, commons.METRIC_LABEL_PREFIX, commons.METRIC_LABEL_TYPEID)
-	sharedMemoryLabels = append(sharedMemoryLabels, commons.METRIC_LABEL_CPID, commons.METRIC_LABEL_LPID)
+		commons.METRIC_LABEL_HEXKEY, commons.METRIC_LABEL_NAMESPACE_ID, commons.METRIC_LABEL_INSTANCE_ID,
+		commons.METRIC_LABEL_PREFIX, commons.METRIC_LABEL_TYPEID,
+		commons.METRIC_LABEL_CPID, commons.METRIC_LABEL_LPID}
 
 	sharedMemoryStats := hsi.systemProvider.GetSharedMemoryStats()
 
@@ -199,10 +197,9 @@ func (hsi *HostSystemInfoProcessor) getSharedMemoryInfo() []AerospikeStat {
 	rssStatName := "shared_memory_rss"
 
 	for _, stats := range sharedMemoryStats {
-		labelValues := []string{hsi.sharedState.ClusterName, hsi.sharedState.Service, stats["hexKey"]}
-		labelValues = append(labelValues, stats["namespaceid"], stats["instanceid"])
-		labelValues = append(labelValues, stats["prefix"], stats["typeid"])
-		labelValues = append(labelValues, stats["cpid"], stats["lpid"])
+		labelValues := []string{hsi.sharedState.ClusterName, hsi.sharedState.Service,
+			stats["hexKey"], stats["namespaceid"], stats["instanceid"],
+			stats["prefix"], stats["typeid"], stats["cpid"], stats["lpid"]}
 
 		// size - Configured segment size in bytes. This is the segment capacity/reserved size.
 		sizeValue, err := commons.TryConvert(stats["size"])

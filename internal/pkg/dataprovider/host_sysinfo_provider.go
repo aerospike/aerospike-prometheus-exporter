@@ -158,19 +158,19 @@ func (sip SystemInfoProvider) GetSharedMemoryStats() []map[string]string {
 			continue
 		}
 
-		key, err := strconv.ParseInt(shmFields[0], 10, 32)
+		key, err := strconv.ParseInt(shmFields[0], 10, 64)
 		if err != nil {
 			log.Debugf("Skipping shm line %d: invalid key %q: %v", lineNo, shmFields[0], err)
 			continue
 		}
 
-		if !IsAerospikeShmSegment(int32(key)) {
+		if !IsAerospikeShmSegment(key) {
 			log.Debugf("Skipping shm line %d: key=%d is not an Aerospike shm segment", lineNo, key)
 			continue
 		}
 
-		stats, err := parseSysVSharedMemInfo(shmFields)
-		if err != nil {
+		stats := parseSysVSharedMemInfo(key, shmFields)
+		if stats == nil {
 			log.Debugf("Skipping shm line %d: %v", lineNo, err)
 			continue
 		}

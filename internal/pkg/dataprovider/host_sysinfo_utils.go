@@ -23,15 +23,6 @@ const (
 	NET_STAT_ACCEPT_LIST = "tcp_(activeopens|retranssegs|currestab)"
 )
 
-var (
-	PROC_PATH         = procfs.DefaultMountPoint
-	SYS_PATH          = "/sys"
-	ROOTFS_PATH       = "/"
-	NET_STAT_PATH     = "net/netstat"
-	NET_DEV_STAT_PATH = "/proc/net/dev"
-	ICS_SHM_PATH      = "sysvipc/shm" // actual path is /proc/sysvipc/shm
-)
-
 const (
 	SECONDS_PER_TICK = 0.0001 // 1000 ticks per second
 
@@ -49,7 +40,25 @@ const (
 )
 
 var (
+	PROC_PATH         = procfs.DefaultMountPoint
+	SYS_PATH          = "/sys"
+	ROOTFS_PATH       = "/"
+	NET_STAT_PATH     = "net/netstat"
+	NET_DEV_STAT_PATH = "/proc/net/dev"
+	ICS_SHM_PATH      = "sysvipc/shm" // actual path is /proc/sysvipc/shm
+)
+
+var (
 	regexNetstatAcceptPattern = regexp.MustCompile(NET_STAT_ACCEPT_LIST)
+)
+
+var (
+	shKeyNames = []string{"key", "shmid", "perms", "size", "cpid", "lpid", "nattch", "uid", "gid", "cuid", "cgid", "atime", "dtime", "ctime", "rss", "swap"}
+
+	// index of int/uint keys in shmFields
+	//   ignore key index 0, as it is the key itself
+	shMemIntKeyIdx  = []int{1, 2, 4, 6, 11, 12, 13}
+	shMemUIntKeyIdx = []int{3, 7, 8, 9, 10, 14, 15}
 )
 
 func getProcFilePath(name string) string {
@@ -71,7 +80,7 @@ func getFloatValue(addr *uint64) float64 {
 // IsAerospikeShmSegment reports whether a sysvipc shm key belongs to Aerospike,
 // based on the encoded key prefix (PI/base=0xae, sindex=0xa2, data=0xad).
 // This works across host, VM, Docker, and K8s sidecars without relying on cpid/lpid.
-func IsAerospikeShmSegment(key int32) bool {
+func IsAerospikeShmSegment(key int64) bool {
 	switch byte(uint32(key) >> 24) {
 	case 0xae, 0xa2, 0xad:
 		return true
@@ -117,113 +126,48 @@ func parseNetStats(fileName string) map[string]string {
 	return arrSysInfoStats
 }
 
-func parseSysVSharedMemInfo(shmFields []string) (map[string]string, error) {
-
+func parseSysVSharedMemInfo(key int64, shmFields []string) map[string]string {
 	// parse each field, if any field is invalid, return an error
 	// total 16 fields - key,shmid,perms,size,cpid,lpid,nattch,uid,gid,cuid,cgid,atime,dtime,ctime,rss,swap
-	key, err := strconv.ParseInt(shmFields[0], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("key %q: %w", shmFields[0], err)
+	// int-keys = {"key", "shmid", "perms", "cpid", "lpid", "atime", "dtime", "ctime"}
+	// unsigned-int-keys {"size", "nattch", "uid", "gid", "cuid", "cgid", "rss", "swap"}
+
+	arrSysInfoStats := make(map[string]string)
+
+	// parse each field, if any field is invalid, return an error
+	// NOTE: key is already parsed, so we are not re-parsing it here
+	for _, keyIdx := range shMemIntKeyIdx {
+		value, err := strconv.ParseInt(shmFields[keyIdx], 10, 64)
+		if err != nil {
+			log.Error("Error while parsing key: ", shKeyNames[keyIdx], " value: ", shmFields[keyIdx], " error: ", err)
+			return nil
+		}
+		arrSysInfoStats[shKeyNames[keyIdx]] = strconv.FormatInt(value, 10)
 	}
 
-	shmid, err := strconv.ParseInt(shmFields[1], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("shmid %q: %w", shmFields[1], err)
+	for _, keyIdx := range shMemUIntKeyIdx {
+		value, err := strconv.ParseUint(shmFields[keyIdx], 10, 64)
+		if err != nil {
+			log.Error("Error while parsing key: ", shKeyNames[keyIdx], " value: ", shmFields[keyIdx], " error: ", err)
+			return nil
+		}
+		arrSysInfoStats[shKeyNames[keyIdx]] = strconv.FormatUint(value, 10)
 	}
 
-	size, err := strconv.ParseUint(shmFields[3], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("size %q: %w", shmFields[3], err)
-	}
+	hexKey, prefix, typeid, instanceID, namespaceID, suffix := decodeAerospikeShmKey(key)
 
-	cpid, err := strconv.ParseInt(shmFields[4], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("cpid %q: %w", shmFields[4], err)
-	}
+	arrSysInfoStats["key"] = strconv.FormatInt(key, 10)
+	arrSysInfoStats["hexKey"] = hexKey
+	arrSysInfoStats["prefix"] = prefix
+	arrSysInfoStats["typeid"] = typeid
+	arrSysInfoStats["instanceid"] = instanceID
+	arrSysInfoStats["namespaceid"] = namespaceID
+	arrSysInfoStats["suffix"] = suffix
 
-	lpid, err := strconv.ParseInt(shmFields[5], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("lpid %q: %w", shmFields[5], err)
-	}
-
-	nattch, err := strconv.ParseUint(shmFields[6], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("nattch %q: %w", shmFields[6], err)
-	}
-
-	uid, err := strconv.ParseUint(shmFields[7], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("uid %q: %w", shmFields[7], err)
-	}
-
-	gid, err := strconv.ParseUint(shmFields[8], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("gid %q: %w", shmFields[8], err)
-	}
-
-	cuid, err := strconv.ParseUint(shmFields[9], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("cuid %q: %w", shmFields[9], err)
-	}
-
-	cgid, err := strconv.ParseUint(shmFields[10], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("cgid %q: %w", shmFields[10], err)
-	}
-
-	atime, err := strconv.ParseInt(shmFields[11], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("atime %q: %w", shmFields[11], err)
-	}
-
-	dtime, err := strconv.ParseInt(shmFields[12], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("dtime %q: %w", shmFields[12], err)
-	}
-
-	ctime, err := strconv.ParseInt(shmFields[13], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("ctime %q: %w", shmFields[13], err)
-	}
-
-	rss, err := strconv.ParseUint(shmFields[14], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("rss %q: %w", shmFields[14], err)
-	}
-
-	swap, err := strconv.ParseUint(shmFields[15], 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("swap %q: %w", shmFields[15], err)
-	}
-
-	hexKey, prefix, typeid, instanceID, namespaceID, suffix := decodeAerospikeShmKey(int32(key))
-
-	return map[string]string{
-		"key":         strconv.FormatInt(key, 10),
-		"shmid":       strconv.FormatInt(shmid, 10),
-		"size":        strconv.FormatUint(size, 10),
-		"cpid":        strconv.FormatInt(cpid, 10),
-		"lpid":        strconv.FormatInt(lpid, 10),
-		"nattch":      strconv.FormatUint(nattch, 10),
-		"uid":         strconv.FormatUint(uid, 10),
-		"gid":         strconv.FormatUint(gid, 10),
-		"cuid":        strconv.FormatUint(cuid, 10),
-		"cgid":        strconv.FormatUint(cgid, 10),
-		"atime":       strconv.FormatInt(atime, 10),
-		"dtime":       strconv.FormatInt(dtime, 10),
-		"ctime":       strconv.FormatInt(ctime, 10),
-		"rss":         strconv.FormatUint(rss, 10),
-		"swap":        strconv.FormatUint(swap, 10),
-		"hexKey":      hexKey,
-		"prefix":      prefix,
-		"typeid":      typeid,
-		"instanceid":  instanceID,
-		"namespaceid": namespaceID,
-		"suffix":      suffix,
-	}, nil
+	return arrSysInfoStats
 }
 
-func decodeAerospikeShmKey(raw int32) (string, string, string, string, string, string) {
+func decodeAerospikeShmKey(raw int64) (string, string, string, string, string, string) {
 	u := uint32(raw)
 
 	prefix := byte(u >> 24)
@@ -249,5 +193,4 @@ func decodeAerospikeShmKey(raw int32) (string, string, string, string, string, s
 	// rawKey = strconv.FormatInt(int64(raw), 10),
 	return hexKey, fmt.Sprintf("0x%02x", prefix),
 		typeid, instanceID, namespaceID, suffix
-
 }

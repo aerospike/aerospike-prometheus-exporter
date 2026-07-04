@@ -1,4 +1,4 @@
-package dataprovider
+package dataprovider_test
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 func TestIsAerospikeShmSegment(t *testing.T) {
 	tests := []struct {
 		name     string
-		key      int32
+		key      int64
 		expected bool
 	}{
 		{name: "pi base", key: -1375727360, expected: true},
