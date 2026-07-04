@@ -137,21 +137,21 @@ func parseSysVSharedMemInfo(key int64, shmFields []string) map[string]string {
 	// parse each field, if any field is invalid, return an error
 	// NOTE: key is already parsed, so we are not re-parsing it here
 	for _, keyIdx := range shMemIntKeyIdx {
-		value, err := strconv.ParseInt(shmFields[keyIdx], 10, 64)
+		_, err := strconv.ParseInt(shmFields[keyIdx], 10, 64)
 		if err != nil {
 			log.Error("Error while parsing key: ", shKeyNames[keyIdx], " value: ", shmFields[keyIdx], " error: ", err)
 			return nil
 		}
-		arrSysInfoStats[shKeyNames[keyIdx]] = strconv.FormatInt(value, 10)
+		arrSysInfoStats[shKeyNames[keyIdx]] = shmFields[keyIdx] //strconv.FormatInt(value, 10)
 	}
 
 	for _, keyIdx := range shMemUIntKeyIdx {
-		value, err := strconv.ParseUint(shmFields[keyIdx], 10, 64)
+		_, err := strconv.ParseUint(shmFields[keyIdx], 10, 64)
 		if err != nil {
 			log.Error("Error while parsing key: ", shKeyNames[keyIdx], " value: ", shmFields[keyIdx], " error: ", err)
 			return nil
 		}
-		arrSysInfoStats[shKeyNames[keyIdx]] = strconv.FormatUint(value, 10)
+		arrSysInfoStats[shKeyNames[keyIdx]] = shmFields[keyIdx]
 	}
 
 	hexKey, prefix, typeid, instanceID, namespaceID, suffix := decodeAerospikeShmKey(key)
