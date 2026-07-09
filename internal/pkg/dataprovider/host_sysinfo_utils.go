@@ -2,9 +2,11 @@ package dataprovider
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/prometheus/procfs"
@@ -21,14 +23,6 @@ const (
 	NET_STAT_ACCEPT_LIST = "tcp_(activeopens|retranssegs|currestab)"
 )
 
-var (
-	PROC_PATH         = procfs.DefaultMountPoint
-	SYS_PATH          = "/sys"
-	ROOTFS_PATH       = "/"
-	NET_STAT_PATH     = "net/netstat"
-	NET_DEV_STAT_PATH = "/proc/net/dev"
-)
-
 const (
 	SECONDS_PER_TICK = 0.0001 // 1000 ticks per second
 
@@ -38,8 +32,33 @@ const (
 	ONE_KILO_BYTE = 1024
 )
 
+const (
+	ICS_SHM_PI_BASE_PREFIX = "pi"
+	ICS_SHM_SINDEX_PREFIX  = "si"
+	ICS_SHM_DATA_PREFIX    = "data"
+	ICS_SHM_OTHER_PREFIX   = "other"
+)
+
+var (
+	PROC_PATH         = procfs.DefaultMountPoint
+	SYS_PATH          = "/sys"
+	ROOTFS_PATH       = "/"
+	NET_STAT_PATH     = "net/netstat"
+	NET_DEV_STAT_PATH = "/proc/net/dev"
+	ICS_SHM_PATH      = "sysvipc/shm" // actual path is /proc/sysvipc/shm
+)
+
 var (
 	regexNetstatAcceptPattern = regexp.MustCompile(NET_STAT_ACCEPT_LIST)
+)
+
+var (
+	shKeyNames = []string{"key", "shmid", "perms", "size", "cpid", "lpid", "nattch", "uid", "gid", "cuid", "cgid", "atime", "dtime", "ctime", "rss", "swap"}
+
+	// index of int/uint keys in shmFields
+	//   ignore key index 0, as it is the key itself
+	shMemIntKeyIdx  = []int{1, 2, 4, 5, 6, 11, 12, 13}
+	shMemUIntKeyIdx = []int{3, 7, 8, 9, 10, 14, 15}
 )
 
 func getProcFilePath(name string) string {
@@ -56,6 +75,18 @@ func getFloatValue(addr *uint64) float64 {
 		return value
 	}
 	return 0.0
+}
+
+// IsAerospikeShmSegment reports whether a sysvipc shm key belongs to Aerospike,
+// based on the encoded key prefix (PI/base=0xae, sindex=0xa2, data=0xad).
+// This works across host, VM, Docker, and K8s sidecars without relying on cpid/lpid.
+func IsAerospikeShmSegment(key int64) bool {
+	switch byte(uint32(key) >> 24) {
+	case 0xae, 0xa2, 0xad:
+		return true
+	default:
+		return false
+	}
 }
 
 func parseNetStats(fileName string) map[string]string {
@@ -87,5 +118,89 @@ func parseNetStats(fileName string) map[string]string {
 		}
 	}
 
+	if err := scanner.Err(); err != nil {
+		log.Error("Error while reading file,", fileName, " Error: ", err)
+		return arrSysInfoStats
+	}
+
 	return arrSysInfoStats
+}
+
+// AerospikeShmKeyInfo holds the decoded fields of an Aerospike sysvipc shm key.
+type AerospikeShmKeyInfo struct {
+	HexKey      string
+	Prefix      string
+	TypeID      string
+	InstanceID  string
+	NamespaceID string
+	Suffix      string
+}
+
+func parseSysVSharedMemInfo(key int64, shmFields []string) map[string]string {
+	// parse each field, if any field is invalid, return an error
+	// total 16 fields - key,shmid,perms,size,cpid,lpid,nattch,uid,gid,cuid,cgid,atime,dtime,ctime,rss,swap
+	// int-keys = {"key", "shmid", "perms", "cpid", "lpid", "atime", "dtime", "ctime"}
+	// unsigned-int-keys {"size", "nattch", "uid", "gid", "cuid", "cgid", "rss", "swap"}
+
+	arrSysInfoStats := make(map[string]string)
+
+	// parse each field, if any field is invalid, return an error
+	// NOTE: key is already parsed, so we are not re-parsing it here
+	for _, keyIdx := range shMemIntKeyIdx {
+		_, err := strconv.ParseInt(shmFields[keyIdx], 10, 64)
+		if err != nil {
+			log.Error("Error while parsing key: ", shKeyNames[keyIdx], " value: ", shmFields[keyIdx], " error: ", err)
+			return nil
+		}
+		arrSysInfoStats[shKeyNames[keyIdx]] = shmFields[keyIdx] //strconv.FormatInt(value, 10)
+	}
+
+	for _, keyIdx := range shMemUIntKeyIdx {
+		_, err := strconv.ParseUint(shmFields[keyIdx], 10, 64)
+		if err != nil {
+			log.Error("Error while parsing key: ", shKeyNames[keyIdx], " value: ", shmFields[keyIdx], " error: ", err)
+			return nil
+		}
+		arrSysInfoStats[shKeyNames[keyIdx]] = shmFields[keyIdx]
+	}
+
+	decoded := decodeAerospikeShmKey(key)
+
+	arrSysInfoStats["key"] = strconv.FormatInt(key, 10)
+	arrSysInfoStats["hexKey"] = decoded.HexKey
+	arrSysInfoStats["prefix"] = decoded.Prefix
+	arrSysInfoStats["typeid"] = decoded.TypeID
+	arrSysInfoStats["instanceid"] = decoded.InstanceID
+	arrSysInfoStats["namespaceid"] = decoded.NamespaceID
+	arrSysInfoStats["suffix"] = decoded.Suffix
+
+	return arrSysInfoStats
+}
+
+func decodeAerospikeShmKey(raw int64) AerospikeShmKeyInfo {
+	u := uint32(raw)
+
+	prefix := byte(u >> 24)
+
+	var typeID string
+
+	switch prefix {
+	case 0xae:
+		typeID = ICS_SHM_PI_BASE_PREFIX
+	case 0xa2:
+		typeID = ICS_SHM_SINDEX_PREFIX
+	case 0xad:
+		typeID = ICS_SHM_DATA_PREFIX
+	default:
+		typeID = ICS_SHM_OTHER_PREFIX
+	}
+
+	return AerospikeShmKeyInfo{
+		HexKey:      fmt.Sprintf("0x%08x", u),
+		Prefix:      fmt.Sprintf("0x%02x", prefix),
+		TypeID:      typeID,
+		InstanceID:  strconv.FormatUint(uint64((u>>20)&0xF), 10),
+		NamespaceID: strconv.FormatUint(uint64((u>>12)&0xFF), 10),
+		Suffix:      strconv.FormatUint(uint64(u&0xFFF), 10),
+	}
 }

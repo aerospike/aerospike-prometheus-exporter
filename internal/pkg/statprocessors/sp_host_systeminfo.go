@@ -35,6 +35,7 @@ func (hsi *HostSystemInfoProcessor) RefreshSystemInfo() ([]AerospikeStat, error)
 	arrSysInfoStats = append(arrSysInfoStats, hsi.getMemInfo()...)
 	arrSysInfoStats = append(arrSysInfoStats, hsi.getNetStatInfo()...)
 	arrSysInfoStats = append(arrSysInfoStats, hsi.getNetworkInfo()...)
+	arrSysInfoStats = append(arrSysInfoStats, hsi.getSharedMemoryInfo()...)
 
 	return arrSysInfoStats, nil
 }
@@ -177,6 +178,61 @@ func (hsi *HostSystemInfoProcessor) getNetworkInfo() []AerospikeStat {
 		sysMetric.Value = value
 
 		arrSysInfoStats = append(arrSysInfoStats, sysMetric)
+	}
+
+	return arrSysInfoStats
+}
+
+func (hsi *HostSystemInfoProcessor) getSharedMemoryInfo() []AerospikeStat {
+	arrSysInfoStats := []AerospikeStat{}
+
+	sharedMemoryLabels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE,
+		commons.METRIC_LABEL_HEXKEY, commons.METRIC_LABEL_NAMESPACE_ID, commons.METRIC_LABEL_INSTANCE_ID,
+		commons.METRIC_LABEL_PREFIX, commons.METRIC_LABEL_TYPEID,
+		commons.METRIC_LABEL_CPID, commons.METRIC_LABEL_LPID}
+
+	sharedMemoryStats := hsi.systemProvider.GetSharedMemoryStats()
+
+	sizeStatName := "shared_memory_size"
+	rssStatName := "shared_memory_rss"
+
+	for _, stats := range sharedMemoryStats {
+		labelValues := []string{hsi.sharedState.ClusterName, hsi.sharedState.Service,
+			stats["hexKey"], stats["namespaceid"], stats["instanceid"],
+			stats["prefix"], stats["typeid"], stats["cpid"], stats["lpid"]}
+
+		// size - Configured segment size in bytes. This is the segment capacity/reserved size.
+		sizeValue, err := commons.TryConvert(stats["size"])
+
+		if err != nil {
+			log.Debugf("Error while converting value of stat: %s and converted value is %s", sizeStatName, stats["size"])
+			continue
+		}
+
+		allowed := isMetricAllowed(commons.CTX_SYSINFO_MEMORY_STATS, sizeStatName)
+		sizeMetric := NewAerospikeStat(commons.CTX_SYSINFO_MEMORY_STATS, sizeStatName, allowed)
+		sizeMetric.Labels = sharedMemoryLabels
+		sizeMetric.LabelValues = labelValues
+		sizeMetric.Value = sizeValue
+
+		arrSysInfoStats = append(arrSysInfoStats, sizeMetric)
+
+		// RSS - currently utilized / RAM  blocked
+		rssValue, err := commons.TryConvert(stats["rss"])
+
+		if err != nil {
+			log.Debugf("Error while converting value of stat: %s and converted value is %s", rssStatName, stats["rss"])
+			continue
+		}
+
+		allowed = isMetricAllowed(commons.CTX_SYSINFO_MEMORY_STATS, rssStatName)
+		rssMetric := NewAerospikeStat(commons.CTX_SYSINFO_MEMORY_STATS, rssStatName, allowed)
+		rssMetric.Labels = sharedMemoryLabels
+		rssMetric.LabelValues = labelValues
+		rssMetric.Value = rssValue
+
+		arrSysInfoStats = append(arrSysInfoStats, rssMetric)
+
 	}
 
 	return arrSysInfoStats

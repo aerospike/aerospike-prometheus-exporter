@@ -115,7 +115,7 @@ func (oe *OtelExecutor) constructMetricKey(metricName string, labels []attribute
 		b.WriteString("|")
 		b.WriteString(string(l.Key))
 		b.WriteString("=")
-		b.WriteString(l.Value.Emit())
+		b.WriteString(l.Value.String())
 	}
 
 	return b.String()

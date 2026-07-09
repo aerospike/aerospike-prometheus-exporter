@@ -43,7 +43,15 @@ const (
 )
 
 const (
-	METRIC_LABEL_DEVICE = "device"
+	METRIC_LABEL_DEVICE       = "device"
+	METRIC_LABEL_HEXKEY       = "hexkey"
+	METRIC_LABEL_PREFIX       = "prefix"
+	METRIC_LABEL_TYPEID       = "typeid"
+	METRIC_LABEL_INSTANCE_ID  = "instance_id"
+	METRIC_LABEL_NAMESPACE_ID = "namespace_id"
+	METRIC_LABEL_CPID         = "cpid"
+	METRIC_LABEL_LPID         = "lpid"
+	METRIC_LABEL_SHMEM_ID     = "shmem_id"
 )
 
 const (
