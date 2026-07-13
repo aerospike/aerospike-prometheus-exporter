@@ -81,7 +81,7 @@ func getFloatValue(addr *uint64) float64 {
 // based on the encoded key prefix (PI/base=0xae, sindex=0xa2, data=0xad).
 // This works across host, VM, Docker, and K8s sidecars without relying on cpid/lpid.
 func IsAerospikeShmSegment(key int64) bool {
-	switch byte(uint32(key) >> 24) {
+	switch byte(uint64(key) >> 24) {
 	case 0xae, 0xa2, 0xad:
 		return true
 	default:
@@ -178,7 +178,7 @@ func parseSysVSharedMemInfo(key int64, shmFields []string) map[string]string {
 }
 
 func decodeAerospikeShmKey(raw int64) AerospikeShmKeyInfo {
-	u := uint32(raw)
+	u := uint64(raw)
 
 	prefix := byte(u >> 24)
 
