@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/prometheus/procfs"
@@ -37,6 +38,11 @@ func (sip SystemInfoProvider) GetFileFD() map[string]string {
 
 	}
 
+	if err := scanner.Err(); err != nil {
+		log.Error("Error while reading file,", fileName, " Error: ", err)
+		return fileFDStats
+	}
+
 	log.Debugf("FileFD Stats - Count of return stats %d", len(fileFDStats))
 
 	return fileFDStats
@@ -62,6 +68,8 @@ func (sip SystemInfoProvider) GetMemInfoStats() map[string]string {
 	// All values are in KB, convert to bytes
 	memStats["Shmem"] = fmt.Sprint(getFloatValue(meminfo.Shmem) * ONE_KILO_BYTE)
 	memStats["Swap_Cached"] = fmt.Sprint(getFloatValue(meminfo.SwapCached) * ONE_KILO_BYTE)
+	memStats["MemTotal"] = fmt.Sprint(getFloatValue(meminfo.MemTotal) * ONE_KILO_BYTE)
+	// memStats["MemFree"] = fmt.Sprint(getFloatValue(meminfo.MemFree) * ONE_KILO_BYTE)
 
 	log.Debugf("MemInfo Stats - Count of return stats %d", len(memStats))
 	return memStats
@@ -114,4 +122,68 @@ func (sip SystemInfoProvider) GetNetDevStats() ([]map[string]string, []map[strin
 	log.Debugf("NetDevStats - TRANSFER Count of return status %d", len(arrNetTransferStats))
 
 	return arrNetReceiveStats, arrNetTransferStats
+}
+
+func (sip SystemInfoProvider) GetSharedMemoryStats() []map[string]string {
+	shmInfoStats := []map[string]string{}
+
+	fileName := getProcFilePath(ICS_SHM_PATH)
+
+	file, err := os.Open(fileName)
+
+	if err != nil {
+		log.Error("Error while opening file,", fileName, " Error: ", err)
+		return shmInfoStats
+	}
+
+	defer file.Close() //nolint:errcheck
+
+	scanner := bufio.NewScanner(file)
+
+	lineNo := 0
+
+	for scanner.Scan() {
+		lineNo++
+		line := strings.TrimSpace(scanner.Text())
+
+		//TODO: shall we stop if any error occurs while parsing the file?
+		if line == "" || lineNo == 1 || strings.HasPrefix(line, "key") {
+			log.Debugf("Skipping line %d: %s", lineNo, line)
+			continue
+		}
+
+		shmFields := strings.Fields(line)
+		if len(shmFields) == 0 {
+			log.Debugf("Skipping shm line %d: empty fields", lineNo)
+			continue
+		}
+
+		key, err := strconv.ParseInt(shmFields[0], 10, 64)
+		if err != nil {
+			log.Debugf("Skipping shm line %d: invalid key %q: %v", lineNo, shmFields[0], err)
+			continue
+		}
+
+		if !IsAerospikeShmSegment(key) {
+			log.Debugf("Skipping shm line %d: key=%d is not an Aerospike shm segment", lineNo, key)
+			continue
+		}
+
+		stats := parseSysVSharedMemInfo(key, shmFields)
+		if stats == nil {
+			log.Debugf("Skipping shm line %d: %v", lineNo, err)
+			continue
+		}
+
+		shmInfoStats = append(shmInfoStats, stats)
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Error("Error while reading file,", fileName, " Error: ", err)
+		return shmInfoStats
+	}
+
+	log.Debugf("SharedMemory Stats - Count of return stats %d", len(shmInfoStats))
+
+	return shmInfoStats
 }
