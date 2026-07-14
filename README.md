@@ -6,7 +6,7 @@ The Aerospike Prometheus Exporter is now **generally available** (GA).
 If you're an enterprise customer feel free to reach out to support with any questions.
 We appreciate feedback from community members on the [issues](https://github.com/aerospike/aerospike-prometheus-exporter/issues).
 
-Aerospike agent exports various stats, config from Aerospike Server as metrics in OpenMetrics format,
+Aerospike agent exports various stats, config from Aerospike Server as metrics in OpenMetrics format.
 For more details about Aerospike Server Config refer [Aerospike System Config reference](https://aerospike.com/docs/database/reference/config) and for Aerospike Server Metrics refer [Aerospike System Metrics reference](https://aerospike.com/docs/database/reference/metrics).
 
 **NOTE:** Some of the metrics are pseudo metrics. A pseudo metric is neither a configuration nor a statistic in the server but is exposed as a metric by the agent. For more details, refer to the [Pseudo Metrics](#pseudo-metrics) section.
