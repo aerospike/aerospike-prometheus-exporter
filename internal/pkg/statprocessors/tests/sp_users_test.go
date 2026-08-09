@@ -53,12 +53,10 @@ func users_runTestcase(t *testing.T) {
 	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("users")
 	expected_results := ndv.GetMetricLabelsWithValues()
+	expectedKeys := expectedStatKeysIgnoringValue(expected_results)
 
 	for k := range usersMetrics {
-		// convert / serialize to string which can be compared to stored expected mock result
-		str_metric := fmt.Sprintf("%#v", usersMetrics[k])
-		_, exists := expected_results[str_metric]
-		assert.True(t, exists, "Failed, did not find expected result: "+str_metric)
+		assertAerospikeStatInExpectedResults(t, usersMetrics[k], expectedKeys)
 	}
 
 }

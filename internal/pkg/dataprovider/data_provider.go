@@ -24,6 +24,10 @@ var dpSysInfoProvider = &SystemInfoProvider{}
 
 func GetProvider(executorMode string) DataProvider {
 
+	if is_Mock_Initialized == 1 {
+		return dpMockServer
+	}
+
 	switch executorMode {
 	case commons.EXECUTOR_MODE_PROM:
 		return dpPromAerospikeServer

@@ -109,12 +109,10 @@ func sindex_runTestcase(t *testing.T) {
 	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("sindex")
 	expected_results := ndv.GetMetricLabelsWithValues()
+	expectedKeys := expectedStatKeysIgnoringValue(expected_results)
 
 	for k := range sindexMetrics {
-		// convert / serialize to string which can be compared to stored expected mock result
-		str_metric := fmt.Sprintf("%#v", sindexMetrics[k])
-		_, exists := expected_results[str_metric]
-		assert.True(t, exists, "Failed, did not find expected result: "+str_metric)
+		assertAerospikeStatInExpectedResults(t, sindexMetrics[k], expectedKeys)
 	}
 
 }
