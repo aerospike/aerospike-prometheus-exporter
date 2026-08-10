@@ -118,10 +118,6 @@ func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[str
 
 	}
 
-	for _, metric := range allMetricsToSend {
-		fmt.Println(fmt.Sprintf("%#v", metric))
-	}
-
 	return allMetricsToSend, nil
 }
 
