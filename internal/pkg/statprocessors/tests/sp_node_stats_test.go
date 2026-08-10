@@ -100,12 +100,10 @@ func node_runTestcase(t *testing.T) {
 	udh := &UnittestDataHandler{}
 	ndv := udh.GetUnittestValidator("node")
 	expected_results := ndv.GetMetricLabelsWithValues()
+	expectedKeys := expectedStatKeysIgnoringValue(expected_results)
 
 	for k := range nodeMetrics {
-		// convert / serialize to string which can be compared to stored expected mock result
-		str_metric := fmt.Sprintf("%#v", nodeMetrics[k])
-		_, exists := expected_results[str_metric]
-		assert.True(t, exists, "Failed, did not find expected result: "+str_metric)
+		assertAerospikeStatInExpectedResults(t, nodeMetrics[k], expectedKeys)
 	}
 
 }
