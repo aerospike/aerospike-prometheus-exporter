@@ -72,7 +72,7 @@ jobs:
           done
 
       - name: Set up GPG for signing
-        uses: aerospike/shared-workflows/.github/actions/setup-gpg@c472e1b41e012794502383611c287fbbc920bab1
+        uses: aerospike/shared-workflows/.github/actions/setup-gpg@b7fa32f36a2dea07a84f248e0b9477f1bf3d90af
         with:
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
           gpg-public-key: ${{ secrets.GPG_PUBLIC_KEY }}
