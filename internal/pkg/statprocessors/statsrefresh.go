@@ -1,11 +1,17 @@
 package statprocessors
 
 import (
+	"fmt"
+
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	log "github.com/sirupsen/logrus"
+)
+
+const (
+	CMD_INFOKEY_CHECKPOINT_STATUS = "checkpoint-status"
 )
 
 // StatsRefresher is the main struct that refreshes the stats from the server
@@ -89,6 +95,8 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("passOneOutput", passOneOutput)
 
 	// fetch second second set of info keys
 	// check and load this only once, to avoid multiple file-reads, so this Infokey assignment will happen only once during restart
