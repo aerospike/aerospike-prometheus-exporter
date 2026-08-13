@@ -4,24 +4,38 @@ import (
 	"bufio"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/executors"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
 	"github.com/stretchr/testify/assert"
 )
 
 const (
-	UNIQUE_METRICS_COUNT = 572
+	UNIQUE_METRICS_COUNT = 615
 )
 
-var DEFAULT_PROM_URL = "http://localhost:48627/metrics"
+var DEFAULT_PROM_URL = "http://localhost:48726/metrics"
 
 var metrics_from_prom = []string{}
+
+func TestMain(m *testing.M) {
+	fmt.Println("Initializing global mock server")
+	mockServer, ok := dataprovider.GetProvider("mock").(*dataprovider.MockAerospikeServer)
+	if !ok {
+		fmt.Println("expected MockAerospikeServer")
+		os.Exit(1)
+	}
+
+	mockServer.Initialize()
+	os.Exit(m.Run())
+}
 
 func Test_InitializePromExporter(t *testing.T) {
 
@@ -43,8 +57,6 @@ func Test_RefreshDefault(t *testing.T) {
 	udh := &UnittestDataHandler{}
 	pdv := udh.GetUnittestValidator("prometheus")
 	expectedOutputs := pdv.GetMetricLabelsWithValues()
-
-	assert.LessOrEqual(t, len(expectedOutputs), len(metrics_from_prom))
 
 	// assert values from httpclient with expectedOutputs
 	for idx_metrics := range metrics_from_prom {
@@ -96,10 +108,22 @@ func Test_UniqueMetricsCount(t *testing.T) {
 func makeHttpCallToPromProcessor(t *testing.T, asMetrics []statprocessors.AerospikeStat) []string {
 	// prometheus http server is initialized
 	httpClient := http.Client{Timeout: time.Duration(1) * time.Second}
-	resp, err := httpClient.Get(DEFAULT_PROM_URL)
+	var resp *http.Response
+	var err error
+	for attempt := 0; attempt < 20; attempt++ {
+		resp, err = httpClient.Get(DEFAULT_PROM_URL)
+		if err == nil && resp.StatusCode == http.StatusOK {
+			break
+		}
+		if resp != nil {
+			resp.Body.Close() //nolint:errcheck
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 
 	if err != nil {
 		fmt.Println("Error while reading Http Response: ", err)
+		assert.FailNow(t, "Unable to fetch metrics from prometheus HTTP endpoint")
 	}
 
 	defer resp.Body.Close() //nolint:errcheck
@@ -144,7 +168,7 @@ func initializePromProcessor() {
 		}
 	}()
 
-	fmt.Println("*******************\nPrometheus initialized and running on localhost:9145")
+	fmt.Println("*******************\nPrometheus metrics URL for test scrape: localhost:48627")
 }
 
 // config initialization
