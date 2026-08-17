@@ -2,6 +2,7 @@ package statprocessors
 
 import (
 	"encoding/base64"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -90,6 +91,18 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	// we are sending configs and stats in same refresh call, as both are being sent to prom, instead of doing prom-push in 2 functions
 	// handle configs
 	var allMetricsToSend = []AerospikeStat{}
+
+	// parse checkpoint-status command if present
+	fmt.Println("\t *** step 1 - Refresh -- CMD_INFOKEY_CHECKPOINT_STATUS key exists", rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS])
+	if _, exists := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]; exists {
+		checkpointStatusMetrics, checkpointStatusPv := sw.handleCheckpointStatusStats(rawMetrics)
+		allMetricsToSend = append(allMetricsToSend, checkpointStatusMetrics...)
+		if checkpointStatusPv > 0.0 {
+			fmt.Println("\t step 2.1 *** Refresh -- server is in checkpoint-shutdown state")
+			log.Info("step 2 - Refresh -- server is in checkpoint-shutdown state")
+			return allMetricsToSend, nil
+		}
+	}
 
 	// Config
 	allMetricsToSend = append(allMetricsToSend, sw.handleRefresh(rawMetrics[KEY_SERVICE_CONFIG])...)
@@ -233,11 +246,10 @@ func (sw *NodeStatsProcessor) handleUserAgentsStats(rawMetrics map[string]string
 		}
 
 		asMetric, exists := sw.nodeMetrics[stat]
-		dynamicStatname := "user_agent_details"
 
 		if !exists {
 			allowed := isMetricAllowed(commons.CTX_NODE_STATS, stat)
-			asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, dynamicStatname, allowed)
+			asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, "user_agent_details", allowed)
 			sw.nodeMetrics[stat] = asMetric
 		}
 
@@ -290,7 +302,7 @@ func (sw *NodeStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (string,
 // append version specific commands to the passTwoKeys
 func (sw *NodeStatsProcessor) appendUserAgentCommand(passOneStats map[string]string, passTwoKeys []string) []string {
 	// add user-agents command if build version is >= 8.1.0.0
-	ge, err := isBuildVersionGreaterThanOrEqual(passOneStats["build"], "8.1.0.0")
+	ge, err := isBuildVersionGreaterThanOrEqual(sw.sharedState.Build, "8.1.0.0")
 
 	if err != nil {
 		return passTwoKeys
@@ -306,9 +318,12 @@ func (sw *NodeStatsProcessor) appendUserAgentCommand(passOneStats map[string]str
 // is server in checkpoint-shutdown state == preview-feature available only is 8.1.3 or greater
 func (sw *NodeStatsProcessor) appendCheckpointStatusCommand(passOneStats map[string]string, passTwoKeys []string) []string {
 	// add checkpoint-status command if build version is >= 8.1.3.0
-	ge, err := isBuildVersionGreaterThanOrEqual(passOneStats["build"], "8.1.3.0")
+	// ge, err := isBuildVersionGreaterThanOrEqual( passOneStats["build"], "8.1.3")
+	ge, err := isBuildVersionGreaterThanOrEqual(sw.sharedState.Build, "8.1.3")
+	// fmt.Println("\t *** appendCheckpointStatusCommand -- build version", sw.sharedState.Build, "ge", ge)
 
 	if err != nil {
+		fmt.Println("\t step 1.3 *** appendCheckpointStatusCommand -- error", err)
 		return passTwoKeys
 	}
 
@@ -317,4 +332,54 @@ func (sw *NodeStatsProcessor) appendCheckpointStatusCommand(passOneStats map[str
 	}
 
 	return passTwoKeys
+}
+
+func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]string) ([]AerospikeStat, float64) {
+	var refreshMetricsToSend = []AerospikeStat{}
+	counter := 0.0
+
+	checkpointStatusMetrics := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]
+	stats := strings.Split(checkpointStatusMetrics, ";")
+
+	fmt.Println("\t *** step 1.1 - handleCheckpointStatusStats -- checkpointStatusMetrics", checkpointStatusMetrics)
+
+	//test:state=none:files=0/0;test_two:state=none:files=0/0
+	for _, stat := range stats {
+
+		if len(stat) == 0 {
+			continue
+		}
+
+		fmt.Println("\t step 1.2 *** checkpointStatusMetrics -- stat", stat)
+		values := strings.Split(stat, ":")
+
+		//test:state=none:files=0/0
+		ns := values[0]
+		checkpointStatus := values[1]
+		checkpointFileinfo := strings.Split(values[2], "=")[1]
+
+		// Count value
+		pv := 0.0
+		if checkpointStatus != "state=none" {
+			pv = 1.0
+			counter++
+		}
+
+		asMetric, exists := sw.nodeMetrics["checkpoint_status"]
+
+		if !exists {
+			allowed := isMetricAllowed(commons.CTX_NODE_STATS, stat)
+			asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, "checkpoint_status", allowed)
+			sw.nodeMetrics[stat] = asMetric
+		}
+
+		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_CHECKPOINT_FILEINFO}
+		labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, ns, checkpointFileinfo}
+
+		asMetric.updateValues(pv, labels, labelValues)
+		refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
+
+	}
+
+	return refreshMetricsToSend, counter
 }

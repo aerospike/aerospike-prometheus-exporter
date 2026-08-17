@@ -2,6 +2,7 @@ package statprocessors
 
 import (
 	"fmt"
+	"strings"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -93,8 +94,8 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// if server is in checkpoint-shutdown state, only checkpoint-status info command will work, others info command may fail
-	fmt.Println("passOneOutput--infoKeys", infoKeys)
-	fmt.Println("passOneOutput", passOneOutput)
+	// fmt.Println("passOneOutput--infoKeys", infoKeys)
+	// fmt.Println("passOneOutput", passOneOutput)
 
 	// fetch second set of info keys
 	// check and load this only once, to avoid multiple file-reads, so this Infokey assignment will happen only once during restart
@@ -127,10 +128,17 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// set global values
-	sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
-	sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
-	sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
-	sr.sharedState.NodeId = passTwoResponse[sr.sharedState.Infokey_NodeId]
+
+	// from 8.1.3.0, we may have a case where build version may come as ERROR...
+	if strings.Contains(passTwoResponse[sr.sharedState.Infokey_Build], "ERROR") {
+		log.Info("Build version is not ERROR, retaing old values for build, cluster_name and service ", passTwoResponse[sr.sharedState.Infokey_Build])
+	} else {
+		// retaing old build value so we can decide to send further commands to server or not
+		sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
+		sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
+		sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
+		sr.sharedState.NodeId = passTwoResponse[sr.sharedState.Infokey_NodeId]
+	}
 
 	// Servce is IP of Aerospike Server, in Kubernetes we need pod-name instead of IP.
 	if config.Cfg.Agent.IsKubernetes {
@@ -147,15 +155,19 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 
 		tmpRefreshedMetrics, err := c.Refresh(statprocessorInfoKeys[i], passTwoResponse)
 
+		fmt.Println("\t step 4 - tmpRefreshedMetrics --- statprocessorInfoKeys ", statprocessorInfoKeys[i], " passTwoResponse ")
+
 		if err != nil {
+			fmt.Println("step 5 - tmpRefreshedMetrics --- error ", err)
 			return allStatsToSend, err
 		}
+		// fmt.Println("step 6 - tmpRefreshedMetrics --- appending to allStatsToSend ")
 
 		allStatsToSend = append(allStatsToSend, tmpRefreshedMetrics...)
 	}
 
 	// Refresh user info if supported by the server
-	if sr.userStatsProcessor.canRefreshUserStats(passTwoResponse) {
+	if sr.userStatsProcessor.canRefreshUserStats(passTwoResponse, sr.sharedState.Build) {
 		userMetrics, err := sr.RefreshUserStats()
 
 		if err != nil {

@@ -17,7 +17,7 @@ func NewUserStatsProcessor(state *StatProcessorSharedState) *UserStatsProcessor 
 	return &UserStatsProcessor{ShouldFetchUserStatistics: true, sharedState: state}
 }
 
-func (uw *UserStatsProcessor) canRefreshUserStats(rawMetrics map[string]string) bool {
+func (uw *UserStatsProcessor) canRefreshUserStats(rawMetrics map[string]string, buildVersion string) bool {
 	// check if security configurations are enabled
 	if config.Cfg.Aerospike.AuthMode != "pki" &&
 		(config.Cfg.Aerospike.User == "" && config.Cfg.Aerospike.Password == "") {
@@ -32,7 +32,7 @@ func (uw *UserStatsProcessor) canRefreshUserStats(rawMetrics map[string]string) 
 
 	// validate aerospike build version
 	// support for user statistics is added in aerospike 5.6
-	ge, err := isBuildVersionGreaterThanOrEqual(rawMetrics["build"], "5.6.0.0")
+	ge, err := isBuildVersionGreaterThanOrEqual(buildVersion, "5.6.0.0")
 
 	if err != nil {
 		return false

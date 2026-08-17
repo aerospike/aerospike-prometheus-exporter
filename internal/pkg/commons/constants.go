@@ -26,6 +26,7 @@ const (
 	METRIC_LABEL_USER                      = "user"
 	METRIC_LABEL_UA_CLIENT_LIBRARY_VERSION = "client_library_version"
 	METRIC_LABEL_UA_CLIENT_APP_ID          = "client_app_id"
+	METRIC_LABEL_CHECKPOINT_FILEINFO       = "checkpoint_fileinfo"
 )
 
 // constants used to identify type of metrics
