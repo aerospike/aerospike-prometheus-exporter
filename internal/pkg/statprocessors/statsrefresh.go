@@ -10,10 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	CMD_INFOKEY_CHECKPOINT_STATUS = "checkpoint-status"
-)
-
 // StatsRefresher is the main struct that refreshes the stats from the server
 // responsible for refreshing the stats from the server and dispatching them to the appropriate processors
 // uses shared state to store the latency benchmarks and namespace latency benchmarks
@@ -85,7 +81,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// append infoKey "build" - this is removed from LatenciesStatsProcessor to avoid forced StatsProcessor sequence during refresh
-	infoKeys = append(infoKeys, "build")
+	infoKeys = append(infoKeys, sr.sharedState.Infokey_Build)
 
 	// info request for first set of info keys, this retrives configs from server
 	//   from namespaces,server/node-stats, xdr
@@ -96,9 +92,11 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		return nil, err
 	}
 
+	// if server is in checkpoint-shutdown state, only checkpoint-status info command will work, others info command may fail
+	fmt.Println("passOneOutput--infoKeys", infoKeys)
 	fmt.Println("passOneOutput", passOneOutput)
 
-	// fetch second second set of info keys
+	// fetch second set of info keys
 	// check and load this only once, to avoid multiple file-reads, so this Infokey assignment will happen only once during restart
 	// TODO: check if this logic can be done only 1 before the Refresh call
 	if sr.sharedState.Infokey_Service != INFOKEY_SERVICE_TLS_STD {

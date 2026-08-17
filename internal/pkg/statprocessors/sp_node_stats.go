@@ -16,6 +16,11 @@ const (
 	KEY_SERVICE_LOGS       = "logs"
 )
 
+const (
+	CMD_INFOKEY_CHECKPOINT_STATUS = "checkpoint-status"
+	CMD_INFOKEY_USER_AGENTS       = "user-agents"
+)
+
 type NodeStatsProcessor struct {
 	nodeMetrics  map[string]AerospikeStat
 	sharedState  *StatProcessorSharedState
@@ -46,15 +51,10 @@ func (sw *NodeStatsProcessor) PassTwoKeys(passOneStats map[string]string) []stri
 	passTwoKeys = append(passTwoKeys, sinkCmds...)
 
 	// add user-agents command if build version is >= 8.1.0.0
-	ge, err := isBuildVersionGreaterThanOrEqual(passOneStats["build"], "8.1.0.0")
+	passTwoKeys = sw.appendUserAgentCommand(passOneStats, passTwoKeys)
 
-	if err != nil {
-		return passTwoKeys
-	}
-
-	if ge {
-		passTwoKeys = append(passTwoKeys, "user-agents")
-	}
+	// add checkpoint-status command if build version is >= 8.1.3
+	passTwoKeys = sw.appendCheckpointStatusCommand(passOneStats, passTwoKeys)
 
 	log.Tracef("node-passtwokeys:%s", passTwoKeys)
 
@@ -101,7 +101,7 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	allMetricsToSend = append(allMetricsToSend, sw.handleLogSinkStats(rawMetrics)...)
 
 	// handle user-agents
-	if _, exists := rawMetrics["user-agents"]; exists {
+	if _, exists := rawMetrics[CMD_INFOKEY_USER_AGENTS]; exists {
 		allMetricsToSend = append(allMetricsToSend, sw.handleUserAgentsStats(rawMetrics)...)
 	}
 
@@ -209,7 +209,7 @@ func (sw *NodeStatsProcessor) handleUserAgentsStats(rawMetrics map[string]string
 
 	var refreshMetricsToSend = []AerospikeStat{}
 
-	userAgentsMetrics := rawMetrics["user-agents"]
+	userAgentsMetrics := rawMetrics[CMD_INFOKEY_USER_AGENTS]
 	stats := strings.Split(userAgentsMetrics, ";")
 
 	for _, stat := range stats {
@@ -285,4 +285,36 @@ func (sw *NodeStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (string,
 	uaClientVersionCount = strings.SplitN(uaKeyWithAllInfoParts[1], "=", 2)[1]
 
 	return clientLibraryVersion, appId, uaClientVersionCount, nil
+}
+
+// append version specific commands to the passTwoKeys
+func (sw *NodeStatsProcessor) appendUserAgentCommand(passOneStats map[string]string, passTwoKeys []string) []string {
+	// add user-agents command if build version is >= 8.1.0.0
+	ge, err := isBuildVersionGreaterThanOrEqual(passOneStats["build"], "8.1.0.0")
+
+	if err != nil {
+		return passTwoKeys
+	}
+
+	if ge {
+		passTwoKeys = append(passTwoKeys, CMD_INFOKEY_USER_AGENTS)
+	}
+
+	return passTwoKeys
+}
+
+// is server in checkpoint-shutdown state == preview-feature available only is 8.1.3 or greater
+func (sw *NodeStatsProcessor) appendCheckpointStatusCommand(passOneStats map[string]string, passTwoKeys []string) []string {
+	// add checkpoint-status command if build version is >= 8.1.3.0
+	ge, err := isBuildVersionGreaterThanOrEqual(passOneStats["build"], "8.1.3.0")
+
+	if err != nil {
+		return passTwoKeys
+	}
+
+	if ge {
+		passTwoKeys = append(passTwoKeys, CMD_INFOKEY_CHECKPOINT_STATUS)
+	}
+
+	return passTwoKeys
 }
