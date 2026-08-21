@@ -1,7 +1,6 @@
 package statprocessors
 
 import (
-	"fmt"
 	"strings"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
@@ -93,10 +92,6 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		return nil, err
 	}
 
-	// if server is in checkpoint-shutdown state, only checkpoint-status info command will work, others info command may fail
-	// fmt.Println("passOneOutput--infoKeys", infoKeys)
-	// fmt.Println("passOneOutput", passOneOutput)
-
 	// fetch second set of info keys
 	// check and load this only once, to avoid multiple file-reads, so this Infokey assignment will happen only once during restart
 	// TODO: check if this logic can be done only 1 before the Refresh call
@@ -155,13 +150,9 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 
 		tmpRefreshedMetrics, err := c.Refresh(statprocessorInfoKeys[i], passTwoResponse)
 
-		fmt.Println("\t step 4 - tmpRefreshedMetrics --- statprocessorInfoKeys ", statprocessorInfoKeys[i], " passTwoResponse ")
-
 		if err != nil {
-			fmt.Println("step 5 - tmpRefreshedMetrics --- error ", err)
 			return allStatsToSend, err
 		}
-		// fmt.Println("step 6 - tmpRefreshedMetrics --- appending to allStatsToSend ")
 
 		allStatsToSend = append(allStatsToSend, tmpRefreshedMetrics...)
 	}
