@@ -2,7 +2,6 @@ package statprocessors
 
 import (
 	"encoding/base64"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -52,10 +51,10 @@ func (sw *NodeStatsProcessor) PassTwoKeys(passOneStats map[string]string) []stri
 	passTwoKeys = append(passTwoKeys, sinkCmds...)
 
 	// add user-agents command if build version is >= 8.1.0.0
-	passTwoKeys = sw.appendUserAgentCommand(passOneStats, passTwoKeys)
+	passTwoKeys = sw.appendUserAgentCommand(passTwoKeys)
 
 	// add checkpoint-status command if build version is >= 8.1.3
-	passTwoKeys = sw.appendCheckpointStatusCommand(passOneStats, passTwoKeys)
+	passTwoKeys = sw.appendCheckpointStatusCommand(passTwoKeys)
 
 	log.Tracef("node-passtwokeys:%s", passTwoKeys)
 
@@ -93,12 +92,10 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	var allMetricsToSend = []AerospikeStat{}
 
 	// parse checkpoint-status command if present
-	fmt.Println("\t *** step 1 - Refresh -- CMD_INFOKEY_CHECKPOINT_STATUS key exists", rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS])
 	if _, exists := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]; exists {
 		checkpointStatusMetrics, checkpointStatusPv := sw.handleCheckpointStatusStats(rawMetrics)
 		allMetricsToSend = append(allMetricsToSend, checkpointStatusMetrics...)
 		if checkpointStatusPv > 0.0 {
-			fmt.Println("\t step 2.1 *** Refresh -- server is in checkpoint-shutdown state")
 			log.Info("step 2 - Refresh -- server is in checkpoint-shutdown state")
 			return allMetricsToSend, nil
 		}
@@ -300,7 +297,7 @@ func (sw *NodeStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (string,
 }
 
 // append version specific commands to the passTwoKeys
-func (sw *NodeStatsProcessor) appendUserAgentCommand(passOneStats map[string]string, passTwoKeys []string) []string {
+func (sw *NodeStatsProcessor) appendUserAgentCommand(passTwoKeys []string) []string {
 	// add user-agents command if build version is >= 8.1.0.0
 	ge, err := isBuildVersionGreaterThanOrEqual(sw.sharedState.Build, "8.1.0.0")
 
@@ -316,14 +313,12 @@ func (sw *NodeStatsProcessor) appendUserAgentCommand(passOneStats map[string]str
 }
 
 // is server in checkpoint-shutdown state == preview-feature available only is 8.1.3 or greater
-func (sw *NodeStatsProcessor) appendCheckpointStatusCommand(passOneStats map[string]string, passTwoKeys []string) []string {
+func (sw *NodeStatsProcessor) appendCheckpointStatusCommand(passTwoKeys []string) []string {
 	// add checkpoint-status command if build version is >= 8.1.3.0
 	// ge, err := isBuildVersionGreaterThanOrEqual( passOneStats["build"], "8.1.3")
 	ge, err := isBuildVersionGreaterThanOrEqual(sw.sharedState.Build, "8.1.3")
-	// fmt.Println("\t *** appendCheckpointStatusCommand -- build version", sw.sharedState.Build, "ge", ge)
 
 	if err != nil {
-		fmt.Println("\t step 1.3 *** appendCheckpointStatusCommand -- error", err)
 		return passTwoKeys
 	}
 
@@ -341,8 +336,6 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 	checkpointStatusMetrics := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]
 	stats := strings.Split(checkpointStatusMetrics, ";")
 
-	fmt.Println("\t *** step 1.1 - handleCheckpointStatusStats -- checkpointStatusMetrics", checkpointStatusMetrics)
-
 	//test:state=none:files=0/0;test_two:state=none:files=0/0
 	for _, stat := range stats {
 
@@ -350,7 +343,6 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 			continue
 		}
 
-		fmt.Println("\t step 1.2 *** checkpointStatusMetrics -- stat", stat)
 		values := strings.Split(stat, ":")
 
 		//test:state=none:files=0/0
