@@ -94,7 +94,7 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	var allMetricsToSend = []AerospikeStat{}
 
 	// parse checkpoint-status command if present
-	if _, exists := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]; exists {
+	if _, exists := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]; exists && isValidResponse(rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]) {
 		checkpointStatusMetrics, checkpointStatusPv := sw.handleCheckpointStatusStats(rawMetrics)
 		allMetricsToSend = append(allMetricsToSend, checkpointStatusMetrics...)
 		if checkpointStatusPv > 0.0 {
@@ -333,6 +333,8 @@ func (sw *NodeStatsProcessor) appendVersion8130Commands(passTwoKeys []string) []
 		passTwoKeys = append(passTwoKeys, CMD_INFOKEY_CHECKPOINT_STATUS, CMD_SMD_INFO)
 	}
 
+	fmt.Println("passTwoKeys: appendVersion8130Commands - ", passTwoKeys)
+
 	return passTwoKeys
 }
 
@@ -388,9 +390,84 @@ func (sw *NodeStatsProcessor) handleSmdInfoStats(rawMetrics map[string]string) [
 
 	smdInfoMetrics := rawMetrics[CMD_SMD_INFO]
 
+	if !isValidResponse(rawMetrics[CMD_SMD_INFO]) {
+		fmt.Println("smd-info command is not valid - ", rawMetrics[CMD_SMD_INFO])
+		return refreshMetricsToSend
+	}
+
 	stats := strings.Split(smdInfoMetrics, ";")
 
-	fmt.Println("smdInfoMetrics: ", stats)
+	// smd-info will be a string of group and command separated key=value pairs
+	// example: smd:n_pending_sets=0,n_events=0,n_nodes=1,principal=BB9893EEA6E4B96,initial_sync_done=true,mixed_cluster=false,cluster_key=3F6AF2E3A109,compression_hit_pct=0.000,compression_bytes_saved=0,compression_fallbacks=0;
+	// evict:committed_key=0,committed_tid=0,n_keys=0,state=pr,settled=true;
+	// roster:committed_key=0,committed_tid=0,n_keys=0,state=pr,settled=true;
+	// security:committed_key=0,committed_tid=0,n_keys=0,state=pr,settled=true;
+
+	for _, stat := range stats {
+		fmt.Println("smd-info stat: ", stat)
+		if stat == "" {
+			continue
+		}
+		smd_info_parts := strings.Split(stat, ":")
+		smd_group_key := smd_info_parts[0]
+		// smd_value_pairs := strings.Split(smd_info_parts[1], ",")
+		if smd_group_key == "smd" {
+			smd_value_pairs := commons.ParseStats(smd_info_parts[1], ",")
+			for statName, value := range smd_value_pairs {
+
+				pv, err := commons.TryConvert(value)
+
+				if err != nil {
+					log.Error("Error converting value in smd-info, key ", statName, " value: ", value, " error: ", err)
+					continue
+				}
+
+				metricName := fmt.Sprintf("smd_%s", statName)
+				asMetric, exists := sw.nodeMetrics[metricName]
+
+				if !exists {
+					allowed := isMetricAllowed(commons.CTX_NODE_STATS, metricName)
+					asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, metricName, allowed)
+					sw.nodeMetrics[metricName] = asMetric
+				}
+
+				labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_SMD_GROUP}
+				labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, smd_group_key}
+
+				asMetric.updateValues(pv, labels, labelValues)
+				refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
+
+			}
+
+		} else {
+			smd_value_pairs := commons.ParseStats(smd_info_parts[1], ",")
+
+			pv, err := commons.TryConvert(smd_value_pairs["settled"])
+
+			if err != nil {
+				log.Error("Error converting value in smd-info, group ", smd_group_key, " error: ", err)
+				continue
+			}
+
+			metricName := fmt.Sprintf("smd_%s_settled", smd_group_key)
+			asMetric, exists := sw.nodeMetrics[metricName]
+
+			if !exists {
+				allowed := isMetricAllowed(commons.CTX_NODE_STATS, metricName)
+				asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, metricName, allowed)
+				sw.nodeMetrics[metricName] = asMetric
+			}
+
+			labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_SMD_GROUP}
+			labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, smd_group_key}
+
+			asMetric.updateValues(pv, labels, labelValues)
+			refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
+
+			fmt.Println("smd-info key settled ")
+		}
+
+	}
 
 	return refreshMetricsToSend
 
