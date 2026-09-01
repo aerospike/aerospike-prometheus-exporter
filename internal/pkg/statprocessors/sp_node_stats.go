@@ -2,6 +2,7 @@ package statprocessors
 
 import (
 	"encoding/base64"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -19,6 +20,7 @@ const (
 const (
 	CMD_INFOKEY_CHECKPOINT_STATUS = "checkpoint-status"
 	CMD_INFOKEY_USER_AGENTS       = "user-agents"
+	CMD_SMD_INFO                  = "smd-info"
 )
 
 type NodeStatsProcessor struct {
@@ -51,10 +53,10 @@ func (sw *NodeStatsProcessor) PassTwoKeys(passOneStats map[string]string) []stri
 	passTwoKeys = append(passTwoKeys, sinkCmds...)
 
 	// add user-agents command if build version is >= 8.1.0.0
-	passTwoKeys = sw.appendUserAgentCommand(passTwoKeys)
+	passTwoKeys = sw.appendVersion8100Commands(passTwoKeys)
 
 	// add checkpoint-status command if build version is >= 8.1.3
-	passTwoKeys = sw.appendCheckpointStatusCommand(passTwoKeys)
+	passTwoKeys = sw.appendVersion8130Commands(passTwoKeys)
 
 	log.Tracef("node-passtwokeys:%s", passTwoKeys)
 
@@ -96,7 +98,7 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 		checkpointStatusMetrics, checkpointStatusPv := sw.handleCheckpointStatusStats(rawMetrics)
 		allMetricsToSend = append(allMetricsToSend, checkpointStatusMetrics...)
 		if checkpointStatusPv > 0.0 {
-			log.Info("step 2 - Refresh -- server is in checkpoint-shutdown state")
+			log.Info("server is in checkpoint-shutdown state")
 			return allMetricsToSend, nil
 		}
 	}
@@ -113,6 +115,11 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	// handle user-agents
 	if _, exists := rawMetrics[CMD_INFOKEY_USER_AGENTS]; exists {
 		allMetricsToSend = append(allMetricsToSend, sw.handleUserAgentsStats(rawMetrics)...)
+	}
+
+	// handle smd-info command if present
+	if _, exists := rawMetrics[CMD_SMD_INFO]; exists {
+		allMetricsToSend = append(allMetricsToSend, sw.handleSmdInfoStats(rawMetrics)...)
 	}
 
 	return allMetricsToSend, nil
@@ -297,7 +304,7 @@ func (sw *NodeStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (string,
 }
 
 // append version specific commands to the passTwoKeys
-func (sw *NodeStatsProcessor) appendUserAgentCommand(passTwoKeys []string) []string {
+func (sw *NodeStatsProcessor) appendVersion8100Commands(passTwoKeys []string) []string {
 	// add user-agents command if build version is >= 8.1.0.0
 	ge, err := isBuildVersionGreaterThanOrEqual(sw.sharedState.Build, "8.1.0.0")
 
@@ -313,17 +320,17 @@ func (sw *NodeStatsProcessor) appendUserAgentCommand(passTwoKeys []string) []str
 }
 
 // is server in checkpoint-shutdown state == preview-feature available only is 8.1.3 or greater
-func (sw *NodeStatsProcessor) appendCheckpointStatusCommand(passTwoKeys []string) []string {
+func (sw *NodeStatsProcessor) appendVersion8130Commands(passTwoKeys []string) []string {
 	// add checkpoint-status command if build version is >= 8.1.3.0
-	// ge, err := isBuildVersionGreaterThanOrEqual( passOneStats["build"], "8.1.3")
-	ge, err := isBuildVersionGreaterThanOrEqual(sw.sharedState.Build, "8.1.3")
+	// ge, err := isBuildVersionGreaterThanOrEqual( passOneStats["build"], "8.1.3.0")
+	ge, err := isBuildVersionGreaterThanOrEqual(sw.sharedState.Build, "8.1.3.0")
 
 	if err != nil {
 		return passTwoKeys
 	}
 
 	if ge {
-		passTwoKeys = append(passTwoKeys, CMD_INFOKEY_CHECKPOINT_STATUS)
+		passTwoKeys = append(passTwoKeys, CMD_INFOKEY_CHECKPOINT_STATUS, CMD_SMD_INFO)
 	}
 
 	return passTwoKeys
@@ -374,4 +381,17 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 	}
 
 	return refreshMetricsToSend, counter
+}
+
+func (sw *NodeStatsProcessor) handleSmdInfoStats(rawMetrics map[string]string) []AerospikeStat {
+	var refreshMetricsToSend = []AerospikeStat{}
+
+	smdInfoMetrics := rawMetrics[CMD_SMD_INFO]
+
+	stats := strings.Split(smdInfoMetrics, ";")
+
+	fmt.Println("smdInfoMetrics: ", stats)
+
+	return refreshMetricsToSend
+
 }
