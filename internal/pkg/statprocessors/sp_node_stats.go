@@ -197,28 +197,13 @@ func (sw *NodeStatsProcessor) handleLogSinkStats(rawMetrics map[string]string) [
 		}
 	}
 
-	refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSinkMetric("pseudo_log_debug", debugValue))
-	refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSinkMetric("pseudo_log_detail", detailValue))
-
-	return refreshMetricsToSend
-}
-
-func (sw *NodeStatsProcessor) createLogSinkMetric(statName string, statValue float64) AerospikeStat {
-	asMetric, exists := sw.nodeMetrics[statName]
-
-	if !exists {
-		allowed := isMetricAllowed(commons.CTX_NODE_STATS, statName)
-		asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, statName, allowed)
-		sw.nodeMetrics[statName] = asMetric
-	}
-
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
 	labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service}
 
-	asMetric.updateValues(statValue, labels, labelValues)
+	refreshMetricsToSend = append(refreshMetricsToSend, sw.createNodeStatMetric("pseudo_log_debug", debugValue, labels, labelValues))
+	refreshMetricsToSend = append(refreshMetricsToSend, sw.createNodeStatMetric("pseudo_log_detail", detailValue, labels, labelValues))
 
-	return asMetric
-
+	return refreshMetricsToSend
 }
 
 // handleUserAgentsStats handles the user-agents stats and returns the metrics to send
@@ -400,6 +385,7 @@ func (sw *NodeStatsProcessor) handleSmdInfoStats(rawMetrics map[string]string) [
 	// evict:committed_key=0,committed_tid=0,n_keys=0,state=pr,settled=true;
 	// roster:committed_key=0,committed_tid=0,n_keys=0,state=pr,settled=true;
 	// security:committed_key=0,committed_tid=0,n_keys=0,state=pr,settled=true;
+	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_SMD_GROUP}
 
 	for _, stat := range stats {
 		if stat == "" {
@@ -408,9 +394,13 @@ func (sw *NodeStatsProcessor) handleSmdInfoStats(rawMetrics map[string]string) [
 		smd_info_parts := strings.Split(stat, ":")
 		smd_group_key := smd_info_parts[0]
 		// smd_value_pairs := strings.Split(smd_info_parts[1], ",")
+		smd_value_pairs := commons.ParseStats(smd_info_parts[1], ",")
 		if smd_group_key == "smd" {
-			smd_value_pairs := commons.ParseStats(smd_info_parts[1], ",")
 			for statName, value := range smd_value_pairs {
+
+				if statName == "principal" || statName == "cluster_key" {
+					continue
+				}
 
 				pv, err := commons.TryConvert(value)
 
@@ -418,26 +408,15 @@ func (sw *NodeStatsProcessor) handleSmdInfoStats(rawMetrics map[string]string) [
 					log.Error("Error converting value in smd-info, key ", statName, " value: ", value, " error: ", err)
 					continue
 				}
-
-				metricName := fmt.Sprintf("smd_%s", statName)
-				asMetric, exists := sw.nodeMetrics[metricName]
-
-				if !exists {
-					allowed := isMetricAllowed(commons.CTX_NODE_STATS, metricName)
-					asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, metricName, allowed)
-					sw.nodeMetrics[metricName] = asMetric
-				}
-
-				labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_SMD_GROUP}
 				labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, smd_group_key}
 
-				asMetric.updateValues(pv, labels, labelValues)
+				metricName := fmt.Sprintf("smd_%s", statName)
+				asMetric := sw.createNodeStatMetric(metricName, pv, labels, labelValues)
 				refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
 
 			}
 
 		} else {
-			smd_value_pairs := commons.ParseStats(smd_info_parts[1], ",")
 
 			pv, err := commons.TryConvert(smd_value_pairs["settled"])
 
@@ -446,24 +425,33 @@ func (sw *NodeStatsProcessor) handleSmdInfoStats(rawMetrics map[string]string) [
 				continue
 			}
 
-			metricName := fmt.Sprintf("smd_%s_settled", smd_group_key)
-			asMetric, exists := sw.nodeMetrics[metricName]
-
-			if !exists {
-				allowed := isMetricAllowed(commons.CTX_NODE_STATS, metricName)
-				asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, metricName, allowed)
-				sw.nodeMetrics[metricName] = asMetric
-			}
-
-			labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_SMD_GROUP}
 			labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, smd_group_key}
 
-			asMetric.updateValues(pv, labels, labelValues)
+			metricName := fmt.Sprintf("smd_%s_settled", smd_group_key)
+			asMetric := sw.createNodeStatMetric(metricName, pv, labels, labelValues)
+
 			refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
 		}
 
 	}
 
 	return refreshMetricsToSend
+
+}
+
+// comoon function to create node stats metrics
+func (sw *NodeStatsProcessor) createNodeStatMetric(statName string,
+	statValue float64, labels []string, labelValues []string) AerospikeStat {
+	asMetric, exists := sw.nodeMetrics[statName]
+
+	if !exists {
+		allowed := isMetricAllowed(commons.CTX_NODE_STATS, statName)
+		asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, statName, allowed)
+		sw.nodeMetrics[statName] = asMetric
+	}
+
+	asMetric.updateValues(statValue, labels, labelValues)
+
+	return asMetric
 
 }
