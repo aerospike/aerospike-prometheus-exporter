@@ -2,6 +2,7 @@ package statprocessors
 
 import (
 	"encoding/base64"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -14,6 +15,12 @@ const (
 	KEY_SERVICE_CONFIG     = "get-config:context=service"
 	KEY_SERVICE_STATISTICS = "statistics"
 	KEY_SERVICE_LOGS       = "logs"
+)
+
+const (
+	CMD_INFOKEY_CHECKPOINT_STATUS = "checkpoint-status"
+	CMD_INFOKEY_USER_AGENTS       = "user-agents"
+	CMD_SMD_INFO                  = "smd-info"
 )
 
 type NodeStatsProcessor struct {
@@ -46,15 +53,10 @@ func (sw *NodeStatsProcessor) PassTwoKeys(passOneStats map[string]string) []stri
 	passTwoKeys = append(passTwoKeys, sinkCmds...)
 
 	// add user-agents command if build version is >= 8.1.0.0
-	ge, err := isBuildVersionGreaterThanOrEqual(passOneStats["build"], "8.1.0.0")
+	passTwoKeys = sw.appendVersion8100Commands(passTwoKeys)
 
-	if err != nil {
-		return passTwoKeys
-	}
-
-	if ge {
-		passTwoKeys = append(passTwoKeys, "user-agents")
-	}
+	// add checkpoint-status command if build version is >= 8.1.3
+	passTwoKeys = sw.appendVersion8130Commands(passTwoKeys)
 
 	log.Tracef("node-passtwokeys:%s", passTwoKeys)
 
@@ -91,6 +93,16 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	// handle configs
 	var allMetricsToSend = []AerospikeStat{}
 
+	// parse checkpoint-status command if present
+	if _, exists := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]; exists && isValidResponse(rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]) {
+		checkpointStatusMetrics, checkpointStatusPv := sw.handleCheckpointStatusStats(rawMetrics)
+		allMetricsToSend = append(allMetricsToSend, checkpointStatusMetrics...)
+		if checkpointStatusPv > 0.0 {
+			log.Info("server is in checkpoint-shutdown state")
+			return allMetricsToSend, nil
+		}
+	}
+
 	// Config
 	allMetricsToSend = append(allMetricsToSend, sw.handleRefresh(rawMetrics[KEY_SERVICE_CONFIG])...)
 
@@ -101,8 +113,13 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	allMetricsToSend = append(allMetricsToSend, sw.handleLogSinkStats(rawMetrics)...)
 
 	// handle user-agents
-	if _, exists := rawMetrics["user-agents"]; exists {
+	if _, exists := rawMetrics[CMD_INFOKEY_USER_AGENTS]; exists {
 		allMetricsToSend = append(allMetricsToSend, sw.handleUserAgentsStats(rawMetrics)...)
+	}
+
+	// handle smd-info command if present
+	if _, exists := rawMetrics[CMD_SMD_INFO]; exists {
+		allMetricsToSend = append(allMetricsToSend, sw.handleSmdInfoStats(rawMetrics)...)
 	}
 
 	return allMetricsToSend, nil
@@ -180,28 +197,13 @@ func (sw *NodeStatsProcessor) handleLogSinkStats(rawMetrics map[string]string) [
 		}
 	}
 
-	refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSinkMetric("pseudo_log_debug", debugValue))
-	refreshMetricsToSend = append(refreshMetricsToSend, sw.createLogSinkMetric("pseudo_log_detail", detailValue))
-
-	return refreshMetricsToSend
-}
-
-func (sw *NodeStatsProcessor) createLogSinkMetric(statName string, statValue float64) AerospikeStat {
-	asMetric, exists := sw.nodeMetrics[statName]
-
-	if !exists {
-		allowed := isMetricAllowed(commons.CTX_NODE_STATS, statName)
-		asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, statName, allowed)
-		sw.nodeMetrics[statName] = asMetric
-	}
-
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE}
 	labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service}
 
-	asMetric.updateValues(statValue, labels, labelValues)
+	refreshMetricsToSend = append(refreshMetricsToSend, sw.createNodeStatMetric("pseudo_log_debug", debugValue, labels, labelValues))
+	refreshMetricsToSend = append(refreshMetricsToSend, sw.createNodeStatMetric("pseudo_log_detail", detailValue, labels, labelValues))
 
-	return asMetric
-
+	return refreshMetricsToSend
 }
 
 // handleUserAgentsStats handles the user-agents stats and returns the metrics to send
@@ -209,7 +211,7 @@ func (sw *NodeStatsProcessor) handleUserAgentsStats(rawMetrics map[string]string
 
 	var refreshMetricsToSend = []AerospikeStat{}
 
-	userAgentsMetrics := rawMetrics["user-agents"]
+	userAgentsMetrics := rawMetrics[CMD_INFOKEY_USER_AGENTS]
 	stats := strings.Split(userAgentsMetrics, ";")
 
 	for _, stat := range stats {
@@ -233,11 +235,10 @@ func (sw *NodeStatsProcessor) handleUserAgentsStats(rawMetrics map[string]string
 		}
 
 		asMetric, exists := sw.nodeMetrics[stat]
-		dynamicStatname := "user_agent_details"
 
 		if !exists {
 			allowed := isMetricAllowed(commons.CTX_NODE_STATS, stat)
-			asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, dynamicStatname, allowed)
+			asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, "user_agent_details", allowed)
 			sw.nodeMetrics[stat] = asMetric
 		}
 
@@ -285,4 +286,172 @@ func (sw *NodeStatsProcessor) getUserAgentInfo(uaKeyWithAllInfo string) (string,
 	uaClientVersionCount = strings.SplitN(uaKeyWithAllInfoParts[1], "=", 2)[1]
 
 	return clientLibraryVersion, appId, uaClientVersionCount, nil
+}
+
+// append version specific commands to the passTwoKeys
+func (sw *NodeStatsProcessor) appendVersion8100Commands(passTwoKeys []string) []string {
+	// add user-agents command if build version is >= 8.1.0.0
+	ge, err := isBuildVersionGreaterThanOrEqual(sw.sharedState.Build, "8.1.0.0")
+
+	if err != nil {
+		return passTwoKeys
+	}
+
+	if ge {
+		passTwoKeys = append(passTwoKeys, CMD_INFOKEY_USER_AGENTS)
+	}
+
+	return passTwoKeys
+}
+
+// is server in checkpoint-shutdown state == preview-feature available only is 8.1.3 or greater
+func (sw *NodeStatsProcessor) appendVersion8130Commands(passTwoKeys []string) []string {
+	// add checkpoint-status command if build version is >= 8.1.3.0
+	// ge, err := isBuildVersionGreaterThanOrEqual( passOneStats["build"], "8.1.3.0")
+	ge, err := isBuildVersionGreaterThanOrEqual(sw.sharedState.Build, "8.1.3.0")
+
+	if err != nil {
+		return passTwoKeys
+	}
+
+	if ge {
+		passTwoKeys = append(passTwoKeys, CMD_INFOKEY_CHECKPOINT_STATUS, CMD_SMD_INFO)
+	}
+
+	return passTwoKeys
+}
+
+func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]string) ([]AerospikeStat, float64) {
+	var refreshMetricsToSend = []AerospikeStat{}
+	counter := 0.0
+
+	checkpointStatusMetrics := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]
+	stats := strings.Split(checkpointStatusMetrics, ";")
+
+	//test:state=none:files=0/0;test_two:state=none:files=0/0
+	for _, stat := range stats {
+
+		if len(stat) == 0 {
+			continue
+		}
+
+		values := strings.Split(stat, ":")
+
+		//test:state=none:files=0/0
+		ns := values[0]
+		checkpointStatus := values[1]
+		checkpointFileinfo := strings.Split(values[2], "=")[1]
+
+		// Count value
+		pv := 0.0
+		if checkpointStatus != "state=none" {
+			pv = 1.0
+			counter++
+		}
+
+		metricName := "checkpoint_status"
+		asMetric, exists := sw.nodeMetrics[metricName]
+
+		if !exists {
+			allowed := isMetricAllowed(commons.CTX_NODE_STATS, stat)
+			asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, "checkpoint_status", allowed)
+			sw.nodeMetrics[stat] = asMetric
+		}
+
+		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_CHECKPOINT_FILEINFO}
+		labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, ns, checkpointFileinfo}
+
+		asMetric.updateValues(pv, labels, labelValues)
+		refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
+
+	}
+
+	return refreshMetricsToSend, counter
+}
+
+func (sw *NodeStatsProcessor) handleSmdInfoStats(rawMetrics map[string]string) []AerospikeStat {
+	var refreshMetricsToSend = []AerospikeStat{}
+
+	smdInfoMetrics := rawMetrics[CMD_SMD_INFO]
+
+	if !isValidResponse(rawMetrics[CMD_SMD_INFO]) {
+		return refreshMetricsToSend
+	}
+
+	stats := strings.Split(smdInfoMetrics, ";")
+
+	// smd-info will be a string of group and command separated key=value pairs
+	// example: smd:n_pending_sets=0,n_events=0,n_nodes=1,principal=BB9893EEA6E4B96,initial_sync_done=true,mixed_cluster=false,cluster_key=3F6AF2E3A109,compression_hit_pct=0.000,compression_bytes_saved=0,compression_fallbacks=0;
+	// evict:committed_key=0,committed_tid=0,n_keys=0,state=pr,settled=true;
+	// roster:committed_key=0,committed_tid=0,n_keys=0,state=pr,settled=true;
+	// security:committed_key=0,committed_tid=0,n_keys=0,state=pr,settled=true;
+	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_SMD_GROUP}
+
+	for _, stat := range stats {
+		if stat == "" {
+			continue
+		}
+		smd_info_parts := strings.Split(stat, ":")
+		smd_group_key := smd_info_parts[0]
+		// smd_value_pairs := strings.Split(smd_info_parts[1], ",")
+		smd_value_pairs := commons.ParseStats(smd_info_parts[1], ",")
+		if smd_group_key == "smd" {
+			for statName, value := range smd_value_pairs {
+
+				if statName == "principal" || statName == "cluster_key" {
+					continue
+				}
+
+				pv, err := commons.TryConvert(value)
+
+				if err != nil {
+					log.Error("Error converting value in smd-info, key ", statName, " value: ", value, " error: ", err)
+					continue
+				}
+				labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, smd_group_key}
+
+				metricName := fmt.Sprintf("smd_%s", statName)
+				asMetric := sw.createNodeStatMetric(metricName, pv, labels, labelValues)
+				refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
+
+			}
+
+		} else {
+
+			pv, err := commons.TryConvert(smd_value_pairs["settled"])
+
+			if err != nil {
+				log.Error("Error converting value in smd-info, group ", smd_group_key, " error: ", err)
+				continue
+			}
+
+			labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, smd_group_key}
+
+			metricName := fmt.Sprintf("smd_%s_settled", smd_group_key)
+			asMetric := sw.createNodeStatMetric(metricName, pv, labels, labelValues)
+
+			refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
+		}
+
+	}
+
+	return refreshMetricsToSend
+
+}
+
+// comoon function to create node stats metrics
+func (sw *NodeStatsProcessor) createNodeStatMetric(statName string,
+	statValue float64, labels []string, labelValues []string) AerospikeStat {
+	asMetric, exists := sw.nodeMetrics[statName]
+
+	if !exists {
+		allowed := isMetricAllowed(commons.CTX_NODE_STATS, statName)
+		asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, statName, allowed)
+		sw.nodeMetrics[statName] = asMetric
+	}
+
+	asMetric.updateValues(statValue, labels, labelValues)
+
+	return asMetric
+
 }
