@@ -126,7 +126,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 
 	// from 8.1.3.0, we may have a case where build version may come as ERROR...
 	if strings.Contains(passTwoResponse[sr.sharedState.Infokey_Build], "ERROR") {
-		log.Info("Build version is not ERROR, retaing old values for build, cluster_name and service ", passTwoResponse[sr.sharedState.Infokey_Build])
+		log.Info("Build version is ERROR, retaing old values for build, cluster_name and service ", passTwoResponse[sr.sharedState.Infokey_Build])
 	} else {
 		// retaing old build value so we can decide to send further commands to server or not
 		sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
