@@ -196,8 +196,6 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 			//   and requestinfo call, -- it internall will fail because of n/w disruption
 			as.aeroConnection = nil
 
-			fmt.Println("step 99 - fetchRequestInfoFromAerospike -- as.aeroConnection = nil")
-
 			continue
 		}
 

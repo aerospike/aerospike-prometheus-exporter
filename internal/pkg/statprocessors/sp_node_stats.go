@@ -333,8 +333,6 @@ func (sw *NodeStatsProcessor) appendVersion8130Commands(passTwoKeys []string) []
 		passTwoKeys = append(passTwoKeys, CMD_INFOKEY_CHECKPOINT_STATUS, CMD_SMD_INFO)
 	}
 
-	fmt.Println("passTwoKeys: appendVersion8130Commands - ", passTwoKeys)
-
 	return passTwoKeys
 }
 
@@ -366,7 +364,8 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 			counter++
 		}
 
-		asMetric, exists := sw.nodeMetrics["checkpoint_status"]
+		metricName := "checkpoint_status"
+		asMetric, exists := sw.nodeMetrics[metricName]
 
 		if !exists {
 			allowed := isMetricAllowed(commons.CTX_NODE_STATS, stat)
@@ -391,7 +390,6 @@ func (sw *NodeStatsProcessor) handleSmdInfoStats(rawMetrics map[string]string) [
 	smdInfoMetrics := rawMetrics[CMD_SMD_INFO]
 
 	if !isValidResponse(rawMetrics[CMD_SMD_INFO]) {
-		fmt.Println("smd-info command is not valid - ", rawMetrics[CMD_SMD_INFO])
 		return refreshMetricsToSend
 	}
 
@@ -404,7 +402,6 @@ func (sw *NodeStatsProcessor) handleSmdInfoStats(rawMetrics map[string]string) [
 	// security:committed_key=0,committed_tid=0,n_keys=0,state=pr,settled=true;
 
 	for _, stat := range stats {
-		fmt.Println("smd-info stat: ", stat)
 		if stat == "" {
 			continue
 		}
@@ -463,8 +460,6 @@ func (sw *NodeStatsProcessor) handleSmdInfoStats(rawMetrics map[string]string) [
 
 			asMetric.updateValues(pv, labels, labelValues)
 			refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
-
-			fmt.Println("smd-info key settled ")
 		}
 
 	}
