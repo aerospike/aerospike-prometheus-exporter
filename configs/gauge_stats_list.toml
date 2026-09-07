@@ -123,6 +123,31 @@ node_gauge_stats = [
 	"tree_gc_queue",
 	"tsvc_queue",
 	"uptime",
+
+	# 8.1.3 changes
+	"checkpoint_status",
+	"process_rss_bytes",
+	"wire_comp_apply_patch_cpu_pct",
+	"wire_comp_compress_cpu_pct",
+	"wire_comp_cpu_pct",
+	"wire_comp_decompress_cpu_pct",
+	"wire_comp_make_patch_cpu_pct",
+
+	# 8.1.3 smd-info gauges (exporter prefixes raw keys with smd_)
+	"smd_compression_hit_pct",
+	"smd_initial_sync_done",
+	"smd_mixed_cluster",
+	"smd_n_events",
+	"smd_n_nodes",
+	"smd_n_pending_sets",
+	"smd_UDF_settled",
+	"smd_XDR_settled",
+	"smd_evict_settled",
+	"smd_masking_settled",
+	"smd_roster_settled",
+	"smd_security_settled",
+	"smd_sindex_settled",
+	"smd_truncate_settled",
 	
 	# 4.x XDR stats
 	"dlog_free_pct",
@@ -298,6 +323,14 @@ namespace_gauge_stats =[
 	"sindex_mounts_used_pct",
 	"sindex_used_bytes",
 	"truncating",	
+
+	# 8.1.3 changes
+	"index_shmem_alloc_bytes",
+	"index_shmem_tail_bytes",
+	"repl_wire_compression_delta_hit_pct",
+	"set_index_alloc_bytes",
+	"sindex_shmem_alloc_bytes",
+	"sindex_shmem_tail_bytes",
 ]
 
 # System Info Gauge metrics list

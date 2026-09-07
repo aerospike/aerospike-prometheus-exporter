@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	GAUGES_NAMESPACES_COUNT = 146
-	GAUGES_NODE_STATS_COUNT = 82
+	GAUGES_NAMESPACES_COUNT = 152
+	GAUGES_NODE_STATS_COUNT = 103
 	GAUGES_SETS_COUNT       = 9
 	GAUGES_SINDEX_COUNT     = 13
 	GAUGES_XDR_COUNT        = 10
@@ -76,6 +76,39 @@ func TestIsAGaugeTrue(t *testing.T) {
 	assert.Equal(t, gaugeList.SindexStats["entries_per_rec"], true)
 	assert.Equal(t, gaugeList.XdrStats["recoveries_pending"], true)
 	assert.Equal(t, gaugeList.SetsStats["truncate_lut"], true)
+
+	// 8.1.3 namespace gauges
+	assert.True(t, gaugeList.NamespaceStats["index_shmem_alloc_bytes"])
+	assert.True(t, gaugeList.NamespaceStats["index_shmem_tail_bytes"])
+	assert.True(t, gaugeList.NamespaceStats["repl_wire_compression_delta_hit_pct"])
+	assert.True(t, gaugeList.NamespaceStats["set_index_alloc_bytes"])
+	assert.True(t, gaugeList.NamespaceStats["sindex_shmem_alloc_bytes"])
+	assert.True(t, gaugeList.NamespaceStats["sindex_shmem_tail_bytes"])
+
+	// 8.1.3 node gauges
+	assert.True(t, gaugeList.NodeStats["checkpoint_status"])
+	assert.True(t, gaugeList.NodeStats["process_rss_bytes"])
+	assert.True(t, gaugeList.NodeStats["wire_comp_apply_patch_cpu_pct"])
+	assert.True(t, gaugeList.NodeStats["wire_comp_compress_cpu_pct"])
+	assert.True(t, gaugeList.NodeStats["wire_comp_cpu_pct"])
+	assert.True(t, gaugeList.NodeStats["wire_comp_decompress_cpu_pct"])
+	assert.True(t, gaugeList.NodeStats["wire_comp_make_patch_cpu_pct"])
+
+	// 8.1.3 smd-info gauges
+	assert.True(t, gaugeList.NodeStats["smd_compression_hit_pct"])
+	assert.True(t, gaugeList.NodeStats["smd_initial_sync_done"])
+	assert.True(t, gaugeList.NodeStats["smd_mixed_cluster"])
+	assert.True(t, gaugeList.NodeStats["smd_n_events"])
+	assert.True(t, gaugeList.NodeStats["smd_n_nodes"])
+	assert.True(t, gaugeList.NodeStats["smd_n_pending_sets"])
+	assert.True(t, gaugeList.NodeStats["smd_evict_settled"])
+	assert.True(t, gaugeList.NodeStats["smd_masking_settled"])
+	assert.True(t, gaugeList.NodeStats["smd_roster_settled"])
+	assert.True(t, gaugeList.NodeStats["smd_security_settled"])
+	assert.True(t, gaugeList.NodeStats["smd_sindex_settled"])
+	assert.True(t, gaugeList.NodeStats["smd_truncate_settled"])
+	assert.True(t, gaugeList.NodeStats["smd_UDF_settled"])
+	assert.True(t, gaugeList.NodeStats["smd_XDR_settled"])
 
 }
 
