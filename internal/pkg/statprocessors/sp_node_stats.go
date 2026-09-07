@@ -425,7 +425,7 @@ func (sw *NodeStatsProcessor) handleSmdInfoStats(rawMetrics map[string]string) [
 				continue
 			}
 
-			labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, smd_group_key}
+			labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, strings.ToLower(smd_group_key)}
 
 			metricName := fmt.Sprintf("smd_%s_settled", strings.ToLower(smd_group_key))
 			asMetric := sw.createNodeStatMetric(metricName, pv, labels, labelValues)
