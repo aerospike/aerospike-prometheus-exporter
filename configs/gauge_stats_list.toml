@@ -140,14 +140,14 @@ node_gauge_stats = [
 	"smd_n_events",
 	"smd_n_nodes",
 	"smd_n_pending_sets",
-	"smd_UDF_settled",
-	"smd_XDR_settled",
 	"smd_evict_settled",
 	"smd_masking_settled",
 	"smd_roster_settled",
 	"smd_security_settled",
 	"smd_sindex_settled",
 	"smd_truncate_settled",
+	"smd_udf_settled",
+	"smd_xdr_settled",
 	
 	# 4.x XDR stats
 	"dlog_free_pct",

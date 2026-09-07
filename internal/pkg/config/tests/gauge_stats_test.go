@@ -77,6 +77,12 @@ func TestIsAGaugeTrue(t *testing.T) {
 	assert.Equal(t, gaugeList.XdrStats["recoveries_pending"], true)
 	assert.Equal(t, gaugeList.SetsStats["truncate_lut"], true)
 
+	// smd-info group keys are lowercased by the node processor (UDF/XDR from the server)
+	assert.True(t, gaugeList.NodeStats["smd_udf_settled"])
+	assert.True(t, gaugeList.NodeStats["smd_xdr_settled"])
+	assert.False(t, gaugeList.NodeStats["smd_UDF_settled"])
+	assert.False(t, gaugeList.NodeStats["smd_XDR_settled"])
+
 }
 
 func TestNoGaugeExists(t *testing.T) {
