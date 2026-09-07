@@ -392,7 +392,8 @@ func (sw *NodeStatsProcessor) handleSmdInfoStats(rawMetrics map[string]string) [
 			continue
 		}
 		smd_info_parts := strings.Split(stat, ":")
-		smd_group_key := smd_info_parts[0]
+		smd_group_key := strings.ToLower(smd_info_parts[0])
+
 		// smd_value_pairs := strings.Split(smd_info_parts[1], ",")
 		smd_value_pairs := commons.ParseStats(smd_info_parts[1], ",")
 		if smd_group_key == "smd" {
@@ -425,9 +426,9 @@ func (sw *NodeStatsProcessor) handleSmdInfoStats(rawMetrics map[string]string) [
 				continue
 			}
 
-			labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, strings.ToLower(smd_group_key)}
+			labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, smd_group_key}
 
-			metricName := fmt.Sprintf("smd_%s_settled", strings.ToLower(smd_group_key))
+			metricName := fmt.Sprintf("smd_%s_settled", smd_group_key)
 			asMetric := sw.createNodeStatMetric(metricName, pv, labels, labelValues)
 
 			refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
