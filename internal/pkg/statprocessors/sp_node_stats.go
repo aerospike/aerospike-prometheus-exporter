@@ -308,7 +308,7 @@ func (sw *NodeStatsProcessor) appendVersion8100Commands(passTwoKeys []string) []
 func (sw *NodeStatsProcessor) appendVersion8130Commands(passTwoKeys []string) []string {
 	// add checkpoint-status command if build version is >= 8.1.3.0
 	// ge, err := isBuildVersionGreaterThanOrEqual( passOneStats["build"], "8.1.3.0")
-	ge, err := isBuildVersionGreaterThanOrEqual(sw.sharedState.Build, "8.1.3.0")
+	ge, err := isBuildVersionGreaterThanOrEqual(sw.sharedState.Build, "8.1.3")
 
 	if err != nil {
 		return passTwoKeys
@@ -328,42 +328,52 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 	checkpointStatusMetrics := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]
 	stats := strings.Split(checkpointStatusMetrics, ";")
 
-	//test:state=none:files=0/0;test_two:state=none:files=0/0
+	// test:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0;
+	// test_two:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0;
+	// bar:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0
+	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_CHECKPOINT_STATUS}
 	for _, stat := range stats {
 
 		if len(stat) == 0 {
 			continue
 		}
 
-		values := strings.Split(stat, ":")
-
-		//test:state=none:files=0/0
+		values := strings.SplitN(stat, ":", 2)
 		ns := values[0]
-		checkpointStatus := values[1]
-		checkpointFileinfo := strings.Split(values[2], "=")[1]
+		cpstats := commons.ParseStats(values[1], ":")
 
-		// Count value
-		pv := 0.0
-		if checkpointStatus != "state=none" {
-			pv = 1.0
+		cpstatus := cpstats["state"]
+
+		if cpstatus != "none" {
 			counter++
 		}
 
-		metricName := "checkpoint_status"
-		asMetric, exists := sw.nodeMetrics[metricName]
+		// test:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0;
+		for k, v := range cpstats {
+			if k == "state" {
+				continue
+			}
 
-		if !exists {
-			allowed := isMetricAllowed(commons.CTX_NODE_STATS, stat)
-			asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, "checkpoint_status", allowed)
-			sw.nodeMetrics[stat] = asMetric
+			pv, err := commons.TryConvert(v)
+
+			if err != nil {
+				log.Error("Error converting value in checkpoint-status, key ", k, " value: ", v, " error: ", err)
+				continue
+			}
+
+			metricName := fmt.Sprintf("checkpoint_%s", k)
+			asMetric, exists := sw.nodeMetrics[metricName]
+
+			if !exists {
+				allowed := isMetricAllowed(commons.CTX_NODE_STATS, metricName)
+				asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, metricName, allowed)
+				sw.nodeMetrics[stat] = asMetric
+			}
+
+			labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, ns, cpstatus}
+
+			refreshMetricsToSend = append(refreshMetricsToSend, sw.createNodeStatMetric(metricName, pv, labels, labelValues))
 		}
-
-		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_CHECKPOINT_FILEINFO}
-		labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, ns, checkpointFileinfo}
-
-		asMetric.updateValues(pv, labels, labelValues)
-		refreshMetricsToSend = append(refreshMetricsToSend, asMetric)
-
 	}
 
 	return refreshMetricsToSend, counter
@@ -394,7 +404,6 @@ func (sw *NodeStatsProcessor) handleSmdInfoStats(rawMetrics map[string]string) [
 		smd_info_parts := strings.Split(stat, ":")
 		smd_group_key := strings.ToLower(smd_info_parts[0])
 
-		// smd_value_pairs := strings.Split(smd_info_parts[1], ",")
 		smd_value_pairs := commons.ParseStats(smd_info_parts[1], ",")
 		if smd_group_key == "smd" {
 			for statName, value := range smd_value_pairs {
