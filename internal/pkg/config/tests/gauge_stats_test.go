@@ -11,7 +11,7 @@ import (
 
 const (
 	GAUGES_NAMESPACES_COUNT = 152
-	GAUGES_NODE_STATS_COUNT = 103
+	GAUGES_NODE_STATS_COUNT = 106
 	GAUGES_SETS_COUNT       = 9
 	GAUGES_SINDEX_COUNT     = 13
 	GAUGES_XDR_COUNT        = 10
@@ -82,6 +82,13 @@ func TestIsAGaugeTrue(t *testing.T) {
 	assert.True(t, gaugeList.NodeStats["smd_xdr_settled"])
 	assert.False(t, gaugeList.NodeStats["smd_UDF_settled"])
 	assert.False(t, gaugeList.NodeStats["smd_XDR_settled"])
+
+	// checkpoint-status exposes cp_status as a label and these values as metrics.
+	assert.True(t, gaugeList.NodeStats["checkpoint_files_completed"])
+	assert.True(t, gaugeList.NodeStats["checkpoint_files_total"])
+	assert.True(t, gaugeList.NodeStats["checkpoint_is_parked"])
+	assert.True(t, gaugeList.NodeStats["checkpoint_park_ms"])
+	assert.False(t, gaugeList.NodeStats["checkpoint_status"])
 
 }
 
