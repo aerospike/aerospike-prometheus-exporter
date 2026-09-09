@@ -198,3 +198,9 @@ func isBuildVersionGreaterThanOrEqual(build string, ref string) (bool, error) {
 
 	return false, nil
 }
+
+func isValidResponse(response string) bool {
+	// any invalid response will contain "error:" in the response
+	// example: ERROR:4:unrecognized command
+	return response != "" && !strings.Contains(strings.ToLower(response), "error:")
+}

@@ -1,6 +1,8 @@
 package statprocessors
 
 import (
+	"strings"
+
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
@@ -79,7 +81,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// append infoKey "build" - this is removed from LatenciesStatsProcessor to avoid forced StatsProcessor sequence during refresh
-	infoKeys = append(infoKeys, "build")
+	infoKeys = append(infoKeys, sr.sharedState.Infokey_Build)
 
 	// info request for first set of info keys, this retrives configs from server
 	//   from namespaces,server/node-stats, xdr
@@ -90,7 +92,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		return nil, err
 	}
 
-	// fetch second second set of info keys
+	// fetch second set of info keys
 	// check and load this only once, to avoid multiple file-reads, so this Infokey assignment will happen only once during restart
 	// TODO: check if this logic can be done only 1 before the Refresh call
 	if sr.sharedState.Infokey_Service != INFOKEY_SERVICE_TLS_STD {
@@ -121,10 +123,17 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// set global values
-	sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
-	sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
-	sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
-	sr.sharedState.NodeId = passTwoResponse[sr.sharedState.Infokey_NodeId]
+
+	// from 8.1.3.0, we may have a case where build version may come as ERROR...
+	if strings.Contains(passTwoResponse[sr.sharedState.Infokey_Build], "ERROR") {
+		log.Info("Build version is ERROR, retaing old values for build, cluster_name and service ", passTwoResponse[sr.sharedState.Infokey_Build])
+	} else {
+		// retaing old build value so we can decide to send further commands to server or not
+		sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
+		sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
+		sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
+		sr.sharedState.NodeId = passTwoResponse[sr.sharedState.Infokey_NodeId]
+	}
 
 	// Servce is IP of Aerospike Server, in Kubernetes we need pod-name instead of IP.
 	if config.Cfg.Agent.IsKubernetes {
@@ -149,7 +158,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// Refresh user info if supported by the server
-	if sr.userStatsProcessor.canRefreshUserStats(passTwoResponse) {
+	if sr.userStatsProcessor.canRefreshUserStats(passTwoResponse, sr.sharedState.Build) {
 		userMetrics, err := sr.RefreshUserStats()
 
 		if err != nil {

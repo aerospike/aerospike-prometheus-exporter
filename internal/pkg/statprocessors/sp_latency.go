@@ -34,7 +34,7 @@ func (lw *LatencyStatsProcessor) PassTwoKeys(passOneStats map[string]string) (la
 
 	// latencyCommands = []string{"latencies:", "latency:"}
 
-	ge, err := isBuildVersionGreaterThanOrEqual(passOneStats["build"], "5.1.0.0")
+	ge, err := isBuildVersionGreaterThanOrEqual(lw.sharedState.Build, "5.1.0.0")
 
 	if err != nil {
 		return nil
