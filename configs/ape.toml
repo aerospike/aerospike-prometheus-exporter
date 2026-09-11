@@ -217,3 +217,7 @@
       # sindex_metrics_allowlist = []
       # sindex_metrics_blocklist = []
 
+      # flags to enable/disable specific commandes issues to Server
+      fetch_index_pressure_stats = true
+
+
