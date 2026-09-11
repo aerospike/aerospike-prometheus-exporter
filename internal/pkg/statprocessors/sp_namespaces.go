@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -51,7 +52,7 @@ func NewNamespaceStatsProcessor(state *StatProcessorSharedState) *NamespaceStats
 	processor := &NamespaceStatsProcessor{
 		namespaceStats:               make(map[string]AerospikeStat),
 		isFlashStatSentByServer:      false,
-		idxPressureFetchInterval:     10.0,
+		idxPressureFetchInterval:     30.0,
 		idxPressurePreviousFetchTime: time.Now(),
 		sharedState:                  state,
 		namespaceSCstatus:            make(map[string]bool),
@@ -348,6 +349,10 @@ func (nw *NamespaceStatsProcessor) checkStatPersistanceType(statToProcess string
 // utility function to check if watcher-namespace needs to issue infoKeys command during passTwo
 // index-pressure is a costly command at server side hence we are limiting to every few minutes ( mentioned in seconds)
 func (nw *NamespaceStatsProcessor) canSendIndexPressureInfoKey() bool {
+
+	if !config.Cfg.Aerospike.FetchIndexPressureStats {
+		return false
+	}
 
 	// difference between current-time and last-fetch, if its > defined-value, then true
 	timeDiff := time.Since(nw.idxPressurePreviousFetchTime)
