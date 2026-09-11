@@ -52,7 +52,7 @@ func NewNamespaceStatsProcessor(state *StatProcessorSharedState) *NamespaceStats
 	processor := &NamespaceStatsProcessor{
 		namespaceStats:               make(map[string]AerospikeStat),
 		isFlashStatSentByServer:      false,
-		idxPressureFetchInterval:     30.0,
+		idxPressureFetchInterval:     10.0,
 		idxPressurePreviousFetchTime: time.Now(),
 		sharedState:                  state,
 		namespaceSCstatus:            make(map[string]bool),
