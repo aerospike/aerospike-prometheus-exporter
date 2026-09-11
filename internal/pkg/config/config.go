@@ -143,6 +143,8 @@ type Config struct {
 		SetMetricsBlacklist       []string `toml:"set_metrics_blacklist"`
 		NodeMetricsBlacklist      []string `toml:"node_metrics_blacklist"`
 		XdrMetricsBlacklist       []string `toml:"xdr_metrics_blacklist"`
+
+		FetchIndexPressureStats bool `toml:"fetch_index_pressure_stats"`
 	} `toml:"Aerospike"`
 
 	LogFile *os.File
@@ -236,6 +238,11 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 	// If both Prom and Otel are not enabled, then error out
 	if !c.Agent.PrometheusEnabled && !c.Agent.OtelEnabled {
 		log.Fatal("Atleast one of Prometheus or OpenTelemetry should be enabled")
+	}
+
+	if !md.IsDefined("Aerospike", "fetch_index_pressure_stats") {
+		log.Info("Defaulting to fetching index pressure stats")
+		c.Aerospike.FetchIndexPressureStats = true
 	}
 
 }
