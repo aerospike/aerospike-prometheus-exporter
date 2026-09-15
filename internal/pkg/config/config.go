@@ -144,7 +144,7 @@ type Config struct {
 		NodeMetricsBlacklist      []string `toml:"node_metrics_blacklist"`
 		XdrMetricsBlacklist       []string `toml:"xdr_metrics_blacklist"`
 
-		FetchIndexPressureStats bool `toml:"fetch_index_pressure_stats"`
+		IndexPressureStatsFetchInterval uint8 `toml:"index_pressure_stats_fetch_interval"`
 	} `toml:"Aerospike"`
 
 	LogFile *os.File
@@ -240,11 +240,12 @@ func (c *Config) ValidateAndUpdate(md toml.MetaData) {
 		log.Fatal("Atleast one of Prometheus or OpenTelemetry should be enabled")
 	}
 
-	if !md.IsDefined("Aerospike", "fetch_index_pressure_stats") {
-		log.Info("Defaulting to fetching index pressure stats")
-		c.Aerospike.FetchIndexPressureStats = true
+	if !md.IsDefined("Aerospike", "index_pressure_stats_fetch_interval") {
+		log.Info("Defaulting to 10 minutes interval to fetch index pressure stats")
+		c.Aerospike.IndexPressureStatsFetchInterval = 10
 	}
 
+	log.Infof("Index pressure stats fetch interval: %d minutes", c.Aerospike.IndexPressureStatsFetchInterval)
 }
 
 func (c *Config) validateOtelConfigs() {

@@ -217,7 +217,8 @@
       # sindex_metrics_allowlist = []
       # sindex_metrics_blocklist = []
 
-      # flags to enable/disable specific commandes issues to Server
-      fetch_index_pressure_stats = true
+      # interval in minutes to send index-pressure command to server
+      # NOTE: 0 means disable, never send the command
+      index_pressure_stats_fetch_interval = 10
 
 

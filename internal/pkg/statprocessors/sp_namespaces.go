@@ -350,7 +350,7 @@ func (nw *NamespaceStatsProcessor) checkStatPersistanceType(statToProcess string
 // index-pressure is a costly command at server side hence we are limiting to every few minutes ( mentioned in seconds)
 func (nw *NamespaceStatsProcessor) canSendIndexPressureInfoKey() bool {
 
-	if !config.Cfg.Aerospike.FetchIndexPressureStats {
+	if config.Cfg.Aerospike.IndexPressureStatsFetchInterval == 0 {
 		return false
 	}
 
