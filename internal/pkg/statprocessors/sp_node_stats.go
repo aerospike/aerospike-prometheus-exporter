@@ -344,6 +344,7 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 
 		cpstatus := cpstats["state"]
 
+		// if server runs normally, checkpoint-status will be "none" for given namespace
 		if cpstatus != "none" {
 			counter++
 		}
@@ -362,13 +363,6 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 			}
 
 			metricName := fmt.Sprintf("checkpoint_%s", k)
-			asMetric, exists := sw.nodeMetrics[metricName]
-
-			if !exists {
-				allowed := isMetricAllowed(commons.CTX_NODE_STATS, metricName)
-				asMetric = NewAerospikeStat(commons.CTX_NODE_STATS, metricName, allowed)
-				sw.nodeMetrics[stat] = asMetric
-			}
 
 			labelValues := []string{sw.sharedState.ClusterName, sw.sharedState.Service, ns, cpstatus}
 

@@ -116,8 +116,8 @@ func (as *AerospikeServer) initAerospikeTLS() *tls.Config {
 			Certificates:             clientPool,
 			RootCAs:                  serverPool,
 			InsecureSkipVerify:       false,
-			PreferServerCipherSuites: true,
-			NameToCertificate:        nil,
+			PreferServerCipherSuites: true, // nolint:staticcheck
+			NameToCertificate:        nil,  // nolint:staticcheck
 		}
 		return tlsConfig
 	}
