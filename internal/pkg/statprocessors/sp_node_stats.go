@@ -56,7 +56,7 @@ func (sw *NodeStatsProcessor) PassTwoKeys(passOneStats map[string]string) []stri
 	passTwoKeys = sw.appendVersion8100Commands(passTwoKeys)
 
 	// add checkpoint-status command if build version is >= 8.1.3
-	passTwoKeys = sw.appendVersion8130Commands(passTwoKeys)
+	passTwoKeys = sw.appendVersion820Commands(passTwoKeys)
 
 	log.Tracef("node-passtwokeys:%s", passTwoKeys)
 
@@ -305,10 +305,10 @@ func (sw *NodeStatsProcessor) appendVersion8100Commands(passTwoKeys []string) []
 }
 
 // is server in checkpoint-shutdown state == preview-feature available only is 8.1.3 or greater
-func (sw *NodeStatsProcessor) appendVersion8130Commands(passTwoKeys []string) []string {
+func (sw *NodeStatsProcessor) appendVersion820Commands(passTwoKeys []string) []string {
 	// add checkpoint-status command if build version is >= 8.1.3.0
-	// ge, err := isBuildVersionGreaterThanOrEqual( passOneStats["build"], "8.1.3.0")
-	ge, err := isBuildVersionGreaterThanOrEqual(sw.sharedState.Build, "8.1.3")
+	// ge, err := isBuildVersionGreaterThanOrEqual( passOneStats["build"], "8.2.0.0")
+	ge, err := isBuildVersionGreaterThanOrEqual(sw.sharedState.Build, "8.2.0")
 
 	if err != nil {
 		return passTwoKeys
