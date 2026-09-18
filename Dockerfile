@@ -1,4 +1,4 @@
-FROM golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS builder
+FROM golang:1.27-alpine@sha256:e9bbdf282b51ac8b34c46e5f31d2d56e7bad60366c35f08d2f295b921b13388b AS builder
 
 ARG VERSION=1.29.0
 
@@ -7,7 +7,7 @@ WORKDIR $GOPATH/src/github.com/aerospike/aerospike-prometheus-exporter
 RUN go build -ldflags="-X 'main.version=$VERSION'" -o aerospike-prometheus-exporter ./cmd \
 	&& cp aerospike-prometheus-exporter /aerospike-prometheus-exporter
 
-FROM alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+FROM alpine:3.24.2@sha256:3cf95fe0816180395592b8373f3ec60663f076127617bbacb4eacf9667afe2e9
 
 COPY --from=builder /aerospike-prometheus-exporter /usr/bin/aerospike-prometheus-exporter
 COPY configs/ape.toml.template /etc/aerospike-prometheus-exporter/ape.toml.template
