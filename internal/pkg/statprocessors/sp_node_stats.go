@@ -55,7 +55,7 @@ func (sw *NodeStatsProcessor) PassTwoKeys(passOneStats map[string]string) []stri
 	// add user-agents command if build version is >= 8.1.0.0
 	passTwoKeys = sw.appendVersion8100Commands(passTwoKeys)
 
-	// add checkpoint-status command if build version is >= 8.2.0
+	// add checkpoint-status command if build version is >= 8.2.0.0
 	passTwoKeys = sw.appendVersion820Commands(passTwoKeys)
 
 	log.Tracef("node-passtwokeys:%s", passTwoKeys)
