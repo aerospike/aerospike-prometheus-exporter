@@ -17,11 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	UNIQUE_METRICS_COUNT = 615
-)
-
-var DEFAULT_PROM_URL = "http://localhost:48726/metrics"
+var DEFAULT_PROM_URL = "http://localhost:58132/metrics"
 
 var metrics_from_prom = []string{}
 
@@ -86,20 +82,46 @@ func Test_UniqueMetricsCount(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Unique_Metrics_Count")
 
-	var unique_metric_names = make(map[string]string)
-
-	// find unique metric-names (excluding Label and values)
-	for idx_metric := range metrics_from_prom {
-		metric := metrics_from_prom[idx_metric]
-		metric_name := metric
-		if strings.Index(metric, "{") > 0 {
-			metric_name = metric[0:strings.Index(metric, "{")]
-		}
-
-		unique_metric_names[metric_name] = metric_name
+	if len(metrics_from_prom) == 0 {
+		t.Fatal("metrics_from_prom is empty; Test_InitializePromExporter must run first in this package")
 	}
 
-	assert.Equal(t, len(unique_metric_names), UNIQUE_METRICS_COUNT, "No of Metrics dispatched to Prom CHANGED")
+	liveUnique := uniquePromMetricNames(metrics_from_prom)
+
+	udh := &UnittestDataHandler{}
+	pdv := udh.GetUnittestValidator("prometheus")
+	goldenLines := make([]string, 0, len(pdv.GetMetricLabelsWithValues()))
+	for line := range pdv.GetMetricLabelsWithValues() {
+		goldenLines = append(goldenLines, line)
+	}
+	goldenUnique := uniquePromMetricNames(goldenLines)
+
+	assert.Equal(t, len(goldenUnique), len(liveUnique),
+		"unique Prometheus metric name count differs from tests_data/default_prom_mock_results.txt (golden=%d live=%d)",
+		len(goldenUnique), len(liveUnique))
+}
+
+func promMetricName(line string) string {
+	if idx := strings.Index(line, "{"); idx > 0 {
+		return line[:idx]
+	}
+	fields := strings.Fields(line)
+	if len(fields) > 0 {
+		return fields[0]
+	}
+	return line
+}
+
+func uniquePromMetricNames(lines []string) map[string]struct{} {
+	names := make(map[string]struct{})
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || !strings.HasPrefix(line, "aerospike_") {
+			continue
+		}
+		names[promMetricName(line)] = struct{}{}
+	}
+	return names
 }
 
 /**
@@ -139,9 +161,6 @@ func makeHttpCallToPromProcessor(t *testing.T, asMetrics []statprocessors.Aerosp
 		// fmt.Println(text)
 		if len(text) > 0 && strings.HasPrefix(text, "aerospike_") {
 			metrics_from_prom = append(metrics_from_prom, strings.TrimSpace(text))
-			if strings.Contains(text, "node_tick") {
-				fmt.Println("=== 5555. metrics_from_prom: ", strings.TrimSpace(text))
-			}
 		}
 	}
 

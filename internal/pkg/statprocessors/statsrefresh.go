@@ -1,8 +1,6 @@
 package statprocessors
 
 import (
-	"strings"
-
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
@@ -107,6 +105,10 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	infoKeys = []string{sr.sharedState.Infokey_ClusterName, sr.sharedState.Infokey_Service, sr.sharedState.Infokey_Build, sr.sharedState.Infokey_NodeId}
 	statprocessorInfoKeys := make([][]string, len(allStatsprocessorList))
 
+	if build := passOneOutput[sr.sharedState.Infokey_Build]; isValidResponse(build) {
+		sr.sharedState.Build = build
+	}
+
 	for i, c := range allStatsprocessorList {
 
 		if keys := c.PassTwoKeys(passOneOutput); len(keys) > 0 {
@@ -125,8 +127,8 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	// set global values
 
 	// from 8.1.3.0, we may have a case where build version may come as ERROR...
-	if strings.Contains(passTwoResponse[sr.sharedState.Infokey_Build], "ERROR") {
-		log.Info("Build version is ERROR, retaing old values for build, cluster_name and service ", passTwoResponse[sr.sharedState.Infokey_Build])
+	if !isValidResponse(passTwoResponse[sr.sharedState.Infokey_Build]) {
+		log.Info("Build version response invalid, retaining old values for build, cluster_name and service ", passTwoResponse[sr.sharedState.Infokey_Build])
 	} else {
 		// retaing old build value so we can decide to send further commands to server or not
 		sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
