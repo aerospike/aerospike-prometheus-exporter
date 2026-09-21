@@ -1,0 +1,17 @@
+[Agent]
+use_mock_datasource = true
+bind = ":9145"
+timeout = 10
+labels = {}
+
+[Aerospike]
+db_host = "localhost"
+db_port = 3000
+root_ca = ""
+cert_file = ""
+key_file = ""
+key_file_passphrase = ""
+node_tls_name = ""
+user = ""
+password = ""
+index_pressure_stats_fetch_interval = 7

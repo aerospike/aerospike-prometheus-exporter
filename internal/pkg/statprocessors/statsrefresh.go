@@ -1,7 +1,7 @@
 package statprocessors
 
 import (
-	"strings"
+	"fmt"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -107,6 +107,10 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	infoKeys = []string{sr.sharedState.Infokey_ClusterName, sr.sharedState.Infokey_Service, sr.sharedState.Infokey_Build, sr.sharedState.Infokey_NodeId}
 	statprocessorInfoKeys := make([][]string, len(allStatsprocessorList))
 
+	if build := passOneOutput[sr.sharedState.Infokey_Build]; isValidResponse(build) {
+		sr.sharedState.Build = build
+	}
+
 	for i, c := range allStatsprocessorList {
 
 		if keys := c.PassTwoKeys(passOneOutput); len(keys) > 0 {
@@ -122,18 +126,18 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		return allStatsToSend, err
 	}
 
-	// set global values
-
-	// from 8.1.3.0, we may have a case where build version may come as ERROR...
-	if strings.Contains(passTwoResponse[sr.sharedState.Infokey_Build], "ERROR") {
-		log.Info("Build version is ERROR, retaing old values for build, cluster_name and service ", passTwoResponse[sr.sharedState.Infokey_Build])
-	} else {
-		// retaing old build value so we can decide to send further commands to server or not
-		sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
-		sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
-		sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
-		sr.sharedState.NodeId = passTwoResponse[sr.sharedState.Infokey_NodeId]
+	// from 8.2.0.0, we may have a case where build version may come as ERROR...
+	if !isValidResponse(passTwoResponse[sr.sharedState.Infokey_Build]) {
+		buildResp := passTwoResponse[sr.sharedState.Infokey_Build]
+		log.Infof("Build version response invalid: %s", buildResp)
+		return nil, fmt.Errorf("invalid build version response: %s", buildResp)
 	}
+
+	// retaing old build value so we can decide to send further commands to server or not
+	sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
+	sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
+	sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
+	sr.sharedState.NodeId = passTwoResponse[sr.sharedState.Infokey_NodeId]
 
 	// Servce is IP of Aerospike Server, in Kubernetes we need pod-name instead of IP.
 	if config.Cfg.Agent.IsKubernetes {
