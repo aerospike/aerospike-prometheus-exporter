@@ -1,6 +1,8 @@
 package statprocessors
 
 import (
+	"fmt"
+
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
@@ -79,7 +81,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// append infoKey "build" - this is removed from LatenciesStatsProcessor to avoid forced StatsProcessor sequence during refresh
-	infoKeys = append(infoKeys, "build")
+	infoKeys = append(infoKeys, sr.sharedState.Infokey_Build)
 
 	// info request for first set of info keys, this retrives configs from server
 	//   from namespaces,server/node-stats, xdr
@@ -90,7 +92,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		return nil, err
 	}
 
-	// fetch second second set of info keys
+	// fetch second set of info keys
 	// check and load this only once, to avoid multiple file-reads, so this Infokey assignment will happen only once during restart
 	// TODO: check if this logic can be done only 1 before the Refresh call
 	if sr.sharedState.Infokey_Service != INFOKEY_SERVICE_TLS_STD {
@@ -104,6 +106,10 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 
 	infoKeys = []string{sr.sharedState.Infokey_ClusterName, sr.sharedState.Infokey_Service, sr.sharedState.Infokey_Build, sr.sharedState.Infokey_NodeId}
 	statprocessorInfoKeys := make([][]string, len(allStatsprocessorList))
+
+	if build := passOneOutput[sr.sharedState.Infokey_Build]; isValidResponse(build) {
+		sr.sharedState.Build = build
+	}
 
 	for i, c := range allStatsprocessorList {
 
@@ -120,10 +126,17 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		return allStatsToSend, err
 	}
 
-	// set global values
+	// from 8.2.0.0, we may have a case where build version may come as ERROR...
+	if !isValidResponse(passTwoResponse[sr.sharedState.Infokey_Build]) {
+		buildResp := passTwoResponse[sr.sharedState.Infokey_Build]
+		log.Infof("Build version response invalid: %s", buildResp)
+		return nil, fmt.Errorf("invalid build version response: %s", buildResp)
+	}
+
+	// retaing old build value so we can decide to send further commands to server or not
+	sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
 	sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
 	sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
-	sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
 	sr.sharedState.NodeId = passTwoResponse[sr.sharedState.Infokey_NodeId]
 
 	// Servce is IP of Aerospike Server, in Kubernetes we need pod-name instead of IP.
@@ -149,7 +162,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	// Refresh user info if supported by the server
-	if sr.userStatsProcessor.canRefreshUserStats(passTwoResponse) {
+	if sr.userStatsProcessor.canRefreshUserStats(passTwoResponse, sr.sharedState.Build) {
 		userMetrics, err := sr.RefreshUserStats()
 
 		if err != nil {

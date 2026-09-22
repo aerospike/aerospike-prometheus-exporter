@@ -49,6 +49,19 @@ func Test_Latency_PassOneKeys(t *testing.T) {
 
 }
 
+func latencyFetchPassOneOutput(sharedState *statprocessors.StatProcessorSharedState, passOneKeys []string) map[string]string {
+	infoKeys := passOneKeys
+	if infoKeys == nil {
+		infoKeys = []string{}
+	}
+	infoKeys = append(infoKeys, sharedState.Infokey_Build)
+	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(infoKeys)
+	if build := passOneOutput[sharedState.Infokey_Build]; build != "" {
+		sharedState.Build = build
+	}
+	return passOneOutput
+}
+
 func Test_Latency_PassTwoKeys(t *testing.T) {
 
 	fmt.Println("initializing config ... Test_Latency_PassTwoKeys")
@@ -61,7 +74,7 @@ func Test_Latency_PassTwoKeys(t *testing.T) {
 	// Check passoneKeys
 	latencyStatsProcessor := statprocessors.NewLatencyStatsProcessor(sharedState)
 	nwPassOneKeys := latencyStatsProcessor.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
+	passOneOutput := latencyFetchPassOneOutput(sharedState, nwPassOneKeys)
 	passTwoOutputs := latencyStatsProcessor.PassTwoKeys(passOneOutput)
 
 	udh := &UnittestDataHandler{}
@@ -98,7 +111,7 @@ func latency_runTestcase(t *testing.T) {
 	// Check passoneKeys
 	latencyWatcher := statprocessors.NewLatencyStatsProcessor(sharedState)
 	nwPassOneKeys := latencyWatcher.PassOneKeys()
-	passOneOutput, _ := dataprovider.GetProvider("mock").RequestInfo(nwPassOneKeys)
+	passOneOutput := latencyFetchPassOneOutput(sharedState, nwPassOneKeys)
 	passTwoOutputs := latencyWatcher.PassTwoKeys(passOneOutput)
 
 	// append common keys

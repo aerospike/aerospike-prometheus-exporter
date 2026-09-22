@@ -215,3 +215,7 @@
 
         # user_metrics_users_allowlist = [${USER_METRICS_USERS_ALLOWLIST}]
         # user_metrics_users_blocklist = [${USER_METRICS_USERS_BLOCKLIST}]
+
+        # interval in minutes to send index-pressure command to server
+        # NOTE: 0 means disable, never send the command
+        index_pressure_stats_fetch_interval = ${INDEX_PRESSURE_STAT_FETCH_INTERVAL}
