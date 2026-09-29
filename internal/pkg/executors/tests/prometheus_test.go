@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var DEFAULT_PROM_URL = "http://localhost:58132/metrics"
+var DEFAULT_PROM_URL = "http://localhost:58342/metrics"
 
 var metrics_from_prom = []string{}
 
