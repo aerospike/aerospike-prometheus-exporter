@@ -7,7 +7,7 @@ require (
 	github.com/aerospike/aerospike-client-go/v8 v8.9.0
 	github.com/gobwas/glob v1.0.0
 	github.com/hashicorp/go-version v1.9.0
-	github.com/prometheus/client_golang v1.24.1
+	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/procfs v0.22.0
 	github.com/sirupsen/logrus v1.10.2
 	github.com/stretchr/testify v1.12.1
