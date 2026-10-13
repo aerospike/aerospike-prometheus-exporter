@@ -331,6 +331,7 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 	// test:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0;
 	// test_two:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0;
 	// bar:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0
+	// if server is normal, checkpoint-status simply returns is_parked=false:park_ms=0
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_CHECKPOINT_STATUS}
 	for _, stat := range stats {
 
@@ -342,15 +343,18 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 		ns := values[0]
 		cpstats := commons.ParseStats(values[1], ":")
 
-		cpstatus := cpstats["state"]
+		cpstatus, state_exists := cpstats["state"]
 
 		// if server runs normally, checkpoint-status will be "none" for given namespace
-		if cpstatus != "none" {
+		// we using state here as it will have multiple values like "", none, etc.,
+		// is-parked only will come after the completing -- still can we use is-parked for this ?
+		if state_exists && cpstatus != "none" {
 			counter++
 		}
 
 		// test:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0;
 		for k, v := range cpstats {
+			// we dont return state as metric, only is-parked and parm-ms
 			if k == "state" {
 				continue
 			}
