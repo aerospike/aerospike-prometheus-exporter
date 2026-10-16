@@ -2,6 +2,7 @@ package statprocessors
 
 import (
 	"fmt"
+	"strings"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -129,6 +130,10 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	// from 8.2.0.0, we may have a case where build version may come as ERROR...
 	if !isValidResponse(passTwoResponse[sr.sharedState.Infokey_Build]) {
 		buildResp := passTwoResponse[sr.sharedState.Infokey_Build]
+		if strings.Contains(buildResp, "checkpoint-save in progress") {
+			log.Infof("checkpoint-save in progress, publishing checkpoint metrics with retained build %s", sr.sharedState.Build)
+			return sr.nodeStatsProcessor.Refresh(nil, passTwoResponse)
+		}
 		log.Infof("Build version response invalid: %s", buildResp)
 		return nil, fmt.Errorf("invalid build version response: %s", buildResp)
 	}
