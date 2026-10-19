@@ -1,0 +1,29 @@
+# Turns a locally built / unreleased Aerospike server RPM into a runnable image.
+#
+# Only used via `./compat-test.sh --server-rpm <path>`, which stages the RPMs
+# into the build context and tags the result compat-server-rpm:local.
+#
+# Base is UBI9 because the published RPMs are el9. The build platform must
+# match the RPM architecture; compat-test.sh derives it from the filename and
+# passes --platform, since installing an x86_64 RPM on an arm64 base fails with
+# "does not have a compatible architecture".
+#
+# BOTH RPMs are mandatory. The server RPM installs asd but no asinfo, which the
+# compose healthcheck and sindex creation both require, so a server-only image
+# can never become healthy. compat-test.sh locates the tools RPM next to the
+# server RPM and refuses to build without one, which is why the install below
+# is unconditional rather than defensive.
+
+FROM redhat/ubi9
+
+COPY server.rpm /tmp/server.rpm
+COPY tools.rpm  /tmp/tools.rpm
+
+RUN set -e; \
+    dnf -y install /tmp/server.rpm /tmp/tools.rpm; \
+    dnf clean all; \
+    rm -f /tmp/server.rpm /tmp/tools.rpm; \
+    mkdir -p /opt/aerospike/data /var/log/aerospike
+
+EXPOSE 3000 3001 3002
+ENTRYPOINT ["/usr/bin/asd", "--foreground"]

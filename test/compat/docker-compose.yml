@@ -1,0 +1,91 @@
+# Cross-version metric compatibility matrix.
+#
+# Versions are pinned here on purpose: they are the definition of the test, so
+# they belong in git. To add a server, copy a srv-* block and the two
+# exp-*-<letter> blocks pointing at it, then add the letter to SERVERS in
+# compat-test.sh.
+#
+# The "new" exporter is ape-compat:local, which compat-test.sh builds from this
+# repo's working tree. Override with:  ./compat-test.sh --new-exporter <image>
+#
+# Run ./compat-test.sh rather than compose directly; it discovers your
+# Aerospike feature key and builds the local exporter image first.
+
+name: apecompat
+
+x-server: &server
+  # The config is mounted read-only as compat.conf, NOT as aerospike.conf: the
+  # official entrypoint rewrites that path in place, which would both fail on a
+  # read-only mount and modify the file tracked in git.
+  #
+  # AERO_CONF is aerospike.conf normally, or aerospike-ce.conf in the no-key
+  # Community fallback. FEATURE_KEY falls back to /dev/null, which is harmless
+  # because aerospike-ce.conf never references it.
+  volumes:
+    - ./${AERO_CONF:-aerospike.conf}:/etc/aerospike/compat.conf:ro
+    - ${FEATURE_KEY:-/dev/null}:/etc/aerospike/features.conf:ro
+  command: ["--config-file", "/etc/aerospike/compat.conf"]
+  healthcheck:
+    test: ["CMD-SHELL", "asinfo -v status 2>/dev/null | grep -q ok"]
+    interval: 2s
+    timeout: 3s
+    retries: 45
+    start_period: 5s
+
+# The baseline is the latest RELEASED exporter, so bump this on every release.
+# Overridable for the same reason the new side is: ./compat-test.sh
+# --old-exporter <image>.
+x-old-exporter: &old-exporter
+  image: ${OLD_EXPORTER_IMAGE:-aerospike/aerospike-prometheus-exporter:1.35.0}
+
+x-new-exporter: &new-exporter
+  image: ${NEW_EXPORTER_IMAGE:-ape-compat:local}
+
+services:
+  # ---- servers, oldest to newest -----------------------------------------
+  srv-a:
+    <<: *server
+    image: ${SERVER_A_IMAGE:-aerospike/aerospike-server-enterprise:8.0.0.5}
+
+  srv-b:
+    <<: *server
+    image: ${SERVER_B_IMAGE:-aerospike/aerospike-server-enterprise:8.1.2.4}
+
+  srv-c:
+    <<: *server
+    image: ${SERVER_C_IMAGE:-aerospike/aerospike-server-enterprise:8.2.0.0}
+    # Set by compat-test.sh. Normally the host platform, but an x86_64 server
+    # RPM on an arm64 host forces linux/amd64 emulation.
+    platform: ${SERVER_C_PLATFORM:-}
+
+  # ---- released exporter against each server -----------------------------
+  exp-old-a:
+    <<: *old-exporter
+    environment: { AS_HOST: srv-a, AS_PORT: "3000" }
+    depends_on: { srv-a: { condition: service_healthy } }
+
+  exp-old-b:
+    <<: *old-exporter
+    environment: { AS_HOST: srv-b, AS_PORT: "3000" }
+    depends_on: { srv-b: { condition: service_healthy } }
+
+  exp-old-c:
+    <<: *old-exporter
+    environment: { AS_HOST: srv-c, AS_PORT: "3000" }
+    depends_on: { srv-c: { condition: service_healthy } }
+
+  # ---- local build against each server -----------------------------------
+  exp-new-a:
+    <<: *new-exporter
+    environment: { AS_HOST: srv-a, AS_PORT: "3000" }
+    depends_on: { srv-a: { condition: service_healthy } }
+
+  exp-new-b:
+    <<: *new-exporter
+    environment: { AS_HOST: srv-b, AS_PORT: "3000" }
+    depends_on: { srv-b: { condition: service_healthy } }
+
+  exp-new-c:
+    <<: *new-exporter
+    environment: { AS_HOST: srv-c, AS_PORT: "3000" }
+    depends_on: { srv-c: { condition: service_healthy } }

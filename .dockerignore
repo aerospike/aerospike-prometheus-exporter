@@ -1,0 +1,28 @@
+# The root Dockerfile uses `ADD .`, so everything here would otherwise be sent
+# to the daemon and land in the builder layer.
+#
+# features.conf is listed first and most emphatically: compat-test.sh looks for
+# an Aerospike feature key in ./features.conf relative to test/compat/, and
+# being gitignored does NOT keep a file out of a Docker build context. Verified
+# by building a probe image over this context and reading the key back out.
+features.conf
+features*.conf
+*.pem
+*.key
+
+# Not needed to build the exporter.
+.git
+.github
+.gitignore
+.dockerignore
+test
+deployments
+ci
+
+# Build outputs.
+aerospike-prometheus-exporter
+pkg/target
+
+# Docs.
+*.md
+LICENSE

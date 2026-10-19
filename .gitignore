@@ -1,1 +1,6 @@
 aerospike-prometheus-exporter
+
+# Aerospike Enterprise feature keys are licensed material - never commit them.
+features.conf
+features*.conf
+
