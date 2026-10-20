@@ -11,6 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const CHECKPOINT_SAVE_IN_PROGRESS = "checkpoint-save in progress"
+
 // StatsRefresher is the main struct that refreshes the stats from the server
 // responsible for refreshing the stats from the server and dispatching them to the appropriate processors
 // uses shared state to store the latency benchmarks and namespace latency benchmarks
@@ -67,6 +69,22 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 
 	log.Debugf("Refreshing node %s", commons.GetFullHost())
 
+	// server was in checkpoint-save during previous refresh, probe with build and checkpoint-status only
+	if sr.sharedState.CheckpointSaveInProgress {
+		probe, err := sr.dataProvider.RequestInfo([]string{sr.sharedState.Infokey_Build, CMD_INFOKEY_CHECKPOINT_STATUS})
+		if err != nil {
+			return nil, err
+		}
+
+		if sr.isCheckpointSaveInProgress(probe) {
+			log.Infof("checkpoint-save still in progress, publishing checkpoint metrics with retained build %s", sr.sharedState.Build)
+			return sr.refreshDuringCheckpointSave(probe)
+		}
+
+		log.Infof("checkpoint-save no longer reported (build: %s), resuming full refresh", probe[sr.sharedState.Infokey_Build])
+		sr.sharedState.CheckpointSaveInProgress = false
+	}
+
 	// array to accumulate all metrics, which later will be dispatched by various observers
 	var allStatsToSend = []AerospikeStat{}
 
@@ -91,6 +109,12 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	// server rejects all info commands except checkpoint-status during checkpoint-save, so skip pass-two entirely
+	if sr.isCheckpointSaveInProgress(passOneOutput) {
+		log.Infof("checkpoint-save in progress, skipping pass-two, publishing checkpoint metrics with retained build %s", sr.sharedState.Build)
+		return sr.refreshDuringCheckpointSave(passOneOutput)
 	}
 
 	// fetch second set of info keys
@@ -127,13 +151,15 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		return allStatsToSend, err
 	}
 
+	// checkpoint-save started between pass-one and pass-two, skip processors and user stats
+	if sr.isCheckpointSaveInProgress(passTwoResponse) {
+		log.Infof("checkpoint-save in progress, publishing checkpoint metrics with retained build %s", sr.sharedState.Build)
+		return sr.refreshDuringCheckpointSave(passTwoResponse)
+	}
+
 	// from 8.2.0.0, we may have a case where build version may come as ERROR...
 	if !isValidResponse(passTwoResponse[sr.sharedState.Infokey_Build]) {
 		buildResp := passTwoResponse[sr.sharedState.Infokey_Build]
-		if strings.Contains(buildResp, "checkpoint-save in progress") {
-			log.Infof("checkpoint-save in progress, publishing checkpoint metrics with retained build %s", sr.sharedState.Build)
-			return sr.nodeStatsProcessor.Refresh(nil, passTwoResponse)
-		}
 		log.Infof("Build version response invalid: %s", buildResp)
 		return nil, fmt.Errorf("invalid build version response: %s", buildResp)
 	}
@@ -180,6 +206,32 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	log.Debug("Refreshing node was successful")
 
 	return allStatsToSend, nil
+}
+
+func (sr *StatsRefresher) isCheckpointSaveInProgress(response map[string]string) bool {
+	return strings.Contains(strings.ToLower(response[sr.sharedState.Infokey_Build]), CHECKPOINT_SAVE_IN_PROGRESS)
+}
+
+// only checkpoint-status metrics are published, server rejects every other info command while checkpoint-save is running
+func (sr *StatsRefresher) refreshDuringCheckpointSave(response map[string]string) ([]AerospikeStat, error) {
+	sr.sharedState.CheckpointSaveInProgress = true
+
+	if !isValidResponse(response[CMD_INFOKEY_CHECKPOINT_STATUS]) {
+		cpResponse, err := sr.dataProvider.RequestInfo([]string{CMD_INFOKEY_CHECKPOINT_STATUS})
+		if err != nil {
+			return nil, err
+		}
+		response = cpResponse
+	}
+
+	cpStatus := response[CMD_INFOKEY_CHECKPOINT_STATUS]
+	if !isValidResponse(cpStatus) {
+		return nil, fmt.Errorf("checkpoint-save in progress, invalid checkpoint-status response: %s", cpStatus)
+	}
+
+	checkpointMetrics, _ := sr.nodeStatsProcessor.handleCheckpointStatusStats(response)
+
+	return checkpointMetrics, nil
 }
 
 // User stats are not different stats, metrics are creating using the user info

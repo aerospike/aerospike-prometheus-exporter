@@ -17,6 +17,9 @@ type StatProcessorSharedState struct {
 
 	ServiceLatencyBenchmarks   map[string]string
 	NamespaceLatencyBenchmarks map[string]map[string]string
+
+	// set when server reports checkpoint-save in progress, only build and checkpoint-status are requested until it clears
+	CheckpointSaveInProgress bool
 }
 
 func NewStatProcessorSharedState() *StatProcessorSharedState {
