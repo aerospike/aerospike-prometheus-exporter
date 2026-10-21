@@ -336,7 +336,7 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 	for _, stat := range stats {
 
 		// if server is normal, checkpoint-status simply returns is_parked=false:park_ms=0
-		if len(stat) == 0 || stat == "is_parked=false:park_ms=0" {
+		if len(stat) == 0 || strings.HasPrefix(stat, "is_parked=") {
 			log.Debug("checkpoint-status stat is empty or normal: ", stat)
 			continue
 		}
