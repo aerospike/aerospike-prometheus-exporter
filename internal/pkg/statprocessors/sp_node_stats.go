@@ -94,9 +94,20 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	var allMetricsToSend = []AerospikeStat{}
 
 	// parse checkpoint-status command if present
-	if _, exists := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]; exists && isValidResponse(rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]) {
+	if _, exists := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]; exists {
+
+		stat := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]
+
+		// if server is normal, checkpoint-status simply returns is_parked=false:park_ms=0
+		// fmt.Println("server is normal, checkpoint-status = ", stat)
+
+		if strings.HasPrefix(stat, "is_parked=") {
+			return allMetricsToSend, nil
+		}
+
 		checkpointStatusMetrics, checkpointStatusPv := sw.handleCheckpointStatusStats(rawMetrics)
 		allMetricsToSend = append(allMetricsToSend, checkpointStatusMetrics...)
+
 		if checkpointStatusPv > 0.0 {
 			log.Info("server is in checkpoint-shutdown state")
 			return allMetricsToSend, nil
@@ -322,10 +333,11 @@ func (sw *NodeStatsProcessor) appendVersion820Commands(passTwoKeys []string) []s
 }
 
 func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]string) ([]AerospikeStat, float64) {
-	var refreshMetricsToSend = []AerospikeStat{}
-	counter := 0.0
 
 	checkpointStatusMetrics := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]
+
+	var refreshMetricsToSend = []AerospikeStat{}
+	counter := 0.0
 	stats := strings.Split(checkpointStatusMetrics, ";")
 
 	// test:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0;
@@ -333,30 +345,32 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 	// bar:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0
 	// if server is normal, checkpoint-status simply returns is_parked=false:park_ms=0
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_CHECKPOINT_STATUS}
+	fmt.Println("STEP 1: checkpoint-status = ")
 	for _, stat := range stats {
 
-		// if server is normal, checkpoint-status simply returns is_parked=false:park_ms=0
-		if len(stat) == 0 || strings.HasPrefix(stat, "is_parked=") {
+		if len(stat) == 0 {
 			log.Debug("checkpoint-status stat is empty or normal: ", stat)
 			continue
 		}
 
 		values := strings.SplitN(stat, ":", 2)
+		fmt.Println("STEP 2: checkpoint-status = values ==>", values)
 		ns := values[0]
 		cpstats := commons.ParseStats(values[1], ":")
+		fmt.Println("STEP 3: checkpoint-status = cpstats ", cpstats)
 
-		cpstatus, state_exists := cpstats["state"]
+		cpstatus := cpstats["state"]
 
 		// if server runs normally, checkpoint-status will be "none" for given namespace
 		// we using state here as it will have multiple values like "", none, etc.,
 		// is-parked only will come after the completing -- still can we use is-parked for this ?
-		if state_exists && cpstatus != "none" {
+		if cpstatus != "none" {
 			counter++
 		}
 
 		// test:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0;
 		for k, v := range cpstats {
-			// we dont return state as metric, only is-parked and parm-ms
+			// we dont return state as metric, only is-parked and park-ms
 			if k == "state" {
 				continue
 			}
