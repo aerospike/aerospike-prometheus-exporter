@@ -1,17 +1,12 @@
 package statprocessors
 
 import (
-	"fmt"
-	"strings"
-
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/dataprovider"
 	log "github.com/sirupsen/logrus"
 )
-
-const CHECKPOINT_SAVE_IN_PROGRESS = "checkpoint-save in progress"
 
 // StatsRefresher is the main struct that refreshes the stats from the server
 // responsible for refreshing the stats from the server and dispatching them to the appropriate processors
@@ -68,22 +63,7 @@ func (sr *StatsRefresher) GetStatsProcessors() []StatProcessor {
 func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 
 	log.Debugf("Refreshing node %s", commons.GetFullHost())
-
-	// server was in checkpoint-save during previous refresh, probe with build and checkpoint-status only
-	if sr.sharedState.CheckpointSaveInProgress {
-		probe, err := sr.dataProvider.RequestInfo([]string{sr.sharedState.Infokey_Build, CMD_INFOKEY_CHECKPOINT_STATUS})
-		if err != nil {
-			return nil, err
-		}
-
-		if sr.isCheckpointSaveInProgress(probe) {
-			log.Infof("checkpoint-save still in progress, publishing checkpoint metrics with retained build %s", sr.sharedState.Build)
-			return sr.refreshDuringCheckpointSave(probe)
-		}
-
-		log.Infof("checkpoint-save no longer reported (build: %s), resuming full refresh", probe[sr.sharedState.Infokey_Build])
-		sr.sharedState.CheckpointSaveInProgress = false
-	}
+	sr.sharedState.CheckpointSaveInProgress = false
 
 	// array to accumulate all metrics, which later will be dispatched by various observers
 	var allStatsToSend = []AerospikeStat{}
@@ -111,11 +91,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		return nil, err
 	}
 
-	// server rejects all info commands except checkpoint-status during checkpoint-save, so skip pass-two entirely
-	if sr.isCheckpointSaveInProgress(passOneOutput) {
-		log.Infof("checkpoint-save in progress, skipping pass-two, publishing checkpoint metrics with retained build %s", sr.sharedState.Build)
-		return sr.refreshDuringCheckpointSave(passOneOutput)
-	}
+	sr.sharedState.CheckpointSaveInProgress = isCheckpointSaveInProgress(passOneOutput[sr.sharedState.Infokey_Build])
 
 	// fetch second set of info keys
 	// check and load this only once, to avoid multiple file-reads, so this Infokey assignment will happen only once during restart
@@ -129,7 +105,9 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		}
 	}
 
-	infoKeys = []string{sr.sharedState.Infokey_ClusterName, sr.sharedState.Infokey_Service, sr.sharedState.Infokey_Build, sr.sharedState.Infokey_NodeId}
+	infoKeys = []string{sr.sharedState.Infokey_ClusterName, sr.sharedState.Infokey_Service,
+		sr.sharedState.Infokey_Build, sr.sharedState.Infokey_NodeId}
+
 	statprocessorInfoKeys := make([][]string, len(allStatsprocessorList))
 
 	if build := passOneOutput[sr.sharedState.Infokey_Build]; isValidResponse(build) {
@@ -151,24 +129,17 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		return allStatsToSend, err
 	}
 
-	// checkpoint-save started between pass-one and pass-two, skip processors and user stats
-	if sr.isCheckpointSaveInProgress(passTwoResponse) {
-		log.Infof("checkpoint-save in progress, publishing checkpoint metrics with retained build %s", sr.sharedState.Build)
-		return sr.refreshDuringCheckpointSave(passTwoResponse)
-	}
+	sr.sharedState.CheckpointSaveInProgress = isCheckpointSaveInProgress(passOneOutput[sr.sharedState.Infokey_Build])
 
 	// from 8.2.0.0, we may have a case where build version may come as ERROR...
 	if !isValidResponse(passTwoResponse[sr.sharedState.Infokey_Build]) {
-		buildResp := passTwoResponse[sr.sharedState.Infokey_Build]
-		log.Infof("Build version response invalid: %s", buildResp)
-		return nil, fmt.Errorf("invalid build version response: %s", buildResp)
+		log.Infof("Build version response invalid")
+	} else {
+		sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
+		sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
+		sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
+		sr.sharedState.NodeId = passTwoResponse[sr.sharedState.Infokey_NodeId]
 	}
-
-	// retaing old build value so we can decide to send further commands to server or not
-	sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
-	sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
-	sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
-	sr.sharedState.NodeId = passTwoResponse[sr.sharedState.Infokey_NodeId]
 
 	// Servce is IP of Aerospike Server, in Kubernetes we need pod-name instead of IP.
 	if config.Cfg.Agent.IsKubernetes {
@@ -206,32 +177,6 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	log.Debug("Refreshing node was successful")
 
 	return allStatsToSend, nil
-}
-
-func (sr *StatsRefresher) isCheckpointSaveInProgress(response map[string]string) bool {
-	return strings.Contains(strings.ToLower(response[sr.sharedState.Infokey_Build]), CHECKPOINT_SAVE_IN_PROGRESS)
-}
-
-// only checkpoint-status metrics are published, server rejects every other info command while checkpoint-save is running
-func (sr *StatsRefresher) refreshDuringCheckpointSave(response map[string]string) ([]AerospikeStat, error) {
-	sr.sharedState.CheckpointSaveInProgress = true
-
-	if !isValidResponse(response[CMD_INFOKEY_CHECKPOINT_STATUS]) {
-		cpResponse, err := sr.dataProvider.RequestInfo([]string{CMD_INFOKEY_CHECKPOINT_STATUS})
-		if err != nil {
-			return nil, err
-		}
-		response = cpResponse
-	}
-
-	cpStatus := response[CMD_INFOKEY_CHECKPOINT_STATUS]
-	if !isValidResponse(cpStatus) {
-		return nil, fmt.Errorf("checkpoint-save in progress, invalid checkpoint-status response: %s", cpStatus)
-	}
-
-	checkpointMetrics, _ := sr.nodeStatsProcessor.handleCheckpointStatusStats(response)
-
-	return checkpointMetrics, nil
 }
 
 // User stats are not different stats, metrics are creating using the user info

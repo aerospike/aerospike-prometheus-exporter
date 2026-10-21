@@ -62,12 +62,21 @@ func NewNamespaceStatsProcessor(state *StatProcessorSharedState) *NamespaceStats
 }
 
 func (nw *NamespaceStatsProcessor) PassOneKeys() []string {
+	if nw.sharedState.CheckpointSaveInProgress {
+		log.Tracef("namespace-passonekeys:nil")
+		return nil
+	}
 	// we are sending key "namespaces", server returns all the configs and stats in single call, unlike node-stats, xdr
 	log.Tracef("namespace-passonekeys:%s", []string{KEY_NS_METADATA})
 	return []string{KEY_NS_METADATA}
 }
 
 func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) []string {
+	if nw.sharedState.CheckpointSaveInProgress {
+		log.Tracef("namespace-passtwokeys:nil")
+		return nil
+	}
+
 	s := passOneStats[KEY_NS_METADATA]
 	nsList := strings.Split(s, ";")
 

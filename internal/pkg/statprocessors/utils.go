@@ -18,6 +18,10 @@ const (
 	INFOKEY_SERVICE_TLS_STD   = "service-tls-std"
 )
 
+const (
+	CHECKPOINT_SAVE_IN_PROGRESS = "checkpoint-save-in-progress"
+)
+
 // Default info commands
 
 var (
@@ -203,4 +207,8 @@ func isValidResponse(response string) bool {
 	// any invalid response will contain "error:" in the response
 	// example: ERROR:4:unrecognized command
 	return response != "" && !strings.Contains(strings.ToLower(response), "error:")
+}
+
+func isCheckpointSaveInProgress(build string) bool {
+	return strings.Contains(strings.ToLower(build), CHECKPOINT_SAVE_IN_PROGRESS)
 }
