@@ -52,19 +52,20 @@ func (sw *NodeStatsProcessor) PassTwoKeys(passOneStats map[string]string) []stri
 	passTwoKeys := []string{}
 	// add checkpoint-status command if build version is >= 8.2.0.0
 	passTwoKeys = sw.appendVersion820Commands(passTwoKeys)
-
-	if !sw.sharedState.CheckpointSaveInProgress {
-		// we need to fetch both configs and stat
-
-		// if Logs are configure/present, send individual sink log commands
-		sinkCmds := sw.parseLogSinkDetails(passOneStats)
-
-		passTwoKeys = append(passTwoKeys, KEY_SERVICE_CONFIG, KEY_SERVICE_STATISTICS)
-		passTwoKeys = append(passTwoKeys, sinkCmds...)
-
-		// add user-agents command if build version is >= 8.1.0.0
-		passTwoKeys = sw.appendVersion8100Commands(passTwoKeys)
+	if sw.sharedState.CheckpointSaveInProgress {
+		return passTwoKeys
 	}
+
+	// we need to fetch both configs and stat
+
+	// if Logs are configure/present, send individual sink log commands
+	sinkCmds := sw.parseLogSinkDetails(passOneStats)
+
+	passTwoKeys = append(passTwoKeys, KEY_SERVICE_CONFIG, KEY_SERVICE_STATISTICS)
+	passTwoKeys = append(passTwoKeys, sinkCmds...)
+
+	// add user-agents command if build version is >= 8.1.0.0
+	passTwoKeys = sw.appendVersion8100Commands(passTwoKeys)
 
 	log.Tracef("node-passtwokeys:%s", passTwoKeys)
 

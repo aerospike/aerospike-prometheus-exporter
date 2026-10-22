@@ -25,11 +25,6 @@ func NewSetsStatsProcessor(state *StatProcessorSharedState) *SetsStatsProcessor 
 }
 
 func (sw *SetsStatsProcessor) PassOneKeys() []string {
-	if sw.sharedState.CheckpointSaveInProgress {
-		log.Tracef("sets-passonekeys:nil")
-		return nil
-	}
-
 	log.Tracef("sets-passonekeys:nil")
 
 	return nil
