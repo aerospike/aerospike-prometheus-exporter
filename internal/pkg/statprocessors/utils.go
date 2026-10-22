@@ -19,7 +19,7 @@ const (
 )
 
 const (
-	CHECKPOINT_SAVE_IN_PROGRESS = "checkpoint-save-in-progress"
+	CHECKPOINT_SAVE_IN_PROGRESS = "checkpoint-save in progress"
 )
 
 // Default info commands

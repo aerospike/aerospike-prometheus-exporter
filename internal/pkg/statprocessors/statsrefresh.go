@@ -129,7 +129,7 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		return allStatsToSend, err
 	}
 
-	sr.sharedState.CheckpointSaveInProgress = isCheckpointSaveInProgress(passOneOutput[sr.sharedState.Infokey_Build])
+	sr.sharedState.CheckpointSaveInProgress = isCheckpointSaveInProgress(passTwoResponse[sr.sharedState.Infokey_Build])
 
 	// from 8.2.0.0, we may have a case where build version may come as ERROR...
 	if !isValidResponse(passTwoResponse[sr.sharedState.Infokey_Build]) {
