@@ -18,7 +18,7 @@ For more details about Aerospike Server Config refer [Aerospike System Config re
 
 #### Pre Requisites
 
-- Install Go v1.25+
+- Install Go v1.26.8+
 
 #### Steps
 
@@ -79,7 +79,7 @@ For more details about Aerospike Server Config refer [Aerospike System Config re
 
 ####  Pre Requisites for a FIPS build
 
-To generate a FIPS compatible exporter you need Golang 1.20 or above or have a FIPS enabled OS and OpenSSL.
+To generate a FIPS compatible exporter you need Go 1.26.8 or above or have a FIPS enabled OS and OpenSSL.
 
 Aerospike Exporter internally using boringcrypto library for FIPS complaince crypto operations
 
@@ -261,7 +261,7 @@ make release-docker-multi-arch
     [Agent]
         enable_open_telemetry = true
 
-    [Agen.OpenTelemetry]
+    [Agent.OpenTelemetry]
     ```
 
 - Update exporter's OTel grpc_endpoint configuration to send metrics to a gRPC end-point 
