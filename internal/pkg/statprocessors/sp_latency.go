@@ -22,6 +22,7 @@ func (lw *LatencyStatsProcessor) PassOneKeys() []string {
 		log.Tracef("latency-passonekeys:nil")
 		return nil
 	}
+
 	// return []string{"build"}
 	log.Tracef("latency-passonekeys:nil")
 
@@ -29,7 +30,6 @@ func (lw *LatencyStatsProcessor) PassOneKeys() []string {
 }
 
 func (lw *LatencyStatsProcessor) PassTwoKeys(passOneStats map[string]string) (latencyCommands []string) {
-
 	if lw.sharedState.CheckpointSaveInProgress {
 		log.Tracef("latency-passtwokeys:nil")
 		return nil

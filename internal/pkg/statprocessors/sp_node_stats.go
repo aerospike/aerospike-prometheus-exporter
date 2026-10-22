@@ -332,11 +332,12 @@ func (sw *NodeStatsProcessor) appendVersion820Commands(passTwoKeys []string) []s
 	}
 
 	if ge {
-		passTwoKeys = append(passTwoKeys, CMD_INFOKEY_CHECKPOINT_STATUS)
-
-		if !sw.sharedState.CheckpointSaveInProgress {
-			passTwoKeys = append(passTwoKeys, CMD_SMD_INFO)
+		if sw.sharedState.CheckpointSaveInProgress {
+			passTwoKeys = append(passTwoKeys, CMD_INFOKEY_CHECKPOINT_STATUS)
+			return passTwoKeys
 		}
+
+		passTwoKeys = append(passTwoKeys, CMD_SMD_INFO, CMD_INFOKEY_CHECKPOINT_STATUS)
 	}
 
 	return passTwoKeys
