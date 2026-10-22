@@ -99,8 +99,6 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 		stat := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]
 
 		// if server is normal, checkpoint-status simply returns is_parked=false:park_ms=0
-		// fmt.Println("server is normal, checkpoint-status = ", stat)
-
 		if strings.HasPrefix(stat, "is_parked=") {
 			return allMetricsToSend, nil
 		}
@@ -345,7 +343,6 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 	// bar:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0
 	// if server is normal, checkpoint-status simply returns is_parked=false:park_ms=0
 	labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_CHECKPOINT_STATUS}
-	fmt.Println("STEP 1: checkpoint-status = ")
 	for _, stat := range stats {
 
 		if len(stat) == 0 {
@@ -354,10 +351,8 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 		}
 
 		values := strings.SplitN(stat, ":", 2)
-		fmt.Println("STEP 2: checkpoint-status = values ==>", values)
 		ns := values[0]
 		cpstats := commons.ParseStats(values[1], ":")
-		fmt.Println("STEP 3: checkpoint-status = cpstats ", cpstats)
 
 		cpstatus := cpstats["state"]
 
