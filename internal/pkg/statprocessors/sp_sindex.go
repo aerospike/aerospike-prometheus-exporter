@@ -27,7 +27,7 @@ func NewSindexStatsProcessor(state *StatProcessorSharedState) *SindexStatsProces
 
 func (siw *SindexStatsProcessor) PassOneKeys() []string {
 
-	if config.Cfg.Aerospike.DisableSindexMetrics {
+	if config.Cfg.Aerospike.DisableSindexMetrics || siw.sharedState.CheckpointSaveInProgress {
 		// disabled
 		log.Tracef("sindex-passonekeys:nil")
 		return nil
@@ -39,7 +39,8 @@ func (siw *SindexStatsProcessor) PassOneKeys() []string {
 
 func (siw *SindexStatsProcessor) PassTwoKeys(passOneStats map[string]string) (sindexCommands []string) {
 
-	if config.Cfg.Aerospike.DisableSindexMetrics {
+	if config.Cfg.Aerospike.DisableSindexMetrics || siw.sharedState.CheckpointSaveInProgress {
+		log.Tracef("sindex-passtwokeys:nil")
 		// disabled
 		return nil
 	}
