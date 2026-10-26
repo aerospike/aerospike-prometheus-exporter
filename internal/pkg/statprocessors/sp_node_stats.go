@@ -103,7 +103,8 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	var allMetricsToSend = []AerospikeStat{}
 
 	// parse checkpoint-status command if present
-	if _, exists := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]; exists {
+	// servers without index-checkpoint-path configured return ERROR:4:'index-checkpoint-path' is not configured
+	if _, exists := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]; exists && isValidResponse(rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]) {
 
 		checkpointStatusMetrics, checkpointStatusPv := sw.handleCheckpointStatusStats(rawMetrics)
 		allMetricsToSend = append(allMetricsToSend, checkpointStatusMetrics...)
@@ -343,13 +344,6 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 
 	var refreshMetricsToSend = []AerospikeStat{}
 	counter := 0.0
-
-	// servers without index-checkpoint-path configured return ERROR:4:'index-checkpoint-path' is not configured
-	if !isValidResponse(checkpointStatusMetrics) {
-		log.Debug("checkpoint-status not available: ", checkpointStatusMetrics)
-		return refreshMetricsToSend, counter
-	}
-
 	stats := strings.Split(checkpointStatusMetrics, ";")
 
 	// test:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0;
@@ -366,6 +360,7 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 
 		// no namespace is checkpointing (e.g. all-flash or skip-checkpoint), server returns only node-level is_parked=false:park_ms=0
 		if strings.HasPrefix(stat, "is_parked=") {
+			// Checkpoint save is in progress in case of all-flash or skip-checkpoint on evry namespace
 			if strings.HasPrefix(stat, "is_parked=true") {
 				counter++
 			}
