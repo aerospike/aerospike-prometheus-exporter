@@ -105,13 +105,6 @@ func (sw *NodeStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]s
 	// parse checkpoint-status command if present
 	if _, exists := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]; exists {
 
-		stat := rawMetrics[CMD_INFOKEY_CHECKPOINT_STATUS]
-
-		// if server is normal, checkpoint-status simply returns is_parked=false:park_ms=0
-		if strings.HasPrefix(stat, "is_parked=") {
-			return allMetricsToSend, nil
-		}
-
 		checkpointStatusMetrics, checkpointStatusPv := sw.handleCheckpointStatusStats(rawMetrics)
 		allMetricsToSend = append(allMetricsToSend, checkpointStatusMetrics...)
 
@@ -350,6 +343,13 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 
 	var refreshMetricsToSend = []AerospikeStat{}
 	counter := 0.0
+
+	// servers without index-checkpoint-path configured return ERROR:4:'index-checkpoint-path' is not configured
+	if !isValidResponse(checkpointStatusMetrics) {
+		log.Debug("checkpoint-status not available: ", checkpointStatusMetrics)
+		return refreshMetricsToSend, counter
+	}
+
 	stats := strings.Split(checkpointStatusMetrics, ";")
 
 	// test:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0;
@@ -360,7 +360,15 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 	for _, stat := range stats {
 
 		if len(stat) == 0 {
-			log.Debug("checkpoint-status stat is empty or normal: ", stat)
+			log.Debug("checkpoint-status stat is empty: ", stat)
+			continue
+		}
+
+		// no namespace is checkpointing (e.g. all-flash or skip-checkpoint), server returns only node-level is_parked=false:park_ms=0
+		if strings.HasPrefix(stat, "is_parked=") {
+			if strings.HasPrefix(stat, "is_parked=true") {
+				counter++
+			}
 			continue
 		}
 
