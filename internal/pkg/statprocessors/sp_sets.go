@@ -31,6 +31,11 @@ func (sw *SetsStatsProcessor) PassOneKeys() []string {
 }
 
 func (sw *SetsStatsProcessor) PassTwoKeys(passOneStats map[string]string) []string {
+	if sw.sharedState.CheckpointSaveInProgress {
+		log.Tracef("sets-passtwokeys:nil")
+		return nil
+	}
+
 	log.Tracef("sets-passtwokeys:%s", []string{KEY_SETS})
 
 	return []string{KEY_SETS}

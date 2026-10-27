@@ -18,6 +18,11 @@ func NewUserStatsProcessor(state *StatProcessorSharedState) *UserStatsProcessor 
 }
 
 func (uw *UserStatsProcessor) canRefreshUserStats(rawMetrics map[string]string, buildVersion string) bool {
+	if uw.sharedState.CheckpointSaveInProgress {
+		log.Tracef("user-canrefreshuserstats:nil")
+		return false
+	}
+
 	// check if security configurations are enabled
 	if config.Cfg.Aerospike.AuthMode != "pki" &&
 		(config.Cfg.Aerospike.User == "" && config.Cfg.Aerospike.Password == "") {

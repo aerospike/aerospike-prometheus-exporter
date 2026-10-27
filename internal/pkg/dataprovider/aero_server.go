@@ -147,11 +147,8 @@ func (as *AerospikeServer) createNewConnection() (*aero.Connection, error) {
 		}
 	}
 
-	// Set no connection deadline to re-use connection, but socketTimeout will be in effect
-	var deadline time.Time
-	err = as.aeroConnection.SetTimeout(deadline, as.clientPolicy.Timeout)
-
-	if err != nil {
+	// No absolute deadline, so the connection can be reused. Socket timeout still applies per call.
+	if err = as.clearConnectionDeadline(); err != nil {
 		return nil, err
 	}
 
@@ -184,6 +181,15 @@ func (as *AerospikeServer) fetchRequestInfoFromAerospike(infoKeys []string) (map
 				log.Debugf("Error while setting user-agent: %v", err)
 				continue
 			}
+		}
+
+		// Admin commands leave an absolute deadline on this shared connection.
+		// Clear it before the info call so the next scrape is not rejected up front.
+		if err = as.clearConnectionDeadline(); err != nil {
+			log.Debugf("Error while clearing connection deadline: %v", err)
+			as.aeroConnection.Close()
+			as.aeroConnection = nil
+			continue
 		}
 
 		// Info request
@@ -242,6 +248,12 @@ func (as *AerospikeServer) fetchUsersRoles() (bool, []*aero.UserRoles, error) {
 		// query users
 		users, aeroErr = admCmd.QueryUsers(as.aeroConnection, admPlcy)
 
+		// QueryUsers sets an absolute deadline and does not restore the previous one.
+		// Clear it on every path, including role violation and retry, while the connection is still open.
+		if resetErr := as.clearConnectionDeadline(); resetErr != nil {
+			return shouldFetchUserStatistics, nil, resetErr
+		}
+
 		if aeroErr != nil {
 			// Do not retry if there's role violation.
 			// This could be a permanent error leading to unnecessary errors on server end.
@@ -261,6 +273,17 @@ func (as *AerospikeServer) fetchUsersRoles() (bool, []*aero.UserRoles, error) {
 	}
 
 	return shouldFetchUserStatistics, users, err
+}
+
+// clearConnectionDeadline drops the absolute deadline admin commands store on the
+// shared connection. A zero deadline leaves the per-call socket timeout in effect.
+func (as *AerospikeServer) clearConnectionDeadline() error {
+	if as.aeroConnection == nil || !as.aeroConnection.IsConnected() {
+		return nil
+	}
+
+	var deadline time.Time
+	return as.aeroConnection.SetTimeout(deadline, as.clientPolicy.Timeout)
 }
 
 func (as *AerospikeServer) setUserAgent() error {
