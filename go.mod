@@ -5,7 +5,7 @@ go 1.26.10
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/aerospike/aerospike-client-go/v8 v8.9.0
-	github.com/gobwas/glob v1.0.0
+	github.com/gobwas/glob v1.1.0
 	github.com/hashicorp/go-version v1.9.0
 	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/procfs v0.22.0
