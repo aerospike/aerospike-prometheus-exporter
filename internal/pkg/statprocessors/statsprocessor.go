@@ -10,21 +10,26 @@ type StatProcessor interface {
 type StatProcessorSharedState struct {
 	Service, ClusterName, Build, NodeId string
 
-	Infokey_ClusterName string
-	Infokey_Service     string
-	Infokey_Build       string
-	Infokey_NodeId      string
+	Infokey_ClusterName      string
+	Infokey_Service          string
+	Infokey_Build            string
+	Infokey_NodeId           string
+	Infokey_CheckpointStatus string
 
 	ServiceLatencyBenchmarks   map[string]string
 	NamespaceLatencyBenchmarks map[string]map[string]string
+
+	// set when server reports checkpoint-save in progress, only build and checkpoint-status are requested until it clears
+	CheckpointSaveInProgress bool
 }
 
 func NewStatProcessorSharedState() *StatProcessorSharedState {
 
 	sharedState := &StatProcessorSharedState{
-		Infokey_Build:       "build",
-		Infokey_ClusterName: "cluster-name",
-		Infokey_NodeId:      "node:",
+		Infokey_Build:            "build",
+		Infokey_ClusterName:      "cluster-name",
+		Infokey_NodeId:           "node:",
+		Infokey_CheckpointStatus: "checkpoint-status",
 
 		// this value will be set depending on the server mode (tls or clear)
 		//   modified in the first Refresh call
@@ -32,6 +37,7 @@ func NewStatProcessorSharedState() *StatProcessorSharedState {
 
 		ServiceLatencyBenchmarks:   make(map[string]string),
 		NamespaceLatencyBenchmarks: make(map[string]map[string]string),
+		CheckpointSaveInProgress:   false,
 	}
 
 	return sharedState

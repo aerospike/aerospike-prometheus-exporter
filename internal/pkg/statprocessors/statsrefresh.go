@@ -1,8 +1,6 @@
 package statprocessors
 
 import (
-	"fmt"
-
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
@@ -65,6 +63,7 @@ func (sr *StatsRefresher) GetStatsProcessors() []StatProcessor {
 func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 
 	log.Debugf("Refreshing node %s", commons.GetFullHost())
+	sr.sharedState.CheckpointSaveInProgress = false
 
 	// array to accumulate all metrics, which later will be dispatched by various observers
 	var allStatsToSend = []AerospikeStat{}
@@ -92,6 +91,8 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		return nil, err
 	}
 
+	sr.sharedState.CheckpointSaveInProgress = isCheckpointSaveInProgress(passOneOutput[sr.sharedState.Infokey_Build])
+
 	// fetch second set of info keys
 	// check and load this only once, to avoid multiple file-reads, so this Infokey assignment will happen only once during restart
 	// TODO: check if this logic can be done only 1 before the Refresh call
@@ -104,7 +105,9 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		}
 	}
 
-	infoKeys = []string{sr.sharedState.Infokey_ClusterName, sr.sharedState.Infokey_Service, sr.sharedState.Infokey_Build, sr.sharedState.Infokey_NodeId}
+	infoKeys = []string{sr.sharedState.Infokey_ClusterName, sr.sharedState.Infokey_Service,
+		sr.sharedState.Infokey_Build, sr.sharedState.Infokey_NodeId}
+
 	statprocessorInfoKeys := make([][]string, len(allStatsprocessorList))
 
 	if build := passOneOutput[sr.sharedState.Infokey_Build]; isValidResponse(build) {
@@ -126,18 +129,17 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 		return allStatsToSend, err
 	}
 
+	sr.sharedState.CheckpointSaveInProgress = isCheckpointSaveInProgress(passTwoResponse[sr.sharedState.Infokey_Build])
+
 	// from 8.2.0.0, we may have a case where build version may come as ERROR...
 	if !isValidResponse(passTwoResponse[sr.sharedState.Infokey_Build]) {
-		buildResp := passTwoResponse[sr.sharedState.Infokey_Build]
-		log.Infof("Build version response invalid: %s", buildResp)
-		return nil, fmt.Errorf("invalid build version response: %s", buildResp)
+		log.Infof("Build version response invalid")
+	} else {
+		sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
+		sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
+		sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
+		sr.sharedState.NodeId = passTwoResponse[sr.sharedState.Infokey_NodeId]
 	}
-
-	// retaing old build value so we can decide to send further commands to server or not
-	sr.sharedState.Build = passTwoResponse[sr.sharedState.Infokey_Build]
-	sr.sharedState.ClusterName = passTwoResponse[sr.sharedState.Infokey_ClusterName]
-	sr.sharedState.Service = passTwoResponse[sr.sharedState.Infokey_Service]
-	sr.sharedState.NodeId = passTwoResponse[sr.sharedState.Infokey_NodeId]
 
 	// Servce is IP of Aerospike Server, in Kubernetes we need pod-name instead of IP.
 	if config.Cfg.Agent.IsKubernetes {

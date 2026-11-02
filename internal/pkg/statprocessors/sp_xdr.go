@@ -27,12 +27,20 @@ func NewXdrStatsProcessor(state *StatProcessorSharedState) *XdrStatsProcessor {
 }
 
 func (xw *XdrStatsProcessor) PassOneKeys() []string {
+	if xw.sharedState.CheckpointSaveInProgress {
+		log.Tracef("xdr-passonekeys:nil")
+		return nil
+	}
 	// this is used to fetch the dcs metadata, we send same get-config command to fetch the dc-names required in next steps
 	log.Tracef("xdr-passonekeys:%s", []string{KEY_XDR_METADATA})
 	return []string{KEY_XDR_METADATA}
 }
 
 func (xw *XdrStatsProcessor) PassTwoKeys(passOneStats map[string]string) []string {
+	if xw.sharedState.CheckpointSaveInProgress {
+		log.Tracef("xdr-passtwokeys:nil")
+		return nil
+	}
 	log.Tracef("get-config:context=xdr:%s", passOneStats[KEY_XDR_METADATA])
 
 	res := passOneStats[KEY_XDR_METADATA]
