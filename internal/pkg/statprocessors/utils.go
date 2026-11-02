@@ -166,10 +166,17 @@ func GetMetricType(pContext commons.ContextType, pRawMetricName string) commons.
 		return commons.MetricTypeGauge
 	}
 
-	tmpRawMetricName := strings.ReplaceAll(pRawMetricName, commons.STORAGE_ENGINE, "")
+	// array stats are built as storage-engine_<type>_<stat>, gauge_stats_list.toml keys them as storage-engine.<type>.<stat>
+	if strings.HasPrefix(pRawMetricName, commons.STORAGE_ENGINE+"_") {
+		parts := strings.SplitN(pRawMetricName, "_", 3)
+		if len(parts) == 3 && isGauge(pContext, strings.Join(parts, ".")) {
+			return commons.MetricTypeGauge
+		}
+		return commons.MetricTypeCounter
+	}
 
-	if strings.Contains(tmpRawMetricName, "-") ||
-		isGauge(pContext, tmpRawMetricName) {
+	if strings.Contains(pRawMetricName, "-") ||
+		isGauge(pContext, pRawMetricName) {
 		return commons.MetricTypeGauge
 	}
 
