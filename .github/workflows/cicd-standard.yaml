@@ -1,0 +1,78 @@
+name: CI/CD (artifacts)
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  version:
+    name: Version
+    # Publishing needs the JFrog OIDC trust (set through the JFROG_* repository variables).
+    # Fork and Dependabot pull requests cannot obtain a token for it.
+    if: >-
+      vars.JFROG_PROJECT != '' && vars.JFROG_OIDC_PROVIDER != '' && vars.JFROG_OIDC_AUDIENCE != ''
+      && github.actor != 'dependabot[bot]'
+      && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Compute the version
+        id: version
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Release tags are cut on master and are not always reachable from dev,
+          # so take the highest one rather than git describe.
+          base=$(git tag -l 'v[0-9]*' --sort=-v:refname | head -1)
+          if [[ -z "${base}" ]]; then
+            echo "::error::No release tag found"
+            exit 1
+          fi
+          version="${base#v}-pr${PR_NUMBER}-${SOURCE_SHA::7}"
+          echo "Publishing version ${version}"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+  publish:
+    name: Publish
+    needs: version
+    permissions:
+      contents: read
+      id-token: write
+    uses: aerospike/shared-workflows/.github/workflows/reusable_artifacts-cicd.yaml@308f37e0cd5c7a6386a99ea7afc379d5a4ea9256 # v5.1.0
+    with:
+      # Must match the ref in the uses: line above.
+      gh-workflows-ref: 308f37e0cd5c7a6386a99ea7afc379d5a4ea9256 # v5.1.0
+      jf-project: ${{ vars.JFROG_PROJECT }}
+      jf-build-name: aerospike-prometheus-exporter
+      oidc-provider-name: ${{ vars.JFROG_OIDC_PROVIDER }}
+      oidc-audience: ${{ vars.JFROG_OIDC_AUDIENCE }}
+      version: ${{ needs.version.outputs.version }}
+      build-type: snapshot
+      gh-source-ref: ${{ github.event.pull_request.head.sha }}
+      gh-artifact-directory: dist
+      build-script-path: .github/scripts/build-artifacts.sh
+      build-env: VERSION=${{ needs.version.outputs.version }}
+    secrets:
+      gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
+      gpg-public-key: ${{ secrets.GPG_PUBLIC_KEY }}
+      gpg-key-pass: ${{ secrets.GPG_PASS }}
