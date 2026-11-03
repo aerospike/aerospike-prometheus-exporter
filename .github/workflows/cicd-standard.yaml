@@ -13,11 +13,9 @@ concurrency:
 jobs:
   version:
     name: Version
-    # Publishing needs the JFrog OIDC trust (set through the JFROG_* repository variables).
-    # Fork and Dependabot pull requests cannot obtain a token for it.
+    # Publishing needs a JFrog OIDC token, which fork and Dependabot pull requests cannot obtain.
     if: >-
-      vars.JFROG_PROJECT != '' && vars.JFROG_OIDC_PROVIDER != '' && vars.JFROG_OIDC_AUDIENCE != ''
-      && github.actor != 'dependabot[bot]'
+      github.actor != 'dependabot[bot]'
       && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     outputs:
@@ -62,10 +60,10 @@ jobs:
     with:
       # Must match the ref in the uses: line above.
       gh-workflows-ref: 308f37e0cd5c7a6386a99ea7afc379d5a4ea9256 # v5.1.0
-      jf-project: ${{ vars.JFROG_PROJECT }}
+      jf-project: ${{ vars.JFROG_PROJECT || 'database' }}
       jf-build-name: aerospike-prometheus-exporter
-      oidc-provider-name: ${{ vars.JFROG_OIDC_PROVIDER }}
-      oidc-audience: ${{ vars.JFROG_OIDC_AUDIENCE }}
+      oidc-provider-name: ${{ vars.JFROG_OIDC_PROVIDER || 'gh-aerospike' }}
+      oidc-audience: ${{ vars.JFROG_OIDC_AUDIENCE || 'aerospike' }}
       version: ${{ needs.version.outputs.version }}
       build-type: snapshot
       gh-source-ref: ${{ github.event.pull_request.head.sha }}
