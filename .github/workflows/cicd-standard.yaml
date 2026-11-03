@@ -60,7 +60,7 @@ jobs:
     with:
       # Must match the ref in the uses: line above.
       gh-workflows-ref: 308f37e0cd5c7a6386a99ea7afc379d5a4ea9256 # v5.1.0
-      jf-project: ${{ vars.JFROG_PROJECT || 'database' }}
+      jf-project: ${{ vars.JFROG_PROJECT || 'aerospike-prometheus-exporter' }}
       jf-build-name: aerospike-prometheus-exporter
       oidc-provider-name: ${{ vars.JFROG_OIDC_PROVIDER || 'gh-aerospike' }}
       oidc-audience: ${{ vars.JFROG_OIDC_AUDIENCE || 'aerospike' }}
