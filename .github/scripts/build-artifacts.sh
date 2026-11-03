@@ -43,20 +43,38 @@ for tar in "${TARGET_DIR}"/*.tar; do
   mv "${tar}.gz" "${tar%.tar}.tgz"
 done
 
-mkdir -p "${DIST_DIR}"
-for file in \
-  "${NAME}_${VERSION}-1_amd64.deb" \
-  "${NAME}_${VERSION}-1_arm64.deb" \
-  "${NAME}-${VERSION}-1.x86_64.rpm" \
-  "${NAME}-${VERSION}-1.aarch64.rpm" \
-  "${NAME}_${VERSION}_x86_64.tgz" \
-  "${NAME}_${VERSION}_aarch64.tgz"; do
-  if [[ ! -f "${TARGET_DIR}/${file}" ]]; then
-    echo "Expected ${file} in ${TARGET_DIR}, found:" >&2
+require_package() {
+  if [[ ! -f "${TARGET_DIR}/$1" ]]; then
+    echo "Expected $1 in ${TARGET_DIR}, found:" >&2
     ls -l "${TARGET_DIR}" >&2
     exit 1
   fi
-  cp "${TARGET_DIR}/${file}" "${DIST_DIR}/"
+}
+
+# The shared deploy step takes each package's target distribution from its file
+# name and rejects packages without one. The exporter binary is static, so the
+# same package is published under every distribution listed here.
+DEB_DISTROS=${DEB_DISTROS:-ubuntu20.04 ubuntu22.04 ubuntu24.04 ubuntu26.04 debian11 debian12 debian13}
+RPM_DISTROS=${RPM_DISTROS:-el8 el9 el10}
+
+mkdir -p "${DIST_DIR}"
+for arch in amd64 arm64; do
+  deb="${NAME}_${VERSION}-1_${arch}.deb"
+  require_package "${deb}"
+  for distro in ${DEB_DISTROS}; do
+    cp "${TARGET_DIR}/${deb}" "${DIST_DIR}/${NAME}_${VERSION}-1_${distro}_${arch}.deb"
+  done
+done
+for arch in x86_64 aarch64; do
+  rpm="${NAME}-${VERSION}-1.${arch}.rpm"
+  require_package "${rpm}"
+  for distro in ${RPM_DISTROS}; do
+    cp "${TARGET_DIR}/${rpm}" "${DIST_DIR}/${NAME}-${VERSION}-1.${distro}.${arch}.rpm"
+  done
+
+  tgz="${NAME}_${VERSION}_${arch}.tgz"
+  require_package "${tgz}"
+  cp "${TARGET_DIR}/${tgz}" "${DIST_DIR}/"
 done
 
 echo "Artifacts in ${DIST_DIR}:"
