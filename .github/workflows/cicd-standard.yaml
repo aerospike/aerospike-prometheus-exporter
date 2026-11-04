@@ -1,25 +1,38 @@
 name: CI/CD (artifacts)
 
+# Pull requests build and sign everything in dry-run mode (nothing is uploaded).
+# Pushes to dev and master publish a dev build to the JFrog database project.
+# Release tags publish the release, create its release bundle and promote it to TEST.
+# Promotion beyond TEST is manual: promote-to-preview.yml and promote-to-prod.yml.
+
 on:
   pull_request:
+  push:
+    branches: [dev, master]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   version:
     name: Version
-    # Publishing needs a JFrog OIDC token, which fork and Dependabot pull requests cannot obtain.
+    # Fork and Dependabot pull requests cannot obtain the JFrog OIDC token the shared workflows log in with.
     if: >-
-      github.actor != 'dependabot[bot]'
-      && github.event.pull_request.head.repo.full_name == github.repository
+      github.event_name != 'pull_request'
+      || (github.actor != 'dependabot[bot]'
+          && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
+      build-type: ${{ steps.version.outputs.build-type }}
+      dry-run: ${{ steps.version.outputs.dry-run }}
+      release: ${{ steps.version.outputs.release }}
+      source-sha: ${{ steps.version.outputs.source-sha }}
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
@@ -29,26 +42,58 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
       - name: Compute the version
         id: version
         env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          # Release tags are cut on master and are not always reachable from dev,
-          # so take the highest one rather than git describe.
-          base=$(git tag -l 'v[0-9]*' --sort=-v:refname | head -1)
-          if [[ -z "${base}" ]]; then
-            echo "::error::No release tag found"
+          set -euo pipefail
+
+          dry_run=false
+          release=false
+          build_type=snapshot
+
+          if [[ "${EVENT_NAME}" == "push" && "${REF_TYPE}" == "tag" ]]; then
+            version="${REF_NAME#v}"
+            build_type=release
+            release=true
+          else
+            # Release tags are cut on master and are not always reachable from dev,
+            # so take the highest one rather than git describe.
+            base=$(git tag -l 'v[0-9]*' --sort=-v:refname | head -1)
+            if [[ -z "${base}" ]]; then
+              echo "::error::No release tag found"
+              exit 1
+            fi
+            if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+              version="${base#v}-pr${PR_NUMBER}-${SOURCE_SHA::7}"
+              dry_run=true
+            else
+              version="${base#v}-${REF_NAME}-${SOURCE_SHA::7}"
+            fi
+          fi
+
+          if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+[0-9A-Za-z.-]*$ ]]; then
+            echo "::error::Version '${version}' is not a valid package version"
             exit 1
           fi
-          version="${base#v}-pr${PR_NUMBER}-${SOURCE_SHA::7}"
-          echo "Publishing version ${version}"
-          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+          echo "Version ${version} (build-type ${build_type}, dry-run ${dry_run}, release ${release})"
+          {
+            echo "version=${version}"
+            echo "build-type=${build_type}"
+            echo "dry-run=${dry_run}"
+            echo "release=${release}"
+            echo "source-sha=${SOURCE_SHA}"
+          } >> "${GITHUB_OUTPUT}"
 
   publish:
     name: Publish
@@ -65,8 +110,9 @@ jobs:
       oidc-provider-name: gh-aerospike
       oidc-audience: aerospike
       version: ${{ needs.version.outputs.version }}
-      build-type: snapshot
-      gh-source-ref: ${{ github.event.pull_request.head.sha }}
+      build-type: ${{ needs.version.outputs.build-type }}
+      dry-run: ${{ needs.version.outputs.dry-run == 'true' }}
+      gh-source-ref: ${{ needs.version.outputs.source-sha }}
       gh-artifact-directory: dist
       build-script-path: .github/scripts/build-artifacts.sh
       build-env: VERSION=${{ needs.version.outputs.version }}
@@ -74,3 +120,86 @@ jobs:
       gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
       gpg-public-key: ${{ secrets.GPG_PUBLIC_KEY }}
       gpg-key-pass: ${{ secrets.GPG_PASS }}
+
+  docker:
+    name: Docker image
+    needs: version
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    uses: aerospike/shared-workflows/.github/workflows/reusable_docker-build-deploy.yaml@308f37e0cd5c7a6386a99ea7afc379d5a4ea9256 # v5.1.0
+    with:
+      jf-project: database
+      jf-build-name: aerospike-prometheus-exporter-docker
+      image-name: aerospike-prometheus-exporter
+      app-version: ${{ needs.version.outputs.version }}
+      oidc-provider-name: gh-aerospike
+      oidc-audience: aerospike
+      context: .
+      file: Dockerfile
+      # Docker Hub is fed by artifact-publisher from the PROD release bundle, never from this repository.
+      push: ${{ needs.version.outputs.dry-run != 'true' }}
+      build-args-json: >-
+        {"VERSION": "${{ needs.version.outputs.version }}"}
+
+  release-bundle:
+    name: Release bundle
+    needs: [version, publish, docker]
+    # Pull requests run this in dry-run mode so the bundle wiring is checked before a release needs it.
+    if: needs.version.outputs.release == 'true' || github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      id-token: write
+    uses: aerospike/shared-workflows/.github/workflows/reusable_create-release-bundle.yaml@308f37e0cd5c7a6386a99ea7afc379d5a4ea9256 # v5.1.0
+    with:
+      # Must match the ref in the uses: line above.
+      gh-workflows-ref: 308f37e0cd5c7a6386a99ea7afc379d5a4ea9256 # v5.1.0
+      jf-project: database
+      jf-bundle-name: aerospike-prometheus-exporter
+      jf-build-names: >-
+        ${{ needs.publish.outputs.jf-build-name }}:${{ needs.publish.outputs.jf-build-id }},${{ needs.docker.outputs.jf-build-name }}:${{ needs.docker.outputs.jf-build-id }}
+      version: ${{ needs.version.outputs.version }}
+      jf-bundle-revision: auto
+      dry-run: ${{ needs.version.outputs.release != 'true' }}
+      oidc-provider-name: gh-aerospike
+      oidc-audience: aerospike
+
+  promote-dev:
+    name: Promote to DEV
+    needs: [version, release-bundle]
+    if: needs.version.outputs.release == 'true'
+    permissions:
+      contents: read
+      attestations: write
+      id-token: write
+    uses: aerospike/shared-workflows/.github/workflows/reusable_promote-release-bundle.yaml@308f37e0cd5c7a6386a99ea7afc379d5a4ea9256 # v5.1.0
+    with:
+      # Must match the ref in the uses: line above.
+      gh-workflows-ref: 308f37e0cd5c7a6386a99ea7afc379d5a4ea9256 # v5.1.0
+      jf-project: database
+      jf-bundle-name: aerospike-prometheus-exporter
+      version: ${{ needs.release-bundle.outputs.bundle-version }}
+      target-stage: DEV
+      oidc-provider-name: gh-aerospike
+      oidc-audience: aerospike
+
+  promote-test:
+    name: Promote to TEST
+    needs: [version, release-bundle, promote-dev]
+    if: needs.version.outputs.release == 'true'
+    permissions:
+      contents: read
+      attestations: write
+      id-token: write
+    uses: aerospike/shared-workflows/.github/workflows/reusable_promote-release-bundle.yaml@308f37e0cd5c7a6386a99ea7afc379d5a4ea9256 # v5.1.0
+    with:
+      # Must match the ref in the uses: line above.
+      gh-workflows-ref: 308f37e0cd5c7a6386a99ea7afc379d5a4ea9256 # v5.1.0
+      jf-project: database
+      jf-bundle-name: aerospike-prometheus-exporter
+      version: ${{ needs.release-bundle.outputs.bundle-version }}
+      target-stage: TEST
+      oidc-provider-name: gh-aerospike
+      oidc-audience: aerospike
