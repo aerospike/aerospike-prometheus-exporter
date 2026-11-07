@@ -23,15 +23,21 @@ func TestEncodeAndDecodeRoundTrip(t *testing.T) {
 	binary.BigEndian.PutUint32(frame[4:8], uint32(len(body)))
 	copy(frame[8:], body)
 
-	decoded, err := DecodeResponse(bytes.NewReader(frame))
+	decoded, err := DecodeResponse(bytes.NewReader(frame), true)
 	require.NoError(t, err)
 	require.Equal(t, secret, decoded)
+}
+
+func TestDecodeResponsePlaintext(t *testing.T) {
+	decoded, err := DecodeResponse(bytes.NewReader(responseFrame(t, `{"SecretValue":"test"}`)), false)
+	require.NoError(t, err)
+	require.Equal(t, "test", string(decoded))
 }
 
 func TestDecodeResponseFailures(t *testing.T) {
 	t.Run("agent error", func(t *testing.T) {
 		frame := responseFrame(t, `{"Error":"resource not found","SecretValue":"c2VjcmV0"}`)
-		_, err := DecodeResponse(bytes.NewReader(frame))
+		_, err := DecodeResponse(bytes.NewReader(frame), true)
 		require.EqualError(t, err, "resource not found")
 		require.NotContains(t, err.Error(), "c2VjcmV0")
 	})
@@ -39,7 +45,7 @@ func TestDecodeResponseFailures(t *testing.T) {
 	t.Run("invalid magic", func(t *testing.T) {
 		frame := responseFrame(t, `{"SecretValue":"YQ=="}`)
 		binary.BigEndian.PutUint32(frame[:4], 1)
-		_, err := DecodeResponse(bytes.NewReader(frame))
+		_, err := DecodeResponse(bytes.NewReader(frame), true)
 		require.ErrorContains(t, err, "invalid header")
 	})
 
@@ -47,21 +53,21 @@ func TestDecodeResponseFailures(t *testing.T) {
 		frame := make([]byte, 8)
 		binary.BigEndian.PutUint32(frame[:4], magic)
 		binary.BigEndian.PutUint32(frame[4:8], maxResponseBody+1)
-		_, err := DecodeResponse(bytes.NewReader(frame))
+		_, err := DecodeResponse(bytes.NewReader(frame), true)
 		require.ErrorContains(t, err, "exceeds")
 	})
 
 	t.Run("empty and invalid base64", func(t *testing.T) {
-		_, err := DecodeResponse(bytes.NewReader(responseFrame(t, `{"SecretValue":"   "}`)))
+		_, err := DecodeResponse(bytes.NewReader(responseFrame(t, `{"SecretValue":"   "}`)), true)
 		require.ErrorContains(t, err, "empty secret")
 
-		_, err = DecodeResponse(bytes.NewReader(responseFrame(t, `{"SecretValue":"****"}`)))
+		_, err = DecodeResponse(bytes.NewReader(responseFrame(t, `{"SecretValue":"****"}`)), true)
 		require.ErrorContains(t, err, "not valid base64")
 		require.NotContains(t, err.Error(), "****")
 	})
 
 	t.Run("bad json", func(t *testing.T) {
-		_, err := DecodeResponse(bytes.NewReader(responseFrame(t, `not-json`)))
+		_, err := DecodeResponse(bytes.NewReader(responseFrame(t, `not-json`)), true)
 		require.EqualError(t, err, "failed to decode secret agent response")
 		require.NotContains(t, err.Error(), "not-json")
 	})

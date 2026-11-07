@@ -79,6 +79,9 @@
       # TLS certificate verification is always enabled. timeout is in seconds.
 
 # [Agent.SecretAgent]
+      # Set is_sa_base64 when Secret Agent returns base64 (convert-to-base64 or an already encoded value).
+      # Leave it false when SecretValue is the plain username or password.
+      # is_sa_base64 = false
       # address = "127.0.0.1"
       # port = 3005
       # socket_path = ""

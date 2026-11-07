@@ -18,11 +18,12 @@ func TestParseDisabled(t *testing.T) {
 }
 
 func TestParseTCPAndUDS(t *testing.T) {
-	tcp, err := Parse(RawConfig{Address: "127.0.0.1", Port: 3005})
+	tcp, err := Parse(RawConfig{Address: "127.0.0.1", Port: 3005, IsBase64: true})
 	require.NoError(t, err)
 	require.Equal(t, ModeTCP, tcp.Mode)
 	require.Equal(t, "127.0.0.1:3005", tcp.Endpoint())
 	require.Equal(t, defaultTimeout, tcp.Timeout)
+	require.True(t, tcp.IsBase64)
 
 	custom, err := Parse(RawConfig{Address: "localhost", Port: 3005, TimeoutSeconds: 2})
 	require.NoError(t, err)

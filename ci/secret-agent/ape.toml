@@ -12,6 +12,7 @@ timeout = 5
 address = "sa-tcp"
 port = 3005
 timeout = 5
+is_sa_base64 = true
 
 [Aerospike]
 db_host = "127.0.0.1"

@@ -49,6 +49,7 @@ type Config struct {
 			KeyFile           string `toml:"key_file"`
 			KeyFilePassphrase string `toml:"key_file_passphrase"`
 			Timeout           uint16 `toml:"timeout"`
+			IsBase64          bool   `toml:"is_sa_base64"`
 		} `toml:"SecretAgent"`
 
 		Otel struct {
@@ -351,6 +352,7 @@ func (c *Config) SecretAgentConfigs() secretagent.RawConfig {
 		KeyFile:           settings.KeyFile,
 		KeyFilePassphrase: settings.KeyFilePassphrase,
 		TimeoutSeconds:    settings.Timeout,
+		IsBase64:          settings.IsBase64,
 	}
 }
 

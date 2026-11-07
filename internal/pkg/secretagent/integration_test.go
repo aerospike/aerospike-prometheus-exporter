@@ -29,6 +29,7 @@ func TestIntegrationUnixSocket(t *testing.T) {
 	cfg, err := secretagent.Parse(secretagent.RawConfig{
 		SocketPath:     os.Getenv("APE_SA_UDS"),
 		TimeoutSeconds: 5,
+		IsBase64:       true,
 	})
 	require.NoError(t, err)
 
@@ -145,6 +146,7 @@ func clearClient(t *testing.T, endpoint string) secretagent.Client {
 		Address:        host,
 		Port:           port,
 		TimeoutSeconds: 5,
+		IsBase64:       true,
 	})
 	require.NoError(t, err)
 
@@ -165,6 +167,7 @@ func tlsClient(t *testing.T, endpoint, caFile string, mutual bool) secretagent.C
 		TLSName:        os.Getenv("APE_SA_TLS_NAME"),
 		CAFile:         caFile,
 		TimeoutSeconds: 5,
+		IsBase64:       true,
 	}
 	if mutual {
 		raw.CertFile = os.Getenv("APE_SA_CLIENT_CERT")

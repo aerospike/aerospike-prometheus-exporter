@@ -458,7 +458,7 @@ Secret Agent support is optional. An existing `ape.toml` keeps working when `[Ag
 
 APE uses the same Secret Agent transports as Aerospike Server: plain TCP, TCP with TLS, TCP with mutual TLS, and a Unix domain socket. HTTP and HTTPS are not used. Set either `socket_path` or `address` and `port`. TLS is selected when `tls_name` and `ca_file` are set, and mutual TLS also requires `cert_file` and `key_file`. Certificate verification stays enabled. The certificates used to connect to Secret Agent cannot themselves be `secrets:` references.
 
-Sensitive configuration values can use `secrets:<resource>:<key>`. APE fetches that value during startup, before it initializes the Aerospike connection, the Prometheus listener, or OpenTelemetry. The Secret Agent response is base64-decoded, matching Aerospike Server. Existing direct text, `file:`, `env:`, `env-b64:`, and `b64:` values continue to work.
+Sensitive configuration values can use `secrets:<resource>:<key>`. APE fetches that value during startup, before it initializes the Aerospike connection, the Prometheus listener, or OpenTelemetry. Set `[Agent.SecretAgent] is_sa_base64 = true` when Secret Agent returns base64, matching Aerospike Server. Leave it false when `SecretValue` is already the plain text. Existing direct text, `file:`, `env:`, `env-b64:`, and `b64:` values continue to work.
 
 ```toml
 [Agent.SecretAgent]

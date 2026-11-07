@@ -32,7 +32,7 @@ func TestFetchOverTCPAndUDS(t *testing.T) {
 		return base64.StdEncoding.EncodeToString([]byte(secret)), ""
 	})
 
-	client := newTestClient(t, RawConfig{Address: "127.0.0.1", Port: portOf(t, tcp)}, nil)
+	client := newTestClient(t, RawConfig{Address: "127.0.0.1", Port: portOf(t, tcp), IsBase64: true}, nil)
 	got, err := client.Fetch(context.Background(), "APE", "DbPassword")
 	require.NoError(t, err)
 	require.Equal(t, secret, string(got))
@@ -45,10 +45,21 @@ func TestFetchOverTCPAndUDS(t *testing.T) {
 		return base64.StdEncoding.EncodeToString([]byte("uds-secret")), ""
 	})
 
-	udsClient := newTestClient(t, RawConfig{SocketPath: socketPath}, nil)
+	udsClient := newTestClient(t, RawConfig{SocketPath: socketPath, IsBase64: true}, nil)
 	got, err = udsClient.Fetch(context.Background(), "APE", "Token")
 	require.NoError(t, err)
 	require.Equal(t, "uds-secret", string(got))
+}
+
+func TestFetchPlaintextSecret(t *testing.T) {
+	ln := startClearListener(t, "tcp", "127.0.0.1:0", func(string, string) (string, string) {
+		return "test", ""
+	})
+
+	client := newTestClient(t, RawConfig{Address: "127.0.0.1", Port: portOf(t, ln)}, nil)
+	got, err := client.Fetch(context.Background(), "APE", "DbUser")
+	require.NoError(t, err)
+	require.Equal(t, "test", string(got))
 }
 
 func TestFetchTLSAndMTLS(t *testing.T) {
@@ -58,10 +69,11 @@ func TestFetchTLSAndMTLS(t *testing.T) {
 		return base64.StdEncoding.EncodeToString([]byte("tls-secret")), ""
 	}, func(port int) {
 		client := newTestClient(t, RawConfig{
-			Address: "127.0.0.1",
-			Port:    uint16(port),
-			TLSName: "secretagent",
-			CAFile:  material.caPath,
+			Address:  "127.0.0.1",
+			Port:     uint16(port),
+			TLSName:  "secretagent",
+			CAFile:   material.caPath,
+			IsBase64: true,
 		}, testTLSConfig(t, material, false))
 		got, err := client.Fetch(context.Background(), "APE", "Password")
 		require.NoError(t, err)
@@ -78,6 +90,7 @@ func TestFetchTLSAndMTLS(t *testing.T) {
 			CAFile:   material.caPath,
 			CertFile: material.clientCertPath,
 			KeyFile:  material.clientKeyPath,
+			IsBase64: true,
 		}, testTLSConfig(t, material, true))
 		got, err := client.Fetch(context.Background(), "APE", "Password")
 		require.NoError(t, err)

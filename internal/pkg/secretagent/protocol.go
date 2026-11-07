@@ -43,9 +43,10 @@ func EncodeRequest(resource, key string) ([]byte, error) {
 	return payload, nil
 }
 
-// DecodeResponse reads one Secret Agent response and base64-decodes SecretValue.
+// DecodeResponse reads one Secret Agent response.
+// When isBase64 is true, SecretValue is base64-decoded. Otherwise it is returned as text.
 // The returned error never includes the secret bytes.
-func DecodeResponse(r io.Reader) ([]byte, error) {
+func DecodeResponse(r io.Reader, isBase64 bool) ([]byte, error) {
 	header := make([]byte, 8)
 	if _, err := io.ReadFull(r, header); err != nil {
 		return nil, fmt.Errorf("failed to read secret agent response header: %w", err)
@@ -82,6 +83,10 @@ func DecodeResponse(r io.Reader) ([]byte, error) {
 	payload := strings.TrimRight(decoded.SecretValue, trailingWhitespace)
 	if payload == "" {
 		return nil, errors.New("secret agent returned an empty secret")
+	}
+
+	if !isBase64 {
+		return []byte(payload), nil
 	}
 
 	secret, err := base64.StdEncoding.DecodeString(payload)
