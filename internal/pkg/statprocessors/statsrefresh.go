@@ -22,6 +22,8 @@ type StatsRefresher struct {
 	xdrStatsProcessor       *XdrStatsProcessor
 	latencyStatsProcessor   *LatencyStatsProcessor
 
+	backupRestoreStatsProcessor *BackupRestoreStatsProcessor
+
 	userStatsProcessor *UserStatsProcessor
 }
 
@@ -42,6 +44,7 @@ func NewStatsRefresher(dataProvider dataprovider.DataProvider,
 	statsRefresher.xdrStatsProcessor = NewXdrStatsProcessor(statsRefresher.sharedState)
 	statsRefresher.latencyStatsProcessor = NewLatencyStatsProcessor(statsRefresher.sharedState)
 	statsRefresher.userStatsProcessor = NewUserStatsProcessor(statsRefresher.sharedState)
+	statsRefresher.backupRestoreStatsProcessor = NewBackupRestoreStatsProcessor(statsRefresher.sharedState)
 
 	return statsRefresher
 }
@@ -54,6 +57,7 @@ func (sr *StatsRefresher) GetStatsProcessors() []StatProcessor {
 		sr.sindexStatsProcessor,
 		sr.xdrStatsProcessor,
 		sr.latencyStatsProcessor,
+		sr.backupRestoreStatsProcessor,
 		// Did not include users processor, as it process UserRoles directly and not the stats from server
 	}
 
