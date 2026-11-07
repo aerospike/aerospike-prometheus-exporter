@@ -1,12 +1,21 @@
 name: ape-secret-agent
 
 services:
+  # Stay up after the one-shot work. --exit-code-from implies
+  # --abort-on-container-exit, so an exiting init container tears down
+  # the Secret Agent listeners before the tester starts.
   certs:
     image: alpine:3.24
     volumes:
       - ./scripts/gencerts.sh:/scripts/gencerts.sh:ro
       - certs:/certs
-    command: ["/bin/sh", "/scripts/gencerts.sh"]
+    command: ["/bin/sh", "-c", "/bin/sh /scripts/gencerts.sh && while true; do sleep 3600; done"]
+    healthcheck:
+      test: ["CMD", "test", "-f", "/certs/client.crt"]
+      interval: 1s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
 
   sa-tcp:
     image: aerospike/aerospike-secret-agent:1.4.0
@@ -26,7 +35,7 @@ services:
       - certs:/certs:ro
     depends_on:
       certs:
-        condition: service_completed_successfully
+        condition: service_healthy
 
   sa-mtls:
     image: aerospike/aerospike-secret-agent:1.4.0
@@ -38,7 +47,7 @@ services:
       - certs:/certs:ro
     depends_on:
       certs:
-        condition: service_completed_successfully
+        condition: service_healthy
 
   sa-uds:
     image: aerospike/aerospike-secret-agent:1.4.0
@@ -62,7 +71,13 @@ services:
     volumes:
       - ./scripts/wait.sh:/scripts/wait.sh:ro
       - uds:/run
-    command: ["/bin/sh", "/scripts/wait.sh"]
+    command: ["/bin/sh", "-c", "/bin/sh /scripts/wait.sh && touch /tmp/ready && while true; do sleep 3600; done"]
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/ready"]
+      interval: 2s
+      timeout: 2s
+      retries: 40
+      start_period: 70s
     depends_on:
       sa-tcp:
         condition: service_started
@@ -80,14 +95,14 @@ services:
     working_dir: /src
     environment:
       CGO_ENABLED: "0"
-    command: ["go", "run", "./cmd", "--config", "/etc/ape/ape.toml"]
+    command: ["go", "run", "./cmd", "--config", "/etc/ape/ape.toml", "--gauge-list", "/src/configs/gauge_stats_list.toml"]
     volumes:
       - ../..:/src
       - ./ape.toml:/etc/ape/ape.toml:ro
       - logs:/logs
     depends_on:
       wait-agents:
-        condition: service_completed_successfully
+        condition: service_healthy
 
   tester:
     image: golang:1.26.10
@@ -118,7 +133,7 @@ services:
       - logs:/logs:ro
     depends_on:
       wait-agents:
-        condition: service_completed_successfully
+        condition: service_healthy
       ape:
         condition: service_started
 
