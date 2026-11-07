@@ -182,10 +182,12 @@ func (oe *OtelExecutor) Initialize() error {
 
 // func (oe *OtelExecutor) BuildGrpcExporter(resource *resource.Resource) (*sdkmetric.MeterProvider, error) {
 func (oe *OtelExecutor) BuildGrpcExporter(ctx context.Context) (sdkmetric.Exporter, error) {
-	headers := oe.readHeaders()
+	headers, err := oe.readHeaders()
+	if err != nil {
+		return nil, err
+	}
 
 	var exporter *otlpmetricgrpc.Exporter
-	var err error
 
 	// Build options conditionally
 	exporterOptions := []otlpmetricgrpc.Option{
@@ -207,9 +209,11 @@ func (oe *OtelExecutor) BuildGrpcExporter(ctx context.Context) (sdkmetric.Export
 }
 
 func (oe *OtelExecutor) BuildHttpExporter(ctx context.Context) (sdkmetric.Exporter, error) {
-	headers := oe.readHeaders()
+	headers, err := oe.readHeaders()
+	if err != nil {
+		return nil, err
+	}
 
-	var err error
 	var exporter *otlpmetrichttp.Exporter
 
 	// tlsConfig := &tls.Config{
@@ -311,17 +315,20 @@ func (oe *OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, commonLabels
 }
 
 // Utility functions
-func (oe *OtelExecutor) readHeaders() map[string]string {
+func (oe *OtelExecutor) readHeaders() (map[string]string, error) {
 	headers := make(map[string]string)
-	// headers["api-key"] = "abcdefghijklmnopqrstuvwxyz"
 	headerPairs := config.Cfg.Agent.Otel.Headers
 
-	if len(headerPairs) > 0 {
-		for k, v := range headerPairs {
-			headers[k] = v
+	for name, value := range headerPairs {
+		resolved, err := commons.GetSecret(value)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve OpenTelemetry header %s: %w", name, err)
 		}
+
+		headers[name] = string(resolved)
 	}
+
 	log.Debugf("** OTel header count %d", len(headers))
 
-	return headers
+	return headers, nil
 }

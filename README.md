@@ -452,6 +452,26 @@ make release-docker-multi-arch
     latency_buckets_count=0
     ```
 
+## Secret Agent
+
+Secret Agent support is optional. An existing `ape.toml` keeps working when `[Agent.SecretAgent]` is absent.
+
+APE uses the same Secret Agent transports as Aerospike Server: plain TCP, TCP with TLS, TCP with mutual TLS, and a Unix domain socket. HTTP and HTTPS are not used. Set either `socket_path` or `address` and `port`. TLS is selected when `tls_name` and `ca_file` are set, and mutual TLS also requires `cert_file` and `key_file`. Certificate verification stays enabled. The certificates used to connect to Secret Agent cannot themselves be `secrets:` references.
+
+Sensitive configuration values can use `secrets:<resource>:<key>`. APE fetches that value during startup, before it initializes the Aerospike connection, the Prometheus listener, or OpenTelemetry. The Secret Agent response is base64-decoded, matching Aerospike Server. Existing direct text, `file:`, `env:`, `env-b64:`, and `b64:` values continue to work.
+
+```toml
+[Agent.SecretAgent]
+address = "127.0.0.1"
+port = 3005
+timeout = 5
+
+[Aerospike]
+password = "secrets:APE:DbPassword"
+```
+
+`make test` runs the in-process unit tests and does not need Docker. `make test-integration` starts Secret Agent with its file backend and runs the Docker suite. That suite generates TLS material at runtime and does not commit certificates or private keys.
+
 ## Pseudo Metrics
 
 | S.No | Name  | Description  |

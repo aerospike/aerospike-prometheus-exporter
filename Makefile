@@ -32,7 +32,14 @@ lint:
 .PHONY: test
 test: ## Run all the test-cases defined in this folder.
 	## for verbose mode use go test -v ./...	
-	go test ./...	
+	go test ./...
+
+.PHONY: test-integration
+test-integration: ## Run the Docker Secret Agent suite. Unit tests stay available through make test.
+	docker compose -f ci/secret-agent/docker-compose.yml up --abort-on-container-exit --exit-code-from tester; \
+	status=$$?; \
+	docker compose -f ci/secret-agent/docker-compose.yml down -v; \
+	exit $$status
 
 # Builds RPM, DEB and TAR packages
 # Requires FPM package manager

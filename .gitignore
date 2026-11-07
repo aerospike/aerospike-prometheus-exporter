@@ -1,1 +1,2 @@
 aerospike-prometheus-exporter
+ci/secret-agent/generated/

@@ -1,0 +1,21 @@
+[Agent]
+enable_prometheus = true
+enable_open_telemetry = false
+log_file = "/logs/ape.log"
+log_level = "info"
+bind = ":9145"
+basic_auth_username = "exporter"
+basic_auth_password = "secrets:APE:BasicAuthPassword"
+timeout = 5
+
+[Agent.SecretAgent]
+address = "sa-tcp"
+port = 3005
+timeout = 5
+
+[Aerospike]
+db_host = "127.0.0.1"
+db_port = 3000
+user = "secrets:APE:DbUser"
+password = "secrets:APE:DbPassword"
+timeout = 5
