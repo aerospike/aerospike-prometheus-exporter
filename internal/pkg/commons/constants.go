@@ -32,6 +32,12 @@ const (
 	METRIC_LABEL_SMD_GROUP                 = "smd_group"
 	METRIC_LABEL_JOB_ID                    = "job_id"
 	METRIC_LABEL_STATE                     = "state"
+	METRIC_LABEL_ERROR_REASON              = "error_reason"
+	METRIC_LABEL_ABORT_ORIGIN              = "abort_origin"
+	METRIC_LABEL_KIND                      = "kind"
+	METRIC_LABEL_NS_STATE                  = "ns_state"
+	METRIC_LABEL_BACKUP_ID                 = "backup_id"
+	METRIC_LABEL_CLUSTER_KEY               = "cluster_key"
 )
 
 // constants used to identify type of metrics
