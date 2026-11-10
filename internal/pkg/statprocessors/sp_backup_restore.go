@@ -11,6 +11,11 @@ import (
 const (
 	KEY_BACKUP_STATUS  = "backup-status"
 	KEY_RESTORE_STATUS = "restore-status"
+
+	// STAT_JOB is emitted as its own gauge so jobs can be counted per state:
+	// aerospike_backup_job / aerospike_restore_job, labeled with job_id and state.
+	// The job_id stays a label on every other metric.
+	STAT_JOB = "job"
 )
 
 // BackupRestoreStatsProcessor exports the per-node status of in-server backup and restore jobs.
@@ -96,6 +101,14 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 		}
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_JOB_ID}
+		labelValues := []string{bw.sharedState.ClusterName, bw.sharedState.Service, stats["ns"], jobID}
+
+		// the job is also emitted as its own gauge so the number of jobs in each state can be counted:
+		// aerospike_backup_job{job_id="b1",state="BASE_SCAN_ACTIVE"} 1
+		if state, hasState := stats["state"]; hasState {
+			allMetricsToSend = append(allMetricsToSend,
+				bw.jobMetric(context, metrics, append(labels, commons.METRIC_LABEL_STATE), append(labelValues, state)))
+		}
 
 		for stat, value := range stats {
 			// identifiers are used as labels, not as metrics
@@ -117,12 +130,29 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 				metrics[stat] = asMetric
 			}
 
-			labelValues := []string{bw.sharedState.ClusterName, bw.sharedState.Service, stats["ns"], jobID}
-
 			asMetric.updateValues(pv, labels, labelValues)
 			allMetricsToSend = append(allMetricsToSend, asMetric)
 		}
 	}
 
 	return allMetricsToSend
+}
+
+// jobMetric emits one gauge per job, valued 1, labeled with job_id and the job's state.
+// It is always a gauge: "job" has no hyphen and is not in gauge_stats_list.toml, so it would
+// otherwise be typed as a counter.
+func (bw *BackupRestoreStatsProcessor) jobMetric(context commons.ContextType, metrics map[string]AerospikeStat, labels []string, labelValues []string) AerospikeStat {
+
+	asMetric, exists := metrics[STAT_JOB]
+
+	if !exists {
+		allowed := isMetricAllowed(context, STAT_JOB)
+		asMetric = NewAerospikeStat(context, STAT_JOB, allowed)
+		asMetric.MType = commons.MetricTypeGauge
+		metrics[STAT_JOB] = asMetric
+	}
+
+	asMetric.updateValues(1, labels, labelValues)
+
+	return asMetric
 }

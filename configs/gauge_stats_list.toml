@@ -37,6 +37,12 @@ xdr_gauge_stats = [
 ]	
 
 #
+# Backup and Restore : below section define all Backup and Restore stats which are treated as Gauges 
+#
+backup_and_restore = [
+]
+
+#
 # Sindex: below section define all Sindex stats which are treated as Gauges 
 #
 sindex_gauge_stats = [

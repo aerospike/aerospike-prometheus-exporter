@@ -31,6 +31,7 @@ const (
 	METRIC_LABEL_CHECKPOINT_STATUS         = "cp_status"
 	METRIC_LABEL_SMD_GROUP                 = "smd_group"
 	METRIC_LABEL_JOB_ID                    = "job_id"
+	METRIC_LABEL_STATE                     = "state"
 )
 
 // constants used to identify type of metrics

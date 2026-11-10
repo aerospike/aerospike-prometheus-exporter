@@ -3,6 +3,7 @@ package statprocessors
 import (
 	"testing"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -62,6 +63,19 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	assert.Equal(t, 42.5, backupPct.Value)
 	assert.Equal(t, []string{"b1"}, backupPct.LabelValues[3:])
 
+	// job-id is its own gauge carrying the state, so jobs can be counted per stage
+	backupJob, ok := byKey["backup/job"]
+	assert.Equal(t, commons.MetricTypeGauge, backupJob.MType)
+	assert.True(t, ok)
+	assert.Equal(t, 1.0, backupJob.Value)
+	assert.Equal(t, []string{"c1", "10.0.0.1:3000", "test", "b1", "RUNNING"}, backupJob.LabelValues)
+
+	restoreJob, ok := byKey["restore/job"]
+	assert.Equal(t, commons.MetricTypeGauge, restoreJob.MType)
+	assert.True(t, ok)
+	assert.Equal(t, 1.0, restoreJob.Value)
+	assert.Equal(t, []string{"c1", "10.0.0.1:3000", "test", "r1", "COMPLETE"}, restoreJob.LabelValues)
+
 	cs, ok := byKey["backup/change-stream-active"]
 	assert.True(t, ok)
 	assert.Equal(t, 1.0, cs.Value)
@@ -74,8 +88,4 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	// the bare ns row has no job-id, so it must not produce any metric
 	_, hasNsState := byKey["restore/ns-state"]
 	assert.False(t, hasNsState)
-
-	// identifiers are labels, never metrics
-	_, hasJobID := byKey["backup/job-id"]
-	assert.False(t, hasJobID)
 }
