@@ -172,10 +172,7 @@ func GetMetricType(pContext commons.ContextType, pRawMetricName string) commons.
 		if len(parts) == 3 && isGauge(pContext, strings.Join(parts, ".")) {
 			return commons.MetricTypeGauge
 		}
-		return commons.MetricTypeCounter
-	}
-
-	if strings.Contains(pRawMetricName, "-") ||
+	} else if strings.Contains(strings.TrimPrefix(pRawMetricName, commons.STORAGE_ENGINE), "-") ||
 		isGauge(pContext, pRawMetricName) {
 		return commons.MetricTypeGauge
 	}
