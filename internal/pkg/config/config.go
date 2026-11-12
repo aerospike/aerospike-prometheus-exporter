@@ -304,6 +304,15 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 		cloudLabels := CollectCloudDetails()
 		log.Debugf("Adding Cloud Info to Metric Labels %s", cloudLabels)
 
+		if len(cloudLabels) == 0 {
+			return
+		}
+
+		// labels is omitted from the toml when cloud_provider is set on its own.
+		if c.Agent.MetricLabels == nil {
+			c.Agent.MetricLabels = make(map[string]string)
+		}
+
 		for k, v := range cloudLabels {
 
 			if len(v) == 0 {

@@ -1,2 +1,15 @@
 aerospike-prometheus-exporter
 ci/secret-agent/generated/
+
+# TLS/key material: never commit (test certs are generated per run)
+*.pem
+*.key
+*.crt
+*.cer
+*.csr
+*.srl
+*.p12
+*.pfx
+*.jks
+certs/
+ci/**/generated/

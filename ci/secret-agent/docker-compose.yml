@@ -112,6 +112,22 @@ services:
       wait-agents:
         condition: service_healthy
 
+  # Same exporter, configured by ape-uds.toml to reach Secret Agent through the Unix socket.
+  ape-uds:
+    image: golang:1.26.10
+    working_dir: /src
+    environment:
+      CGO_ENABLED: "0"
+    command: ["go", "run", "./cmd", "--config", "/etc/ape/ape.toml", "--gauge-list", "/src/configs/gauge_stats_list.toml"]
+    volumes:
+      - ../..:/src
+      - ./ape-uds.toml:/etc/ape/ape.toml:ro
+      - logs:/logs
+      - uds:/run
+    depends_on:
+      wait-agents:
+        condition: service_healthy
+
   tester:
     image: golang:1.26.10
     working_dir: /src
@@ -129,6 +145,8 @@ services:
       APE_SA_CLIENT_KEY: /certs/client.key
       APE_SA_TLS_NAME: secretagent
       APE_METRICS_URL: http://ape:9145/metrics
+      APE_UDS_METRICS_URL: http://ape-uds:9146/metrics
+      APE_UDS_LOG_FILE: /logs/ape-uds.log
       APE_BASIC_AUTH_USER: exporter
       APE_BASIC_AUTH_PASSWORD: ape-it-basic-auth-9f3c
       APE_DB_PASSWORD: ape-it-db-password-9f3c
@@ -143,6 +161,8 @@ services:
       wait-agents:
         condition: service_healthy
       ape:
+        condition: service_started
+      ape-uds:
         condition: service_started
 
 volumes:

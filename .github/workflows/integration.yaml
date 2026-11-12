@@ -22,4 +22,39 @@ jobs:
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Secret Agent integration
-        run: make test-integration
+        run: make test-integration-secret-agent
+
+  secret-agent-aws:
+    name: secret agent aws
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Secret Agent AWS integration
+        env:
+          APE_IT_AWS_SECRET_ARN: ${{ secrets.APE_IT_AWS_SECRET_ARN }}
+          APE_IT_AWS_PLAIN_SECRET_ARN: ${{ secrets.APE_IT_AWS_PLAIN_SECRET_ARN }}
+          APE_IT_PLAIN_USERNAME: ${{ secrets.APE_IT_PLAIN_USERNAME }}
+          APE_IT_PLAIN_PASSWORD: ${{ secrets.APE_IT_PLAIN_PASSWORD }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: make test-integration-aws
+
+  otel:
+    name: otel collector
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: OpenTelemetry collector integration
+        run: make test-integration-otel

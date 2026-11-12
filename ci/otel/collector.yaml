@@ -1,0 +1,18 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  file:
+    path: /output/metrics.json
+    append: true
+    format: json
+    flush_interval: 1s
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      exporters: [file]

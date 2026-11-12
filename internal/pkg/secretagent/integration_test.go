@@ -92,10 +92,18 @@ func TestIntegrationMTLSWithoutClientCertificate(t *testing.T) {
 	require.NotContains(t, err.Error(), os.Getenv("APE_DB_PASSWORD"))
 }
 
-func TestIntegrationExporterMetricsAndLogs(t *testing.T) {
+func TestIntegrationExporterTCP(t *testing.T) {
+	requireExporterMetrics(t, os.Getenv("APE_METRICS_URL"), os.Getenv("APE_LOG_FILE"))
+}
+
+func TestIntegrationExporterUDS(t *testing.T) {
+	requireExporterMetrics(t, os.Getenv("APE_UDS_METRICS_URL"), os.Getenv("APE_UDS_LOG_FILE"))
+}
+
+func requireExporterMetrics(t *testing.T, url, logFile string) {
+	t.Helper()
 	requireIntegration(t)
 
-	url := os.Getenv("APE_METRICS_URL")
 	user := os.Getenv("APE_BASIC_AUTH_USER")
 	password := os.Getenv("APE_BASIC_AUTH_PASSWORD")
 	dbPassword := os.Getenv("APE_DB_PASSWORD")
@@ -131,7 +139,7 @@ func TestIntegrationExporterMetricsAndLogs(t *testing.T) {
 	defer func() { _ = denied.Body.Close() }()
 	require.Equal(t, http.StatusUnauthorized, denied.StatusCode)
 
-	logBody, err := os.ReadFile(os.Getenv("APE_LOG_FILE"))
+	logBody, err := os.ReadFile(logFile)
 	require.NoError(t, err)
 	require.NotContains(t, string(logBody), password)
 	require.NotContains(t, string(logBody), dbPassword)

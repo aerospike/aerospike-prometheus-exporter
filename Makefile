@@ -35,11 +35,29 @@ test: ## Run all the test-cases defined in this folder.
 	go test ./...
 
 .PHONY: test-integration
-test-integration: ## Run the Docker Secret Agent suite. Unit tests stay available through make test.
+test-integration: ## Run the laptop Docker suites: Secret Agent and OpenTelemetry. AWS stays in test-integration-aws.
+	status=0; \
+	$(MAKE) test-integration-secret-agent || status=$$?; \
+	$(MAKE) test-integration-otel || status=$$?; \
+	exit $$status
+
+.PHONY: test-integration-secret-agent
+test-integration-secret-agent: ## Run the Docker Secret Agent suite.
 	docker compose -f ci/secret-agent/docker-compose.yml up --abort-on-container-exit --exit-code-from tester; \
 	status=$$?; \
 	docker compose -f ci/secret-agent/docker-compose.yml down -v; \
 	exit $$status
+
+.PHONY: test-integration-otel
+test-integration-otel: ## Run the OpenTelemetry exporter against an OTel collector.
+	docker compose -f ci/otel/docker-compose.yml up --abort-on-container-exit --exit-code-from tester; \
+	status=$$?; \
+	docker compose -f ci/otel/docker-compose.yml down -v; \
+	exit $$status
+
+.PHONY: test-integration-aws
+test-integration-aws: ## Run the TLS/mTLS suite with Secret Agent and AWS Secrets Manager. Skips when APE_IT_AWS_SECRET_ARN is unset.
+	ci/secret-agent-aws/run.sh
 
 # Builds RPM, DEB and TAR packages
 # Requires FPM package manager

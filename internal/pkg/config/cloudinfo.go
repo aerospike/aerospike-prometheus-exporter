@@ -14,6 +14,9 @@ const (
 	HTTP_DEFAULT_TIMEOUT    = time.Duration(1 * time.Second)
 )
 
+// cloudMetadataURL is the instance-metadata root. Tests point it at a local server.
+var cloudMetadataURL = BASE_CLOUD_METADATA_URL
+
 var (
 	cloudInfo map[string]string
 )
@@ -50,13 +53,13 @@ func getAwsCloudDetails() {
 	var token, awsRegion string
 	var tokenHeaders = make(map[string]string)
 	tokenHeaders["X-aws-ec2-metadata-token-ttl-seconds"] = "21600"
-	token, ok := callUrl("PUT", BASE_CLOUD_METADATA_URL+"/latest/api/token", tokenHeaders)
+	token, ok := callUrl("PUT", cloudMetadataURL+"/latest/api/token", tokenHeaders)
 	if !ok {
 		return
 	}
 
 	tokenHeaders["X-aws-ec2-metadata-token"] = token
-	awsRegion, ok = callUrl("GET", BASE_CLOUD_METADATA_URL+"/latest/meta-data/placement/region", tokenHeaders)
+	awsRegion, ok = callUrl("GET", cloudMetadataURL+"/latest/meta-data/placement/region", tokenHeaders)
 	if !ok {
 		return
 	}
@@ -70,7 +73,7 @@ func getAwsCloudDetails() {
 	// cloudInfo["availability_zone_id"] = awsAvailZoneId
 
 	var awsAvailZone string
-	awsAvailZone, ok = callUrl("GET", BASE_CLOUD_METADATA_URL+"/latest/meta-data/placement/availability-zone", tokenHeaders)
+	awsAvailZone, ok = callUrl("GET", cloudMetadataURL+"/latest/meta-data/placement/availability-zone", tokenHeaders)
 	if !ok {
 		return
 	}
@@ -83,13 +86,13 @@ func getAzureCloudDetails() {
 	}
 	var tokenHeaders = make(map[string]string)
 	tokenHeaders["Metadata"] = "true"
-	azureLocation, ok := callUrl("GET", BASE_CLOUD_METADATA_URL+"/metadata/instance/compute/location?api-version=2021-02-01&format=text", tokenHeaders)
+	azureLocation, ok := callUrl("GET", cloudMetadataURL+"/metadata/instance/compute/location?api-version=2021-02-01&format=text", tokenHeaders)
 	if !ok {
 		return
 	}
 	cloudInfo["location"] = azureLocation
 
-	azureZone, ok := callUrl("GET", BASE_CLOUD_METADATA_URL+"/metadata/instance/compute/zone?api-version=2021-02-01&format=text", tokenHeaders)
+	azureZone, ok := callUrl("GET", cloudMetadataURL+"/metadata/instance/compute/zone?api-version=2021-02-01&format=text", tokenHeaders)
 	if !ok {
 		return
 	}
@@ -104,7 +107,7 @@ func getGoogleCloudDetails() {
 
 	var tokenHeaders = make(map[string]string)
 	tokenHeaders["Metadata-Flavor"] = "Google"
-	gcpZone, ok := callUrl("GET", BASE_CLOUD_METADATA_URL+"/computeMetadata/v1/instance/zone", tokenHeaders)
+	gcpZone, ok := callUrl("GET", cloudMetadataURL+"/computeMetadata/v1/instance/zone", tokenHeaders)
 
 	if !ok {
 		return
