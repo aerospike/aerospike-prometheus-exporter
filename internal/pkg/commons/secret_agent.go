@@ -3,6 +3,7 @@ package commons
 import (
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -153,7 +154,7 @@ func fetchConfiguredSecret(reference string) ([]byte, error) {
 		return nil, errors.New("secret agent is not configured")
 	}
 
-	resource, key, err := parseSecretReference(reference)
+	resource, key, isBase64, err := parseSecretReference(reference)
 	if err != nil {
 		return nil, err
 	}
@@ -163,6 +164,13 @@ func fetchConfiguredSecret(reference string) ([]byte, error) {
 		return nil, err
 	}
 
+	if isBase64 {
+		secret, err = decodeBase64Secret(secret)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	secretStateMu.Lock()
 	secretCache[reference] = append([]byte(nil), secret...)
 	secretStateMu.Unlock()
@@ -170,11 +178,43 @@ func fetchConfiguredSecret(reference string) ([]byte, error) {
 	return secret, nil
 }
 
-func parseSecretReference(reference string) (string, string, error) {
-	parts := strings.SplitN(reference, ":", 3)
-	if len(parts) != 3 || parts[0] != "secrets" || parts[1] == "" || parts[2] == "" {
-		return "", "", errors.New("invalid secret reference: must be secrets:<resource>:<key>")
+func parseSecretReference(reference string) (string, string, bool, error) {
+	const invalidReference = "invalid secret reference: must be secrets:<resource>:<key> or secrets:b64:<resource>:<key>"
+
+	// secrets:b64:<resource>:<key> is recognized only when a resource and key follow b64.
+	// secrets:b64:<key> stays a text reference whose resource is named b64.
+	parts := strings.SplitN(reference, ":", 4)
+	if len(parts) >= 2 && parts[0] == "secrets" && parts[1] == "b64" {
+		if len(parts) == 4 && parts[2] != "" && parts[3] != "" {
+			return parts[2], parts[3], true, nil
+		}
+
+		if len(parts) == 3 && parts[2] != "" {
+			return "b64", parts[2], false, nil
+		}
+
+		return "", "", false, errors.New(invalidReference)
 	}
 
-	return parts[1], parts[2], nil
+	parts = strings.SplitN(reference, ":", 3)
+	if len(parts) != 3 || parts[0] != "secrets" || parts[1] == "" || parts[2] == "" {
+		return "", "", false, errors.New(invalidReference)
+	}
+
+	return parts[1], parts[2], false, nil
+}
+
+// decodeBase64Secret decodes one standard-base64 SecretValue.
+// The error never includes the secret bytes.
+func decodeBase64Secret(secret []byte) ([]byte, error) {
+	decoded, err := base64.StdEncoding.DecodeString(string(secret))
+	if err != nil {
+		return nil, errors.New("secret agent returned a secret that is not valid base64")
+	}
+
+	if len(decoded) == 0 {
+		return nil, errors.New("secret agent returned an empty secret")
+	}
+
+	return decoded, nil
 }

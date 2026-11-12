@@ -7,6 +7,7 @@ secret-manager:
     convert-to-base64: true
     resources:
       APE: /secrets/ape.json
+      Certs: /certs/material.json
 
 log:
   level: info

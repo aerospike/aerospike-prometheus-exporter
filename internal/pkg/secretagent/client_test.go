@@ -8,7 +8,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"encoding/pem"
@@ -29,10 +28,10 @@ func TestFetchOverTCPAndUDS(t *testing.T) {
 	tcp := startClearListener(t, "tcp", "127.0.0.1:0", func(resource, key string) (string, string) {
 		require.Equal(t, "APE", resource)
 		require.Equal(t, "DbPassword", key)
-		return base64.StdEncoding.EncodeToString([]byte(secret)), ""
+		return secret, ""
 	})
 
-	client := newTestClient(t, RawConfig{Address: "127.0.0.1", Port: portOf(t, tcp), IsBase64: true}, nil)
+	client := newTestClient(t, RawConfig{Address: "127.0.0.1", Port: portOf(t, tcp)}, nil)
 	got, err := client.Fetch(context.Background(), "APE", "DbPassword")
 	require.NoError(t, err)
 	require.Equal(t, secret, string(got))
@@ -42,10 +41,10 @@ func TestFetchOverTCPAndUDS(t *testing.T) {
 	startClearListener(t, "unix", socketPath, func(resource, key string) (string, string) {
 		require.Equal(t, "APE", resource)
 		require.Equal(t, "Token", key)
-		return base64.StdEncoding.EncodeToString([]byte("uds-secret")), ""
+		return "uds-secret", ""
 	})
 
-	udsClient := newTestClient(t, RawConfig{SocketPath: socketPath, IsBase64: true}, nil)
+	udsClient := newTestClient(t, RawConfig{SocketPath: socketPath}, nil)
 	got, err = udsClient.Fetch(context.Background(), "APE", "Token")
 	require.NoError(t, err)
 	require.Equal(t, "uds-secret", string(got))
@@ -66,14 +65,13 @@ func TestFetchTLSAndMTLS(t *testing.T) {
 	material := newCertMaterial(t)
 
 	startTLSListener(t, material.serverTLS(tls.NoClientCert), func(string, string) (string, string) {
-		return base64.StdEncoding.EncodeToString([]byte("tls-secret")), ""
+		return "tls-secret", ""
 	}, func(port int) {
 		client := newTestClient(t, RawConfig{
-			Address:  "127.0.0.1",
-			Port:     uint16(port),
-			TLSName:  "secretagent",
-			CAFile:   material.caPath,
-			IsBase64: true,
+			Address: "127.0.0.1",
+			Port:    uint16(port),
+			TLSName: "secretagent",
+			CAFile:  material.caPath,
 		}, testTLSConfig(t, material, false))
 		got, err := client.Fetch(context.Background(), "APE", "Password")
 		require.NoError(t, err)
@@ -81,7 +79,7 @@ func TestFetchTLSAndMTLS(t *testing.T) {
 	})
 
 	startTLSListener(t, material.serverTLS(tls.RequireAndVerifyClientCert), func(string, string) (string, string) {
-		return base64.StdEncoding.EncodeToString([]byte("mtls-secret")), ""
+		return "mtls-secret", ""
 	}, func(port int) {
 		client := newTestClient(t, RawConfig{
 			Address:  "127.0.0.1",
@@ -90,7 +88,6 @@ func TestFetchTLSAndMTLS(t *testing.T) {
 			CAFile:   material.caPath,
 			CertFile: material.clientCertPath,
 			KeyFile:  material.clientKeyPath,
-			IsBase64: true,
 		}, testTLSConfig(t, material, true))
 		got, err := client.Fetch(context.Background(), "APE", "Password")
 		require.NoError(t, err)
@@ -140,7 +137,7 @@ func TestFetchFailures(t *testing.T) {
 
 		socketPath := shortSocketPath(t)
 		ln := startClearListener(t, "unix", socketPath, func(string, string) (string, string) {
-			return base64.StdEncoding.EncodeToString([]byte("hidden")), ""
+			return "hidden", ""
 		})
 		require.NoError(t, os.Chmod(socketPath, 0o000))
 		t.Cleanup(func() { _ = os.Chmod(socketPath, 0o600) })
@@ -157,7 +154,7 @@ func TestTLSVerificationFailures(t *testing.T) {
 	other := newCertMaterial(t)
 
 	startTLSListener(t, material.serverTLS(tls.NoClientCert), func(string, string) (string, string) {
-		return base64.StdEncoding.EncodeToString([]byte("should-not-return")), ""
+		return "should-not-return", ""
 	}, func(port int) {
 		wrongCA := testTLSConfig(t, other, false)
 		wrongCA.RootCAs = other.pool
@@ -187,7 +184,7 @@ func TestTLSVerificationFailures(t *testing.T) {
 	})
 
 	startTLSListener(t, material.serverTLS(tls.RequireAndVerifyClientCert), func(string, string) (string, string) {
-		return base64.StdEncoding.EncodeToString([]byte("mtls-secret")), ""
+		return "mtls-secret", ""
 	}, func(port int) {
 		client := newTestClient(t, RawConfig{
 			Address: "127.0.0.1",

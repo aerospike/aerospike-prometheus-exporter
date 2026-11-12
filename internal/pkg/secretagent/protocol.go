@@ -1,7 +1,6 @@
 package secretagent
 
 import (
-	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
@@ -43,10 +42,10 @@ func EncodeRequest(resource, key string) ([]byte, error) {
 	return payload, nil
 }
 
-// DecodeResponse reads one Secret Agent response.
-// When isBase64 is true, SecretValue is base64-decoded. Otherwise it is returned as text.
+// DecodeResponse reads one Secret Agent response and returns SecretValue as text.
+// Base64 decoding is selected by the secrets:b64: reference, not by this response.
 // The returned error never includes the secret bytes.
-func DecodeResponse(r io.Reader, isBase64 bool) ([]byte, error) {
+func DecodeResponse(r io.Reader) ([]byte, error) {
 	header := make([]byte, 8)
 	if _, err := io.ReadFull(r, header); err != nil {
 		return nil, fmt.Errorf("failed to read secret agent response header: %w", err)
@@ -85,18 +84,5 @@ func DecodeResponse(r io.Reader, isBase64 bool) ([]byte, error) {
 		return nil, errors.New("secret agent returned an empty secret")
 	}
 
-	if !isBase64 {
-		return []byte(payload), nil
-	}
-
-	secret, err := base64.StdEncoding.DecodeString(payload)
-	if err != nil {
-		return nil, errors.New("secret agent returned a secret that is not valid base64")
-	}
-
-	if len(secret) == 0 {
-		return nil, errors.New("secret agent returned an empty secret")
-	}
-
-	return secret, nil
+	return []byte(payload), nil
 }

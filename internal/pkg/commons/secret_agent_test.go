@@ -2,11 +2,20 @@ package commons
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/pem"
+	"math/big"
 	"os"
 	"path/filepath"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
@@ -64,6 +73,104 @@ func TestGetSecretAndCertificateFromAgent(t *testing.T) {
 	_, err = GetSecret("secrets:APE:Missing")
 	require.ErrorContains(t, err, "not found")
 	require.NotContains(t, err.Error(), "super-secret-value")
+}
+
+func TestSecretReferenceBase64(t *testing.T) {
+	t.Cleanup(func() { RegisterSecretAgent(nil) })
+
+	encoded := base64.StdEncoding.EncodeToString([]byte("pem-bytes"))
+	fetcher := &fakeFetcher{values: map[string]string{
+		"APE\x00Cert":     encoded,
+		"APE\x00my:key":   base64.StdEncoding.EncodeToString([]byte("colon-key")),
+		"b64\x00password": "plain-pass",
+		"APE\x00Bad":      "****",
+		"APE\x00Empty":    "",
+	}}
+	RegisterSecretAgent(fetcher)
+
+	got, err := GetSecret("secrets:APE:Cert")
+	require.NoError(t, err)
+	require.Equal(t, encoded, string(got))
+
+	got, err = GetSecret("secrets:b64:APE:Cert")
+	require.NoError(t, err)
+	require.Equal(t, "pem-bytes", string(got))
+
+	cert, err := getCertificate("secrets:b64:APE:Cert")
+	require.NoError(t, err)
+	require.Equal(t, "pem-bytes", string(cert))
+	require.Equal(t, 2, fetcher.calls)
+
+	got, err = GetSecret("secrets:b64:APE:my:key")
+	require.NoError(t, err)
+	require.Equal(t, "colon-key", string(got))
+
+	got, err = GetSecret("secrets:b64:password")
+	require.NoError(t, err)
+	require.Equal(t, "plain-pass", string(got))
+
+	_, err = GetSecret("secrets:b64:APE:Bad")
+	require.ErrorContains(t, err, "not valid base64")
+	require.NotContains(t, err.Error(), "****")
+
+	_, err = GetSecret("secrets:b64:APE:Empty")
+	require.ErrorContains(t, err, "empty secret")
+
+	_, err = GetSecret("secrets:b64:")
+	require.ErrorContains(t, err, "invalid secret reference")
+
+	_, err = GetSecret("secrets:b64:APE:")
+	require.ErrorContains(t, err, "invalid secret reference")
+}
+
+func TestSecretReferenceLoadsGeneratedPEM(t *testing.T) {
+	t.Cleanup(func() { RegisterSecretAgent(nil) })
+
+	certPEM, keyPEM := generatedPEM(t)
+	fetcher := &fakeFetcher{values: map[string]string{
+		"Certs\x00client_cert": string(certPEM),
+		"Certs\x00client_key":  string(keyPEM),
+		"Certs\x00b64_cert":    base64.StdEncoding.EncodeToString(certPEM),
+		"Certs\x00b64_key":     base64.StdEncoding.EncodeToString(keyPEM),
+	}}
+	RegisterSecretAgent(fetcher)
+
+	textCert := mustSecret(t, "secrets:Certs:client_cert")
+	textKey := mustSecret(t, "secrets:Certs:client_key")
+	_, err := tls.X509KeyPair(textCert, textKey)
+	require.NoError(t, err)
+
+	b64Cert := mustSecret(t, "secrets:b64:Certs:b64_cert")
+	b64Key := mustSecret(t, "secrets:b64:Certs:b64_key")
+	_, err = tls.X509KeyPair(b64Cert, b64Key)
+	require.NoError(t, err)
+	require.Equal(t, textCert, b64Cert)
+	require.Equal(t, textKey, b64Key)
+}
+
+func generatedPEM(t *testing.T) (certPEM, keyPEM []byte) {
+	t.Helper()
+
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{CommonName: "ape-test"},
+		NotBefore:    time.Now().Add(-time.Hour),
+		NotAfter:     time.Now().Add(time.Hour),
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+	}
+	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	require.NoError(t, err)
+
+	certPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+	keyDER, err := x509.MarshalECPrivateKey(key)
+	require.NoError(t, err)
+	keyPEM = pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+
+	return certPEM, keyPEM
 }
 
 func TestResolveStartupSecrets(t *testing.T) {

@@ -458,7 +458,7 @@ Secret Agent support is optional. An existing `ape.toml` keeps working when `[Ag
 
 APE uses the same Secret Agent transports as Aerospike Server: plain TCP, TCP with TLS, TCP with mutual TLS, and a Unix domain socket. HTTP and HTTPS are not used. Set either `socket_path` or `address` and `port`. TLS is selected when `tls_name` and `ca_file` are set, and mutual TLS also requires `cert_file` and `key_file`. Certificate verification stays enabled. The certificates used to connect to Secret Agent cannot themselves be `secrets:` references.
 
-Sensitive configuration values can use `secrets:<resource>:<key>`. APE fetches that value during startup, before it initializes the Aerospike connection, the Prometheus listener, or OpenTelemetry. Set `[Agent.SecretAgent] is_sa_base64 = true` when Secret Agent returns base64, matching Aerospike Server. Leave it false when `SecretValue` is already the plain text. Existing direct text, `file:`, `env:`, `env-b64:`, and `b64:` values continue to work.
+Sensitive configuration values can use a Secret Agent reference. APE fetches that value during startup, before it initializes the Aerospike connection, the Prometheus listener, or OpenTelemetry. `secrets:<resource>:<key>` uses `SecretValue` as text, including a PEM certificate. `secrets:b64:<resource>:<key>` base64-decodes `SecretValue` once. Use the base64 form when the stored value is base64, or when Secret Agent `convert-to-base64` is enabled. Existing direct text, `file:`, `env:`, `env-b64:`, and `b64:` values continue to work.
 
 ```toml
 [Agent.SecretAgent]
@@ -467,10 +467,12 @@ port = 3005
 timeout = 5
 
 [Aerospike]
+user = "secrets:APE:DbUser"
 password = "secrets:APE:DbPassword"
+cert_file = "secrets:b64:APE:Cert"
 ```
 
-`make test` runs the in-process unit tests and does not need Docker. `make test-integration` starts Secret Agent with its file backend and runs the Docker suite. That suite generates TLS material at runtime and does not commit certificates or private keys.
+`make test` runs the in-process unit tests and does not need Docker. `make test-integration` starts Secret Agent with its file backend and runs the Docker suite. That suite generates TLS material at runtime and does not commit certificates or private keys. The same runtime material is stored for Secret Agent as text and as base64, then fetched with `secrets:` and `secrets:b64:` and used for a mutual-TLS handshake.
 
 ## Pseudo Metrics
 

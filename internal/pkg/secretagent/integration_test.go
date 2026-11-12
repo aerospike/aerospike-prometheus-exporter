@@ -5,11 +5,13 @@ package secretagent_test
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"io"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -29,7 +31,6 @@ func TestIntegrationUnixSocket(t *testing.T) {
 	cfg, err := secretagent.Parse(secretagent.RawConfig{
 		SocketPath:     os.Getenv("APE_SA_UDS"),
 		TimeoutSeconds: 5,
-		IsBase64:       true,
 	})
 	require.NoError(t, err)
 
@@ -51,6 +52,22 @@ func TestIntegrationMTLS(t *testing.T) {
 func TestIntegrationAlreadyBase64(t *testing.T) {
 	client := clearClient(t, os.Getenv("APE_SA_TCP_B64"))
 	requireSecret(t, client, "DbPassword", os.Getenv("APE_DB_PASSWORD"))
+}
+
+func TestIntegrationCertificateMaterial(t *testing.T) {
+	textClient := clearClient(t, os.Getenv("APE_SA_TCP_B64"))
+	textCA, textCert, textKey := fetchCertificateMaterial(t, textClient, "secrets:Certs:")
+	requirePEMFile(t, "/certs/ca.crt", textCA)
+	requirePEMFile(t, "/certs/client.crt", textCert)
+	requirePEMFile(t, "/certs/client.key", textKey)
+	requireMutualTLSHandshake(t, textCA, textCert, textKey)
+
+	b64Client := clearClient(t, os.Getenv("APE_SA_TCP"))
+	b64CA, b64Cert, b64Key := fetchCertificateMaterial(t, b64Client, "secrets:b64:Certs:")
+	require.Equal(t, normalizePEM(textCA), normalizePEM(b64CA))
+	require.Equal(t, normalizePEM(textCert), normalizePEM(b64Cert))
+	require.Equal(t, normalizePEM(textKey), normalizePEM(b64Key))
+	requireMutualTLSHandshake(t, b64CA, b64Cert, b64Key)
 }
 
 func TestIntegrationUnknownResource(t *testing.T) {
@@ -128,10 +145,62 @@ func requireIntegration(t *testing.T) {
 	}
 }
 
+func fetchCertificateMaterial(t *testing.T, client secretagent.Client, prefix string) (ca, cert, key []byte) {
+	t.Helper()
+
+	commons.RegisterSecretAgent(client)
+	t.Cleanup(func() { commons.RegisterSecretAgent(nil) })
+
+	var err error
+	ca, err = commons.GetSecret(prefix + "ca_cert")
+	require.NoError(t, err)
+	cert, err = commons.GetSecret(prefix + "client_cert")
+	require.NoError(t, err)
+	key, err = commons.GetSecret(prefix + "client_key")
+	require.NoError(t, err)
+	require.NoError(t, client.Close())
+
+	return ca, cert, key
+}
+
+func requirePEMFile(t *testing.T, path string, got []byte) {
+	t.Helper()
+
+	file, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.Equal(t, normalizePEM(file), normalizePEM(got))
+}
+
+func normalizePEM(in []byte) string {
+	return strings.TrimRight(string(in), " \t\n\r\f\v")
+}
+
+func requireMutualTLSHandshake(t *testing.T, caPEM, certPEM, keyPEM []byte) {
+	t.Helper()
+
+	pair, err := tls.X509KeyPair(certPEM, keyPEM)
+	require.NoError(t, err)
+
+	pool := x509.NewCertPool()
+	require.True(t, pool.AppendCertsFromPEM(caPEM))
+
+	conn, err := tls.Dial("tcp", os.Getenv("APE_SA_MTLS"), &tls.Config{
+		Certificates: []tls.Certificate{pair},
+		RootCAs:      pool,
+		ServerName:   os.Getenv("APE_SA_TLS_NAME"),
+		MinVersion:   tls.VersionTLS12,
+	})
+	require.NoError(t, err)
+	require.NoError(t, conn.Close())
+}
+
 func requireSecret(t *testing.T, client secretagent.Client, key, want string) {
 	t.Helper()
 
-	got, err := client.Fetch(context.Background(), "APE", key)
+	commons.RegisterSecretAgent(client)
+	t.Cleanup(func() { commons.RegisterSecretAgent(nil) })
+
+	got, err := commons.GetSecret("secrets:b64:APE:" + key)
 	require.NoError(t, err)
 	require.Equal(t, want, string(got))
 	require.NoError(t, client.Close())
@@ -146,7 +215,6 @@ func clearClient(t *testing.T, endpoint string) secretagent.Client {
 		Address:        host,
 		Port:           port,
 		TimeoutSeconds: 5,
-		IsBase64:       true,
 	})
 	require.NoError(t, err)
 
@@ -167,7 +235,6 @@ func tlsClient(t *testing.T, endpoint, caFile string, mutual bool) secretagent.C
 		TLSName:        os.Getenv("APE_SA_TLS_NAME"),
 		CAFile:         caFile,
 		TimeoutSeconds: 5,
-		IsBase64:       true,
 	}
 	if mutual {
 		raw.CertFile = os.Getenv("APE_SA_CLIENT_CERT")

@@ -76,7 +76,8 @@ func ValidateBasicAuth(r *http.Request, username string, password string) bool {
 // 3. "env:<environment-variable-that-contains-secret>" (environment variable containing secret)
 // 4. "env-b64:<environment-variable-that-contains-base64-encoded-secret>" (environment variable containing base64 encoded secret)
 // 5. "b64:<base64-encoded-secret>" (base64 encoded secret)
-// 6. "secrets:<resource>:<key>" (value fetched from the configured Secret Agent)
+// 6. "secrets:<resource>:<key>" (text value fetched from the configured Secret Agent)
+// 7. "secrets:b64:<resource>:<key>" (base64 value fetched from the configured Secret Agent and decoded once)
 func GetSecret(secretConfig string) ([]byte, error) {
 	if secretagent.IsSecretReference(secretConfig) {
 		return fetchConfiguredSecret(secretConfig)
@@ -259,7 +260,8 @@ func GetFullHost() string {
 // 2. "file:<file-path>" (certificate file path)
 // 3. "env-b64:<environment-variable-that-contains-base64-encoded-certificate>" (environment variable containing base64 encoded certificate)
 // 4. "b64:<base64-encoded-certificate>" (base64 encoded certificate)
-// 5. "secrets:<resource>:<key>" (certificate fetched from the configured Secret Agent)
+// 5. "secrets:<resource>:<key>" (text certificate fetched from the configured Secret Agent)
+// 6. "secrets:b64:<resource>:<key>" (base64 certificate fetched from the configured Secret Agent and decoded once)
 func getCertificate(certConfig string) ([]byte, error) {
 	if secretagent.IsSecretReference(certConfig) {
 		return fetchConfiguredSecret(certConfig)

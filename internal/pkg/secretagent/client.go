@@ -20,7 +20,6 @@ type agentClient struct {
 	endpoint  string
 	timeout   time.Duration
 	tlsConfig *tls.Config
-	isBase64  bool
 }
 
 // New returns a client for a parsed Secret Agent configuration.
@@ -54,7 +53,6 @@ func New(cfg Config, tlsConfig *tls.Config) (Client, error) {
 		endpoint:  cfg.Endpoint(),
 		timeout:   cfg.Timeout,
 		tlsConfig: tlsConfig,
-		isBase64:  cfg.IsBase64,
 	}, nil
 }
 
@@ -95,7 +93,7 @@ func (c *agentClient) Fetch(ctx context.Context, resource, key string) ([]byte, 
 		return nil, c.wrap(resource, key, "read", err)
 	}
 
-	secret, err := DecodeResponse(conn, c.isBase64)
+	secret, err := DecodeResponse(conn)
 	if err != nil {
 		return nil, c.wrap(resource, key, "read", err)
 	}

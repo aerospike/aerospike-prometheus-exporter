@@ -42,4 +42,22 @@ openssl req -newkey rsa:2048 -nodes \
 openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
 	-out client.crt -days 1 -extfile /tmp/client.ext
 
+# Secret Agent reads this file from the certs volume. It is not written to the repo.
+pem_json() {
+	awk 'BEGIN { ORS = "" }
+	{
+		gsub(/\\/, "\\\\")
+		gsub(/"/, "\\\"")
+		printf "%s\\n", $0
+	}' "$1"
+}
+
+{
+	printf '{\n'
+	printf '  "ca_cert": "%s",\n' "$(pem_json ca.crt)"
+	printf '  "client_cert": "%s",\n' "$(pem_json client.crt)"
+	printf '  "client_key": "%s"\n' "$(pem_json client.key)"
+	printf '}\n'
+} > material.json
+
 chmod 644 /certs/*

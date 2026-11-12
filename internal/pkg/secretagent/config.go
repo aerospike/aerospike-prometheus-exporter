@@ -52,9 +52,6 @@ type RawConfig struct {
 	KeyFile           string
 	KeyFilePassphrase string
 	TimeoutSeconds    uint16
-	// IsBase64 is ape.toml is_sa_base64. When true, SecretValue is base64.
-	// When false, SecretValue is the secret text.
-	IsBase64 bool
 }
 
 // Config is a validated Secret Agent connection.
@@ -69,7 +66,6 @@ type Config struct {
 	KeyFile           string
 	KeyFilePassphrase string
 	Timeout           time.Duration
-	IsBase64          bool
 }
 
 // Endpoint is the dial address. TCP modes use host:port. UDS uses the socket path.
@@ -81,7 +77,7 @@ func (c Config) Endpoint() string {
 	return net.JoinHostPort(c.Address, strconv.Itoa(int(c.Port)))
 }
 
-// IsSecretReference reports whether value uses the secrets:<resource>:<key> scheme.
+// IsSecretReference reports whether value uses secrets:<resource>:<key> or secrets:b64:<resource>:<key>.
 func IsSecretReference(value string) bool {
 	return strings.HasPrefix(strings.TrimSpace(value), "secrets:")
 }
@@ -123,7 +119,6 @@ func Parse(raw RawConfig) (Config, error) {
 			Mode:       ModeUDS,
 			SocketPath: socketPath,
 			Timeout:    timeout,
-			IsBase64:   raw.IsBase64,
 		}, nil
 	}
 
@@ -133,11 +128,10 @@ func Parse(raw RawConfig) (Config, error) {
 
 	if !tlsConfigured {
 		return Config{
-			Mode:     ModeTCP,
-			Address:  address,
-			Port:     raw.Port,
-			Timeout:  timeout,
-			IsBase64: raw.IsBase64,
+			Mode:    ModeTCP,
+			Address: address,
+			Port:    raw.Port,
+			Timeout: timeout,
 		}, nil
 	}
 
@@ -168,7 +162,6 @@ func Parse(raw RawConfig) (Config, error) {
 		KeyFile:           keyFile,
 		KeyFilePassphrase: keyPass,
 		Timeout:           timeout,
-		IsBase64:          raw.IsBase64,
 	}, nil
 }
 

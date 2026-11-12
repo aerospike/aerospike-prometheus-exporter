@@ -11,7 +11,7 @@ services:
       - certs:/certs
     command: ["/bin/sh", "-c", "/bin/sh /scripts/gencerts.sh && while true; do sleep 3600; done"]
     healthcheck:
-      test: ["CMD", "test", "-f", "/certs/client.crt"]
+      test: ["CMD", "test", "-f", "/certs/material.json"]
       interval: 1s
       timeout: 2s
       retries: 30
@@ -24,6 +24,10 @@ services:
     volumes:
       - ./config/tcp.yaml:/config/tcp.yaml:ro
       - ./secrets:/secrets:ro
+      - certs:/certs:ro
+    depends_on:
+      certs:
+        condition: service_healthy
 
   sa-tls:
     image: aerospike/aerospike-secret-agent:1.4.0
@@ -65,6 +69,10 @@ services:
     volumes:
       - ./config/tcp-b64.yaml:/config/tcp-b64.yaml:ro
       - ./secrets:/secrets:ro
+      - certs:/certs:ro
+    depends_on:
+      certs:
+        condition: service_healthy
 
   wait-agents:
     image: alpine:3.24
