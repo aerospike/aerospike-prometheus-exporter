@@ -210,7 +210,7 @@ func TestNewRejectsInconsistentTLS(t *testing.T) {
 	insecure := &tls.Config{InsecureSkipVerify: true, MinVersion: tls.VersionTLS12}
 	client, err := New(Config{Mode: ModeTLS, Address: "127.0.0.1", Port: 1, TLSName: "secretagent", Timeout: time.Second}, insecure)
 	require.NoError(t, err)
-	require.False(t, client.(*agentClient).tlsConfig.InsecureSkipVerify)
+	require.False(t, client.(*secretAgentClient).tlsConfig.InsecureSkipVerify)
 	require.True(t, insecure.InsecureSkipVerify)
 }
 
@@ -289,7 +289,7 @@ func serveSecret(conn net.Conn, handler secretHandler) {
 	_, _ = conn.Write(frame)
 }
 
-func newTestClient(t *testing.T, raw RawConfig, tlsConfig *tls.Config) Client {
+func newTestClient(t *testing.T, raw RawConfig, tlsConfig *tls.Config) SecretClient {
 	t.Helper()
 
 	if raw.TimeoutSeconds == 0 {

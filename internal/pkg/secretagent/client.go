@@ -9,13 +9,13 @@ import (
 	"time"
 )
 
-// Client fetches one secret at a time from Secret Agent.
-type Client interface {
+// SecretClient fetches one secret at a time from Secret Agent.
+type SecretClient interface {
 	Fetch(ctx context.Context, resource, key string) ([]byte, error)
 	Close() error
 }
 
-type agentClient struct {
+type secretAgentClient struct {
 	mode      Mode
 	endpoint  string
 	timeout   time.Duration
@@ -25,7 +25,7 @@ type agentClient struct {
 // New returns a client for a parsed Secret Agent configuration.
 // tlsConfig is required for TLS and mTLS and must be nil for TCP and UDS.
 // Certificate verification is always left enabled.
-func New(cfg Config, tlsConfig *tls.Config) (Client, error) {
+func New(cfg Config, tlsConfig *tls.Config) (SecretClient, error) {
 	if cfg.Mode == ModeDisabled {
 		return nil, errors.New("secret agent is not configured")
 	}
@@ -48,7 +48,7 @@ func New(cfg Config, tlsConfig *tls.Config) (Client, error) {
 		tlsConfig.InsecureSkipVerify = false
 	}
 
-	return &agentClient{
+	return &secretAgentClient{
 		mode:      cfg.Mode,
 		endpoint:  cfg.Endpoint(),
 		timeout:   cfg.Timeout,
@@ -56,11 +56,11 @@ func New(cfg Config, tlsConfig *tls.Config) (Client, error) {
 	}, nil
 }
 
-func (c *agentClient) Close() error {
+func (c *secretAgentClient) Close() error {
 	return nil
 }
 
-func (c *agentClient) Fetch(ctx context.Context, resource, key string) ([]byte, error) {
+func (c *secretAgentClient) Fetch(ctx context.Context, resource, key string) ([]byte, error) {
 	if resource == "" || key == "" {
 		return nil, errors.New("secret agent resource and key are required")
 	}
@@ -101,7 +101,7 @@ func (c *agentClient) Fetch(ctx context.Context, resource, key string) ([]byte, 
 	return secret, nil
 }
 
-func (c *agentClient) dial(ctx context.Context) (net.Conn, error) {
+func (c *secretAgentClient) dial(ctx context.Context) (net.Conn, error) {
 	dialCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
@@ -119,7 +119,7 @@ func (c *agentClient) dial(ctx context.Context) (net.Conn, error) {
 	return dialer.DialContext(dialCtx, network, c.endpoint)
 }
 
-func (c *agentClient) wrap(resource, key, op string, err error) error {
+func (c *secretAgentClient) wrap(resource, key, op string, err error) error {
 	return fmt.Errorf("secret agent %s %s: failed to %s %s:%s: %w", c.mode, c.endpoint, op, resource, key, err)
 }
 

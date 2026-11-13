@@ -153,7 +153,7 @@ func requireIntegration(t *testing.T) {
 	}
 }
 
-func fetchCertificateMaterial(t *testing.T, client secretagent.Client, prefix string) (ca, cert, key []byte) {
+func fetchCertificateMaterial(t *testing.T, client secretagent.SecretClient, prefix string) (ca, cert, key []byte) {
 	t.Helper()
 
 	commons.RegisterSecretAgent(client)
@@ -202,7 +202,7 @@ func requireMutualTLSHandshake(t *testing.T, caPEM, certPEM, keyPEM []byte) {
 	require.NoError(t, conn.Close())
 }
 
-func requireSecret(t *testing.T, client secretagent.Client, key, want string) {
+func requireSecret(t *testing.T, client secretagent.SecretClient, key, want string) {
 	t.Helper()
 
 	commons.RegisterSecretAgent(client)
@@ -214,7 +214,7 @@ func requireSecret(t *testing.T, client secretagent.Client, key, want string) {
 	require.NoError(t, client.Close())
 }
 
-func clearClient(t *testing.T, endpoint string) secretagent.Client {
+func clearClient(t *testing.T, endpoint string) secretagent.SecretClient {
 	t.Helper()
 	requireIntegration(t)
 
@@ -232,7 +232,7 @@ func clearClient(t *testing.T, endpoint string) secretagent.Client {
 	return client
 }
 
-func tlsClient(t *testing.T, endpoint, caFile string, mutual bool) secretagent.Client {
+func tlsClient(t *testing.T, endpoint, caFile string, mutual bool) secretagent.SecretClient {
 	t.Helper()
 	requireIntegration(t)
 
