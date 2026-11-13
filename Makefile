@@ -32,7 +32,47 @@ lint:
 .PHONY: test
 test: ## Run all the test-cases defined in this folder.
 	## for verbose mode use go test -v ./...	
-	go test ./...	
+	go test ./...
+
+.PHONY: test-integration
+test-integration: ## Run the laptop Docker suites: Secret Agent, OpenTelemetry, the processor info server, user stats, and the 7.2 scrape. AWS stays in test-integration-aws.
+	status=0; \
+	$(MAKE) test-integration-secret-agent || status=$$?; \
+	$(MAKE) test-integration-otel || status=$$?; \
+	$(MAKE) test-integration-processor || status=$$?; \
+	$(MAKE) test-integration-users || status=$$?; \
+	$(MAKE) test-integration-versions || status=$$?; \
+	exit $$status
+
+.PHONY: test-integration-secret-agent
+test-integration-secret-agent: ## Run the Docker Secret Agent suite.
+	docker compose -f ci/secret-agent/docker-compose.yml up --abort-on-container-exit --exit-code-from tester; \
+	status=$$?; \
+	docker compose -f ci/secret-agent/docker-compose.yml down -v; \
+	exit $$status
+
+.PHONY: test-integration-otel
+test-integration-otel: ## Run the OpenTelemetry exporter against an OTel collector.
+	docker compose -f ci/otel/docker-compose.yml up --abort-on-container-exit --exit-code-from tester; \
+	status=$$?; \
+	docker compose -f ci/otel/docker-compose.yml down -v; \
+	exit $$status
+
+.PHONY: test-integration-processor
+test-integration-processor: ## Feed live asinfo output into the namespace and node processors. Skips when APE_IT_FEATURE_KEY_FILE is unset.
+	ci/processor/run.sh
+
+.PHONY: test-integration-users
+test-integration-users: ## Create three users, run asbench as each, and check user stats. Skips when APE_IT_FEATURE_KEY_FILE is unset.
+	ci/users/run.sh
+
+.PHONY: test-integration-versions
+test-integration-versions: ## Scrape the exporter against Community servers. Default tag is 7.2.0.11. Set APE_IT_SERVER_VERSIONS for more.
+	ci/versions/run.sh
+
+.PHONY: test-integration-aws
+test-integration-aws: ## Run the TLS/mTLS suite with Secret Agent and AWS Secrets Manager. Skips when APE_IT_AWS_SECRET_ARN is unset.
+	ci/secret-agent-aws/run.sh
 
 # Builds RPM, DEB and TAR packages
 # Requires FPM package manager

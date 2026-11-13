@@ -1,0 +1,90 @@
+name: ape-secret-agent-aws
+
+# Run through run.sh, which sequences setup, Secret Agent and the tester and always cleans up.
+# AWS credentials come from the default chain: variables passed through below, or a
+# read-only ~/.aws. Nothing is baked into an image.
+
+services:
+  setup:
+    build:
+      context: .
+      dockerfile: Dockerfile.setup
+    environment:
+      - HOME=/root
+      - APE_IT_SA_BACKEND
+      - APE_IT_SA_TRANSPORT
+      - APE_IT_PEM_ENCODING
+      - APE_IT_AWS_SECRET_ARN
+      - APE_IT_AWS_MISSING_SECRET_ARN
+      - APE_IT_AWS_PLAIN_SECRET_ARN
+      - APE_IT_AWS_REGION
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
+      - AWS_PROFILE
+    volumes:
+      - work:/work
+      - ${APE_IT_AWS_DIR:?run through run.sh}:/root/.aws:ro
+
+  secret-agent:
+    image: aerospike/aerospike-secret-agent:1.4.0
+    user: "0:0"
+    command: ["-config-file", "/work/sa/config.yaml"]
+    environment:
+      - HOME=/root
+      # Lets the agent's AWS SDK read profiles from ~/.aws/config, not only ~/.aws/credentials.
+      - AWS_SDK_LOAD_CONFIG=1
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
+      - AWS_PROFILE
+    volumes:
+      - work:/work:ro
+      - sa-run:/run/sa
+      - ${APE_IT_AWS_DIR:?run through run.sh}:/root/.aws:ro
+
+  # Reads a secret whose values are plain text and returns each one base64-encoded.
+  secret-agent-plain:
+    image: aerospike/aerospike-secret-agent:1.4.0
+    user: "0:0"
+    command: ["-config-file", "/work/sa/config-plain.yaml"]
+    environment:
+      - HOME=/root
+      - AWS_SDK_LOAD_CONFIG=1
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
+      - AWS_PROFILE
+    volumes:
+      - work:/work:ro
+      - sa-run:/run/sa
+      - ${APE_IT_AWS_DIR:?run through run.sh}:/root/.aws:ro
+
+  tester:
+    image: golang:1.26.10
+    working_dir: /src
+    environment:
+      - CGO_ENABLED=0
+      - APE_IT_E2E=1
+      - APE_IT_SA_BACKEND
+      - APE_IT_SA_TRANSPORT
+      - APE_IT_PEM_ENCODING
+      - APE_IT_AWS_PLAIN_SECRET_ARN
+      - APE_IT_PLAIN_USERNAME
+      - APE_IT_PLAIN_PASSWORD
+    command:
+      - sh
+      - -c
+      - >-
+        go build -o /tmp/ape ./cmd &&
+        go test -tags awse2e -count=1 -v -timeout 15m ./ci/secret-agent-aws/e2e/
+    volumes:
+      - ../..:/src
+      - work:/work:ro
+      - sa-run:/run/sa
+    depends_on:
+      - secret-agent
+
+volumes:
+  work:
+  sa-run:

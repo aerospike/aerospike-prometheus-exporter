@@ -1,0 +1,12 @@
+service:
+  uds:
+    socket-path: /run/secret-agent.sock
+
+secret-manager:
+  file:
+    convert-to-base64: true
+    resources:
+      APE: /secrets/ape.json
+
+log:
+  level: info

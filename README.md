@@ -452,6 +452,75 @@ make release-docker-multi-arch
     latency_buckets_count=0
     ```
 
+## Secret Agent
+
+Secret Agent support is optional. An existing `ape.toml` keeps working when `[Agent.SecretAgent]` is absent.
+
+APE uses the same Secret Agent transports as Aerospike Server: plain TCP, TCP with TLS, TCP with mutual TLS, and a Unix domain socket. HTTP and HTTPS are not used. Set either `socket_path` or `address` and `port`. TLS is selected when `tls_name` and `ca_file` are set, and mutual TLS also requires `cert_file` and `key_file`. Certificate verification stays enabled. The certificates used to connect to Secret Agent cannot themselves be `secrets:` references.
+
+Sensitive configuration values can use a Secret Agent reference. APE fetches that value during startup, before it initializes the Aerospike connection, the Prometheus listener, or OpenTelemetry. `secrets:<resource>:<key>` uses `SecretValue` as text, including a PEM certificate. `secrets:b64:<resource>:<key>` base64-decodes `SecretValue` once. Use the base64 form when the stored value is base64, or when Secret Agent `convert-to-base64` is enabled. Existing direct text, `file:`, `env:`, `env-b64:`, and `b64:` values continue to work.
+
+```toml
+[Agent.SecretAgent]
+address = "127.0.0.1"
+port = 3005
+timeout = 5
+
+[Aerospike]
+user = "secrets:APE:DbUser"
+password = "secrets:APE:DbPassword"
+cert_file = "secrets:b64:APE:Cert"
+```
+
+`make test` runs the in-process unit tests and does not need Docker. `make test-integration` runs every Docker suite that can run on a laptop: Secret Agent, then OpenTelemetry, then the processor info suite, then the user-stats suite, then a Prometheus scrape of Community 7.2. `make test-integration-aws` stays separate because it needs AWS credentials and a Secrets Manager secret.
+
+`make test-integration-processor` starts one Enterprise server from `ci/processor/aerospike.conf`, runs the namespace and node info commands, and passes those strings to the processors. It checks that every numeric field is emitted, including storage-engine and flash index array stats. The test also creates secondary index `name_idx`, writes and reads records, and checks the set, sindex, and latency processors against those responses. Set `APE_IT_FEATURE_KEY_FILE` to an Enterprise feature key on the host. The key is mounted into the container and is not committed. When the variable is unset the command prints a skip message and exits 0.
+
+`make test-integration-users` starts a separate Enterprise server with `security` and `enable-quotas` enabled. The server's default `admin` / `admin` user creates `u13user`, `phani`, and `u1phani`. `asbench` then runs as each of those users, and the user processor is checked against `QueryUsers` while that load is running. Connections and single-record read and write rates must be above zero. The roles have no rate quota, so the quota stats are present and zero. Set `APE_IT_FEATURE_KEY_FILE` to an Enterprise feature key on the host. When the variable is unset the command prints a skip message and exits 0.
+
+`make test-integration-versions` starts a Community server with the image's own configuration, runs the exporter, and waits until `/metrics` shows `aerospike_node_up` 1 plus a namespace stat and a node stat. Server 5.7 uses the image's file-backed device namespace, because that image rejects `file` inside `storage-engine memory`. The default tag is `7.2.0.11`. Set `APE_IT_SERVER_VERSIONS` to a space-separated list of tags to scrape more than one release. The Integrations server versions workflow scrapes 5.7, 6.4, 7.2, 8.0, 8.1, and 8.2 on pull requests to master and dev, and nightly at 03:00 UTC. The Integration workflow scrapes 7.2 on branch pushes.
+
+`make test-integration-secret-agent` starts Secret Agent with its file backend. Two exporters are started from `ape.toml` files: `ci/secret-agent/ape.toml` connects to Secret Agent over TCP, and `ci/secret-agent/ape-uds.toml` connects over a Unix socket. That suite generates TLS material at runtime and does not commit certificates or private keys. The same runtime material is stored for Secret Agent as text and as base64, then fetched with `secrets:` and `secrets:b64:` and used for a mutual-TLS handshake.
+
+`make test-integration-otel` runs the OpenTelemetry exporter against an OpenTelemetry collector. Compose starts a single-node Aerospike Community Edition server, the collector, and the exporter. The exporter sends OTLP over HTTP to `http://otel-collector:4318/v1/metrics`. The collector writes metrics to a file, and the test waits until `aerospike.server.node_up` and `aerospike.server.node_stats.cluster_size` are present. The gRPC client uses TLS, so this suite uses `http_endpoint`.
+
+### AWS Secrets Manager TLS/mTLS suite
+
+`make test-integration-aws` runs the exporter's HTTPS listener end to end with certificates that come from AWS Secrets Manager through Secret Agent. Each run generates a fresh CA, server certificate, encrypted and unencrypted server keys, and client certificates. It writes them to the secret, starts Secret Agent and the exporter, runs the checks, and then removes the containers and the generated files. The secret value is replaced with a placeholder at the end of the run. When `APE_IT_AWS_SECRET_ARN` is unset the command prints a skip message and exits 0, so CI can run it before that secret exists. `make test-integration` does not read this variable.
+
+The secret must be disposable test data. The suite refuses to write to it unless it carries the tag `ape-integration-test=true`:
+
+```sh
+aws secretsmanager tag-resource --secret-id "$ARN" --tags Key=ape-integration-test,Value=true
+APE_IT_AWS_SECRET_ARN="$ARN" make test-integration-aws
+```
+
+AWS credentials come from the default chain. `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, and `AWS_PROFILE` are passed through, and `~/.aws` is mounted read-only. With SSO, export temporary credentials first, for example `eval "$(aws configure export-credentials --format env)"`. The identity needs `secretsmanager:DescribeSecret`, `secretsmanager:PutSecretValue`, and `secretsmanager:GetSecretValue` on that secret.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `APE_IT_AWS_SECRET_ARN` | unset skips the suite | Secret holding `cert_file`, `key_file`, `key_file_plain`, `root_ca`, `key_file_passphrase`, and `key_file_passphrase_invalid` |
+| `APE_IT_AWS_REGION` | region in the ARN | Region for Secret Agent and the AWS CLI |
+| `APE_IT_AWS_MISSING_SECRET_ARN` | a non-existent ARN in the same account | Used for the missing-secret check |
+| `APE_IT_SA_TRANSPORT` | `tcp` | `tcp`, `tls`, `mtls`, or `uds` between the exporter and Secret Agent |
+| `APE_IT_PEM_ENCODING` | `base64` | `base64` stores PEM values base64-encoded and reads them with `secrets:b64:`. `text` stores PEM as text and reads it with `secrets:` |
+| `APE_IT_SA_BACKEND` | `aws` | `file` runs the same checks with Secret Agent's file backend and no AWS access |
+| `APE_IT_AWS_PLAIN_SECRET_ARN` | unset skips that one test | Secret whose `username` and `password` keys are plain text. A second Secret Agent has `convert-to-base64` on and the exporter reads them with `secrets:b64:APEPlain:username` and `secrets:b64:APEPlain:password` |
+| `APE_IT_PLAIN_USERNAME` | required with the plain ARN | Expected `username` value |
+| `APE_IT_PLAIN_PASSWORD` | required with the plain ARN | Expected `password` value |
+
+The default is base64 because Aerospike's Secret Agent guidance is to store multi-line values such as certificates base64-encoded in AWS Secrets Manager. Passphrases are single-line and are read with `secrets:`.
+
+The suite checks HTTPS with a trusted CA and an untrusted CA, mutual TLS with a valid client certificate, no client certificate, and a certificate from another CA, an encrypted server key unlocked by a passphrase from the secret, and startup failure for a wrong passphrase, an unknown alias, a missing key, and a missing AWS secret. It also checks that exporter output never contains a passphrase or private-key material.
+
+A separate secret covers plain text that Secret Agent base64-encodes. Create it with these keys, leave the values as text, and tag it `ape-integration-test=true`:
+
+```json
+{"username": "<plain username>", "password": "<plain password>"}
+```
+
+The suite does not write this secret. Set `APE_IT_AWS_PLAIN_SECRET_ARN`, `APE_IT_PLAIN_USERNAME`, and `APE_IT_PLAIN_PASSWORD`. The exporter reads `secrets:b64:APEPlain:username` and `secrets:b64:APEPlain:password`. Without the ARN, that one test is skipped.
+
 ## Pseudo Metrics
 
 | S.No | Name  | Description  |

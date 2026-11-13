@@ -1,0 +1,37 @@
+name: ape-versions
+
+services:
+  aerospike:
+    image: aerospike/aerospike-server:${AEROSPIKE_VERSION}
+    environment:
+      NAMESPACE: test
+      DATA_IN_MEMORY: ${DATA_IN_MEMORY:-true}
+      MEM_GB: "1"
+    healthcheck:
+      test: ["CMD", "asinfo", "-v", "status"]
+      interval: 2s
+      timeout: 5s
+      retries: 40
+      start_period: 10s
+
+  ape:
+    image: golang:1.26.10
+    working_dir: /src
+    environment:
+      CGO_ENABLED: "0"
+    command: ["go", "run", "./cmd", "--config", "/etc/ape/ape.toml", "--gauge-list", "/src/configs/gauge_stats_list.toml"]
+    volumes:
+      - ../..:/src
+      - ./ape.toml:/etc/ape/ape.toml:ro
+    depends_on:
+      aerospike:
+        condition: service_healthy
+
+  tester:
+    image: alpine:3.24
+    command: ["/bin/sh", "/scripts/check.sh"]
+    volumes:
+      - ./check.sh:/scripts/check.sh:ro
+    depends_on:
+      ape:
+        condition: service_started

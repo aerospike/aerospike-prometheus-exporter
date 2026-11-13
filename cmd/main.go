@@ -8,6 +8,7 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/executors"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/secretagent"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -31,6 +32,14 @@ func main() {
 
 	// initialize configs and gauge-stats
 	config.InitConfig(*configFile)
+	if err := initSecretAgent(); err != nil {
+		log.Fatalf("Failed to initialize Secret Agent: %s", err)
+	}
+
+	if err := commons.ResolveStartupSecrets(); err != nil {
+		log.Fatalf("Failed to resolve secrets: %s", err)
+	}
+
 	config.InitGaugeStats(*gaugeStatsFile)
 
 	// Initialize signal handling once for all executors
@@ -45,6 +54,32 @@ func main() {
 	}
 
 	select {}
+}
+
+func initSecretAgent() error {
+	settings, err := secretagent.Parse(config.Cfg.SecretAgentConfigs())
+	if err != nil {
+		return err
+	}
+
+	if settings.Mode == secretagent.ModeDisabled {
+		return nil
+	}
+
+	tlsConfig, err := commons.BuildSecretAgentTLS(settings)
+	if err != nil {
+		return err
+	}
+
+	client, err := secretagent.New(settings, tlsConfig)
+	if err != nil {
+		return err
+	}
+
+	commons.RegisterSecretAgent(client)
+	log.Infof("Secret Agent configured using %s %s", settings.Mode, settings.Endpoint())
+
+	return nil
 }
 
 func startExecutor(mode string) {

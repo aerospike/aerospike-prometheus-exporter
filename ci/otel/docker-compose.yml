@@ -1,0 +1,56 @@
+name: ape-otel
+
+services:
+  aerospike:
+    image: aerospike/aerospike-server:7.2.0.11
+    environment:
+      NAMESPACE: test
+      DATA_IN_MEMORY: "true"
+      MEM_GB: "1"
+    healthcheck:
+      test: ["CMD", "asinfo", "-v", "status"]
+      interval: 2s
+      timeout: 5s
+      retries: 40
+      start_period: 5s
+
+  # The exporter gRPC client uses TLS. This suite uses http_endpoint, which
+  # sends OTLP over plain HTTP to the collector /v1/metrics path.
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.128.0
+    user: "0:0"
+    command: ["--config", "/etc/otel/collector.yaml"]
+    volumes:
+      - ./collector.yaml:/etc/otel/collector.yaml:ro
+      - otel-output:/output
+
+  ape:
+    image: golang:1.26.10
+    working_dir: /src
+    environment:
+      CGO_ENABLED: "0"
+    command: ["go", "run", "./cmd", "--config", "/etc/ape/ape.toml", "--gauge-list", "/src/configs/gauge_stats_list.toml"]
+    volumes:
+      - ../..:/src
+      - ./ape.toml:/etc/ape/ape.toml:ro
+      - logs:/logs
+    depends_on:
+      aerospike:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+
+  tester:
+    image: alpine:3.24
+    volumes:
+      - ./scripts/wait.sh:/scripts/wait.sh:ro
+      - otel-output:/output:ro
+      - logs:/logs:ro
+    command: ["/bin/sh", "/scripts/wait.sh"]
+    depends_on:
+      ape:
+        condition: service_started
+
+volumes:
+  otel-output:
+  logs:

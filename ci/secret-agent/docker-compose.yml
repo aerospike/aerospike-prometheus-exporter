@@ -1,0 +1,171 @@
+name: ape-secret-agent
+
+services:
+  # Stay up after the one-shot work. --exit-code-from implies
+  # --abort-on-container-exit, so an exiting init container tears down
+  # the Secret Agent listeners before the tester starts.
+  certs:
+    image: alpine:3.24
+    volumes:
+      - ./scripts/gencerts.sh:/scripts/gencerts.sh:ro
+      - certs:/certs
+    command: ["/bin/sh", "-c", "/bin/sh /scripts/gencerts.sh && while true; do sleep 3600; done"]
+    healthcheck:
+      test: ["CMD", "test", "-f", "/certs/material.json"]
+      interval: 1s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
+
+  sa-tcp:
+    image: aerospike/aerospike-secret-agent:1.4.0
+    user: "0:0"
+    command: ["-config-file", "/config/tcp.yaml"]
+    volumes:
+      - ./config/tcp.yaml:/config/tcp.yaml:ro
+      - ./secrets:/secrets:ro
+      - certs:/certs:ro
+    depends_on:
+      certs:
+        condition: service_healthy
+
+  sa-tls:
+    image: aerospike/aerospike-secret-agent:1.4.0
+    user: "0:0"
+    command: ["-config-file", "/config/tls.yaml"]
+    volumes:
+      - ./config/tls.yaml:/config/tls.yaml:ro
+      - ./secrets:/secrets:ro
+      - certs:/certs:ro
+    depends_on:
+      certs:
+        condition: service_healthy
+
+  sa-mtls:
+    image: aerospike/aerospike-secret-agent:1.4.0
+    user: "0:0"
+    command: ["-config-file", "/config/mtls.yaml"]
+    volumes:
+      - ./config/mtls.yaml:/config/mtls.yaml:ro
+      - ./secrets:/secrets:ro
+      - certs:/certs:ro
+    depends_on:
+      certs:
+        condition: service_healthy
+
+  sa-uds:
+    image: aerospike/aerospike-secret-agent:1.4.0
+    user: "0:0"
+    command: ["-config-file", "/config/uds.yaml"]
+    volumes:
+      - ./config/uds.yaml:/config/uds.yaml:ro
+      - ./secrets:/secrets:ro
+      - uds:/run
+
+  sa-tcp-b64:
+    image: aerospike/aerospike-secret-agent:1.4.0
+    user: "0:0"
+    command: ["-config-file", "/config/tcp-b64.yaml"]
+    volumes:
+      - ./config/tcp-b64.yaml:/config/tcp-b64.yaml:ro
+      - ./secrets:/secrets:ro
+      - certs:/certs:ro
+    depends_on:
+      certs:
+        condition: service_healthy
+
+  wait-agents:
+    image: alpine:3.24
+    volumes:
+      - ./scripts/wait.sh:/scripts/wait.sh:ro
+      - uds:/run
+    command: ["/bin/sh", "-c", "/bin/sh /scripts/wait.sh && touch /tmp/ready && while true; do sleep 3600; done"]
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/ready"]
+      interval: 2s
+      timeout: 2s
+      retries: 40
+      start_period: 70s
+    depends_on:
+      sa-tcp:
+        condition: service_started
+      sa-tls:
+        condition: service_started
+      sa-mtls:
+        condition: service_started
+      sa-uds:
+        condition: service_started
+      sa-tcp-b64:
+        condition: service_started
+
+  ape:
+    image: golang:1.26.10
+    working_dir: /src
+    environment:
+      CGO_ENABLED: "0"
+    command: ["go", "run", "./cmd", "--config", "/etc/ape/ape.toml", "--gauge-list", "/src/configs/gauge_stats_list.toml"]
+    volumes:
+      - ../..:/src
+      - ./ape.toml:/etc/ape/ape.toml:ro
+      - logs:/logs
+    depends_on:
+      wait-agents:
+        condition: service_healthy
+
+  # Same exporter, configured by ape-uds.toml to reach Secret Agent through the Unix socket.
+  ape-uds:
+    image: golang:1.26.10
+    working_dir: /src
+    environment:
+      CGO_ENABLED: "0"
+    command: ["go", "run", "./cmd", "--config", "/etc/ape/ape.toml", "--gauge-list", "/src/configs/gauge_stats_list.toml"]
+    volumes:
+      - ../..:/src
+      - ./ape-uds.toml:/etc/ape/ape.toml:ro
+      - logs:/logs
+      - uds:/run
+    depends_on:
+      wait-agents:
+        condition: service_healthy
+
+  tester:
+    image: golang:1.26.10
+    working_dir: /src
+    environment:
+      CGO_ENABLED: "0"
+      APE_SECRET_AGENT_IT: "1"
+      APE_SA_TCP: sa-tcp:3005
+      APE_SA_TLS: sa-tls:3005
+      APE_SA_MTLS: sa-mtls:3005
+      APE_SA_UDS: /run/secret-agent.sock
+      APE_SA_TCP_B64: sa-tcp-b64:3005
+      APE_SA_CA_FILE: /certs/ca.crt
+      APE_SA_OTHER_CA_FILE: /certs/other-ca.crt
+      APE_SA_CLIENT_CERT: /certs/client.crt
+      APE_SA_CLIENT_KEY: /certs/client.key
+      APE_SA_TLS_NAME: secretagent
+      APE_METRICS_URL: http://ape:9145/metrics
+      APE_UDS_METRICS_URL: http://ape-uds:9146/metrics
+      APE_UDS_LOG_FILE: /logs/ape-uds.log
+      APE_BASIC_AUTH_USER: exporter
+      APE_BASIC_AUTH_PASSWORD: ape-it-basic-auth-9f3c
+      APE_DB_PASSWORD: ape-it-db-password-9f3c
+      APE_LOG_FILE: /logs/ape.log
+    command: ["go", "test", "-tags", "integration", "-count=1", "-timeout", "20m", "./internal/pkg/secretagent/", "-run", "TestIntegration"]
+    volumes:
+      - ../..:/src
+      - certs:/certs:ro
+      - uds:/run
+      - logs:/logs:ro
+    depends_on:
+      wait-agents:
+        condition: service_healthy
+      ape:
+        condition: service_started
+      ape-uds:
+        condition: service_started
+
+volumes:
+  certs:
+  uds:
+  logs:

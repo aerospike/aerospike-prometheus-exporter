@@ -1,0 +1,50 @@
+name: ape-processor
+
+services:
+  aerospike:
+    image: aerospike/aerospike-server-enterprise:8.2.0.0
+    user: "0:0"
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        mkdir -p \
+          /opt/aerospike/data/emp_flash_index \
+          /opt/aerospike/data/emp_flash_sindex \
+          /opt/aerospike/data/checkpoint \
+          /var/log/aerospike \
+          /var/run/aerospike
+        exec asd --config-file /opt/aerospike/aerospike.conf --preview index-checkpoint --fgdaemon
+    volumes:
+      - ./aerospike.conf:/opt/aerospike/aerospike.conf:ro
+      - ${APE_IT_FEATURE_KEY_FILE}:/etc/aerospike/features.conf:ro
+    healthcheck:
+      test: ["CMD", "asinfo", "-v", "status"]
+      interval: 2s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  tester:
+    image: golang:1.26.10
+    working_dir: /src
+    environment:
+      CGO_ENABLED: "0"
+      AEROSPIKE_HOST: aerospike
+      AEROSPIKE_PORT: "3000"
+    command:
+      - go
+      - test
+      - -tags
+      - integration
+      - -count=1
+      - -timeout
+      - 240s
+      - ./internal/pkg/statprocessors/
+      - -run
+      - LiveServerInfo
+    volumes:
+      - ../..:/src
+    depends_on:
+      aerospike:
+        condition: service_healthy
