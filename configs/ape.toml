@@ -72,19 +72,17 @@
       basic_auth_username = ""
       basic_auth_password = ""
 
-      # Secret Agent is optional. Leave this section empty to keep existing configuration behavior.
-      # Connection mode is inferred:
-      # - socket_path alone uses a Unix domain socket
-      # - address and port use TCP
-      # - address, port, tls_name and ca_file use TLS; cert_file and key_file together use mutual TLS
-      # Do not set both a TCP endpoint and socket_path.
-      # ca_file, cert_file, key_file and key_file_passphrase in this section cannot use secrets: references.
-      # TLS certificate verification is always enabled. timeout is in seconds.
-      # "secrets:<resource>:<key>" uses SecretValue as text. "secrets:b64:<resource>:<key>" base64-decodes it once.
-
+# Secret Agent is optional. Leave this section empty to keep existing configuration behavior.
+# Connection mode is inferred:
+# NOTE: Do not set both a TCP endpoint and socket_path.
+# NOTE: ca_file, cert_file, key_file and key_file_passphrase in this section cannot use secrets: references.
+# TLS certificate verification is always enabled. timeout is in seconds.
 # [Agent.SecretAgent]
+      # TCP - address and port use TCP
+      # TCP - tls/mts - address, port, tls_name and ca_file use TLS; cert_file and key_file together use mutual TLS
       # address = "127.0.0.1"
       # port = 3005
+      # UDS - socket_path alone uses a Unix domain socket
       # socket_path = ""
       # tls_name = ""
       # ca_file = ""

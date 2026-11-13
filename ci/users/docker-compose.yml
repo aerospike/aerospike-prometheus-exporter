@@ -1,0 +1,75 @@
+name: ape-users
+
+services:
+  aerospike:
+    image: aerospike/aerospike-server-enterprise:8.2.0.0
+    user: "0:0"
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        mkdir -p /opt/aerospike/data /var/log/aerospike /var/run/aerospike
+        asd --config-file /opt/aerospike/aerospike.conf --fgdaemon &
+        asd_pid=$$!
+        for _ in $$(seq 1 60); do
+          if asadm -h 127.0.0.1 -p 3000 -U admin -P admin --enable -e 'show users'; then
+            break
+          fi
+          sleep 1
+        done
+        asadm -h 127.0.0.1 -p 3000 -U admin -P admin --enable -e 'manage acl create user u13user password u13pwd roles service-ctrl user-admin sys-admin read-write'
+        asadm -h 127.0.0.1 -p 3000 -U admin -P admin --enable -e 'manage acl create user phani password phanipwd roles service-ctrl user-admin sys-admin read-write'
+        asadm -h 127.0.0.1 -p 3000 -U admin -P admin --enable -e 'manage acl create user u1phani password u1phanipwd roles service-ctrl user-admin sys-admin read-write'
+        touch /var/run/aerospike/users.ready
+        wait "$$asd_pid"
+    volumes:
+      - ./aerospike.conf:/opt/aerospike/aerospike.conf:ro
+      - ${APE_IT_FEATURE_KEY_FILE}:/etc/aerospike/features.conf:ro
+    healthcheck:
+      test: ["CMD", "test", "-f", "/var/run/aerospike/users.ready"]
+      interval: 2s
+      timeout: 5s
+      retries: 40
+      start_period: 15s
+
+  bench:
+    image: aerospike/aerospike-tools:13.1.0
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        asbench -h aerospike -p 3000 -U u13user --password=u13pwd -n test -s demo -k 200 -t 45 -w RU,50 -z 4 -o I &
+        asbench -h aerospike -p 3000 -U phani --password=phanipwd -n test -s demo -k 200 -t 45 -w RU,50 -z 4 -o I &
+        asbench -h aerospike -p 3000 -U u1phani --password=u1phanipwd -n test -s demo -k 200 -t 45 -w RU,50 -z 4 -o I &
+        wait
+    depends_on:
+      aerospike:
+        condition: service_healthy
+
+  tester:
+    image: golang:1.26.10
+    working_dir: /src
+    environment:
+      CGO_ENABLED: "0"
+      AEROSPIKE_HOST: aerospike
+      AEROSPIKE_PORT: "3000"
+      AEROSPIKE_USER: admin
+      AEROSPIKE_PASSWORD: admin
+    command:
+      - go
+      - test
+      - -tags
+      - integration
+      - -count=1
+      - -timeout
+      - 180s
+      - ./internal/pkg/statprocessors/
+      - -run
+      - TestLiveUserStatsAfterAsbench
+    volumes:
+      - ../..:/src
+    depends_on:
+      aerospike:
+        condition: service_healthy
+      bench:
+        condition: service_started

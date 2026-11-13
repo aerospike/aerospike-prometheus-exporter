@@ -48,6 +48,64 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
         run: make test-integration-aws
 
+  processor:
+    name: processor info
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Processor info integration
+        env:
+          APE_IT_FEATURE_KEY: ${{ secrets.APE_IT_FEATURE_KEY }}
+        run: |
+          if [ -z "${APE_IT_FEATURE_KEY}" ]; then
+            make test-integration-processor
+            exit 0
+          fi
+          key="${RUNNER_TEMP}/features.conf"
+          printf '%s\n' "${APE_IT_FEATURE_KEY}" > "${key}"
+          APE_IT_FEATURE_KEY_FILE="${key}" make test-integration-processor
+
+  users:
+    name: user stats
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: User stats integration
+        env:
+          APE_IT_FEATURE_KEY: ${{ secrets.APE_IT_FEATURE_KEY }}
+        run: |
+          if [ -z "${APE_IT_FEATURE_KEY}" ]; then
+            make test-integration-users
+            exit 0
+          fi
+          key="${RUNNER_TEMP}/features.conf"
+          printf '%s\n' "${APE_IT_FEATURE_KEY}" > "${key}"
+          APE_IT_FEATURE_KEY_FILE="${key}" make test-integration-users
+
+  server-7.2:
+    name: server 7.2 scrape
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Exporter scrape
+        run: make test-integration-versions
+
   otel:
     name: otel collector
     runs-on: ubuntu-latest
