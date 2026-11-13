@@ -82,14 +82,16 @@
       # TCP - tls/mts - address, port, tls_name and ca_file use TLS; cert_file and key_file together use mutual TLS
       # address = "127.0.0.1"
       # port = 3005
-      # UDS - socket_path alone uses a Unix domain socket
-      # socket_path = ""
       # tls_name = ""
       # ca_file = ""
       # cert_file = ""
       # key_file = ""
       # key_file_passphrase = ""
       # timeout = 5
+      
+      # UDS - socket_path alone uses a Unix domain socket
+      # socket_path = ""
+
 
 [Agent.OpenTelemetry]
       # OTel service-name
