@@ -5,7 +5,7 @@ services:
     image: aerospike/aerospike-server:${AEROSPIKE_VERSION}
     environment:
       NAMESPACE: test
-      DATA_IN_MEMORY: "true"
+      DATA_IN_MEMORY: ${DATA_IN_MEMORY:-true}
       MEM_GB: "1"
     healthcheck:
       test: ["CMD", "asinfo", "-v", "status"]
