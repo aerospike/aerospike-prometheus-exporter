@@ -79,7 +79,7 @@
 # TLS certificate verification is always enabled. timeout is in seconds.
 # [Agent.SecretAgent]
       # TCP - address and port use TCP
-      # TCP - tls/mts - address, port, tls_name and ca_file use TLS; cert_file and key_file together use mutual TLS
+      # TCP - tls/mtls - address, port, tls_name and ca_file use TLS; cert_file and key_file together use mutual TLS
       # address = "127.0.0.1"
       # port = 3005
       # tls_name = ""
