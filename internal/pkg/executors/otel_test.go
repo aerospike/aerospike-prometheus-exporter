@@ -2,6 +2,7 @@ package executors
 
 import (
 	"context"
+	"encoding/base64"
 	"testing"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
@@ -146,6 +147,8 @@ func TestOtelReadHeaders(t *testing.T) {
 		"literal":       "plain-token",
 		"env":           "env:APE_OTEL_TOKEN",
 		"Authorization": "secrets:APE:ApiKey",
+		"b64-agent":     "secrets:b64:APE:ApiKeyB64",
+		"b64-inline":    "b64:" + base64.StdEncoding.EncodeToString([]byte("inline-token")),
 		"colon":         "Bearer abc:def",
 	}
 
@@ -155,6 +158,8 @@ func TestOtelReadHeaders(t *testing.T) {
 		"literal":       "plain-token",
 		"env":           "from-env",
 		"Authorization": "from-agent",
+		"b64-agent":     "from-agent",
+		"b64-inline":    "inline-token",
 		"colon":         "Bearer abc:def",
 	}, headers)
 
@@ -266,6 +271,9 @@ type otelFetcher struct {
 func (f *otelFetcher) Fetch(_ context.Context, resource, key string) ([]byte, error) {
 	if resource == "APE" && key == "ApiKey" {
 		return []byte(f.value), nil
+	}
+	if resource == "APE" && key == "ApiKeyB64" {
+		return []byte(base64.StdEncoding.EncodeToString([]byte(f.value))), nil
 	}
 	return nil, errMissingOtelSecret
 }

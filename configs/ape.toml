@@ -113,7 +113,7 @@
       # OTel headers, 
       # NOTE: Each header will be a "<key>"="<value>" pair and each header is comma separated
       # Example: "api-key"="<api-key>","Authorization"="Api-Token <token>"
-      # Header values support the same secret formats as basic_auth_password, including "secrets:<resource>:<key>" and "secrets:b64:<resource>:<key>".
+      # Header Values support "b64:<base64-encoded-value>", "secrets:<resource>:<key>" and "secrets:b64:<resource>:<key>".
       headers = {}
 
       # OTel server-stat fetch interval (default 15, not recommended to to reduce this)
