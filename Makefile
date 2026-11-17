@@ -2,6 +2,9 @@
 # Include all common variables
 include Makefile.vars
 
+# Go toolchain used by the CI compose images. Read from go.mod so the version is set in one place.
+export CI_GO_VERSION := $(shell awk '/^go /{print $$2; exit}' go.mod)
+
 # Builds exporter binary
 .PHONY: exporter
 exporter:

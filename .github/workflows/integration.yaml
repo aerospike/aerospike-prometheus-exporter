@@ -70,7 +70,7 @@ jobs:
           printf '%s\n' "${APE_IT_FEATURE_KEY}" > "${key}"
           APE_IT_FEATURE_KEY_FILE="${key}" make test-integration-users
 
-  server-7.2:
+  server-72:
     name: server 7.2 scrape
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest

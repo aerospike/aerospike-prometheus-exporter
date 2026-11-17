@@ -99,7 +99,7 @@ services:
         condition: service_started
 
   ape:
-    image: golang:1.26.10
+    image: golang:${CI_GO_VERSION:?set by make from go.mod}
     working_dir: /src
     environment:
       CGO_ENABLED: "0"
@@ -114,7 +114,7 @@ services:
 
   # Same exporter, configured by ape-uds.toml to reach Secret Agent through the Unix socket.
   ape-uds:
-    image: golang:1.26.10
+    image: golang:${CI_GO_VERSION:?set by make from go.mod}
     working_dir: /src
     environment:
       CGO_ENABLED: "0"
@@ -129,7 +129,7 @@ services:
         condition: service_healthy
 
   tester:
-    image: golang:1.26.10
+    image: golang:${CI_GO_VERSION:?set by make from go.mod}
     working_dir: /src
     environment:
       CGO_ENABLED: "0"
