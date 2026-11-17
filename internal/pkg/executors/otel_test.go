@@ -146,6 +146,7 @@ func TestOtelReadHeaders(t *testing.T) {
 		"literal":       "plain-token",
 		"env":           "env:APE_OTEL_TOKEN",
 		"Authorization": "secrets:APE:ApiKey",
+		"colon":         "Bearer abc:def",
 	}
 
 	headers, err := (&OtelExecutor{}).readHeaders()
@@ -154,6 +155,7 @@ func TestOtelReadHeaders(t *testing.T) {
 		"literal":       "plain-token",
 		"env":           "from-env",
 		"Authorization": "from-agent",
+		"colon":         "Bearer abc:def",
 	}, headers)
 
 	config.Cfg.Agent.Otel.Headers = map[string]string{"api-key": "secrets:APE:Missing"}

@@ -223,6 +223,26 @@ func TestResolveStartupSecrets(t *testing.T) {
 	require.NotContains(t, err.Error(), "value-DbPassword")
 }
 
+func TestGetSecretKeepsUnprefixedColonValuesAsText(t *testing.T) {
+	t.Cleanup(func() { RegisterSecretAgent(nil) })
+
+	for _, value := range []string{"Bearer abc:def", "user:pass", "host:3000"} {
+		got, err := GetSecret(value)
+		require.NoError(t, err, value)
+		require.Equal(t, value, string(got))
+	}
+}
+
+func TestGetCertificateReadsPathWithColon(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "ca:old.pem")
+	require.NoError(t, os.WriteFile(path, []byte("pem-bytes"), 0o600))
+
+	got, err := getCertificate(path)
+	require.NoError(t, err)
+	require.Equal(t, "pem-bytes", string(got))
+}
+
 func TestBundledConfigLeavesSecretAgentDisabled(t *testing.T) {
 	path := filepath.Join("..", "..", "..", "configs", "ape.toml")
 	blob, err := os.ReadFile(path)

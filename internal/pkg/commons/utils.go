@@ -103,12 +103,10 @@ func GetSecret(secretConfig string) ([]byte, error) {
 
 		case "b64":
 			return GetValueFromBase64(secretSource[1])
-
-		default:
-			return nil, fmt.Errorf("invalid source: %s", secretSource[0])
 		}
 	}
 
+	// Any other value is literal text, including one that contains ':' such as "Bearer abc:def".
 	return []byte(secretConfig), nil
 }
 
@@ -279,13 +277,10 @@ func getCertificate(certConfig string) ([]byte, error) {
 
 		case "b64":
 			return GetValueFromBase64(certificateSource[1])
-
-		default:
-			return nil, fmt.Errorf("invalid source %s", certificateSource[0])
 		}
 	}
 
-	// Assume certConfig is a file path (backward compatible)
+	// Any other value is a file path (backward compatible), including one that contains ':'.
 	return readFromFile(certConfig)
 }
 
