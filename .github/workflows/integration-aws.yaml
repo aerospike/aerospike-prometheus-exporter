@@ -2,8 +2,11 @@ name: Integration AWS
 on:
   push:
     branches:
-      - dev
+      - "**"
+  pull_request:
+    branches:
       - master
+      - dev
   workflow_dispatch:
 
 # AWS runs write to one shared secret and scrub it afterwards. Serialize them
@@ -19,6 +22,9 @@ permissions:
 jobs:
   secret-agent-aws:
     name: secret agent aws
+    # A fork pull request does not receive the AWS secrets, and its code would
+    # run with the role. Same-repository pull requests and branch pushes do.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -31,8 +37,9 @@ jobs:
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Short-lived credentials from OIDC. The role trusts only this repository's
-      # dev and master branches and can read and write APE_IT_AWS_SECRET_ARN.
+      # Short-lived credentials from OIDC. The role must trust the ref GitHub
+      # sends: refs/heads/<branch> for a push, and pull_request for a pull request.
+      # It can read and write APE_IT_AWS_SECRET_ARN.
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
