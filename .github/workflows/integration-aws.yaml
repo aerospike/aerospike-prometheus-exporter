@@ -1,0 +1,48 @@
+name: Integration AWS
+on:
+  push:
+    branches:
+      - dev
+      - master
+  workflow_dispatch:
+
+# AWS runs write to one shared secret and scrub it afterwards. Serialize them
+# in their own group and never cancel a running job, so an overlapping run
+# cannot replace the material or scrub it while another run reads it.
+concurrency:
+  group: integration-aws
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  secret-agent-aws:
+    name: secret agent aws
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Short-lived credentials from OIDC. The role trusts only this repository's
+      # dev and master branches and can read and write APE_IT_AWS_SECRET_ARN.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.APE_IT_AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Secret Agent AWS integration
+        env:
+          APE_IT_AWS_SECRET_ARN: ${{ secrets.APE_IT_AWS_SECRET_ARN }}
+          APE_IT_AWS_PLAIN_SECRET_ARN: ${{ secrets.APE_IT_AWS_PLAIN_SECRET_ARN }}
+          APE_IT_PLAIN_USERNAME: ${{ secrets.APE_IT_PLAIN_USERNAME }}
+          APE_IT_PLAIN_PASSWORD: ${{ secrets.APE_IT_PLAIN_PASSWORD }}
+        run: make test-integration-aws
