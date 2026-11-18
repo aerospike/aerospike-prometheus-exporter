@@ -38,6 +38,7 @@ const (
 	METRIC_LABEL_NS_STATE                  = "ns_state"
 	METRIC_LABEL_BACKUP_ID                 = "backup_id"
 	METRIC_LABEL_CLUSTER_KEY               = "cluster_key"
+	METRIC_LABEL_ACHIEVED_CONSISTENCY      = "achieved_consistency"
 )
 
 // constants used to identify type of metrics

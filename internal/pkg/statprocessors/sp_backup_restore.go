@@ -19,6 +19,10 @@ const (
 	// aerospike_backup_job / aerospike_restore_job, labeled with job_id and state.
 	// The job_id stays a label on every other metric.
 	STAT_JOB = "job"
+
+	// STAT_ACHIEVED_CONSISTENCY is a gauge whose value is the consistency level reached:
+	// 0 while it is "-", 1 for relaxed, 2 for strict. The level is also the label.
+	STAT_ACHIEVED_CONSISTENCY = "achieved-consistency"
 )
 
 // BackupRestoreStatsProcessor exports the per-node status of in-server backup and restore jobs.
@@ -123,10 +127,17 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 			allMetricsToSend = append(allMetricsToSend, bw.jobMetric(context, metrics, jobLabels, jobLabelValues))
 		}
 
+		// achieved-consistency is an enum ("-", "relaxed", "strict"), so it is its own gauge
+		// valued by the level reached and labeled with the level, rather than a number
+		if consistency, hasConsistency := stats[STAT_ACHIEVED_CONSISTENCY]; hasConsistency {
+			allMetricsToSend = append(allMetricsToSend,
+				bw.achievedConsistencyMetric(context, metrics, consistency, labels, labelValues))
+		}
+
 		for stat, value := range stats {
 			// identifiers and non-numeric descriptors are used as labels, not as metrics.
 			// cluster-key is hex, so an all-digit key would otherwise slip through as a number.
-			if stat == "job-id" || stat == "ns" || stat == "cluster-key" || stat == "backup-id" {
+			if stat == "job-id" || stat == "ns" || stat == "cluster-key" || stat == "backup-id" || stat == STAT_ACHIEVED_CONSISTENCY {
 				continue
 			}
 
@@ -174,6 +185,37 @@ func (bw *BackupRestoreStatsProcessor) jobMetric(context commons.ContextType, me
 	return asMetric
 }
 
+// consistencyLevel maps the achieved-consistency enum to a number: nothing yet, relaxed, strict.
+func consistencyLevel(value string) float64 {
+	switch strings.ToLower(value) {
+	case "relaxed":
+		return 1
+	case "strict":
+		return 2
+	default:
+		return 0
+	}
+}
+
+// achievedConsistencyMetric emits one gauge per job for the consistency level reached.
+// The level is both the value and the label, so it can be read as a number or filtered by name.
+func (bw *BackupRestoreStatsProcessor) achievedConsistencyMetric(context commons.ContextType, metrics map[string]AerospikeStat, consistency string, labels []string, labelValues []string) AerospikeStat {
+
+	asMetric, exists := metrics[STAT_ACHIEVED_CONSISTENCY]
+
+	if !exists {
+		allowed := isMetricAllowed(context, STAT_ACHIEVED_CONSISTENCY)
+		asMetric = NewAerospikeStat(context, STAT_ACHIEVED_CONSISTENCY, allowed)
+		asMetric.MType = commons.MetricTypeGauge
+		metrics[STAT_ACHIEVED_CONSISTENCY] = asMetric
+	}
+
+	asMetric.updateValues(consistencyLevel(consistency),
+		append(labels, commons.METRIC_LABEL_ACHIEVED_CONSISTENCY), append(labelValues, consistency))
+
+	return asMetric
+}
+
 // appendLabelIfPresent adds a label only when the server emitted a real value for it.
 // An absent field, an empty value, or "-" all mean the field was not emitted.
 func appendLabelIfPresent(labels []string, labelValues []string, label string, value string) ([]string, []string) {
@@ -192,17 +234,25 @@ var serverTimeFormats = []string{
 }
 
 // numericValue returns the metric value for one field and whether it came from a boolean.
-// Timestamps become unix milliseconds so a job's duration is finish-time minus start-time;
-// "-" means the time was never reached and is skipped.
+// Timestamps become unix milliseconds so a job's duration is finish-time minus start-time.
+// finish-time is "-" (or unparseable) while the job has not finished, and is exported as 0 so
+// the metric is always present. start-time is skipped instead: a 0 there is a real epoch and
+// would make the duration enormous.
 func numericValue(stat string, value string) (float64, bool, bool) {
 	if stat == "start-time" || stat == "finish-time" {
 		if value == "-" {
+			if stat == "finish-time" {
+				return 0, false, true
+			}
 			return 0, false, false
 		}
 
 		t, ok := parseServerTime(value)
 		if !ok {
 			log.Debugf("backup-restore: unparseable %s %q", stat, value)
+			if stat == "finish-time" {
+				return 0, false, true
+			}
 			return 0, false, false
 		}
 

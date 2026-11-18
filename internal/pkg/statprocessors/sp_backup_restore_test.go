@@ -47,8 +47,8 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	bw := NewBackupRestoreStatsProcessor(sharedState)
 
 	raw := map[string]string{
-		KEY_BACKUP_STATUS: "job-id=b1:ns=test:state=RUNNING:progress-pct=42.50:change-stream-active=true:start-time=20260728T161500.250Z:finish-time=-;" +
-			"job-id=b2:ns=test:state=ABORTED:start-time=2026-11-10 06.19.51.659 UTC:finish-time=2026-11-10 06.19.52.836 UTC:error-reason=job-id reuse prefix already holds a finished backup:abort-origin=server",
+		KEY_BACKUP_STATUS: "job-id=b1:ns=test:state=RUNNING:progress-pct=42.50:change-stream-active=true:start-time=20260728T161500.250Z:finish-time=-:achieved-consistency=-;" +
+			"job-id=b2:ns=test:state=ABORTED:start-time=2026-11-10 06.19.51.659 UTC:finish-time=2026-11-10 06.19.52.836 UTC:error-reason=job-id reuse prefix already holds a finished backup:abort-origin=server:achieved-consistency=strict",
 		KEY_RESTORE_STATUS: "ns=test:ns-state=NORMAL;job-id=r1:ns=test:kind=cold:ns-state=RESTORING:state=COMPLETE:progress-pct=100.00:applied=7:joiner=false:done=false:backup-id=daily1:cluster-key=3F6AF2E3A109",
 	}
 
@@ -72,6 +72,19 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	assert.Equal(t, 1.0, backupJob.Value)
 	assert.Equal(t, []string{commons.METRIC_LABEL_STATE}, backupJob.Labels[4:])
 	assert.Equal(t, []string{"c1", "10.0.0.1:3000", "test", "b1", "RUNNING"}, backupJob.LabelValues)
+
+	// achieved-consistency is its own gauge: 0 while "-", 2 for strict, with the level as a label
+	pending, ok := byKey["backup/achieved-consistency/b1"]
+	assert.True(t, ok)
+	assert.Equal(t, commons.MetricTypeGauge, pending.MType)
+	assert.Equal(t, 0.0, pending.Value)
+	assert.Equal(t, []string{"-"}, pending.LabelValues[4:])
+
+	reached, ok := byKey["backup/achieved-consistency/b2"]
+	assert.True(t, ok)
+	assert.Equal(t, 2.0, reached.Value)
+	assert.Equal(t, []string{commons.METRIC_LABEL_ACHIEVED_CONSISTENCY}, reached.Labels[4:])
+	assert.Equal(t, []string{"strict"}, reached.LabelValues[4:])
 
 	// error-reason and abort-origin are not job labels for now, even on an aborted job
 	abortedJob, ok := byKey["backup/job/b2"]
@@ -112,13 +125,14 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	assert.Equal(t, 7.0, restoreApplied.Value)
 	assert.Equal(t, []string{"c1", "10.0.0.1:3000", "test", "r1"}, restoreApplied.LabelValues)
 
-	// timestamps become unix milliseconds; finish-time is "-" while the job is still running
+	// timestamps become unix milliseconds; finish-time is "-" while the job is still running and is exported as 0
 	start, ok := byKey["backup/start-time/b1"]
 	assert.True(t, ok)
 	assert.Equal(t, float64(time.Date(2026, 7, 28, 16, 15, 0, int(250*time.Millisecond), time.UTC).UnixMilli()), start.Value)
 
-	_, hasFinish := byKey["backup/finish-time/b1"]
-	assert.False(t, hasFinish)
+	runningFinish, ok := byKey["backup/finish-time/b1"]
+	assert.True(t, ok)
+	assert.Equal(t, 0.0, runningFinish.Value)
 
 	// the live server prints "2026-11-10 06.19.51.659 UTC"
 	liveStart, ok := byKey["backup/start-time/b2"]
