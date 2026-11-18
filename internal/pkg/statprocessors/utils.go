@@ -65,6 +65,12 @@ func isMetricAllowed(pContextType commons.ContextType, pRawStatName string) bool
 	case commons.CTX_XDR:
 		pAllowlist = config.Cfg.Aerospike.XdrMetricsAllowlist
 		pBlocklist = config.Cfg.Aerospike.XdrMetricsBlocklist
+	case commons.CTX_BACKUP:
+		pAllowlist = config.Cfg.Aerospike.BackupMetricsAllowlist
+		pBlocklist = config.Cfg.Aerospike.BackupMetricsBlocklist
+	case commons.CTX_RESTORE:
+		pAllowlist = config.Cfg.Aerospike.RestoreMetricsAllowlist
+		pBlocklist = config.Cfg.Aerospike.RestoreMetricsBlocklist
 
 	}
 

@@ -217,6 +217,14 @@
       # sindex_metrics_allowlist = []
       # sindex_metrics_blocklist = []
 
+      # In-server backup and restore metrics (backup-status and restore-status), available from Aerospike 8.2.1.
+      # Commenting these out collects every backup and restore stat the server emits.
+      # to exclude or stop all backup or restore metrics, use ["*"] in the blocklist
+      # backup_metrics_allowlist = []
+      # backup_metrics_blocklist = []
+      # restore_metrics_allowlist = []
+      # restore_metrics_blocklist = []
+
       # interval in minutes to send index-pressure command to server
       # NOTE: 0 means disable, never send the command
       index_pressure_stats_fetch_interval = 10

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -142,4 +143,48 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	// the bare ns row has no job-id, so it must not produce any metric
 	_, hasNsState := byKey["restore/ns-state"]
 	assert.False(t, hasNsState)
+}
+
+// Test_BackupRestore_AllowlistAndBlocklist checks that backup_metrics_* and restore_metrics_* in
+// ape.toml filter the stats, the same way the namespace and node lists do.
+func Test_BackupRestore_AllowlistAndBlocklist(t *testing.T) {
+	config.Cfg.Aerospike.BackupMetricsAllowlist = []string{"recs-*", "job"}
+	config.Cfg.Aerospike.BackupMetricsBlocklist = []string{"recs-filtered"}
+	config.Cfg.Aerospike.RestoreMetricsAllowlist = []string{"applied"}
+	defer func() {
+		config.Cfg.Aerospike.BackupMetricsAllowlist = nil
+		config.Cfg.Aerospike.BackupMetricsBlocklist = nil
+		config.Cfg.Aerospike.RestoreMetricsAllowlist = nil
+	}()
+
+	sharedState := NewStatProcessorSharedState()
+	sharedState.ClusterName = "c1"
+	sharedState.Service = "10.0.0.1:3000"
+	bw := NewBackupRestoreStatsProcessor(sharedState)
+
+	raw := map[string]string{
+		KEY_BACKUP_STATUS:  "job-id=b1:ns=test:state=RUNNING:recs-backed-up=5:recs-filtered=2:bytes-backed-up=9",
+		KEY_RESTORE_STATUS: "job-id=r1:ns=test:state=ACTIVE:applied=7:failed=3",
+	}
+
+	metrics, err := bw.Refresh(nil, raw)
+	assert.Nil(t, err)
+
+	allowed := map[string]bool{}
+	for _, m := range metrics {
+		allowed[string(m.Context)+"/"+m.Name] = m.IsAllowed
+	}
+
+	// recs-* matches the allowlist, but recs-filtered is blocked; bytes-backed-up matches neither
+	assert.True(t, allowed["backup/recs-backed-up"])
+	assert.False(t, allowed["backup/recs-filtered"])
+	assert.False(t, allowed["backup/bytes-backed-up"])
+
+	// the job gauge is filtered too, since it is built through the same check
+	assert.True(t, allowed["backup/job"])
+
+	// restore has its own lists: applied is allowed, failed is not
+	assert.True(t, allowed["restore/applied"])
+	assert.False(t, allowed["restore/failed"])
+	assert.False(t, allowed["restore/job"])
 }

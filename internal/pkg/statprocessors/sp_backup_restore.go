@@ -23,6 +23,11 @@ const (
 	// STAT_ACHIEVED_CONSISTENCY is a gauge whose value is the consistency level reached:
 	// 0 while it is "-", 1 for relaxed, 2 for strict. The level is also the label.
 	STAT_ACHIEVED_CONSISTENCY = "achieved-consistency"
+
+	// BACKUP_RESTORE_MIN_BUILD is the first server build that reports backup-status and restore-status.
+	// Keep this at 8.2.1. For local testing against an 8.1.1 server, change it locally only and do
+	// not commit that change.
+	BACKUP_RESTORE_MIN_BUILD = "8.2.1"
 )
 
 // BackupRestoreStatsProcessor exports the per-node status of in-server backup and restore jobs.
@@ -54,8 +59,8 @@ func (bw *BackupRestoreStatsProcessor) PassTwoKeys(passOneStats map[string]strin
 		return nil
 	}
 
-	// in-server backup and restore is only available from 8.2.1 onwards
-	ge, err := isBuildVersionGreaterThanOrEqual(bw.sharedState.Build, "8.2.1")
+	// in-server backup and restore is only available from BACKUP_RESTORE_MIN_BUILD onwards
+	ge, err := isBuildVersionGreaterThanOrEqual(bw.sharedState.Build, BACKUP_RESTORE_MIN_BUILD)
 
 	if err != nil {
 		return nil
