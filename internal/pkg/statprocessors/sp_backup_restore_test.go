@@ -49,7 +49,7 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	raw := map[string]string{
 		KEY_BACKUP_STATUS: "job-id=b1:ns=test:state=RUNNING:progress-pct=42.50:change-stream-active=true:start-time=20260728T161500.250Z:finish-time=-;" +
 			"job-id=b2:ns=test:state=ABORTED:start-time=2026-11-10 06.19.51.659 UTC:finish-time=2026-11-10 06.19.52.836 UTC:error-reason=job-id reuse prefix already holds a finished backup:abort-origin=server",
-		KEY_RESTORE_STATUS: "ns=test:ns-state=NORMAL;job-id=r1:ns=test:kind=cold:ns-state=RESTORING:state=COMPLETE:progress-pct=100.00:applied=7:backup-id=daily1:cluster-key=3F6AF2E3A109",
+		KEY_RESTORE_STATUS: "ns=test:ns-state=NORMAL;job-id=r1:ns=test:kind=cold:ns-state=RESTORING:state=COMPLETE:progress-pct=100.00:applied=7:joiner=false:done=false:backup-id=daily1:cluster-key=3F6AF2E3A109",
 	}
 
 	metrics, err := bw.Refresh(nil, raw)
@@ -73,11 +73,11 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	assert.Equal(t, []string{commons.METRIC_LABEL_STATE}, backupJob.Labels[4:])
 	assert.Equal(t, []string{"c1", "10.0.0.1:3000", "test", "b1", "RUNNING"}, backupJob.LabelValues)
 
-	// a failed job adds error-reason as a label
+	// error-reason and abort-origin are not job labels for now, even on an aborted job
 	abortedJob, ok := byKey["backup/job/b2"]
 	assert.True(t, ok)
-	assert.Equal(t, []string{commons.METRIC_LABEL_STATE, commons.METRIC_LABEL_ERROR_REASON, commons.METRIC_LABEL_ABORT_ORIGIN}, abortedJob.Labels[4:])
-	assert.Equal(t, []string{"ABORTED", "job-id reuse prefix already holds a finished backup", "server"}, abortedJob.LabelValues[4:])
+	assert.Equal(t, []string{commons.METRIC_LABEL_STATE}, abortedJob.Labels[4:])
+	assert.Equal(t, []string{"ABORTED"}, abortedJob.LabelValues[4:])
 
 	restoreJob, ok := byKey["restore/job/r1"]
 	assert.Equal(t, commons.MetricTypeGauge, restoreJob.MType)
@@ -95,6 +95,17 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	cs, ok := byKey["backup/change-stream-active/b1"]
 	assert.True(t, ok)
 	assert.Equal(t, 1.0, cs.Value)
+	assert.Equal(t, commons.MetricTypeGauge, cs.MType)
+
+	// boolean flags are gauges, even when the name has no hyphen and would otherwise be a counter
+	done, ok := byKey["restore/done/r1"]
+	assert.True(t, ok)
+	assert.Equal(t, 0.0, done.Value)
+	assert.Equal(t, commons.MetricTypeGauge, done.MType)
+
+	joiner, ok := byKey["restore/joiner/r1"]
+	assert.True(t, ok)
+	assert.Equal(t, commons.MetricTypeGauge, joiner.MType)
 
 	restoreApplied, ok := byKey["restore/applied/r1"]
 	assert.True(t, ok)

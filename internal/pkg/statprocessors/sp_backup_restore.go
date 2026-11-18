@@ -1,6 +1,8 @@
 package statprocessors
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -111,9 +113,6 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 			jobLabels := append(labels, commons.METRIC_LABEL_STATE)
 			jobLabelValues := append(labelValues, state)
 
-			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_ERROR_REASON, stats["error-reason"])
-			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_ABORT_ORIGIN, stats["abort-origin"])
-
 			// restore rows name their lane, the namespace's restore gate, and — when restoring a
 			// list of backups or a frozen layout — which backup and which cluster key
 			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_KIND, stats["kind"])
@@ -131,7 +130,7 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 				continue
 			}
 
-			pv, ok := numericValue(stat, value)
+			pv, isBool, ok := numericValue(stat, value)
 			if !ok {
 				continue
 			}
@@ -141,6 +140,10 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 			if !exists {
 				allowed := isMetricAllowed(context, stat)
 				asMetric = NewAerospikeStat(context, stat, allowed)
+				// booleans are gauges: a flag like "done" flips back to false, which a counter cannot
+				if isBool {
+					asMetric.MType = commons.MetricTypeGauge
+				}
 				metrics[stat] = asMetric
 			}
 
@@ -188,29 +191,47 @@ var serverTimeFormats = []string{
 	"20060102T150405.000Z",
 }
 
-// numericValue returns the metric value for one field. Timestamps become unix milliseconds so a
-// job's duration is finish-time minus start-time; "-" means the time was never reached and is skipped.
-func numericValue(stat string, value string) (float64, bool) {
+// numericValue returns the metric value for one field and whether it came from a boolean.
+// Timestamps become unix milliseconds so a job's duration is finish-time minus start-time;
+// "-" means the time was never reached and is skipped.
+func numericValue(stat string, value string) (float64, bool, bool) {
 	if stat == "start-time" || stat == "finish-time" {
 		if value == "-" {
-			return 0, false
+			return 0, false, false
 		}
 
 		t, ok := parseServerTime(value)
 		if !ok {
 			log.Debugf("backup-restore: unparseable %s %q", stat, value)
-			return 0, false
+			return 0, false, false
 		}
 
-		return float64(t.UnixMilli()), true
+		return float64(t.UnixMilli()), false, true
 	}
 
-	pv, err := commons.TryConvert(value)
+	pv, isBool, err := convertStatValue(value)
 	if err != nil {
-		return 0, false
+		return 0, false, false
 	}
 
-	return pv, true
+	return pv, isBool, true
+}
+
+// convertStatValue parses a numeric field. Booleans are reported separately because a boolean
+// stat is a gauge even when its name would otherwise make it a counter.
+func convertStatValue(value string) (float64, bool, error) {
+	if f, err := strconv.ParseFloat(value, 64); err == nil {
+		return f, false, nil
+	}
+
+	if b, err := strconv.ParseBool(value); err == nil {
+		if b {
+			return 1, true, nil
+		}
+		return 0, true, nil
+	}
+
+	return 0, false, fmt.Errorf("invalid value %q", value)
 }
 
 func parseServerTime(value string) (time.Time, bool) {
