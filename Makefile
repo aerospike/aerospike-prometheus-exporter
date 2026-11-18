@@ -38,7 +38,7 @@ test: ## Run all the test-cases defined in this folder.
 	go test ./...
 
 .PHONY: test-integration
-test-integration: ## Run the laptop Docker suites: Secret Agent, OpenTelemetry, the processor info server, user stats, the 7.2 scrape, and the release-image render. AWS stays in test-integration-aws.
+test-integration: ## Run the laptop Docker suites: Secret Agent, OpenTelemetry, the processor info server, user stats, the 7.2 scrape, and the release image. AWS stays in test-integration-aws.
 	status=0; \
 	$(MAKE) test-integration-secret-agent || status=$$?; \
 	$(MAKE) test-integration-otel || status=$$?; \
@@ -79,7 +79,7 @@ test-integration-aws: ## Run the TLS/mTLS suite with Secret Agent and AWS Secret
 	ci/secret-agent-aws/run.sh
 
 .PHONY: test-integration-docker
-test-integration-docker: ## Build the release image and check Secret Agent env rendering.
+test-integration-docker: ## Build the release image, check Secret Agent env rendering, and scrape a Community server.
 	ci/docker/run.sh
 
 # Builds RPM, DEB and TAR packages

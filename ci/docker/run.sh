@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Build the release image and check that docker-entrypoint.sh writes a Secret
-# Agent setting only when its environment variable is set.
+# Build the release image, check that docker-entrypoint.sh writes a Secret
+# Agent setting only when its environment variable is set, then start that
+# image against a Community server and scrape /metrics.
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
@@ -57,3 +58,13 @@ for key in address port tls_name ca_file cert_file key_file key_file_passphrase 
 done
 
 echo "Docker Secret Agent config rendering passed"
+
+server=${APE_IT_DOCKER_SERVER:-7.2.0.11}
+echo "scrape: release image against aerospike/aerospike-server:${server}"
+export APE_IT_DOCKER_IMAGE="$image"
+cleanup() {
+	AEROSPIKE_VERSION="$server" docker compose -f ci/docker/docker-compose.yml -p ape-docker-image down -v >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+AEROSPIKE_VERSION="$server" docker compose -f ci/docker/docker-compose.yml -p ape-docker-image up --abort-on-container-exit --exit-code-from tester
+echo "Docker release image scrape passed"
