@@ -1,0 +1,419 @@
+name: Exporter tests
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches:
+      - master
+      - dev
+permissions:
+  contents: read
+
+env:
+  LC_ALL: C
+  SERVER_IMAGE: aerospike/aerospike-server-enterprise
+  EXPORTER_IMAGE: aerospike/aerospike-prometheus-exporter
+  # Must stay valid on the oldest server tested (7.x).
+  SERVER_CONF: |
+    service {
+        proto-fd-max 15000
+        cluster-name compat_cluster
+        feature-key-file /etc/aerospike/features.conf
+    }
+    logging {
+        console {
+            context any info
+        }
+    }
+    network {
+        service {
+            address any
+            port 3000
+        }
+        heartbeat {
+            mode mesh
+            address any
+            port 3002
+            interval 150
+            timeout 10
+        }
+        fabric {
+            address any
+            port 3001
+        }
+    }
+    # A DC that never connects is enough for the xdr context to report.
+    xdr {
+        dc backup_dc_1 {
+            node-address-port 127.0.0.1 65530
+            namespace test {
+            }
+            namespace bar {
+            }
+        }
+    }
+    namespace test {
+        replication-factor 1
+        enable-benchmarks-read true
+        enable-benchmarks-write true
+        enable-benchmarks-batch-sub true
+        storage-engine memory {
+            data-size 1G
+        }
+    }
+    namespace bar {
+        replication-factor 1
+        enable-benchmarks-read true
+        enable-benchmarks-write true
+        enable-benchmarks-batch-sub true
+        storage-engine device {
+            file /opt/aerospike/data/bar.dat
+            filesize 1G
+        }
+    }
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  go-mod-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: go mod tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum || { echo "::error::go.mod or go.sum is not tidy, run go mod tidy"; exit 1; }
+
+  compat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Write server config and feature key
+        env:
+          FEATURES_CONF: ${{ secrets.AEROSPIKE_FEATURES_CONF }}
+        run: |
+          [ -n "$FEATURES_CONF" ] || { echo "::error::secret AEROSPIKE_FEATURES_CONF is not set"; exit 1; }
+          printf '%s\n' "$FEATURES_CONF" > "$RUNNER_TEMP/features.conf"
+          printf '%s\n' "$SERVER_CONF" > "$RUNNER_TEMP/aerospike.conf"
+
+      - name: Pick versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Highest patch of every X.Y line, oldest first.
+          minors=$(curl -fsS "https://hub.docker.com/v2/repositories/$SERVER_IMAGE/tags?page_size=100&ordering=last_updated" \
+            | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | sort -V \
+            | awk -F. '{last[$1"."$2]=$0} END {for (m in last) print last[m]}' | sort -V)
+          chain=$(echo "$minors" | awk -F. '$1>=8' | tail -3 | xargs)
+          legacy=$(echo "$minors" | awk -F. '$1==7' | tail -1)
+          released=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)
+          [ -n "$chain" ] && [ -n "$legacy" ] && [ -n "$released" ] || { echo "::error::could not resolve versions"; exit 1; }
+          {
+            echo "SERVERS=$legacy $chain"
+            echo "CHAIN=$chain"
+            echo "RELEASED=${released#v}"
+          } | tee -a "$GITHUB_ENV"
+
+      - name: Build exporter from this commit
+        run: |
+          docker build -q -t ape:commit --build-arg VERSION="${GITHUB_SHA::7}" .
+          docker pull -q "$EXPORTER_IMAGE:$RELEASED"
+
+      - name: Start servers and exporters
+        run: |
+          docker network create ape
+          for v in $SERVERS; do
+            s=${v//./-}
+            docker pull -q "$SERVER_IMAGE:$v" >/dev/null
+            docker run -d --name "srv-$s" --network ape \
+              -v "$RUNNER_TEMP/aerospike.conf:/etc/aerospike/compat.conf:ro" \
+              -v "$RUNNER_TEMP/features.conf:/etc/aerospike/features.conf:ro" \
+              "$SERVER_IMAGE:$v" --config-file /etc/aerospike/compat.conf >/dev/null
+          done
+          for v in $SERVERS; do
+            s=${v//./-}
+            for _ in $(seq 60); do
+              docker exec "srv-$s" asinfo -v status 2>/dev/null | grep -q ok && break
+              sleep 2
+            done
+            docker exec "srv-$s" asinfo -v status 2>/dev/null | grep -q ok \
+              || { docker logs "srv-$s" 2>&1 | tail -30; echo "::error::server $v did not start"; exit 1; }
+            echo "server $v: $(docker exec "srv-$s" asinfo -v build)"
+            # Secondary indexes make the sindex and sets contexts report.
+            docker exec "srv-$s" asinfo -v "sindex-create:ns=test;indexname=t_idx;set=testset;indexdata=bin1,numeric" >/dev/null
+            docker exec "srv-$s" asinfo -v "sindex-create:ns=bar;indexname=b_idx;set=barset;indexdata=bin1,numeric" >/dev/null
+            docker run -d --name "exp-released-$s" --network ape -e AS_HOST="srv-$s" "$EXPORTER_IMAGE:$RELEASED" >/dev/null
+            docker run -d --name "exp-commit-$s" --network ape -e AS_HOST="srv-$s" ape:commit >/dev/null
+          done
+
+      - name: Scrape
+        run: |
+          scrape() { docker exec "$1" wget -qO- http://localhost:9145/metrics || true; }
+          # Latency families only appear once the server has published a
+          # latency window, so wait until every exporter reports them and
+          # their counts stop moving.
+          prev=""
+          for _ in $(seq 30); do
+            now=""
+            for e in released commit; do
+              for v in $SERVERS; do
+                now="$now $(scrape "exp-$e-${v//./-}" | grep -c '^# TYPE aerospike_latencies' || true)"
+              done
+            done
+            [ "$now" = "$prev" ] && ! grep -qw 0 <<<"$now" && break
+            prev=$now
+            sleep 4
+          done
+          mkdir -p "$RUNNER_TEMP/scrapes"
+          for e in released commit; do
+            for v in $SERVERS; do
+              scrape "exp-$e-${v//./-}" > "$RUNNER_TEMP/scrapes/$e-$v.raw"
+            done
+          done
+          failed=0
+          for e in released commit; do
+            for v in $SERVERS; do
+              raw=$RUNNER_TEMP/scrapes/$e-$v.raw
+              awk '/^# TYPE/ {print $3" "$4}' "$raw" | sort -u > "${raw%.raw}.ty"
+              up=$(grep -m1 '^aerospike_node_up' "$raw" | awk '{print $NF}' || true)
+              if [ "$up" = "1" ]; then
+                echo "$e exporter on $v: $(wc -l < "${raw%.raw}.ty") metrics"
+              else
+                echo "::error::$e exporter on $v is not working (aerospike_node_up=${up:-missing})"
+                failed=1
+              fi
+            done
+          done
+          exit $failed
+
+      - name: Compare
+        run: |
+          dir=$RUNNER_TEMP/scrapes
+          failed=0
+          fail() { echo "::error::$*"; failed=1; }
+          names() { cut -d' ' -f1 "$1"; }
+          contexts() { names "$1" | sed 's/^aerospike_//' | cut -d_ -f1 | sort -u; }
+          compare() {
+            local label=$1 a=$dir/$2.ty b=$dir/$3.ty fa fb ga gb dropped reverted lost
+            fa=$(wc -l < "$a"); fb=$(wc -l < "$b")
+            ga=$(grep -c ' gauge$' "$a" || true); gb=$(grep -c ' gauge$' "$b" || true)
+            echo "$label: metrics $fa -> $fb, gauges $ga -> $gb"
+            [ "$fb" -ge "$fa" ] || fail "$label: metric count went down ($fa -> $fb)"
+            [ "$gb" -ge "$ga" ] || fail "$label: gauge count went down ($ga -> $gb)"
+            dropped=$(comm -23 <(names "$a") <(names "$b") | xargs)
+            [ -z "$dropped" ] || fail "$label: metrics missing: $dropped"
+            reverted=$(join "$a" "$b" | awk '$2=="gauge" && $3=="counter" {print $1}' | xargs)
+            [ -z "$reverted" ] || fail "$label: gauge turned back into a counter: $reverted"
+            lost=$(comm -23 <(contexts "$a") <(contexts "$b") | xargs)
+            [ -z "$lost" ] || fail "$label: context went empty: $lost"
+          }
+
+          echo "== released exporter $RELEASED vs this commit, same server"
+          for v in $SERVERS; do
+            compare "server $v" "released-$v" "commit-$v"
+          done
+
+          # 7.x is not in the chain: 8.0 removed server stats.
+          echo "== same exporter, newer server"
+          for e in released commit; do
+            prev=""
+            for v in $CHAIN; do
+              [ -n "$prev" ] && compare "$e exporter, $prev -> $v" "$e-$prev" "$e-$v"
+              prev=$v
+            done
+          done
+          exit $failed
+
+      - name: Server logs
+        if: failure()
+        run: |
+          docker ps -a
+          for c in $(docker ps -aq --filter name=srv-); do docker logs "$c" 2>&1 | tail -20; done
+
+  checkpoint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PARK_SECS: 60
+      COOL_DOWN_SECS: 30
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Write server config and feature key
+        env:
+          FEATURES_CONF: ${{ secrets.AEROSPIKE_FEATURES_CONF }}
+        run: |
+          [ -n "$FEATURES_CONF" ] || { echo "::error::secret AEROSPIKE_FEATURES_CONF is not set"; exit 1; }
+          printf '%s\n' "$FEATURES_CONF" > "$RUNNER_TEMP/features.conf"
+          # index-checkpoint-path requires an explicit node-id.
+          printf '%s\n' "$SERVER_CONF" \
+            | awk '{print} /feature-key-file/ {print "    node-id a1"; print "    index-checkpoint-path /opt/aerospike/checkpoint"}' \
+            > "$RUNNER_TEMP/aerospike.conf"
+
+      - name: Pick the latest server
+        run: |
+          latest=$(curl -fsS "https://hub.docker.com/v2/repositories/$SERVER_IMAGE/tags?page_size=100&ordering=last_updated" \
+            | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          [ "$(printf '8.2\n%s\n' "$latest" | sort -V | head -1)" = "8.2" ] \
+            || { echo "::error::latest server $latest does not support index checkpoint"; exit 1; }
+          echo "SERVER=$latest" | tee -a "$GITHUB_ENV"
+
+      - name: Start server and exporter
+        run: |
+          docker build -q -t ape:commit --build-arg VERSION="${GITHUB_SHA::7}" .
+          docker network create ape
+          docker pull -q "$SERVER_IMAGE:$SERVER" >/dev/null
+          docker run -d --name srv --network ape \
+            -v "$RUNNER_TEMP/aerospike.conf:/etc/aerospike/compat.conf:ro" \
+            -v "$RUNNER_TEMP/features.conf:/etc/aerospike/features.conf:ro" \
+            -v ape-checkpoint:/opt/aerospike/checkpoint \
+            "$SERVER_IMAGE:$SERVER" --config-file /etc/aerospike/compat.conf --preview=index-checkpoint >/dev/null
+          for _ in $(seq 60); do
+            docker exec srv asinfo -v status 2>/dev/null | grep -q ok && break
+            sleep 2
+          done
+          docker exec srv asinfo -v status 2>/dev/null | grep -q ok \
+            || { docker logs srv 2>&1 | tail -30; echo "::error::server $SERVER did not start"; exit 1; }
+          docker run -d --name exp --network ape -e AS_HOST=srv ape:commit >/dev/null
+
+      - name: Baseline
+        run: |
+          for _ in $(seq 30); do
+            m=$(docker exec exp wget -qO- http://localhost:9145/metrics || true)
+            grep -q '^aerospike_node_up.* 1$' <<<"$m" \
+              && grep -q '^aerospike_node_stats_checkpoint_is_parked{.*cp_status="none".*} 0$' <<<"$m" && break
+            sleep 2
+          done
+          grep '^aerospike_node_stats_checkpoint_' <<<"$m" || true
+          for f in files_completed files_total is_parked park_ms; do
+            grep -q "^aerospike_node_stats_checkpoint_$f{.*cp_status=\"none\"" <<<"$m" \
+              || { echo "::error::aerospike_node_stats_checkpoint_$f is missing before the save"; exit 1; }
+          done
+          echo "BASELINE=$(grep -c '^# TYPE' <<<"$m")" | tee -a "$GITHUB_ENV"
+
+      - name: Checkpoint save
+        run: |
+          docker exec -d srv asinfo -v "checkpoint-save:timeout=$PARK_SECS"
+          for _ in $(seq 30); do
+            m=$(docker exec exp wget -qO- http://localhost:9145/metrics) \
+              || { echo "::error::scrape failed during checkpoint-save"; exit 1; }
+            grep -q '^aerospike_node_stats_checkpoint_is_parked{.*} 1$' <<<"$m" && break
+            sleep 2
+          done
+          grep '^aerospike_node_stats_checkpoint_' <<<"$m" || true
+          grep -q '^aerospike_node_up.* 1$' <<<"$m" \
+            || { echo "::error::exporter reported the node down while it was parked"; exit 1; }
+          grep -q '^aerospike_node_stats_checkpoint_is_parked{.*} 1$' <<<"$m" \
+            || { echo "::error::checkpoint_is_parked never became 1"; exit 1; }
+
+      - name: Server goes off
+        run: |
+          timeout $((PARK_SECS + 120)) docker wait srv \
+            || { echo "::error::server did not stop after the park timeout"; exit 1; }
+          for _ in $(seq 15); do
+            m=$(docker exec exp wget -qO- http://localhost:9145/metrics || true)
+            grep -q '^aerospike_node_up.* 0$' <<<"$m" && break
+            sleep 2
+          done
+          [ "$(docker inspect -f '{{.State.Running}}' exp)" = "true" ] \
+            || { echo "::error::exporter stopped when the server went off"; exit 1; }
+          grep -q '^aerospike_node_up.* 0$' <<<"$m" \
+            || { echo "::error::exporter did not report aerospike_node_up=0 with the server off"; exit 1; }
+
+      - name: Cool down and restart server
+        run: |
+          sleep "$COOL_DOWN_SECS"
+          docker start srv >/dev/null
+          for _ in $(seq 60); do
+            docker exec srv asinfo -v status 2>/dev/null | grep -q ok && break
+            sleep 2
+          done
+          docker exec srv asinfo -v status 2>/dev/null | grep -q ok \
+            || { docker logs srv 2>&1 | tail -30; echo "::error::server did not come back after restart"; exit 1; }
+
+      - name: Exporter recovers
+        run: |
+          for _ in $(seq 45); do
+            m=$(docker exec exp wget -qO- http://localhost:9145/metrics || true)
+            n=$(grep -c '^# TYPE' <<<"$m" || true)
+            grep -q '^aerospike_node_up.* 1$' <<<"$m" \
+              && grep -q '^aerospike_node_stats_checkpoint_is_parked{.*cp_status="none".*} 0$' <<<"$m" \
+              && [ "$n" -ge "$BASELINE" ] && { echo "exporter recovered: $n metrics (baseline $BASELINE)"; exit 0; }
+            sleep 2
+          done
+          echo "::error::exporter did not recover: $n metrics (baseline $BASELINE)"
+          grep -E '^aerospike_node_up|^aerospike_node_stats_checkpoint_' <<<"$m" || true
+          exit 1
+
+      - name: Server logs
+        if: failure()
+        run: |
+          docker ps -a
+          docker logs srv 2>&1 | tail -40
+          docker logs exp 2>&1 | tail -20
+
+  govulncheck:
+    if: github.event_name == 'pull_request' && github.base_ref == 'master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  snyk:
+    if: github.event_name == 'pull_request' && github.base_ref == 'master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Set up Snyk CLI
+        uses: snyk/actions/setup@9adf32b1121593767fc3c057af55b55db032dc04
+        with:
+          snyk-version: v1.1297.3
+
+      - name: snyk test
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk test --file=go.mod

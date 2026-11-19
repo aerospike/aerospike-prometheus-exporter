@@ -1,0 +1,39 @@
+name: Promote release bundle to PROD
+
+# Promotes an aerospike-prometheus-exporter release bundle from STAGE to PROD. Doing the same
+# promotion in the JFrog UI is equivalent. Only a PM/EM should run this, once the release is validated:
+# reaching PROD makes artifact-publisher publish the release to public registries such as Docker Hub.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release bundle version currently at STAGE (e.g. 1.37.0-12345678901-1)
+        required: true
+        type: string
+      dry-run:
+        description: Only print the JFrog commands, do not promote
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    name: Promote to PROD
+    permissions:
+      contents: read
+      attestations: write
+      id-token: write
+    uses: aerospike/shared-workflows/.github/workflows/reusable_promote-release-bundle.yaml@308f37e0cd5c7a6386a99ea7afc379d5a4ea9256 # v5.1.0
+    with:
+      # Must match the ref in the uses: line above.
+      gh-workflows-ref: 308f37e0cd5c7a6386a99ea7afc379d5a4ea9256 # v5.1.0
+      jf-project: database
+      jf-bundle-name: aerospike-prometheus-exporter
+      version: ${{ inputs.version }}
+      target-stage: PROD
+      dry-run: ${{ inputs.dry-run }}
+      oidc-provider-name: gh-aerospike
+      oidc-audience: aerospike
