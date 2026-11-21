@@ -77,6 +77,25 @@ func (c Config) Endpoint() string {
 	return net.JoinHostPort(c.Address, strconv.Itoa(int(c.Port)))
 }
 
+// IsPlaintextRemote reports whether secrets travel unencrypted to another host:
+// plain TCP to an address that is not loopback. UDS and TLS are never plaintext remote.
+func (c Config) IsPlaintextRemote() bool {
+	if c.Mode != ModeTCP {
+		return false
+	}
+
+	host := strings.TrimSpace(c.Address)
+	if strings.EqualFold(host, "localhost") {
+		return false
+	}
+
+	if ip := net.ParseIP(strings.Trim(host, "[]")); ip != nil {
+		return !ip.IsLoopback()
+	}
+
+	return true
+}
+
 // IsSecretReference reports whether value uses secrets:<resource>:<key> or secrets:b64:<resource>:<key>.
 func IsSecretReference(value string) bool {
 	return strings.HasPrefix(strings.TrimSpace(value), "secrets:")

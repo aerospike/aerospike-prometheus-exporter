@@ -8,9 +8,20 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/secretagent"
+	log "github.com/sirupsen/logrus"
+)
+
+// Secret Agent can start after APE (a sidecar, for example), so startup waits for it.
+// Only dial and timeout errors are retried, and the window is shared by every secret,
+// so an agent that never appears fails startup after startupRetryWindow in total.
+// They are variables so tests can shorten them.
+var (
+	startupRetryWindow   = 30 * time.Second
+	startupRetryInterval = time.Second
 )
 
 // SecretFetcher retrieves one secret from Secret Agent.
@@ -22,6 +33,10 @@ var (
 	secretFetcher SecretFetcher
 	secretCache   = map[string][]byte{}
 	secretStateMu sync.Mutex
+
+	// retryUntil is set only while ResolveStartupSecrets runs. It is zero afterwards,
+	// so a fetch outside startup makes a single attempt.
+	retryUntil time.Time
 )
 
 // RegisterSecretAgent installs the process-wide Secret Agent client.
@@ -36,25 +51,10 @@ func RegisterSecretAgent(fetcher SecretFetcher) {
 
 // BuildSecretAgentTLS loads CA and client certificate material for a TLS Secret Agent connection.
 // TCP and UDS return a nil config. Verification is always enabled.
+// secretagent.Parse has already rejected secrets: references in these files.
 func BuildSecretAgentTLS(cfg secretagent.Config) (*tls.Config, error) {
 	if cfg.Mode != secretagent.ModeTLS && cfg.Mode != secretagent.ModeMTLS {
 		return nil, nil
-	}
-
-	fields := []struct {
-		name  string
-		value string
-	}{
-		{"ca_file", cfg.CAFile},
-		{"cert_file", cfg.CertFile},
-		{"key_file", cfg.KeyFile},
-		{"key_file_passphrase", cfg.KeyFilePassphrase},
-	}
-
-	for _, field := range fields {
-		if secretagent.IsSecretReference(field.value) {
-			return nil, fmt.Errorf("secret agent %s cannot use a secrets: reference", field.name)
-		}
 	}
 
 	rootCAs, err := LoadCACert(cfg.CAFile)
@@ -83,18 +83,27 @@ func BuildSecretAgentTLS(cfg secretagent.Config) (*tls.Config, error) {
 
 // ResolveStartupSecrets fetches every secrets: reference before listeners start.
 // Direct text, file, environment, and base64 values stay unresolved until they are used.
+// Fields of an executor that is not enabled are skipped, so a reference there neither
+// needs Secret Agent nor blocks startup.
+// While it runs, unreachable-agent errors are retried for startupRetryWindow in total.
 func ResolveStartupSecrets() error {
-	fields := []struct {
+	secretStateMu.Lock()
+	retryUntil = time.Now().Add(startupRetryWindow)
+	secretStateMu.Unlock()
+
+	defer func() {
+		secretStateMu.Lock()
+		retryUntil = time.Time{}
+		secretStateMu.Unlock()
+	}()
+
+	type field struct {
 		name   string
 		value  string
 		isCert bool
-	}{
-		{"Agent.basic_auth_username", config.Cfg.Agent.BasicAuthUsername, false},
-		{"Agent.basic_auth_password", config.Cfg.Agent.BasicAuthPassword, false},
-		{"Agent.cert_file", config.Cfg.Agent.CertFile, true},
-		{"Agent.key_file", config.Cfg.Agent.KeyFile, true},
-		{"Agent.root_ca", config.Cfg.Agent.RootCA, true},
-		{"Agent.key_file_passphrase", config.Cfg.Agent.KeyFilePassphrase, false},
+	}
+
+	fields := []field{
 		{"Aerospike.user", config.Cfg.Aerospike.User, false},
 		{"Aerospike.password", config.Cfg.Aerospike.Password, false},
 		{"Aerospike.cert_file", config.Cfg.Aerospike.CertFile, true},
@@ -103,14 +112,25 @@ func ResolveStartupSecrets() error {
 		{"Aerospike.key_file_passphrase", config.Cfg.Aerospike.KeyFilePassphrase, false},
 	}
 
-	for _, field := range fields {
-		if err := resolveSecretField(field.name, field.value, field.isCert); err != nil {
-			return err
+	if config.Cfg.Agent.PrometheusEnabled {
+		fields = append(fields,
+			field{"Agent.basic_auth_username", config.Cfg.Agent.BasicAuthUsername, false},
+			field{"Agent.basic_auth_password", config.Cfg.Agent.BasicAuthPassword, false},
+			field{"Agent.cert_file", config.Cfg.Agent.CertFile, true},
+			field{"Agent.key_file", config.Cfg.Agent.KeyFile, true},
+			field{"Agent.root_ca", config.Cfg.Agent.RootCA, true},
+			field{"Agent.key_file_passphrase", config.Cfg.Agent.KeyFilePassphrase, false},
+		)
+	}
+
+	if config.Cfg.Agent.OtelEnabled {
+		for name, value := range config.Cfg.Agent.Otel.Headers {
+			fields = append(fields, field{"Agent.OpenTelemetry.headers." + name, value, false})
 		}
 	}
 
-	for name, value := range config.Cfg.Agent.Otel.Headers {
-		if err := resolveSecretField("Agent.OpenTelemetry.headers."+name, value, false); err != nil {
+	for _, f := range fields {
+		if err := resolveSecretField(f.name, f.value, f.isCert); err != nil {
 			return err
 		}
 	}
@@ -148,6 +168,7 @@ func fetchConfiguredSecret(reference string) ([]byte, error) {
 	}
 
 	fetcher := secretFetcher
+	until := retryUntil
 	secretStateMu.Unlock()
 
 	if fetcher == nil {
@@ -159,7 +180,15 @@ func fetchConfiguredSecret(reference string) ([]byte, error) {
 		return nil, err
 	}
 
-	secret, err := fetcher.Fetch(context.Background(), resource, key)
+	policy := secretagent.RetryPolicy{
+		Until:    until,
+		Interval: startupRetryInterval,
+		OnRetry: func(err error) {
+			log.Warnf("Secret Agent is not reachable yet, retrying: %s", err)
+		},
+	}
+
+	secret, err := secretagent.FetchWithRetry(context.Background(), fetcher, resource, key, policy)
 	if err != nil {
 		return nil, err
 	}
@@ -205,9 +234,21 @@ func parseSecretReference(reference string) (string, string, bool, error) {
 }
 
 // decodeBase64Secret decodes one standard-base64 SecretValue.
+// ASCII whitespace is not part of the base64 alphabet, so it is removed before decoding:
+// wrapped output such as GNU base64 produces, or a stray space or tab, still decodes,
+// and the decoded bytes are unchanged.
 // The error never includes the secret bytes.
 func decodeBase64Secret(secret []byte) ([]byte, error) {
-	decoded, err := base64.StdEncoding.DecodeString(string(secret))
+	compact := strings.Map(func(r rune) rune {
+		switch r {
+		case ' ', '\t', '\n', '\r', '\f', '\v':
+			return -1
+		}
+
+		return r
+	}, string(secret))
+
+	decoded, err := base64.StdEncoding.DecodeString(compact)
 	if err != nil {
 		return nil, errors.New("secret agent returned a secret that is not valid base64")
 	}

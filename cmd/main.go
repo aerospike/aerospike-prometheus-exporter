@@ -79,6 +79,10 @@ func initSecretAgent() error {
 	commons.RegisterSecretAgent(client)
 	log.Infof("Secret Agent configured using %s %s", settings.Mode, settings.Endpoint())
 
+	if settings.IsPlaintextRemote() {
+		log.Warnf("Secret Agent at %s is reached over plain TCP, so secrets cross the network unencrypted. Use tls_name and ca_file, or a socket_path.", settings.Endpoint())
+	}
+
 	return nil
 }
 

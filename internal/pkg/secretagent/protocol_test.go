@@ -3,6 +3,7 @@ package secretagent
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -23,7 +24,26 @@ func TestEncodeAndDecodeRoundTrip(t *testing.T) {
 
 	decoded, err := DecodeResponse(bytes.NewReader(frame))
 	require.NoError(t, err)
-	require.Equal(t, "db-password", string(decoded))
+	require.Equal(t, "db-password\n", string(decoded), "the value is returned exactly as sent")
+}
+
+func TestDecodeResponseKeepsValueAsIs(t *testing.T) {
+	for _, value := range []string{
+		"secret ",
+		" secret",
+		"secret\t",
+		"secret\n",
+		"secret\r\n",
+		"line1\nline2\n",
+		"  ",
+	} {
+		body, err := json.Marshal(response{SecretValue: value})
+		require.NoError(t, err)
+
+		decoded, err := DecodeResponse(bytes.NewReader(responseFrame(t, string(body))))
+		require.NoError(t, err, "%q", value)
+		require.Equal(t, value, string(decoded))
+	}
 }
 
 func TestDecodeResponsePlaintext(t *testing.T) {
@@ -56,7 +76,10 @@ func TestDecodeResponseFailures(t *testing.T) {
 	})
 
 	t.Run("empty secret", func(t *testing.T) {
-		_, err := DecodeResponse(bytes.NewReader(responseFrame(t, `{"SecretValue":"   "}`)))
+		_, err := DecodeResponse(bytes.NewReader(responseFrame(t, `{"SecretValue":""}`)))
+		require.ErrorContains(t, err, "empty secret")
+
+		_, err = DecodeResponse(bytes.NewReader(responseFrame(t, `{}`)))
 		require.ErrorContains(t, err, "empty secret")
 
 		decoded, err := DecodeResponse(bytes.NewReader(responseFrame(t, `{"SecretValue":"****"}`)))

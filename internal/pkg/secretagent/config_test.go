@@ -124,3 +124,28 @@ func TestParseRejectsAmbiguousAndIncomplete(t *testing.T) {
 		})
 	}
 }
+
+func TestIsPlaintextRemote(t *testing.T) {
+	cases := []struct {
+		name string
+		raw  RawConfig
+		want bool
+	}{
+		{"disabled", RawConfig{}, false},
+		{"uds", RawConfig{SocketPath: "/tmp/sa.sock"}, false},
+		{"tcp loopback v4", RawConfig{Address: "127.0.0.1", Port: 3005}, false},
+		{"tcp loopback v6", RawConfig{Address: "::1", Port: 3005}, false},
+		{"tcp localhost", RawConfig{Address: "localhost", Port: 3005}, false},
+		{"tcp remote ip", RawConfig{Address: "10.1.2.3", Port: 3005}, true},
+		{"tcp remote name", RawConfig{Address: "secret-agent", Port: 3005}, true},
+		{"tls remote", RawConfig{Address: "secret-agent", Port: 3005, TLSName: "sa", CAFile: "/ca.pem"}, false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg, err := Parse(tc.raw)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, cfg.IsPlaintextRemote())
+		})
+	}
+}

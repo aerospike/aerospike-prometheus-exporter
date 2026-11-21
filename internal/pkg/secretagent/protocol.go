@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strings"
 )
 
 // magic is the Secret Agent header marker. Aerospike Server uses the same value.
@@ -14,8 +13,6 @@ const magic uint32 = 0x51dec1cc
 
 // maxResponseBody is large enough for PEM material and small enough to reject a hostile length.
 const maxResponseBody = 256 * 1024
-
-const trailingWhitespace = " \t\n\r\f\v"
 
 type request struct {
 	Resource  string `json:"Resource"`
@@ -42,7 +39,8 @@ func EncodeRequest(resource, key string) ([]byte, error) {
 	return payload, nil
 }
 
-// DecodeResponse reads one Secret Agent response and returns SecretValue as text.
+// DecodeResponse reads one Secret Agent response and returns SecretValue exactly as sent.
+// The value is not trimmed: a space or newline at the end of a stored secret is part of the secret.
 // Base64 decoding is selected by the secrets:b64: reference, not by this response.
 // The returned error never includes the secret bytes.
 func DecodeResponse(r io.Reader) ([]byte, error) {
@@ -79,10 +77,9 @@ func DecodeResponse(r io.Reader) ([]byte, error) {
 		return nil, errors.New(decoded.Error)
 	}
 
-	payload := strings.TrimRight(decoded.SecretValue, trailingWhitespace)
-	if payload == "" {
+	if decoded.SecretValue == "" {
 		return nil, errors.New("secret agent returned an empty secret")
 	}
 
-	return []byte(payload), nil
+	return []byte(decoded.SecretValue), nil
 }

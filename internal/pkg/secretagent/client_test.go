@@ -104,6 +104,7 @@ func TestFetchFailures(t *testing.T) {
 		_, err := client.Fetch(context.Background(), "APE", "Missing")
 		require.ErrorContains(t, err, "resource not found")
 		require.NotContains(t, err.Error(), "super-secret-value")
+		require.False(t, IsRetryable(err), "an agent error will not change on retry")
 	})
 
 	t.Run("connection refused", func(t *testing.T) {
@@ -122,12 +123,14 @@ func TestFetchFailures(t *testing.T) {
 		_, err = client.Fetch(context.Background(), "APE", "DbPassword")
 		require.Error(t, err)
 		require.NotContains(t, err.Error(), "DbPasswordValue")
+		require.True(t, IsRetryable(err), "a refused connection means the agent may still be starting")
 	})
 
 	t.Run("missing socket", func(t *testing.T) {
 		client := newTestClient(t, RawConfig{SocketPath: filepath.Join(shortDir(t), "missing.sock"), TimeoutSeconds: 1}, nil)
 		_, err := client.Fetch(context.Background(), "APE", "DbPassword")
 		require.Error(t, err)
+		require.True(t, IsRetryable(err), "a missing socket means the agent may still be starting")
 	})
 
 	t.Run("socket permissions", func(t *testing.T) {
@@ -145,6 +148,7 @@ func TestFetchFailures(t *testing.T) {
 		client := newTestClient(t, RawConfig{SocketPath: socketPath, TimeoutSeconds: 1}, nil)
 		_, err := client.Fetch(context.Background(), "APE", "DbPassword")
 		require.Error(t, err)
+		require.False(t, IsRetryable(err), "permission denied will not change on retry")
 		_ = ln
 	})
 }
@@ -169,6 +173,7 @@ func TestTLSVerificationFailures(t *testing.T) {
 		_, err = client.Fetch(context.Background(), "APE", "Password")
 		require.Error(t, err)
 		require.NotContains(t, err.Error(), "should-not-return")
+		require.False(t, IsRetryable(err), "a certificate failure will not change on retry: %v", err)
 
 		wrongName := testTLSConfig(t, material, false)
 		wrongName.ServerName = "other-name"
