@@ -248,6 +248,7 @@ make release-docker-multi-arch
     # supported cloud provider values are - AWS, Azure and GCP
     cloud_provider = aws
     ```
+    The cloud details are added to the metric labels. `labels` does not need to be set for this to work.
 
 - Update exporter's refresh_system_stats to get few system metrics like open-filefd, memory, network recv/trans packets etc.,
     ```toml
@@ -460,6 +461,17 @@ APE uses the same Secret Agent transports as Aerospike Server: plain TCP, TCP wi
 
 Sensitive configuration values can use a Secret Agent reference. APE fetches that value during startup, before it initializes the Aerospike connection, the Prometheus listener, or OpenTelemetry. `secrets:<resource>:<key>` uses `SecretValue` as text, including a PEM certificate. `secrets:b64:<resource>:<key>` base64-decodes `SecretValue` once. Use the base64 form when the stored value is base64, or when Secret Agent `convert-to-base64` is enabled. Existing direct text, `file:`, `env:`, `env-b64:`, and `b64:` values continue to work.
 
+How values are handled:
+
+- **Read once.** Secrets are fetched at startup and kept until APE exits. Restart APE to pick up a changed value in Secret Agent, a cloud secret store, or a vault.
+- **Used as stored.** The value is not trimmed. A trailing space or newline stored with the secret is part of the secret, so a wrong value fails where it is used, for example as an authentication error. A `file:` value is different: it drops one trailing newline and all carriage returns.
+- **Base64.** `secrets:b64:` accepts wrapped base64, such as the 76-column output of GNU `base64`, and ignores spaces and tabs inside it.
+- **CA certificates.** A `root_ca` or `ca_file` whose value is not PEM stops APE at startup. A common cause is a base64 value read with `secrets:` instead of `secrets:b64:`.
+- **Typos.** A value that looks like `<source>:<rest>` with a source APE does not know, for example `evn:DB_PASSWORD`, is an error and not a literal password. A value with a space before the colon, such as `Bearer abc:def`, stays literal text. To use a literal value that looks like a source, store it with `b64:`, `env:`, or `file:`.
+- **Startup retry.** While Secret Agent is not reachable, APE retries for up to 30 seconds in total across all secrets, then stops. Only connection and timeout errors are retried. A missing key, an Error from Secret Agent, a bad certificate, or bad base64 stops APE immediately. `timeout` is one deadline for each attempt.
+- **Only enabled sections.** OpenTelemetry headers are resolved only when OpenTelemetry is enabled, and the Prometheus listener values only when Prometheus is enabled.
+- **Plain TCP.** APE logs a warning when it reaches Secret Agent over plain TCP at an address that is not loopback, because secrets then cross the network unencrypted. Use TLS or a Unix socket.
+
 ```toml
 [Agent.SecretAgent]
 address = "127.0.0.1"
@@ -501,7 +513,7 @@ AWS credentials come from the default chain. `AWS_ACCESS_KEY_ID`, `AWS_SECRET_AC
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `APE_IT_AWS_SECRET_ARN` | unset skips the suite | Secret holding `cert_file`, `key_file`, `key_file_plain`, `root_ca`, `key_file_passphrase`, and `key_file_passphrase_invalid` |
+| `APE_IT_AWS_SECRET_ARN` | unset skips the suite | Disposable secret that the suite overwrites on each run. It writes the keys itself, listed below |
 | `APE_IT_AWS_REGION` | region in the ARN | Region for Secret Agent and the AWS CLI |
 | `APE_IT_AWS_MISSING_SECRET_ARN` | a non-existent ARN in the same account | Used for the missing-secret check |
 | `APE_IT_SA_TRANSPORT` | `tcp` | `tcp`, `tls`, `mtls`, or `uds` between the exporter and Secret Agent |
@@ -514,6 +526,22 @@ AWS credentials come from the default chain. `AWS_ACCESS_KEY_ID`, `AWS_SECRET_AC
 The default is base64 because Aerospike's Secret Agent guidance is to store multi-line values such as certificates base64-encoded in AWS Secrets Manager. Passphrases are single-line and are read with `secrets:`.
 
 The suite checks HTTPS with a trusted CA and an untrusted CA, mutual TLS with a valid client certificate, no client certificate, and a certificate from another CA, an encrypted server key unlocked by a passphrase from the secret, and startup failure for a wrong passphrase, an unknown alias, a missing key, and a missing AWS secret. It also checks that exporter output never contains a passphrase or private-key material.
+
+Each run writes these keys to the secret, so the suite does not depend on data you create by hand:
+
+| Key | Stored as | What it checks |
+|---|---|---|
+| `cert_file`, `key_file`, `key_file_plain`, `root_ca` | `APE_IT_PEM_ENCODING` | TLS material read with `secrets:` or `secrets:b64:` |
+| `key_file_passphrase`, `key_file_passphrase_invalid` | text | Correct and wrong passphrase for the encrypted key |
+| `pw_trailing_space` | text, ends in a space | The password is used as stored: the exact value is accepted and the same value without the space is rejected |
+| `pw_trailing_newline` | text, ends in a newline | Same, for a trailing newline |
+| `pw_with_colon` | text, contains `:` | A value with colons is used as is |
+| `cert_file_b64_wrapped` | base64 wrapped at 76 columns | `secrets:b64:` accepts wrapped base64 |
+| `root_ca_b64` | base64 on one line | `secrets:b64:` loads it as the mutual-TLS CA, and `secrets:` fails startup with "no PEM certificate found" |
+
+It also checks without any secret in the secret: a literal `Bearer ape:9f3c` password stays literal, a `evn:DB_PASSWORD` password stops startup with an unknown-source error that does not repeat the value, and startup waits for a Secret Agent that appears a few seconds late and gives up after about 30 seconds when it never does. The last check forwards a local port to the agent, so it is skipped for the `uds` transport and adds about 35 seconds to each run.
+
+The GitHub Actions job runs the suite four times in a row, because every run uses the same secret: `tcp` with base64 PEM, `tcp` with text PEM, `mtls` with base64 PEM, and `uds` with text PEM. Locally, set `APE_IT_SA_TRANSPORT` and `APE_IT_PEM_ENCODING` to run any other combination.
 
 A separate secret covers plain text that Secret Agent base64-encodes. Create it with these keys, leave the values as text, and tag it `ape-integration-test=true`:
 

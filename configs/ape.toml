@@ -76,7 +76,11 @@
 # Connection mode is inferred:
 # NOTE: Do not set both a TCP endpoint and socket_path.
 # NOTE: ca_file, cert_file, key_file and key_file_passphrase in this section cannot use secrets: references.
-# TLS certificate verification is always enabled. timeout is in seconds.
+# TLS certificate verification is always enabled.
+# timeout is in seconds and covers one whole attempt: connect, TLS handshake, request and reply.
+# At startup APE retries for up to 30 seconds in total while Secret Agent is not reachable, for example a sidecar that is still starting.
+# Secrets are read once at startup. Restart APE to pick up a changed value.
+# A secret is used exactly as Secret Agent returns it. A trailing space or newline is part of the value.
 # [Agent.SecretAgent]
       # TCP - address and port use TCP
       # TCP - tls/mtls - address, port, tls_name and ca_file use TLS; cert_file and key_file together use mutual TLS
