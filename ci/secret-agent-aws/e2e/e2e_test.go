@@ -37,6 +37,14 @@ const (
 	saAddress = "secret-agent:3005"
 )
 
+// Probe values stored by scripts/secret.sh. Keep them in sync with that file.
+const (
+	probeUser         = "ape"
+	pwTrailingSpace   = "ape-pass-9f3c "
+	pwTrailingNewline = "ape-pass-9f3c\n"
+	pwWithColon       = "ape:pass:9f3c"
+)
+
 var (
 	transport = envOr("APE_IT_SA_TRANSPORT", "tcp")
 	backend   = envOr("APE_IT_SA_BACKEND", "aws")
@@ -129,12 +137,15 @@ func TestPlainValueConvertedToBase64(t *testing.T) {
 	require.NotContains(t, logged, encoded)
 }
 
+type startupCase struct {
+	name   string
+	agent  string
+	want   []string // must appear in the exporter output
+	reject []string // must not appear
+}
+
 func TestStartupFailures(t *testing.T) {
-	cases := []struct {
-		name  string
-		agent string
-		want  []string
-	}{
+	cases := []startupCase{
 		{
 			name:  "invalid key passphrase",
 			agent: agentTLS(pemRef("cert_file"), pemRef("key_file"), pemRef("root_ca"), textRef("key_file_passphrase_invalid")),
@@ -150,14 +161,23 @@ func TestStartupFailures(t *testing.T) {
 			agent: agentTLS(pemRef("no_such_key"), pemRef("key_file_plain"), "", ""),
 			want:  []string{"failed to resolve Agent.cert_file"},
 		},
+		{
+			// The CA is base64 in the secret, and secrets: reads it as text.
+			// It used to be skipped silently and the system roots used instead.
+			name:  "base64 CA read as text",
+			agent: agentTLS(pemRef("cert_file"), pemRef("key_file_plain"), textRef("root_ca_b64"), ""),
+			want:  []string{"Failed to load CA certificate", "no PEM certificate found"},
+		},
+		{
+			name:   "mistyped source prefix is not a password",
+			agent:  fmt.Sprintf("basic_auth_username = %q\nbasic_auth_password = %q\n", probeUser, "evn:DB_PASSWORD"),
+			want:   []string{"Failed to get http basic auth password", "unknown source"},
+			reject: []string{"DB_PASSWORD"},
+		},
 	}
 
 	if backend == "aws" {
-		cases = append(cases, struct {
-			name  string
-			agent string
-			want  []string
-		}{
+		cases = append(cases, startupCase{
 			name:  "missing AWS secret",
 			agent: agentTLS(pemPrefix()+"APEMissingSecret:cert_file", pemRef("key_file_plain"), "", ""),
 			want:  []string{"failed to resolve Agent.cert_file"},
@@ -171,8 +191,98 @@ func TestStartupFailures(t *testing.T) {
 			for _, want := range tc.want {
 				require.Contains(t, out, want)
 			}
+			for _, reject := range tc.reject {
+				require.NotContains(t, out, reject)
+			}
 		})
 	}
+}
+
+// A secret is used exactly as Secret Agent returns it. A trailing space or newline is part of the
+// value, so the stored value is accepted and the same value with its tail removed is not.
+func TestSecretValueIsUsedAsStored(t *testing.T) {
+	cases := []struct {
+		name    string
+		key     string
+		value   string
+		trimmed string
+	}{
+		{"trailing space", "pw_trailing_space", pwTrailingSpace, strings.TrimRight(pwTrailingSpace, " \n")},
+		{"trailing newline", "pw_trailing_newline", pwTrailingNewline, strings.TrimRight(pwTrailingNewline, " \n")},
+		{"contains colons", "pw_with_colon", pwWithColon, "ape"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ape := startAPE(t, basicAuth(probeUser, textRef(tc.key)))
+			ape.waitListening(t)
+
+			requireStatus(t, ape.addr, probeUser, tc.value, http.StatusOK)
+			requireStatus(t, ape.addr, probeUser, tc.trimmed, http.StatusUnauthorized)
+		})
+	}
+}
+
+// A value with ':' that does not start with a source name is literal text, with no Secret Agent involved.
+func TestLiteralValueWithColonIsKept(t *testing.T) {
+	const literal = "Bearer ape:9f3c"
+
+	ape := startAPE(t, basicAuth(probeUser, literal))
+	ape.waitListening(t)
+
+	requireStatus(t, ape.addr, probeUser, literal, http.StatusOK)
+	requireStatus(t, ape.addr, probeUser, "Bearer ape", http.StatusUnauthorized)
+}
+
+// secrets:b64: accepts base64 wrapped at 76 columns, the way GNU base64 writes it.
+func TestWrappedBase64Certificate(t *testing.T) {
+	ape := startAPE(t, agentTLS("secrets:b64:"+resource+":cert_file_b64_wrapped", pemRef("key_file_plain"), "", ""))
+	ape.waitListening(t)
+
+	requireMetricsOK(t, ape.addr, caPool(t, "ca.crt"), nil)
+}
+
+// The same CA, stored as base64 on one line, is accepted when it is read with secrets:b64:.
+func TestBase64CAReadAsBase64(t *testing.T) {
+	ape := startAPE(t, agentTLS(pemRef("cert_file"), pemRef("key_file_plain"), "secrets:b64:"+resource+":root_ca_b64", ""))
+	ape.waitListening(t)
+
+	trusted := caPool(t, "ca.crt")
+	requireMetricsOK(t, ape.addr, trusted, clientCert(t, "client"))
+
+	_, err := getMetrics(ape.addr, trusted, nil)
+	require.Error(t, err, "the CA was loaded, so a client without a certificate is rejected")
+}
+
+// Startup waits for a Secret Agent that is not listening yet, and gives up after a bounded time.
+func TestStartupWaitsForSecretAgent(t *testing.T) {
+	if transport == "uds" {
+		t.Skip("the delayed agent is a TCP forwarder")
+	}
+
+	agent := agentTLS(pemRef("cert_file"), pemRef("key_file_plain"), "", "")
+
+	t.Run("agent appears after a few seconds", func(t *testing.T) {
+		port := delayedForwarder(t, saAddress, 4*time.Second)
+		ape := startAPEAgainst(t, agent, secretAgentEndpoint("127.0.0.1", port, ""))
+		ape.waitListening(t)
+
+		requireMetricsOK(t, ape.addr, caPool(t, "ca.crt"), nil)
+		require.Contains(t, ape.out.String(), "not reachable yet, retrying")
+	})
+
+	t.Run("agent never appears", func(t *testing.T) {
+		port := delayedForwarder(t, saAddress, time.Hour)
+		start := time.Now()
+		ape := startAPEAgainst(t, agent, secretAgentEndpoint("127.0.0.1", port, ""))
+		out := ape.waitExit(t, 90*time.Second)
+		elapsed := time.Since(start)
+
+		require.Contains(t, out, "failed to resolve Agent.cert_file")
+		require.Contains(t, out, "connection refused")
+		require.GreaterOrEqual(t, elapsed, 25*time.Second, "the window is about 30s")
+		require.Less(t, elapsed, 60*time.Second)
+	})
 }
 
 func pemPrefix() string {
@@ -204,26 +314,108 @@ func agentTLS(certFile, keyFile, rootCA, passphrase string) string {
 	return b.String()
 }
 
+func basicAuth(user, password string) string {
+	return fmt.Sprintf("basic_auth_username = %q\nbasic_auth_password = %q\n", user, password)
+}
+
+func requireStatus(t *testing.T, addr, user, pass string, want int) {
+	t.Helper()
+
+	resp, err := getHTTPMetrics(addr, user, pass)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	_, _ = io.Copy(io.Discard, resp.Body)
+	require.Equal(t, want, resp.StatusCode)
+}
+
+// delayedForwarder reserves a local port, starts forwarding it to target after delay, and returns
+// the port. Until then a connection to it is refused, like a sidecar that has not started yet.
+// TLS passes through untouched, so the exporter still verifies the real agent's certificate.
+func delayedForwarder(t *testing.T, target string, delay time.Duration) int {
+	t.Helper()
+
+	reserve, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	port := reserve.Addr().(*net.TCPAddr).Port
+	require.NoError(t, reserve.Close())
+
+	stop := make(chan struct{})
+	var ln net.Listener
+	var lnMu sync.Mutex
+
+	t.Cleanup(func() {
+		close(stop)
+		lnMu.Lock()
+		defer lnMu.Unlock()
+		if ln != nil {
+			_ = ln.Close()
+		}
+	})
+
+	go func() {
+		select {
+		case <-time.After(delay):
+		case <-stop:
+			return
+		}
+
+		listener, listenErr := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+		if listenErr != nil {
+			return
+		}
+
+		lnMu.Lock()
+		ln = listener
+		lnMu.Unlock()
+
+		for {
+			client, acceptErr := listener.Accept()
+			if acceptErr != nil {
+				return
+			}
+
+			go forward(client, target)
+		}
+	}()
+
+	return port
+}
+
+func forward(client net.Conn, target string) {
+	defer func() { _ = client.Close() }()
+
+	upstream, err := net.DialTimeout("tcp", target, 5*time.Second)
+	if err != nil {
+		return
+	}
+	defer func() { _ = upstream.Close() }()
+
+	done := make(chan struct{}, 2)
+	go func() { _, _ = io.Copy(upstream, client); done <- struct{}{} }()
+	go func() { _, _ = io.Copy(client, upstream); done <- struct{}{} }()
+	<-done
+}
+
 func secretAgentBlock() string {
-	return secretAgentEndpoint("secret-agent", saSocket)
+	return secretAgentEndpoint("secret-agent", 3005, saSocket)
 }
 
 func plainSecretAgentBlock() string {
-	return secretAgentEndpoint("secret-agent-plain", "/run/sa/secret-agent-plain.sock")
+	return secretAgentEndpoint("secret-agent-plain", 3005, "/run/sa/secret-agent-plain.sock")
 }
 
-func secretAgentEndpoint(host, socketPath string) string {
+func secretAgentEndpoint(host string, port int, socketPath string) string {
 	switch transport {
 	case "uds":
 		return fmt.Sprintf("socket_path = %q\ntimeout = 10\n", socketPath)
 	case "tls":
-		return fmt.Sprintf("address = %q\nport = 3005\ntls_name = \"secret-agent\"\nca_file = %q\ntimeout = 10\n",
-			host, filepath.Join(certDir, "ca.crt"))
+		return fmt.Sprintf("address = %q\nport = %d\ntls_name = \"secret-agent\"\nca_file = %q\ntimeout = 10\n",
+			host, port, filepath.Join(certDir, "ca.crt"))
 	case "mtls":
-		return fmt.Sprintf("address = %q\nport = 3005\ntls_name = \"secret-agent\"\nca_file = %q\ncert_file = %q\nkey_file = %q\ntimeout = 10\n",
-			host, filepath.Join(certDir, "ca.crt"), filepath.Join(certDir, "client.crt"), filepath.Join(certDir, "client.key"))
+		return fmt.Sprintf("address = %q\nport = %d\ntls_name = \"secret-agent\"\nca_file = %q\ncert_file = %q\nkey_file = %q\ntimeout = 10\n",
+			host, port, filepath.Join(certDir, "ca.crt"), filepath.Join(certDir, "client.crt"), filepath.Join(certDir, "client.key"))
 	default:
-		return fmt.Sprintf("address = %q\nport = 3005\ntimeout = 10\n", host)
+		return fmt.Sprintf("address = %q\nport = %d\ntimeout = 10\n", host, port)
 	}
 }
 
@@ -444,6 +636,9 @@ func sensitiveValues(t *testing.T) map[string]string {
 	for _, name := range []string{"server.pass", "server.wrong-pass"} {
 		values[name] = strings.TrimSpace(string(readCert(t, name)))
 	}
+
+	values["probe password"] = strings.TrimSpace(pwTrailingSpace)
+	values["probe password with colons"] = pwWithColon
 
 	for _, name := range []string{"server.key", "server-enc.key", "client.key", "rogue-client.key"} {
 		raw := readCert(t, name)

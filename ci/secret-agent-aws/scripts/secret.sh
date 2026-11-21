@@ -30,6 +30,13 @@ require_test_secret() {
 	fi
 }
 
+# Besides the TLS material, the secret carries values that probe exact handling.
+# They are stored as text whatever APE_IT_PEM_ENCODING is, and must match e2e_test.go.
+#   pw_trailing_space     ends in a space
+#   pw_trailing_newline   ends in a newline
+#   pw_with_colon         contains ':'
+#   cert_file_b64_wrapped base64 of the server certificate wrapped at 76 columns, read with secrets:b64:
+#   root_ca_b64           base64 of the CA on one line. secrets: must reject it as a CA, secrets:b64: must accept it
 secret_json() {
 	jq -n \
 		--arg encoding "$encoding" \
@@ -42,7 +49,12 @@ secret_json() {
 		'{cert_file: $cert, key_file: $key, key_file_plain: $key_plain, root_ca: $ca}
 		| map_values(if $encoding == "base64" then @base64 else . end)
 		+ {key_file_passphrase: ($pass | rtrimstr("\n")),
-		   key_file_passphrase_invalid: ($wrong | rtrimstr("\n"))}'
+		   key_file_passphrase_invalid: ($wrong | rtrimstr("\n")),
+		   pw_trailing_space: "ape-pass-9f3c ",
+		   pw_trailing_newline: "ape-pass-9f3c\n",
+		   pw_with_colon: "ape:pass:9f3c",
+		   cert_file_b64_wrapped: (([($cert | @base64) | match(".{1,76}"; "g").string] | join("\n")) + "\n"),
+		   root_ca_b64: ($ca | @base64)}'
 }
 
 store() {
