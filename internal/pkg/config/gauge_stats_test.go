@@ -1,4 +1,4 @@
-package config
+package config_test
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ var TESTS_DEFAULT_GAUGE_LIST_FILE = "configs/gauge_stats_list.toml"
 func initConfigsAndGauges() {
 	// Initialize and validate Gauge config
 	l_cwd, _ := os.Getwd()
-	config.InitGaugeStats(l_cwd + "/../../../../" + TESTS_DEFAULT_GAUGE_LIST_FILE)
+	config.InitGaugeStats(l_cwd + "/../../../" + TESTS_DEFAULT_GAUGE_LIST_FILE)
 
 }
 
