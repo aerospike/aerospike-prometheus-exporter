@@ -63,6 +63,53 @@ For more details about Aerospike Server Config refer [Aerospike System Config re
   docker run -itd --name exporter1 -e AS_HOST=172.17.0.2 -e AS_PORT=3000 -e METRIC_LABELS="type='development',source='aerospike'" aerospike/aerospike-prometheus-exporter:latest
   ```
 
+#### How the image is configured
+
+The image listens on port 9145. Add `-p 9145:9145` to reach `/metrics` from the host, and set `AS_HOST` to an address the container can reach. `docker logs <container>` shows whether the exporter connected.
+
+The image does not carry a finished `ape.toml`. When the container starts, `docker-entrypoint.sh` renders `/etc/aerospike-prometheus-exporter/ape.toml` from `ape.toml.template` and the container's environment variables, then starts the exporter. An option is written only when its variable has a value. Otherwise its line stays commented out and the exporter uses its own default. The main variables are:
+
+| Variable | Default | Sets |
+|---|---|---|
+| `AS_HOST`, `AS_PORT` | none, `3000` | The Aerospike node to scrape |
+| `AS_AUTH_USER`, `AS_AUTH_PASSWORD`, `AS_AUTH_MODE` | unset | Aerospike credentials and authentication mode |
+| `AS_ROOT_CA`, `AS_CERT_FILE`, `AS_KEY_FILE`, `AS_KEY_FILE_PASSPHRASE`, `AS_NODE_TLS_NAME` | unset | TLS or mutual TLS to Aerospike |
+| `AGENT_BIND_HOST`, `AGENT_BIND_PORT` | all interfaces, `9145` | Where the exporter listens |
+| `AGENT_CERT_FILE`, `AGENT_KEY_FILE`, `AGENT_ROOT_CA`, `AGENT_KEY_FILE_PASSPHRASE` | unset | HTTPS, and mutual TLS when `AGENT_ROOT_CA` is set, between Prometheus and the exporter |
+| `BASIC_AUTH_USERNAME`, `BASIC_AUTH_PASSWORD` | unset | Basic authentication on `/metrics` |
+| `METRIC_LABELS` | `latitude="0",longitude="0"` | Labels added to every metric |
+| `AGENT_LOG_LEVEL`, `AGENT_LOG_FILE` | `info`, console | Logging |
+| `AGENT_PROMETHEUS`, `AGENT_OPEN_TELEMETRY` | `true`, `false` | Which outputs are on. The OpenTelemetry settings are the `AGENT_OTEL_*` variables |
+| `AGENT_SECRET_AGENT_ADDRESS`, `_PORT`, `_SOCKET_PATH`, `_TLS_NAME`, `_CA_FILE`, `_CERT_FILE`, `_KEY_FILE`, `_KEY_FILE_PASSPHRASE`, `_TIMEOUT` | unset | The Secret Agent connection (see [Secret Agent](#secret-agent)) |
+| `NAMESPACE_`, `SET_`, `NODE_`, `XDR_`, `JOB_`, `SINDEX_` `METRICS_ALLOWLIST` and `METRICS_BLOCKLIST` | unset | Metric allow and block lists. Each value is a list of quoted names, for example `NAMESPACE_METRICS_ALLOWLIST='"ns1","ns2"'` |
+
+`docker-entrypoint.sh` and `configs/ape.toml.template` list every variable. The secret-valued variables (`AS_AUTH_PASSWORD`, `BASIC_AUTH_PASSWORD`, the certificate and key variables, and the OpenTelemetry headers) accept the same forms as `ape.toml`: a plain value, `file:`, `env:`, `env-b64:`, `b64:`, `secrets:` and `secrets:b64:`.
+
+Files such as certificates must be inside the container, so mount them and point the variable at the path, for example `-v /etc/ape/certs:/certs:ro -e AS_ROOT_CA=file:/certs/ca.pem`.
+
+To read secrets from Secret Agent, set the connection variables and use `secrets:` references as the values:
+
+```bash
+docker run -d --name exporter1 -p 9145:9145 \
+  -e AS_HOST=172.17.0.2 \
+  -e AGENT_SECRET_AGENT_ADDRESS=secret-agent -e AGENT_SECRET_AGENT_PORT=3005 \
+  -e AS_AUTH_USER=secrets:APE:DbUser -e AS_AUTH_PASSWORD=secrets:APE:DbPassword \
+  aerospike/aerospike-prometheus-exporter:latest
+```
+
+The exporter fetches these once at startup and waits up to 30 seconds for Secret Agent to become reachable.
+
+To use your own `ape.toml`, mount it at a different path and pass `--config`. The image starts the exporter with whatever arguments you give it:
+
+```bash
+docker run -d --name exporter1 -p 9145:9145 -v /etc/ape/ape.toml:/conf/ape.toml:ro \
+  aerospike/aerospike-prometheus-exporter:latest --config /conf/ape.toml
+```
+
+Do not mount a file over `/etc/aerospike-prometheus-exporter/ape.toml`. The entrypoint writes the rendered file there, so a read-only mount makes the container fail at start and a writable mount overwrites your file on the host.
+
+To set the version printed at startup, build with `docker build --build-arg VERSION=<version> .`. `make docker` does this. `make test-integration-docker` builds the image, checks the rendered configuration, and scrapes a live server with it.
+
 ### `RPM`, `DEB` and `tar` Package
 
 ####  Pre Requisites
