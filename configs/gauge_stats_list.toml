@@ -43,6 +43,9 @@ sindex_gauge_stats = [
 	"entries_per_bval",
 	"entries_per_rec",
 	"entries",
+	"equality_filter_bytes",        # equality query filter memory used by this index
+	"equality_filter_saturated_partitions", # partitions the equality query filter can no longer narrow
+	"equality_filter_state",        # equality query filter state: off=0, building=1, ready=2
 	"histogram",                    # removed in server6.0
 	"ibtr_memory_used",             # removed in server6.0
 	"keys", # removed in server6.0
@@ -283,6 +286,7 @@ namespace_gauge_stats =[
 	"scan_proto_uncompressed_pct",
 	"set_index_alloc_bytes",
 	"shadow_write_q",
+	"sindex_equality_filter_bytes",
 	"sindex_flash_alloc_bytes",
 	"sindex_flash_tail_bytes",
 	"sindex_local_mount",

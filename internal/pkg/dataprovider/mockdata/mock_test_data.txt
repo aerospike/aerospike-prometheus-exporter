@@ -41,7 +41,7 @@ latencies-stats:batch-index:msec,4014.2,0.36,0.00,0.00,0.00,0.00,0.00,0.00,0.00,
 #sindex-stat:sindex-stat:namespace=bar;indexname=7x_sindex_bar_2:entries=0;used_bytes=16777216;entries_per_bval=0;entries_per_rec=0;load_pct=100;load_time=0;stat_gc_recs=0
 
 sindex-stat:sindex-stat:namespace=test;indexname=test_testset_testbin_int_idx:entries=0;used_bytes=16777216;entries_per_bval=0;entries_per_rec=0;load_pct=100;load_time=0;stat_gc_recs=0
-sindex-stat:sindex-stat:namespace=test;indexname=demo-idx:entries=0;used_bytes=0;load_pct=100
+sindex-stat:sindex-stat:namespace=test;indexname=demo-idx:entries=0;used_bytes=0;load_pct=100;equality_filter_state=ready;equality_filter_bytes=4096;equality_filter_saturated_partitions=2
 
 #xdr-get-config:context=xdr;dc=172.17.0.8:8901:auth-mode=none;auth-password-file=null;auth-user=null;connector=true;max-recoveries-interleaved=0;node-address-port=172.17.0.8:8901;period-ms=100;tls-name=null;use-alternate-access-address=false;namespaces=test 
 #xdr-get-config:context=xdr;dc=172.17.0.8:8901;namespace=test:enabled=true;bin-policy=all;compression-level=1;compression-threshold=128;delay-ms=0;enable-compression=false;forward=false;hot-key-ms=100;ignored-bins=;ignore-expunges=false;ignored-sets=;max-throughput=100000;remote-namespace=null;sc-replication-wait-ms=100;shipped-bins=;ship-bin-luts=false;ship-nsup-deletes=false;ship-only-specified-sets=false;shipped-sets=;transaction-queue-limit=16384;write-policy=auto 

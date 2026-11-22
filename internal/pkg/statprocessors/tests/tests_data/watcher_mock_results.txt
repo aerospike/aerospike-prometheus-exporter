@@ -2608,6 +2608,9 @@ statprocessors.AerospikeStat{Context:"sindex", Name:"entries_per_rec", MType:0x4
 statprocessors.AerospikeStat{Context:"sindex", Name:"entries", MType:0x47, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service", "ns", "sindex"}, LabelValues:[]string{"as80_cluster_1", "172.17.0.4:3000", "test", "demo-idx"}}
 statprocessors.AerospikeStat{Context:"sindex", Name:"used_bytes", MType:0x47, IsAllowed:true, IsConfig:false, Value:0, Labels:[]string{"cluster_name", "service", "ns", "sindex"}, LabelValues:[]string{"as80_cluster_1", "172.17.0.4:3000", "test", "demo-idx"}}
 statprocessors.AerospikeStat{Context:"sindex", Name:"load_pct", MType:0x47, IsAllowed:true, IsConfig:false, Value:100, Labels:[]string{"cluster_name", "service", "ns", "sindex"}, LabelValues:[]string{"as80_cluster_1", "172.17.0.4:3000", "test", "demo-idx"}}
+statprocessors.AerospikeStat{Context:"sindex", Name:"equality_filter_state", MType:0x47, IsAllowed:true, IsConfig:false, Value:2, Labels:[]string{"cluster_name", "service", "ns", "sindex"}, LabelValues:[]string{"as80_cluster_1", "172.17.0.4:3000", "test", "demo-idx"}}
+statprocessors.AerospikeStat{Context:"sindex", Name:"equality_filter_bytes", MType:0x47, IsAllowed:true, IsConfig:false, Value:4096, Labels:[]string{"cluster_name", "service", "ns", "sindex"}, LabelValues:[]string{"as80_cluster_1", "172.17.0.4:3000", "test", "demo-idx"}}
+statprocessors.AerospikeStat{Context:"sindex", Name:"equality_filter_saturated_partitions", MType:0x47, IsAllowed:true, IsConfig:false, Value:2, Labels:[]string{"cluster_name", "service", "ns", "sindex"}, LabelValues:[]string{"as80_cluster_1", "172.17.0.4:3000", "test", "demo-idx"}}
 
 ===============================================================================================================================================
 ## Latencies
