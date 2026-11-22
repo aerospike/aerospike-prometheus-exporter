@@ -72,6 +72,10 @@ func (nw *NamespaceStatsProcessor) PassOneKeys() []string {
 	return []string{KEY_NS_METADATA}
 }
 
+// objectStoreLatencyHistograms are the per-namespace histograms that time each object-store call a
+// server-side backup or restore makes (SERVER-698). They are always in milliseconds.
+var objectStoreLatencyHistograms = []string{"object-store-put", "object-store-get", "object-store-list", "object-store-delete"}
+
 func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) []string {
 	if nw.sharedState.CheckpointSaveInProgress {
 		log.Tracef("namespace-passtwokeys:nil")
@@ -289,6 +293,11 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, r
 	}
 	// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
 	nw.sharedState.NamespaceLatencyBenchmarks[nsName]["re-repl"] = "{" + nsName + "}-" + "re-repl"
+
+	// object-store histograms are always on, but plain latencies: does not list them, so they are requested by name
+	for _, hist := range objectStoreLatencyHistograms {
+		nw.sharedState.NamespaceLatencyBenchmarks[nsName][hist] = "{" + nsName + "}-" + hist
+	}
 
 	// check if strong_consistency stat is coming and enabled for the namespace
 	//   we may have combinations of SC and non-SC namespaces in the same cluster, always check for each namespace.
