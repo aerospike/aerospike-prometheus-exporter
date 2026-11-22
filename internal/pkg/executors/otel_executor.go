@@ -25,15 +25,17 @@ import (
 )
 
 type GaugeMetrics struct {
-	instrument metric.Int64ObservableGauge
-	labels     []attribute.KeyValue
-	value      atomic.Int64 // int64, avoid read/write race condition
+	instrument   metric.Int64ObservableGauge
+	labels       []attribute.KeyValue
+	value        atomic.Int64 // int64, avoid read/write race condition
+	registration metric.Registration
 }
 
 type CounterMetrics struct {
-	instrument metric.Int64ObservableCounter
-	labels     []attribute.KeyValue
-	value      atomic.Int64 // int64, avoid read/write race condition
+	instrument   metric.Int64ObservableCounter
+	labels       []attribute.KeyValue
+	value        atomic.Int64 // int64, avoid read/write race condition
+	registration metric.Registration
 }
 
 // OTelExecutor is class on its own and also implements and embeds sdkmetric.Exporter interface
@@ -46,6 +48,9 @@ type OtelExecutor struct {
 	gauges           map[string]*GaugeMetrics
 	counters         map[string]*CounterMetrics
 	nodeUpMetricName string
+
+	// keys of backup/restore series, swept when a job or a job's label set is no longer reported
+	perJobKeys map[string]struct{}
 
 	meterProvider *sdkmetric.MeterProvider
 	// metricExporter sdkmetric.Exporter
@@ -89,6 +94,7 @@ func (oe *OtelExecutor) Initialize() error {
 	// initialize the metric caches
 	oe.gauges = make(map[string]*GaugeMetrics)
 	oe.counters = make(map[string]*CounterMetrics)
+	oe.perJobKeys = make(map[string]struct{})
 
 	defaultContext := context.Background()
 
@@ -294,7 +300,7 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, commonLabels 
 	log.Debugf("%s Aerospike refreshCounter incremented to %d", time.Now().Format(time.RFC3339), oe.refreshCounter.Load())
 
 	// process metrics
-	oe.processAndPushStats(meter, commonLabels, asRefreshStats)
+	oe.processAndPushStats(meter, commonLabels, asRefreshStats, true)
 
 }
 
@@ -306,8 +312,8 @@ func (oe *OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, commonLabels
 		return
 	}
 
-	// process metrics
-	oe.processAndPushStats(meter, commonLabels, sysInfoRefreshStats)
+	// process metrics; system info never carries per-job series, so nothing is swept here
+	oe.processAndPushStats(meter, commonLabels, sysInfoRefreshStats, false)
 }
 
 // Utility functions

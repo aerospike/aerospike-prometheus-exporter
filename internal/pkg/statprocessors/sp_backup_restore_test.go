@@ -145,6 +145,32 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	assert.False(t, hasNsState)
 }
 
+// Test_BackupRestore_ErrorTextInsideJob checks that a job whose error-reason contains "error:" does not
+// make the whole response look like a failed command, while a real command error still emits nothing.
+func Test_BackupRestore_ErrorTextInsideJob(t *testing.T) {
+	bw := NewBackupRestoreStatsProcessor(NewStatProcessorSharedState())
+
+	raw := map[string]string{
+		KEY_BACKUP_STATUS: "job-id=b1:ns=test:state=BASE_SCAN_ACTIVE:progress-pct=10.00;" +
+			"job-id=b2:ns=test:state=FAILED:progress-pct=0.00:error-reason=S3 error: AccessDenied",
+		KEY_RESTORE_STATUS: "ERROR:4:unrecognized command",
+	}
+
+	metrics, err := bw.Refresh(nil, raw)
+	assert.Nil(t, err)
+
+	jobs := map[string]bool{}
+	for _, m := range metrics {
+		assert.Equal(t, commons.CTX_BACKUP, m.Context, "a command error must not produce restore metrics")
+		if m.Name == STAT_JOB {
+			jobs[m.LabelValues[3]] = true
+		}
+	}
+
+	assert.True(t, jobs["b1"], "the running job must survive another job's error text")
+	assert.True(t, jobs["b2"])
+}
+
 // Test_BackupRestore_AllowlistAndBlocklist checks that backup_metrics_* and restore_metrics_* in
 // ape.toml filter the stats, the same way the namespace and node lists do.
 func Test_BackupRestore_AllowlistAndBlocklist(t *testing.T) {

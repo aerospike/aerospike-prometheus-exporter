@@ -363,6 +363,29 @@ make release-docker-multi-arch
     # sindex_metrics_blocklist = []
     ```
 
+- In-server backup and restore metrics come from the `backup-status` and `restore-status` info commands (Aerospike 8.2.1 and above). Filter them with their own allowlist and blocklist. Patterns match the stat name exactly as the server prints it, with hyphens (for example `recs-backed-up` or `bytes-*`), not the exported metric name `aerospike_backup_recs_backed_up`. Two stats are added by the exporter and can be matched as well: `job` (exported as `aerospike_backup_job` / `aerospike_restore_job`, one series per job labeled with its `state`) and `achieved-consistency` (exported as `aerospike_backup_achieved_consistency`). As with the other lists, the blocklist wins when a stat matches both.
+    ```toml
+    [Aerospike]
+    # Backup metrics allowlist, An empty list will include all metrics.
+    backup_metrics_allowlist = [
+    "job",
+    "progress-pct",
+    "recs-*",
+    "bytes-*",
+    "start-time",
+    "finish-time"
+    ]
+
+    # Backup metrics blocklist, An empty list means all metrics are allowed.
+    backup_metrics_blocklist = [
+    "recs-filtered"
+    ]
+
+    # Restore metrics, to exclude or stop all metrics, use ["*"]
+    # restore_metrics_allowlist = []
+    # restore_metrics_blocklist = []
+    ```
+
 - To enable basic HTTP authentication and/or enable HTTPS between the Prometheus server and the exporter, use the below configurations keys,
     ```toml
     [Agent]

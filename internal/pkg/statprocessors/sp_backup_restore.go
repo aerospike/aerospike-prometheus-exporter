@@ -95,7 +95,7 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 
 	var allMetricsToSend = []AerospikeStat{}
 
-	if !isValidResponse(response) {
+	if !isValidStatusResponse(response) {
 		return allMetricsToSend
 	}
 
@@ -169,6 +169,15 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 	}
 
 	return allMetricsToSend
+}
+
+// isValidStatusResponse reports whether a status response holds job records rather than a command
+// error such as "ERROR:4:unrecognized command". Only the start of the response is checked: a job's
+// error-reason can itself contain "error:", and isValidResponse would then drop every job on the node.
+func isValidStatusResponse(response string) bool {
+	trimmed := strings.TrimSpace(response)
+
+	return trimmed != "" && !strings.HasPrefix(strings.ToLower(trimmed), "error")
 }
 
 // jobMetric emits one gauge per job, valued 1, labeled with job_id and the job's state.

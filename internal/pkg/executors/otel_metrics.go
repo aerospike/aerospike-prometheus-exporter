@@ -41,11 +41,27 @@ func (oe *OtelExecutor) getCommonLabels() []attribute.KeyValue {
 	return attrkv
 }
 
+// isPerJobContext reports whether a context's series belong to short-lived jobs. Their label sets
+// (job_id, state, ns_state, ...) change as jobs run and age out, so stale ones must stop reporting.
+func isPerJobContext(context commons.ContextType) bool {
+	return context == commons.CTX_BACKUP || context == commons.CTX_RESTORE
+}
+
+// processAndPushStats records the latest values. When sweepPerJob is set, backup and restore series
+// that were not part of this refresh are unregistered, so a finished job or a job's previous state
+// does not keep reporting its last value forever.
 func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
-	commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
+	commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat, sweepPerJob bool) {
+
+	seenPerJobKeys := map[string]struct{}{}
 
 	// create the required metered objects
 	for _, stat := range refreshStats {
+
+		// honour the *_metrics_allowlist / *_metrics_blocklist configuration, as the Prometheus path does
+		if !stat.IsAllowed {
+			continue
+		}
 
 		// In OTEL all contexts have '.' separated names and actual stat can have _ etc.,
 		//  Example: aerospike.server.namespace.master_objects
@@ -71,6 +87,11 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 		labels = append(labels, commonLabels...)
 
 		metricKey := oe.constructMetricKey(qualifiedName, labels)
+
+		if isPerJobContext(stat.Context) {
+			seenPerJobKeys[metricKey] = struct{}{}
+			oe.perJobKeys[metricKey] = struct{}{}
+		}
 
 		// Use or Create Otel metric
 		switch stat.MType {
@@ -104,6 +125,43 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 		default:
 			log.Errorf("Unknown metric type: %d", stat.MType)
 		}
+	}
+
+	if sweepPerJob {
+		oe.sweepStalePerJobMetrics(seenPerJobKeys)
+	}
+}
+
+// sweepStalePerJobMetrics unregisters every backup or restore series not seen in the latest refresh.
+// Once its callback stops observing, the SDK no longer exports that attribute set.
+func (oe *OtelExecutor) sweepStalePerJobMetrics(seen map[string]struct{}) {
+	for key := range oe.perJobKeys {
+		if _, ok := seen[key]; ok {
+			continue
+		}
+
+		if gd, ok := oe.gauges[key]; ok {
+			unregister(key, gd.registration)
+			delete(oe.gauges, key)
+		}
+
+		if cd, ok := oe.counters[key]; ok {
+			unregister(key, cd.registration)
+			delete(oe.counters, key)
+		}
+
+		delete(oe.perJobKeys, key)
+		log.Debugf("otel: stopped reporting stale backup/restore series %s", key)
+	}
+}
+
+func unregister(key string, registration metric.Registration) {
+	if registration == nil {
+		return
+	}
+
+	if err := registration.Unregister(); err != nil {
+		log.Warnf("otel: failed to unregister callback for %s: %v", key, err)
 	}
 }
 
@@ -146,7 +204,7 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 	gd.value.Store(0)
 
 	// Register callback ONCE
-	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+	gd.registration, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
 
 		// We send a value only if we are conected and correct value is available
 		if oe.dataProvider.IsServerConnected() {
@@ -190,7 +248,7 @@ func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricN
 	cd.value.Store(0)
 
 	// Register callback ONCE for this instrument
-	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+	cd.registration, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
 
 		// We send a value only if we are conected and correct value is available
 		if oe.dataProvider.IsServerConnected() {
