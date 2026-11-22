@@ -124,6 +124,8 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	restoreApplied, ok := byKey["restore/applied/r1"]
 	assert.True(t, ok)
 	assert.Equal(t, 7.0, restoreApplied.Value)
+	// every backup/restore stat is a gauge for now, including names without a hyphen
+	assert.Equal(t, commons.MetricTypeGauge, restoreApplied.MType)
 	assert.Equal(t, []string{"c1", "10.0.0.1:3000", "test", "r1"}, restoreApplied.LabelValues)
 
 	// timestamps become unix milliseconds; finish-time is "-" while the job is still running and is exported as 0

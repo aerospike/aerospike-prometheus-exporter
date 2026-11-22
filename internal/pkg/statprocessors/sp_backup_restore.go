@@ -1,8 +1,6 @@
 package statprocessors
 
 import (
-	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -146,7 +144,7 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 				continue
 			}
 
-			pv, isBool, ok := numericValue(stat, value)
+			pv, ok := numericValue(stat, value)
 			if !ok {
 				continue
 			}
@@ -156,10 +154,10 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 			if !exists {
 				allowed := isMetricAllowed(context, stat)
 				asMetric = NewAerospikeStat(context, stat, allowed)
-				// booleans are gauges: a flag like "done" flips back to false, which a counter cannot
-				if isBool {
-					asMetric.MType = commons.MetricTypeGauge
-				}
+				// every backup/restore stat is a gauge for now. The default rule types a stat by its name
+				// (no hyphen -> counter), which disagrees with the spec for fields like outstanding and
+				// covered; revisit once the server team confirms each field's type.
+				asMetric.MType = commons.MetricTypeGauge
 				metrics[stat] = asMetric
 			}
 
@@ -247,55 +245,32 @@ var serverTimeFormats = []string{
 	"20060102T150405.000Z",
 }
 
-// numericValue returns the metric value for one field and whether it came from a boolean.
+// numericValue returns the metric value for one field; booleans become 1 or 0.
 // Timestamps become unix milliseconds so a job's duration is finish-time minus start-time.
 // finish-time is "-" (or unparseable) while the job has not finished, and is exported as 0 so
 // the metric is always present. start-time is skipped instead: a 0 there is a real epoch and
 // would make the duration enormous.
-func numericValue(stat string, value string) (float64, bool, bool) {
+func numericValue(stat string, value string) (float64, bool) {
 	if stat == "start-time" || stat == "finish-time" {
 		if value == "-" {
-			if stat == "finish-time" {
-				return 0, false, true
-			}
-			return 0, false, false
+			return 0, stat == "finish-time"
 		}
 
 		t, ok := parseServerTime(value)
 		if !ok {
 			log.Debugf("backup-restore: unparseable %s %q", stat, value)
-			if stat == "finish-time" {
-				return 0, false, true
-			}
-			return 0, false, false
+			return 0, stat == "finish-time"
 		}
 
-		return float64(t.UnixMilli()), false, true
+		return float64(t.UnixMilli()), true
 	}
 
-	pv, isBool, err := convertStatValue(value)
+	pv, err := commons.TryConvert(value)
 	if err != nil {
-		return 0, false, false
+		return 0, false
 	}
 
-	return pv, isBool, true
-}
-
-// convertStatValue parses a numeric field. Booleans are reported separately because a boolean
-// stat is a gauge even when its name would otherwise make it a counter.
-func convertStatValue(value string) (float64, bool, error) {
-	if f, err := strconv.ParseFloat(value, 64); err == nil {
-		return f, false, nil
-	}
-
-	if b, err := strconv.ParseBool(value); err == nil {
-		if b {
-			return 1, true, nil
-		}
-		return 0, true, nil
-	}
-
-	return 0, false, fmt.Errorf("invalid value %q", value)
+	return pv, true
 }
 
 func parseServerTime(value string) (time.Time, bool) {
