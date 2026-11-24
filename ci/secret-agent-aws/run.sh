@@ -16,6 +16,8 @@
 #                                  Secret Agent converts those to base64. Unset skips that test.
 #   APE_IT_PLAIN_USERNAME          value of the username key in the plain secret
 #   APE_IT_PLAIN_PASSWORD          value of the password key in the plain secret
+#   APE_IT_SCRUB_ATTEMPTS          tries to scrub the AWS secret after the run; defaults to 3
+#   APE_IT_SCRUB_DELAY             seconds between scrub tries; defaults to 5
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -55,8 +57,31 @@ export APE_IT_AWS_DIR
 compose=(docker compose -f docker-compose.yml)
 stored=0
 
+# scrub_secret replaces the shared AWS secret, retrying a few times. It returns nonzero when
+# every try failed, because the generated keys and passphrases would still be in the secret.
+scrub_secret() {
+	local attempts=${APE_IT_SCRUB_ATTEMPTS:-3}
+	local delay=${APE_IT_SCRUB_DELAY:-5}
+	local attempt
+
+	for ((attempt = 1; attempt <= attempts; attempt++)); do
+		if "${compose[@]}" run --rm --no-deps setup scrub; then
+			return 0
+		fi
+
+		echo "scrub attempt $attempt of $attempts failed" >&2
+
+		if ((attempt < attempts)); then
+			sleep "$delay"
+		fi
+	done
+
+	return 1
+}
+
 cleanup() {
 	local status=$?
+	local scrub_failed=0
 
 	if ((status != 0)); then
 		echo "--- Secret Agent logs" >&2
@@ -64,13 +89,22 @@ cleanup() {
 	fi
 
 	if ((stored == 1)); then
-		"${compose[@]}" run --rm --no-deps setup scrub || true
+		scrub_secret || scrub_failed=1
 	fi
 
 	"${compose[@]}" down -v --remove-orphans >/dev/null 2>&1 || true
 
 	if [[ -n $empty_aws_dir ]]; then
 		rmdir "$empty_aws_dir" || true
+	fi
+
+	if ((scrub_failed == 1)); then
+		echo "ERROR: could not scrub the test material from the AWS secret; clear it by hand" >&2
+
+		# A passing suite must not hide a failed scrub. A failing suite keeps its own status.
+		if ((status == 0)); then
+			status=1
+		fi
 	fi
 
 	if ((status == 0)); then
