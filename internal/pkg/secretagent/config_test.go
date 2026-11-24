@@ -149,3 +149,19 @@ func TestIsPlaintextRemote(t *testing.T) {
 		})
 	}
 }
+
+// Spaces around a passphrase can be part of it, so Parse must not trim it.
+func TestParseKeepsKeyFilePassphraseUnchanged(t *testing.T) {
+	cfg, err := Parse(RawConfig{
+		Address:           "secret-agent",
+		Port:              3005,
+		TLSName:           "secretagent",
+		CAFile:            "/tmp/ca.pem",
+		CertFile:          "/tmp/cert.pem",
+		KeyFile:           "/tmp/key.pem",
+		KeyFilePassphrase: " pass ",
+	})
+	require.NoError(t, err)
+	require.Equal(t, ModeMTLS, cfg.Mode)
+	require.Equal(t, " pass ", cfg.KeyFilePassphrase)
+}

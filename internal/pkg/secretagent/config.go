@@ -110,7 +110,8 @@ func Parse(raw RawConfig) (Config, error) {
 	caFile := strings.TrimSpace(raw.CAFile)
 	certFile := strings.TrimSpace(raw.CertFile)
 	keyFile := strings.TrimSpace(raw.KeyFile)
-	keyPass := strings.TrimSpace(raw.KeyFilePassphrase)
+	// The passphrase is used exactly as written: leading and trailing spaces can be part of it.
+	keyPass := raw.KeyFilePassphrase
 
 	if err := rejectSecretReferences(caFile, certFile, keyFile, keyPass); err != nil {
 		return Config{}, err
