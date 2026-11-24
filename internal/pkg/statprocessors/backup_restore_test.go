@@ -7,9 +7,10 @@ import (
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func Test_BackupRestore_PassTwoKeysBuildGate(t *testing.T) {
+func TestBackupRestorePassTwoKeysBuildGate(t *testing.T) {
 	tests := []struct {
 		name     string
 		build    string
@@ -25,7 +26,7 @@ func Test_BackupRestore_PassTwoKeysBuildGate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sharedState := NewStatProcessorSharedState()
+			sharedState := useProcessorConfig(t)
 			sharedState.Build = tt.build
 			bw := NewBackupRestoreStatsProcessor(sharedState)
 
@@ -40,8 +41,8 @@ func Test_BackupRestore_PassTwoKeysBuildGate(t *testing.T) {
 	}
 }
 
-func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
-	sharedState := NewStatProcessorSharedState()
+func TestBackupRestoreRefreshParsesJobs(t *testing.T) {
+	sharedState := useProcessorConfig(t)
 	sharedState.ClusterName = "c1"
 	sharedState.Service = "10.0.0.1:3000"
 	sharedState.Build = "8.2.1.0"
@@ -54,7 +55,7 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	}
 
 	metrics, err := bw.Refresh(nil, raw)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	byKey := map[string]AerospikeStat{}
 	for _, m := range metrics {
@@ -62,40 +63,40 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	}
 
 	backupPct, ok := byKey["backup/progress-pct/b1"]
-	assert.True(t, ok)
+	require.True(t, ok)
 	assert.Equal(t, 42.5, backupPct.Value)
 	assert.Equal(t, []string{"b1"}, backupPct.LabelValues[3:])
 
 	// a running job carries only the state; error-reason is absent so it is not a label
 	backupJob, ok := byKey["backup/job/b1"]
 	assert.Equal(t, commons.MetricTypeGauge, backupJob.MType)
-	assert.True(t, ok)
+	require.True(t, ok)
 	assert.Equal(t, 1.0, backupJob.Value)
 	assert.Equal(t, []string{commons.METRIC_LABEL_STATE}, backupJob.Labels[4:])
 	assert.Equal(t, []string{"c1", "10.0.0.1:3000", "test", "b1", "RUNNING"}, backupJob.LabelValues)
 
 	// achieved-consistency is its own gauge: 0 while "-", 2 for strict, with the level as a label
 	pending, ok := byKey["backup/achieved-consistency/b1"]
-	assert.True(t, ok)
+	require.True(t, ok)
 	assert.Equal(t, commons.MetricTypeGauge, pending.MType)
 	assert.Equal(t, 0.0, pending.Value)
 	assert.Equal(t, []string{"-"}, pending.LabelValues[4:])
 
 	reached, ok := byKey["backup/achieved-consistency/b2"]
-	assert.True(t, ok)
+	require.True(t, ok)
 	assert.Equal(t, 2.0, reached.Value)
 	assert.Equal(t, []string{commons.METRIC_LABEL_ACHIEVED_CONSISTENCY}, reached.Labels[4:])
 	assert.Equal(t, []string{"strict"}, reached.LabelValues[4:])
 
 	// error-reason and abort-origin are not job labels for now, even on an aborted job
 	abortedJob, ok := byKey["backup/job/b2"]
-	assert.True(t, ok)
+	require.True(t, ok)
 	assert.Equal(t, []string{commons.METRIC_LABEL_STATE}, abortedJob.Labels[4:])
 	assert.Equal(t, []string{"ABORTED"}, abortedJob.LabelValues[4:])
 
 	restoreJob, ok := byKey["restore/job/r1"]
 	assert.Equal(t, commons.MetricTypeGauge, restoreJob.MType)
-	assert.True(t, ok)
+	require.True(t, ok)
 	assert.Equal(t, 1.0, restoreJob.Value)
 	assert.Equal(t, []string{commons.METRIC_LABEL_STATE, commons.METRIC_LABEL_KIND, commons.METRIC_LABEL_NS_STATE, commons.METRIC_LABEL_BACKUP_ID, commons.METRIC_LABEL_CLUSTER_KEY}, restoreJob.Labels[4:])
 	assert.Equal(t, []string{"c1", "10.0.0.1:3000", "test", "r1", "COMPLETE", "cold", "RESTORING", "daily1", "3F6AF2E3A109"}, restoreJob.LabelValues)
@@ -107,22 +108,22 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	assert.False(t, hasClusterKey)
 
 	cs, ok := byKey["backup/change-stream-active/b1"]
-	assert.True(t, ok)
+	require.True(t, ok)
 	assert.Equal(t, 1.0, cs.Value)
 	assert.Equal(t, commons.MetricTypeGauge, cs.MType)
 
 	// boolean flags are gauges, even when the name has no hyphen and would otherwise be a counter
 	done, ok := byKey["restore/done/r1"]
-	assert.True(t, ok)
+	require.True(t, ok)
 	assert.Equal(t, 0.0, done.Value)
 	assert.Equal(t, commons.MetricTypeGauge, done.MType)
 
 	joiner, ok := byKey["restore/joiner/r1"]
-	assert.True(t, ok)
+	require.True(t, ok)
 	assert.Equal(t, commons.MetricTypeGauge, joiner.MType)
 
 	restoreApplied, ok := byKey["restore/applied/r1"]
-	assert.True(t, ok)
+	require.True(t, ok)
 	assert.Equal(t, 7.0, restoreApplied.Value)
 	// every backup/restore stat is a gauge for now, including names without a hyphen
 	assert.Equal(t, commons.MetricTypeGauge, restoreApplied.MType)
@@ -130,16 +131,16 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 
 	// timestamps become unix milliseconds; finish-time is "-" while the job is still running and is exported as 0
 	start, ok := byKey["backup/start-time/b1"]
-	assert.True(t, ok)
+	require.True(t, ok)
 	assert.Equal(t, float64(time.Date(2026, 7, 28, 16, 15, 0, int(250*time.Millisecond), time.UTC).UnixMilli()), start.Value)
 
 	runningFinish, ok := byKey["backup/finish-time/b1"]
-	assert.True(t, ok)
+	require.True(t, ok)
 	assert.Equal(t, 0.0, runningFinish.Value)
 
 	// the live server prints "2026-11-10 06.19.51.659 UTC"
 	liveStart, ok := byKey["backup/start-time/b2"]
-	assert.True(t, ok)
+	require.True(t, ok)
 	assert.Equal(t, float64(time.Date(2026, 11, 10, 6, 19, 51, int(659*time.Millisecond), time.UTC).UnixMilli()), liveStart.Value)
 
 	// the bare ns row has no job-id, so it must not produce any metric
@@ -147,10 +148,10 @@ func Test_BackupRestore_RefreshParsesJobs(t *testing.T) {
 	assert.False(t, hasNsState)
 }
 
-// Test_BackupRestore_ErrorTextInsideJob checks that a job whose error-reason contains "error:" does not
+// TestBackupRestoreErrorTextInsideJob checks that a job whose error-reason contains "error:" does not
 // make the whole response look like a failed command, while a real command error still emits nothing.
-func Test_BackupRestore_ErrorTextInsideJob(t *testing.T) {
-	bw := NewBackupRestoreStatsProcessor(NewStatProcessorSharedState())
+func TestBackupRestoreErrorTextInsideJob(t *testing.T) {
+	bw := NewBackupRestoreStatsProcessor(useProcessorConfig(t))
 
 	raw := map[string]string{
 		KEY_BACKUP_STATUS: "job-id=b1:ns=test:state=BASE_SCAN_ACTIVE:progress-pct=10.00;" +
@@ -159,7 +160,7 @@ func Test_BackupRestore_ErrorTextInsideJob(t *testing.T) {
 	}
 
 	metrics, err := bw.Refresh(nil, raw)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	jobs := map[string]bool{}
 	for _, m := range metrics {
@@ -173,19 +174,13 @@ func Test_BackupRestore_ErrorTextInsideJob(t *testing.T) {
 	assert.True(t, jobs["b2"])
 }
 
-// Test_BackupRestore_AllowlistAndBlocklist checks that backup_metrics_* and restore_metrics_* in
+// TestBackupRestoreAllowlistAndBlocklist checks that backup_metrics_* and restore_metrics_* in
 // ape.toml filter the stats, the same way the namespace and node lists do.
-func Test_BackupRestore_AllowlistAndBlocklist(t *testing.T) {
+func TestBackupRestoreAllowlistAndBlocklist(t *testing.T) {
+	sharedState := useProcessorConfig(t)
 	config.Cfg.Aerospike.BackupMetricsAllowlist = []string{"recs-*", "job"}
 	config.Cfg.Aerospike.BackupMetricsBlocklist = []string{"recs-filtered"}
 	config.Cfg.Aerospike.RestoreMetricsAllowlist = []string{"applied"}
-	defer func() {
-		config.Cfg.Aerospike.BackupMetricsAllowlist = nil
-		config.Cfg.Aerospike.BackupMetricsBlocklist = nil
-		config.Cfg.Aerospike.RestoreMetricsAllowlist = nil
-	}()
-
-	sharedState := NewStatProcessorSharedState()
 	sharedState.ClusterName = "c1"
 	sharedState.Service = "10.0.0.1:3000"
 	bw := NewBackupRestoreStatsProcessor(sharedState)
@@ -196,7 +191,7 @@ func Test_BackupRestore_AllowlistAndBlocklist(t *testing.T) {
 	}
 
 	metrics, err := bw.Refresh(nil, raw)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	allowed := map[string]bool{}
 	for _, m := range metrics {

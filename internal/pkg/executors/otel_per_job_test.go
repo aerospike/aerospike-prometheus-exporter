@@ -1,25 +1,38 @@
 package executors
 
 import (
-	"context"
 	"testing"
 
-	aero "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/statprocessors"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
-type connectedProvider struct{}
+// useOtelNaming resets the config for one test and restores it afterwards, so the metric naming
+// set here does not leak into other tests.
+func useOtelNaming(t *testing.T) {
+	t.Helper()
 
-func (connectedProvider) RequestInfo([]string) (map[string]string, error) { return nil, nil }
-func (connectedProvider) FetchUsersDetails() (bool, []*aero.UserRoles, error) {
-	return false, nil, nil
+	original := config.Cfg
+	t.Cleanup(func() { config.Cfg = original })
+
+	config.Cfg = config.Config{}
+	config.Cfg.Agent.Otel.MetricNamePrefix = "aerospike.server"
+	config.Cfg.Agent.Otel.MetricContextSeparator = "period"
 }
-func (connectedProvider) IsServerConnected() bool { return true }
+
+// newConnectedExecutor builds an executor the way Initialize does, with a connected server.
+func newConnectedExecutor() *OtelExecutor {
+	return &OtelExecutor{
+		gauges:       map[string]*GaugeMetrics{},
+		counters:     map[string]*CounterMetrics{},
+		perJobKeys:   map[string]struct{}{},
+		dataProvider: &otelProvider{connected: true},
+	}
+}
 
 func jobStat(context commons.ContextType, name string, mType commons.MetricType, jobID string, state string) statprocessors.AerospikeStat {
 	return statprocessors.AerospikeStat{
@@ -35,9 +48,9 @@ func jobStat(context commons.ContextType, name string, mType commons.MetricType,
 
 // collectStates returns the "state" attribute of every data point reported for a metric.
 func collectStates(t *testing.T, reader *sdkmetric.ManualReader, metricName string) []string {
-	var rm metricdata.ResourceMetrics
-	assert.NoError(t, reader.Collect(context.Background(), &rm))
+	t.Helper()
 
+	rm := collectMetrics(t, reader)
 	states := []string{}
 	for _, sm := range rm.ScopeMetrics {
 		for _, m := range sm.Metrics {
@@ -63,22 +76,12 @@ func collectStates(t *testing.T, reader *sdkmetric.ManualReader, metricName stri
 	return states
 }
 
-// Test_Otel_PerJobSeriesAreSwept checks that a backup job's previous state, and a job that is no
+// TestOtelPerJobSeriesAreSwept checks that a backup job's previous state, and a job that is no
 // longer reported, stop being exported, while series from other contexts are left alone.
-func Test_Otel_PerJobSeriesAreSwept(t *testing.T) {
-	config.Cfg.Agent.Otel.MetricNamePrefix = "aerospike.server"
-	config.Cfg.Agent.Otel.MetricContextSeparator = "period"
-	config.Cfg.Agent.Otel.AllMetricsAsGauge = false
-
-	reader := sdkmetric.NewManualReader()
-	meter := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader)).Meter("test")
-
-	oe := &OtelExecutor{
-		gauges:       make(map[string]*GaugeMetrics),
-		counters:     make(map[string]*CounterMetrics),
-		perJobKeys:   make(map[string]struct{}),
-		dataProvider: connectedProvider{},
-	}
+func TestOtelPerJobSeriesAreSwept(t *testing.T) {
+	useOtelNaming(t)
+	meter, reader := testMeter(t)
+	oe := newConnectedExecutor()
 
 	nsStat := jobStat(commons.CTX_NAMESPACE, "master_objects", commons.MetricTypeGauge, "-", "-")
 
@@ -89,47 +92,37 @@ func Test_Otel_PerJobSeriesAreSwept(t *testing.T) {
 		nsStat,
 	}, true)
 
-	assert.Equal(t, []string{"INIT"}, collectStates(t, reader, "aerospike.server.backup.job"))
-	assert.Equal(t, []string{"ACTIVE"}, collectStates(t, reader, "aerospike.server.restore.applied"))
+	require.Equal(t, []string{"INIT"}, collectStates(t, reader, "aerospike.server.backup.job"))
+	require.Equal(t, []string{"ACTIVE"}, collectStates(t, reader, "aerospike.server.restore.applied"))
 
 	// second refresh: the job moved on, the restore job aged out, and the namespace stat is absent once
 	oe.processAndPushStats(meter, nil, []statprocessors.AerospikeStat{
 		jobStat(commons.CTX_BACKUP, "job", commons.MetricTypeGauge, "b1", "BASE_SCAN_ACTIVE"),
 	}, true)
 
-	assert.Equal(t, []string{"BASE_SCAN_ACTIVE"}, collectStates(t, reader, "aerospike.server.backup.job"),
+	require.Equal(t, []string{"BASE_SCAN_ACTIVE"}, collectStates(t, reader, "aerospike.server.backup.job"),
 		"the INIT series must stop reporting once the job changes state")
-	assert.Empty(t, collectStates(t, reader, "aerospike.server.restore.applied"),
+	require.Empty(t, collectStates(t, reader, "aerospike.server.restore.applied"),
 		"a job that is no longer reported must stop being exported")
-	assert.Len(t, collectStates(t, reader, "aerospike.server.namespace.master_objects"), 1,
+	require.Len(t, collectStates(t, reader, "aerospike.server.namespace.master_objects"), 1,
 		"non-job series are never swept")
 
 	// a refresh that does not sweep (system info) must not remove backup series
 	oe.processAndPushStats(meter, nil, nil, false)
-	assert.Equal(t, []string{"BASE_SCAN_ACTIVE"}, collectStates(t, reader, "aerospike.server.backup.job"))
+	require.Equal(t, []string{"BASE_SCAN_ACTIVE"}, collectStates(t, reader, "aerospike.server.backup.job"))
 
 	// no backup jobs left
 	oe.processAndPushStats(meter, nil, nil, true)
-	assert.Empty(t, collectStates(t, reader, "aerospike.server.backup.job"))
-	assert.Empty(t, oe.perJobKeys)
+	require.Empty(t, collectStates(t, reader, "aerospike.server.backup.job"))
+	require.Empty(t, oe.perJobKeys)
 }
 
-// Test_Otel_BlockedStatsAreNotExported checks that a stat filtered out by an allowlist or blocklist
+// TestOtelBlockedStatsAreNotExported checks that a stat filtered out by an allowlist or blocklist
 // (IsAllowed=false) never becomes an OTel series, matching the Prometheus path.
-func Test_Otel_BlockedStatsAreNotExported(t *testing.T) {
-	config.Cfg.Agent.Otel.MetricNamePrefix = "aerospike.server"
-	config.Cfg.Agent.Otel.MetricContextSeparator = "period"
-	config.Cfg.Agent.Otel.AllMetricsAsGauge = false
-
-	reader := sdkmetric.NewManualReader()
-	meter := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader)).Meter("test")
-
-	oe := &OtelExecutor{
-		gauges:       make(map[string]*GaugeMetrics),
-		counters:     make(map[string]*CounterMetrics),
-		perJobKeys:   make(map[string]struct{}),
-		dataProvider: connectedProvider{},
-	}
+func TestOtelBlockedStatsAreNotExported(t *testing.T) {
+	useOtelNaming(t)
+	meter, reader := testMeter(t)
+	oe := newConnectedExecutor()
 
 	allowed := jobStat(commons.CTX_NAMESPACE, "master_objects", commons.MetricTypeGauge, "-", "-")
 	blocked := jobStat(commons.CTX_NAMESPACE, "client_read_success", commons.MetricTypeCounter, "-", "-")
@@ -139,11 +132,11 @@ func Test_Otel_BlockedStatsAreNotExported(t *testing.T) {
 
 	oe.processAndPushStats(meter, nil, []statprocessors.AerospikeStat{allowed, blocked, blockedJob}, true)
 
-	assert.Len(t, collectStates(t, reader, "aerospike.server.namespace.master_objects"), 1)
-	assert.Empty(t, collectStates(t, reader, "aerospike.server.namespace.client_read_success"),
+	require.Len(t, collectStates(t, reader, "aerospike.server.namespace.master_objects"), 1)
+	require.Empty(t, collectStates(t, reader, "aerospike.server.namespace.client_read_success"),
 		"a blocked stat must not be exported")
-	assert.Empty(t, collectStates(t, reader, "aerospike.server.backup.job"),
+	require.Empty(t, collectStates(t, reader, "aerospike.server.backup.job"),
 		"a blocked backup stat must not be exported")
-	assert.Len(t, oe.gauges, 1)
-	assert.Empty(t, oe.counters)
+	require.Len(t, oe.gauges, 1)
+	require.Empty(t, oe.counters)
 }
