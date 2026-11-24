@@ -76,6 +76,19 @@ func (nw *NamespaceStatsProcessor) PassOneKeys() []string {
 // server-side backup or restore makes (SERVER-698). They are always in milliseconds.
 var objectStoreLatencyHistograms = []string{"object-store-put", "object-store-get", "object-store-list", "object-store-delete"}
 
+// OBJECT_STORE_HISTOGRAMS_MIN_BUILD is the first server build that has the object-store histograms.
+// They ship with in-server backup and restore, so they follow the same build gate; older servers
+// answer "bad hist name", which would be four wasted info commands per namespace on every scrape.
+const OBJECT_STORE_HISTOGRAMS_MIN_BUILD = BACKUP_RESTORE_MIN_BUILD
+
+// objectStoreHistogramsSupported reports whether the connected server has the object-store histograms.
+// An unknown or unparseable build is treated as unsupported.
+func (nw *NamespaceStatsProcessor) objectStoreHistogramsSupported() bool {
+	ge, err := isBuildVersionGreaterThanOrEqual(nw.sharedState.Build, OBJECT_STORE_HISTOGRAMS_MIN_BUILD)
+
+	return err == nil && ge
+}
+
 func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) []string {
 	if nw.sharedState.CheckpointSaveInProgress {
 		log.Tracef("namespace-passtwokeys:nil")
@@ -294,9 +307,15 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, r
 	// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
 	nw.sharedState.NamespaceLatencyBenchmarks[nsName]["re-repl"] = "{" + nsName + "}-" + "re-repl"
 
-	// object-store histograms are always on, but plain latencies: does not list them, so they are requested by name
+	// object-store histograms are always on from the gated build, but plain latencies: does not list them,
+	// so they are requested by name. On older servers they are not registered, and any left over are removed.
+	supported := nw.objectStoreHistogramsSupported()
 	for _, hist := range objectStoreLatencyHistograms {
-		nw.sharedState.NamespaceLatencyBenchmarks[nsName][hist] = "{" + nsName + "}-" + hist
+		if supported {
+			nw.sharedState.NamespaceLatencyBenchmarks[nsName][hist] = "{" + nsName + "}-" + hist
+		} else {
+			delete(nw.sharedState.NamespaceLatencyBenchmarks[nsName], hist)
+		}
 	}
 
 	// check if strong_consistency stat is coming and enabled for the namespace

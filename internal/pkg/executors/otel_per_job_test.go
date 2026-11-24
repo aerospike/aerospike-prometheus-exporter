@@ -51,6 +51,11 @@ func collectStates(t *testing.T, reader *sdkmetric.ManualReader, metricName stri
 					v, _ := dp.Attributes.Value(commons.METRIC_LABEL_STATE)
 					states = append(states, v.AsString())
 				}
+			case metricdata.Gauge[float64]:
+				for _, dp := range data.DataPoints {
+					v, _ := dp.Attributes.Value(commons.METRIC_LABEL_STATE)
+					states = append(states, v.AsString())
+				}
 			case metricdata.Sum[int64]:
 				for _, dp := range data.DataPoints {
 					v, _ := dp.Attributes.Value(commons.METRIC_LABEL_STATE)
@@ -75,6 +80,7 @@ func Test_Otel_PerJobSeriesAreSwept(t *testing.T) {
 
 	oe := &OtelExecutor{
 		gauges:       make(map[string]*GaugeMetrics),
+		floatGauges:  make(map[string]*FloatGaugeMetrics),
 		counters:     make(map[string]*CounterMetrics),
 		perJobKeys:   make(map[string]struct{}),
 		dataProvider: connectedProvider{},
@@ -126,6 +132,7 @@ func Test_Otel_BlockedStatsAreNotExported(t *testing.T) {
 
 	oe := &OtelExecutor{
 		gauges:       make(map[string]*GaugeMetrics),
+		floatGauges:  make(map[string]*FloatGaugeMetrics),
 		counters:     make(map[string]*CounterMetrics),
 		perJobKeys:   make(map[string]struct{}),
 		dataProvider: connectedProvider{},
@@ -145,5 +152,91 @@ func Test_Otel_BlockedStatsAreNotExported(t *testing.T) {
 	assert.Empty(t, collectStates(t, reader, "aerospike.server.backup.job"),
 		"a blocked backup stat must not be exported")
 	assert.Len(t, oe.gauges, 1)
+	assert.Empty(t, oe.floatGauges)
 	assert.Empty(t, oe.counters)
+}
+
+// collectGaugeValues returns every value reported for a metric, and the value type of its gauge.
+func collectGaugeValues(t *testing.T, reader *sdkmetric.ManualReader, metricName string) (values []float64, valueType string) {
+	var rm metricdata.ResourceMetrics
+	assert.NoError(t, reader.Collect(context.Background(), &rm))
+
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name != metricName {
+				continue
+			}
+
+			switch data := m.Data.(type) {
+			case metricdata.Gauge[float64]:
+				valueType = "float64"
+				for _, dp := range data.DataPoints {
+					values = append(values, dp.Value)
+				}
+			case metricdata.Gauge[int64]:
+				valueType = "int64"
+				for _, dp := range data.DataPoints {
+					values = append(values, float64(dp.Value))
+				}
+			}
+		}
+	}
+
+	return values, valueType
+}
+
+// Test_Otel_BackupRestoreGaugesKeepFractions checks that a fractional backup or restore gauge such as
+// progress-pct=42.50 is exported as 42.5 and not truncated to 42, while a gauge from an existing context
+// stays an int64 so its exported value type does not change.
+func Test_Otel_BackupRestoreGaugesKeepFractions(t *testing.T) {
+	config.Cfg.Agent.Otel.MetricNamePrefix = "aerospike.server"
+	config.Cfg.Agent.Otel.MetricContextSeparator = "period"
+	config.Cfg.Agent.Otel.AllMetricsAsGauge = false
+
+	reader := sdkmetric.NewManualReader()
+	meter := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader)).Meter("test")
+
+	oe := &OtelExecutor{
+		gauges:       make(map[string]*GaugeMetrics),
+		floatGauges:  make(map[string]*FloatGaugeMetrics),
+		counters:     make(map[string]*CounterMetrics),
+		perJobKeys:   make(map[string]struct{}),
+		dataProvider: connectedProvider{},
+	}
+
+	progress := jobStat(commons.CTX_BACKUP, "progress-pct", commons.MetricTypeGauge, "b1", "BASE_SCAN_ACTIVE")
+	progress.Value = 42.50
+	restoreProgress := jobStat(commons.CTX_RESTORE, "progress-pct", commons.MetricTypeGauge, "r1", "ACTIVE")
+	restoreProgress.Value = 0.25
+	nsStat := jobStat(commons.CTX_NAMESPACE, "master_objects", commons.MetricTypeGauge, "-", "-")
+	nsStat.Value = 7
+
+	oe.processAndPushStats(meter, nil, []statprocessors.AerospikeStat{progress, restoreProgress, nsStat}, true)
+
+	values, valueType := collectGaugeValues(t, reader, "aerospike.server.backup.progress_pct")
+	assert.Equal(t, "float64", valueType)
+	assert.Equal(t, []float64{42.5}, values, "the fractional part must not be dropped")
+
+	values, valueType = collectGaugeValues(t, reader, "aerospike.server.restore.progress_pct")
+	assert.Equal(t, "float64", valueType)
+	assert.Equal(t, []float64{0.25}, values)
+
+	values, valueType = collectGaugeValues(t, reader, "aerospike.server.namespace.master_objects")
+	assert.Equal(t, "int64", valueType, "gauges of existing contexts keep their value type")
+	assert.Equal(t, []float64{7}, values)
+
+	// the value follows the latest refresh, and the series is swept like any other per-job series
+	progress.Value = 87.75
+	oe.processAndPushStats(meter, nil, []statprocessors.AerospikeStat{progress}, true)
+
+	values, _ = collectGaugeValues(t, reader, "aerospike.server.backup.progress_pct")
+	assert.Equal(t, []float64{87.75}, values)
+
+	values, _ = collectGaugeValues(t, reader, "aerospike.server.restore.progress_pct")
+	assert.Empty(t, values, "a restore job that is no longer reported must stop being exported")
+
+	oe.processAndPushStats(meter, nil, nil, true)
+	values, _ = collectGaugeValues(t, reader, "aerospike.server.backup.progress_pct")
+	assert.Empty(t, values)
+	assert.Empty(t, oe.floatGauges)
 }

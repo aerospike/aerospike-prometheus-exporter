@@ -3,6 +3,7 @@ package executors
 import (
 	"context"
 	"fmt"
+	"math"
 	"sync/atomic"
 
 	"time"
@@ -31,6 +32,18 @@ type GaugeMetrics struct {
 	registration metric.Registration
 }
 
+// FloatGaugeMetrics is a gauge that keeps its fractional part, for stats such as progress-pct=42.50.
+// The value is held as float64 bits so it can be read and written atomically.
+type FloatGaugeMetrics struct {
+	instrument   metric.Float64ObservableGauge
+	labels       []attribute.KeyValue
+	bits         atomic.Uint64
+	registration metric.Registration
+}
+
+func (fg *FloatGaugeMetrics) store(v float64) { fg.bits.Store(math.Float64bits(v)) }
+func (fg *FloatGaugeMetrics) load() float64   { return math.Float64frombits(fg.bits.Load()) }
+
 type CounterMetrics struct {
 	instrument   metric.Int64ObservableCounter
 	labels       []attribute.KeyValue
@@ -46,6 +59,7 @@ type OtelExecutor struct {
 	// KEY =  one metric + labels
 	// Each measurement/instrument = one metric + labels + latest value
 	gauges           map[string]*GaugeMetrics
+	floatGauges      map[string]*FloatGaugeMetrics
 	counters         map[string]*CounterMetrics
 	nodeUpMetricName string
 
@@ -93,6 +107,7 @@ func (oe *OtelExecutor) Initialize() error {
 
 	// initialize the metric caches
 	oe.gauges = make(map[string]*GaugeMetrics)
+	oe.floatGauges = make(map[string]*FloatGaugeMetrics)
 	oe.counters = make(map[string]*CounterMetrics)
 	oe.perJobKeys = make(map[string]struct{})
 

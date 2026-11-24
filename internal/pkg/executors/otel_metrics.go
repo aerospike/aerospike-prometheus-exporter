@@ -41,9 +41,10 @@ func (oe *OtelExecutor) getCommonLabels() []attribute.KeyValue {
 	return attrkv
 }
 
-// isPerJobContext reports whether a context's series belong to short-lived jobs. Their label sets
-// (job_id, state, ns_state, ...) change as jobs run and age out, so stale ones must stop reporting.
-func isPerJobContext(context commons.ContextType) bool {
+// isBackupRestoreContext reports whether a context's series belong to short-lived backup or restore jobs.
+// Their label sets (job_id, state, ns_state, ...) change as jobs run and age out, so stale ones must stop
+// reporting. Their gauges can also carry fractions (progress-pct=42.50), so they are exported as float64.
+func isBackupRestoreContext(context commons.ContextType) bool {
 	return context == commons.CTX_BACKUP || context == commons.CTX_RESTORE
 }
 
@@ -88,7 +89,7 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 
 		metricKey := oe.constructMetricKey(qualifiedName, labels)
 
-		if isPerJobContext(stat.Context) {
+		if isBackupRestoreContext(stat.Context) {
 			seenPerJobKeys[metricKey] = struct{}{}
 			oe.perJobKeys[metricKey] = struct{}{}
 		}
@@ -115,6 +116,18 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 			}
 
 		case commons.MetricTypeGauge:
+
+			// backup and restore gauges keep their fractional part, other gauges stay int64 so the
+			// value type of metrics that are already exported does not change
+			if isBackupRestoreContext(stat.Context) {
+				fMetric := oe.getFloatGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
+
+				if fMetric != nil {
+					fMetric.store(stat.Value)
+				}
+
+				break
+			}
 
 			gMetric := oe.getGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
 
@@ -143,6 +156,11 @@ func (oe *OtelExecutor) sweepStalePerJobMetrics(seen map[string]struct{}) {
 		if gd, ok := oe.gauges[key]; ok {
 			unregister(key, gd.registration)
 			delete(oe.gauges, key)
+		}
+
+		if fd, ok := oe.floatGauges[key]; ok {
+			unregister(key, fd.registration)
+			delete(oe.floatGauges, key)
 		}
 
 		if cd, ok := oe.counters[key]; ok {
@@ -220,6 +238,46 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 
 	oe.gauges[key] = gd
 	return gd
+}
+
+// getFloatGaugeMetric is getGaugeMetric for values that keep their fractional part.
+func (oe *OtelExecutor) getFloatGaugeMetric(key string, meter metric.Meter, metricName string,
+	desc string, labels []attribute.KeyValue) *FloatGaugeMetrics {
+
+	// Fast path
+	if fd, ok := oe.floatGauges[key]; ok {
+		return fd
+	}
+
+	og, err := meter.Float64ObservableGauge(metricName, metric.WithDescription(desc))
+
+	if err != nil {
+		log.Fatalf("Error while creating object for float gauge stat %s: %v", metricName, err)
+		return nil
+	}
+
+	fd := &FloatGaugeMetrics{
+		instrument: og,
+		labels:     labels,
+	}
+
+	// Register callback ONCE
+	fd.registration, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+
+		// We send a value only if we are conected and correct value is available
+		if oe.dataProvider.IsServerConnected() {
+			o.ObserveFloat64(fd.instrument, fd.load(), metric.WithAttributes(labels...))
+		}
+
+		return nil
+	}, og)
+
+	if err != nil {
+		log.Fatalf("Error while RegisterCallback for Float Gauge stat %s: %v", metricName, err)
+	}
+
+	oe.floatGauges[key] = fd
+	return fd
 }
 
 func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricName string,

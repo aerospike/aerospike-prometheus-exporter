@@ -2,6 +2,7 @@ package statprocessors
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -13,6 +14,7 @@ import (
 // object-store histograms for each namespace, the same way it registers re-repl.
 func Test_ObjectStore_NamespaceRequestsHistograms(t *testing.T) {
 	sharedState := NewStatProcessorSharedState()
+	sharedState.Build = "8.2.1.0"
 	nw := NewNamespaceStatsProcessor(sharedState)
 
 	// PassTwoKeys creates the per-namespace map before Refresh runs, as in the real refresh cycle
@@ -26,6 +28,76 @@ func Test_ObjectStore_NamespaceRequestsHistograms(t *testing.T) {
 	assert.Equal(t, "{test}-object-store-get", benchmarks["object-store-get"])
 	assert.Equal(t, "{test}-object-store-list", benchmarks["object-store-list"])
 	assert.Equal(t, "{test}-object-store-delete", benchmarks["object-store-delete"])
+}
+
+// Test_ObjectStore_NotRequestedOnOlderServers checks that servers older than the gate never get the
+// object-store commands: they answer "bad hist name", so each would be a wasted info command per
+// namespace on every scrape. It runs the real namespace refresh and then the latency command pass.
+func Test_ObjectStore_NotRequestedOnOlderServers(t *testing.T) {
+	tests := []struct {
+		name     string
+		build    string
+		expected bool
+	}{
+		{"5.1 server", "5.1.0.0", false},
+		{"8.1.1 server", "8.1.1.0", false},
+		{"unknown build", "", false},
+		{"unparseable build", "not-a-version", false},
+		{"exactly the gate", "8.2.1.0", true},
+		{"newer server", "8.3.0.0", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sharedState := NewStatProcessorSharedState()
+			sharedState.Build = tt.build
+
+			nw := NewNamespaceStatsProcessor(sharedState)
+			nw.PassTwoKeys(map[string]string{KEY_NS_METADATA: "test"})
+			nw.Refresh([]string{"namespace/test"}, map[string]string{
+				"namespace/test": "strong-consistency=false:master_objects=1",
+			})
+
+			// the latency pass only looks at the build to choose the command style, so give it a valid one
+			latencyState := NewStatProcessorSharedState()
+			latencyState.Build = "8.2.1.0"
+			latencyState.NamespaceLatencyBenchmarks = sharedState.NamespaceLatencyBenchmarks
+			commands := NewLatencyStatsProcessor(latencyState).PassTwoKeys(nil)
+
+			hasObjectStore := false
+			for _, command := range commands {
+				if strings.Contains(command, "object-store") {
+					hasObjectStore = true
+				}
+			}
+
+			assert.Equal(t, tt.expected, hasObjectStore)
+			// re-repl is unaffected by the gate
+			assert.Contains(t, commands, "latencies:hist={test}-re-repl")
+		})
+	}
+}
+
+// Test_ObjectStore_RemovedWhenServerIsOlder checks that entries registered earlier are dropped if the
+// build turns out to be below the gate, so state stays consistent.
+func Test_ObjectStore_RemovedWhenServerIsOlder(t *testing.T) {
+	sharedState := NewStatProcessorSharedState()
+	sharedState.Build = "8.2.1.0"
+	nw := NewNamespaceStatsProcessor(sharedState)
+
+	refresh := func() {
+		nw.PassTwoKeys(map[string]string{KEY_NS_METADATA: "test"})
+		nw.Refresh([]string{"namespace/test"}, map[string]string{
+			"namespace/test": "strong-consistency=false:master_objects=1",
+		})
+	}
+
+	refresh()
+	assert.Contains(t, sharedState.NamespaceLatencyBenchmarks["test"], "object-store-put")
+
+	sharedState.Build = "8.1.1.0"
+	refresh()
+	assert.NotContains(t, sharedState.NamespaceLatencyBenchmarks["test"], "object-store-put")
 }
 
 // Test_ObjectStore_LatenciesCommandsIncludeHistograms checks that the histograms are asked for by name
