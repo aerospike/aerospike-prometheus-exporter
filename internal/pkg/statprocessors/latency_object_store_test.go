@@ -19,9 +19,10 @@ func Test_ObjectStore_NamespaceRequestsHistograms(t *testing.T) {
 
 	// PassTwoKeys creates the per-namespace map before Refresh runs, as in the real refresh cycle
 	nw.PassTwoKeys(map[string]string{KEY_NS_METADATA: "test"})
-	nw.Refresh([]string{"namespace/test"}, map[string]string{
+	_, err := nw.Refresh([]string{"namespace/test"}, map[string]string{
 		"namespace/test": "strong-consistency=false:master_objects=1",
 	})
+	assert.NoError(t, err)
 
 	benchmarks := sharedState.NamespaceLatencyBenchmarks["test"]
 	assert.Equal(t, "{test}-object-store-put", benchmarks["object-store-put"])
@@ -54,9 +55,10 @@ func Test_ObjectStore_NotRequestedOnOlderServers(t *testing.T) {
 
 			nw := NewNamespaceStatsProcessor(sharedState)
 			nw.PassTwoKeys(map[string]string{KEY_NS_METADATA: "test"})
-			nw.Refresh([]string{"namespace/test"}, map[string]string{
+			_, err := nw.Refresh([]string{"namespace/test"}, map[string]string{
 				"namespace/test": "strong-consistency=false:master_objects=1",
 			})
+			assert.NoError(t, err)
 
 			// the latency pass only looks at the build to choose the command style, so give it a valid one
 			latencyState := NewStatProcessorSharedState()
@@ -87,9 +89,10 @@ func Test_ObjectStore_RemovedWhenServerIsOlder(t *testing.T) {
 
 	refresh := func() {
 		nw.PassTwoKeys(map[string]string{KEY_NS_METADATA: "test"})
-		nw.Refresh([]string{"namespace/test"}, map[string]string{
+		_, err := nw.Refresh([]string{"namespace/test"}, map[string]string{
 			"namespace/test": "strong-consistency=false:master_objects=1",
 		})
+		assert.NoError(t, err)
 	}
 
 	refresh()
