@@ -76,7 +76,7 @@ services:
       - sh
       - -c
       - >-
-        go build -o /tmp/ape ./cmd &&
+        go build -buildvcs=false -o /tmp/ape ./cmd &&
         go test -tags awse2e -count=1 -v -timeout 15m ./ci/secret-agent-aws/e2e/
     volumes:
       - ../..:/src
