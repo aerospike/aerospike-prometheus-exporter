@@ -105,6 +105,14 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 			pv, err := siw.convertStatValue(stat, value)
 
 			if err != nil {
+				// A state this exporter does not know would otherwise look the same as a server
+				// that does not report the stat, so say so. Other non-numeric stats are expected.
+				if stat == STAT_SINDEX_EQUALITY_FILTER_STATE {
+					log.Warnf("sindex %s:%s: skipping %s, no metric emitted: %s", nsName, sindexName, stat, err)
+				} else {
+					log.Debugf("sindex %s:%s: skipping %s: %s", nsName, sindexName, stat, err)
+				}
+
 				continue
 			}
 
