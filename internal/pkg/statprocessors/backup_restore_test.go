@@ -148,6 +148,55 @@ func TestBackupRestoreRefreshParsesJobs(t *testing.T) {
 	assert.False(t, hasNsState)
 }
 
+// TestBackupRestoreUnderscoreFieldNames covers 8.2.2, which prints stats with underscores (start_time,
+// progress_pct) and keeps hyphens on identifiers (job-id). Both spellings must give the same metrics.
+func TestBackupRestoreUnderscoreFieldNames(t *testing.T) {
+	sharedState := useProcessorConfig(t)
+	bw := NewBackupRestoreStatsProcessor(sharedState)
+
+	raw := map[string]string{
+		KEY_BACKUP_STATUS: "job-id=b1:ns=test:state=BASE_SCAN_ACTIVE:backup-rps=0:recs_backed_up=8989:progress_pct=29.52:" +
+			"change_stream_active=false:start_time=2026-11-24 14.51.31.499 UTC:finish_time=-:achieved_consistency=strict",
+		KEY_RESTORE_STATUS: "job-id=r1:ns=test:kind=cold:ns_state=RESTORING:state=ACTIVE:applied=7:backup_id=daily1:cluster_key=123456",
+	}
+
+	metrics, err := bw.Refresh(nil, raw)
+	require.NoError(t, err)
+
+	byKey := map[string]AerospikeStat{}
+	for _, m := range metrics {
+		byKey[string(m.Context)+"/"+m.Name] = m
+	}
+
+	start, ok := byKey["backup/start_time"]
+	require.True(t, ok, "start_time must be read as a timestamp, like start-time")
+	assert.Equal(t, float64(time.Date(2026, 11, 24, 14, 51, 31, int(499*time.Millisecond), time.UTC).UnixMilli()), start.Value)
+
+	finish, ok := byKey["backup/finish_time"]
+	require.True(t, ok, "finish_time=- is exported as 0, like finish-time")
+	assert.Equal(t, 0.0, finish.Value)
+
+	pct, ok := byKey["backup/progress_pct"]
+	require.True(t, ok)
+	assert.Equal(t, 29.52, pct.Value)
+
+	consistency, ok := byKey["backup/"+STAT_ACHIEVED_CONSISTENCY]
+	require.True(t, ok)
+	assert.Equal(t, 2.0, consistency.Value)
+	_, ok = byKey["backup/achieved_consistency"]
+	assert.False(t, ok, "achieved_consistency is not exported a second time as a plain stat")
+
+	restoreJob, ok := byKey["restore/job"]
+	require.True(t, ok)
+	assert.Equal(t, []string{commons.METRIC_LABEL_STATE, commons.METRIC_LABEL_KIND, commons.METRIC_LABEL_NS_STATE, commons.METRIC_LABEL_BACKUP_ID, commons.METRIC_LABEL_CLUSTER_KEY}, restoreJob.Labels[4:])
+	assert.Equal(t, []string{"ACTIVE", "cold", "RESTORING", "daily1", "123456"}, restoreJob.LabelValues[4:])
+
+	_, ok = byKey["restore/cluster_key"]
+	assert.False(t, ok, "an all-digit cluster_key is a label, never a metric")
+	_, ok = byKey["restore/backup_id"]
+	assert.False(t, ok)
+}
+
 // TestBackupRestoreErrorTextInsideJob checks that a job whose error-reason contains "error:" does not
 // make the whole response look like a failed command, while a real command error still emits nothing.
 func TestBackupRestoreErrorTextInsideJob(t *testing.T) {

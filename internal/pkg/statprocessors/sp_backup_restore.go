@@ -104,47 +104,55 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 	for i := range jobRecords {
 		stats := commons.ParseStats(jobRecords[i], ":")
 
+		// fields looked up by their hyphenated name, whichever spelling the server used
+		fields := make(map[string]string, len(stats))
+		for stat, value := range stats {
+			fields[fieldKey(stat)] = value
+		}
+
 		// records without a job-id are not jobs, e.g. restore-status "ns=<name>:ns-state=<STATE>"
-		jobID, hasJobID := stats["job-id"]
+		jobID, hasJobID := fields["job-id"]
 		if !hasJobID {
 			continue
 		}
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_JOB_ID}
-		labelValues := []string{bw.sharedState.ClusterName, bw.sharedState.Service, stats["ns"], jobID}
+		labelValues := []string{bw.sharedState.ClusterName, bw.sharedState.Service, fields["ns"], jobID}
 
 		// the job is also emitted as its own gauge so the number of jobs in each state can be counted:
 		// aerospike_backup_job{job_id="b1",state="BASE_SCAN_ACTIVE"} 1
 		// the remaining labels are conditional, so each is added only when the server emitted it
-		if state, hasState := stats["state"]; hasState {
+		if state, hasState := fields["state"]; hasState {
 			jobLabels := append(labels, commons.METRIC_LABEL_STATE)
 			jobLabelValues := append(labelValues, state)
 
 			// restore rows name their lane, the namespace's restore gate, and — when restoring a
 			// list of backups or a frozen layout — which backup and which cluster key
-			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_KIND, stats["kind"])
-			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_NS_STATE, stats["ns-state"])
-			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_BACKUP_ID, stats["backup-id"])
-			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_CLUSTER_KEY, stats["cluster-key"])
+			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_KIND, fields["kind"])
+			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_NS_STATE, fields["ns-state"])
+			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_BACKUP_ID, fields["backup-id"])
+			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_CLUSTER_KEY, fields["cluster-key"])
 
 			allMetricsToSend = append(allMetricsToSend, bw.jobMetric(context, metrics, jobLabels, jobLabelValues))
 		}
 
 		// achieved-consistency is an enum ("-", "relaxed", "strict"), so it is its own gauge
 		// valued by the level reached and labeled with the level, rather than a number
-		if consistency, hasConsistency := stats[STAT_ACHIEVED_CONSISTENCY]; hasConsistency {
+		if consistency, hasConsistency := fields[STAT_ACHIEVED_CONSISTENCY]; hasConsistency {
 			allMetricsToSend = append(allMetricsToSend,
 				bw.achievedConsistencyMetric(context, metrics, consistency, labels, labelValues))
 		}
 
 		for stat, value := range stats {
+			key := fieldKey(stat)
+
 			// identifiers and non-numeric descriptors are used as labels, not as metrics.
 			// cluster-key is hex, so an all-digit key would otherwise slip through as a number.
-			if stat == "job-id" || stat == "ns" || stat == "cluster-key" || stat == "backup-id" || stat == STAT_ACHIEVED_CONSISTENCY {
+			if key == "job-id" || key == "ns" || key == "cluster-key" || key == "backup-id" || key == STAT_ACHIEVED_CONSISTENCY {
 				continue
 			}
 
-			pv, ok := numericValue(stat, value)
+			pv, ok := numericValue(key, value)
 			if !ok {
 				continue
 			}
@@ -167,6 +175,13 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 	}
 
 	return allMetricsToSend
+}
+
+// fieldKey is a field's name with underscores read as hyphens. Earlier builds print every field with
+// hyphens (start-time); 8.2.2 prints stats with underscores (start_time, progress_pct) and keeps hyphens
+// on identifiers and settings (job-id, backup-rps). Metrics keep the server's own spelling.
+func fieldKey(stat string) string {
+	return strings.ReplaceAll(stat, "_", "-")
 }
 
 // isValidStatusResponse reports whether a status response holds job records rather than a command
