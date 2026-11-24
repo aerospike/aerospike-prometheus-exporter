@@ -20,6 +20,7 @@ const (
 
 	// STAT_ACHIEVED_CONSISTENCY is a gauge whose value is the consistency level reached:
 	// 0 while it is "-", 1 for relaxed, 2 for strict. The level is also the label.
+	// It is matched with fieldKey, and the metric keeps the server's spelling (achieved_consistency on 8.2.2).
 	STAT_ACHIEVED_CONSISTENCY = "achieved-consistency"
 
 	// BACKUP_RESTORE_MIN_BUILD is the first server build that reports backup-status and restore-status.
@@ -27,6 +28,30 @@ const (
 	// not commit that change.
 	BACKUP_RESTORE_MIN_BUILD = "8.2.1"
 )
+
+// backupCounterStats are the backup stats that only grow during a job, so they are counters.
+// Every other backup stat, and every restore stat, is a gauge. Names are matched with fieldKey,
+// so they work for both the hyphen and the 8.2.2 underscore spelling.
+var backupCounterStats = map[string]bool{
+	"recs-backed-up":            true,
+	"recs-base":                 true,
+	"recs-query-incr":           true,
+	"recs-change-incr":          true,
+	"bytes-backed-up":           true,
+	"bytes-base":                true,
+	"bytes-query-incr":          true,
+	"bytes-change-incr":         true,
+	"recs-filtered":             true,
+	"recs-filter-exits":         true,
+	"recs-degenerate":           true,
+	"recs-skipped-xdr-tomb":     true,
+	"recs-read-failed":          true,
+	"count-read-failures":       true,
+	"partitions-flushed":        true,
+	"partitions-scanned":        true,
+	"backpressure-activations":  true,
+	"upload-permanent-failures": true,
+}
 
 // BackupRestoreStatsProcessor exports the per-node status of in-server backup and restore jobs.
 // Both info commands are enterprise-only and gated behind --preview backup-restore, so on any
@@ -136,19 +161,20 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 			allMetricsToSend = append(allMetricsToSend, bw.jobMetric(context, metrics, jobLabels, jobLabelValues))
 		}
 
-		// achieved-consistency is an enum ("-", "relaxed", "strict"), so it is its own gauge
-		// valued by the level reached and labeled with the level, rather than a number
-		if consistency, hasConsistency := fields[STAT_ACHIEVED_CONSISTENCY]; hasConsistency {
-			allMetricsToSend = append(allMetricsToSend,
-				bw.achievedConsistencyMetric(context, metrics, consistency, labels, labelValues))
-		}
-
 		for stat, value := range stats {
 			key := fieldKey(stat)
 
+			// achieved-consistency is an enum ("-", "relaxed", "strict"), so it is its own gauge
+			// valued by the level reached and labeled with the level, rather than a number
+			if key == STAT_ACHIEVED_CONSISTENCY {
+				allMetricsToSend = append(allMetricsToSend,
+					bw.achievedConsistencyMetric(context, metrics, stat, value, labels, labelValues))
+				continue
+			}
+
 			// identifiers and non-numeric descriptors are used as labels, not as metrics.
 			// cluster-key is hex, so an all-digit key would otherwise slip through as a number.
-			if key == "job-id" || key == "ns" || key == "cluster-key" || key == "backup-id" || key == STAT_ACHIEVED_CONSISTENCY {
+			if key == "job-id" || key == "ns" || key == "cluster-key" || key == "backup-id" {
 				continue
 			}
 
@@ -162,10 +188,10 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 			if !exists {
 				allowed := isMetricAllowed(context, stat)
 				asMetric = NewAerospikeStat(context, stat, allowed)
-				// every backup/restore stat is a gauge for now. The default rule types a stat by its name
-				// (no hyphen -> counter), which disagrees with the spec for fields like outstanding and
-				// covered; revisit once the server team confirms each field's type.
-				asMetric.MType = commons.MetricTypeGauge
+				// types come from backupCounterStats, not from the name: 8.2.2 prints every stat with
+				// underscores, so the default rule (no hyphen -> counter) would make rates and queue
+				// depths counters too. Restore stats stay gauges until their types are confirmed.
+				asMetric.MType = backupRestoreMetricType(context, key)
 				metrics[stat] = asMetric
 			}
 
@@ -175,6 +201,14 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 	}
 
 	return allMetricsToSend
+}
+
+func backupRestoreMetricType(context commons.ContextType, key string) commons.MetricType {
+	if context == commons.CTX_BACKUP && backupCounterStats[key] {
+		return commons.MetricTypeCounter
+	}
+
+	return commons.MetricTypeGauge
 }
 
 // fieldKey is a field's name with underscores read as hyphens. Earlier builds print every field with
@@ -226,15 +260,15 @@ func consistencyLevel(value string) float64 {
 
 // achievedConsistencyMetric emits one gauge per job for the consistency level reached.
 // The level is both the value and the label, so it can be read as a number or filtered by name.
-func (bw *BackupRestoreStatsProcessor) achievedConsistencyMetric(context commons.ContextType, metrics map[string]AerospikeStat, consistency string, labels []string, labelValues []string) AerospikeStat {
+func (bw *BackupRestoreStatsProcessor) achievedConsistencyMetric(context commons.ContextType, metrics map[string]AerospikeStat, stat string, consistency string, labels []string, labelValues []string) AerospikeStat {
 
-	asMetric, exists := metrics[STAT_ACHIEVED_CONSISTENCY]
+	asMetric, exists := metrics[stat]
 
 	if !exists {
-		allowed := isMetricAllowed(context, STAT_ACHIEVED_CONSISTENCY)
-		asMetric = NewAerospikeStat(context, STAT_ACHIEVED_CONSISTENCY, allowed)
+		allowed := isMetricAllowed(context, stat)
+		asMetric = NewAerospikeStat(context, stat, allowed)
 		asMetric.MType = commons.MetricTypeGauge
-		metrics[STAT_ACHIEVED_CONSISTENCY] = asMetric
+		metrics[stat] = asMetric
 	}
 
 	asMetric.updateValues(consistencyLevel(consistency),

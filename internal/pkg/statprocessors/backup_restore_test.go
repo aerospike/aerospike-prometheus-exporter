@@ -179,12 +179,27 @@ func TestBackupRestoreUnderscoreFieldNames(t *testing.T) {
 	pct, ok := byKey["backup/progress_pct"]
 	require.True(t, ok)
 	assert.Equal(t, 29.52, pct.Value)
+	assert.Equal(t, commons.MetricTypeGauge, pct.MType)
 
-	consistency, ok := byKey["backup/"+STAT_ACHIEVED_CONSISTENCY]
+	// recs_backed_up only grows during a job, so it is a counter; backup-rps is a setting, so a gauge
+	backedUp, ok := byKey["backup/recs_backed_up"]
 	require.True(t, ok)
+	assert.Equal(t, commons.MetricTypeCounter, backedUp.MType)
+	rps, ok := byKey["backup/backup-rps"]
+	require.True(t, ok)
+	assert.Equal(t, commons.MetricTypeGauge, rps.MType)
+
+	// restore stats stay gauges until their types are confirmed
+	applied, ok := byKey["restore/applied"]
+	require.True(t, ok)
+	assert.Equal(t, commons.MetricTypeGauge, applied.MType)
+
+	consistency, ok := byKey["backup/achieved_consistency"]
+	require.True(t, ok, "the consistency gauge keeps the server's spelling")
 	assert.Equal(t, 2.0, consistency.Value)
-	_, ok = byKey["backup/achieved_consistency"]
-	assert.False(t, ok, "achieved_consistency is not exported a second time as a plain stat")
+	assertLabel(t, consistency, commons.METRIC_LABEL_ACHIEVED_CONSISTENCY, "strict")
+	assert.Equal(t, 1, countNamed(metrics, "achieved_consistency"), "exported once, as the consistency gauge")
+	assert.Zero(t, countNamed(metrics, STAT_ACHIEVED_CONSISTENCY))
 
 	restoreJob, ok := byKey["restore/job"]
 	require.True(t, ok)
@@ -227,15 +242,15 @@ func TestBackupRestoreErrorTextInsideJob(t *testing.T) {
 // ape.toml filter the stats, the same way the namespace and node lists do.
 func TestBackupRestoreAllowlistAndBlocklist(t *testing.T) {
 	sharedState := useProcessorConfig(t)
-	config.Cfg.Aerospike.BackupMetricsAllowlist = []string{"recs-*", "job"}
-	config.Cfg.Aerospike.BackupMetricsBlocklist = []string{"recs-filtered"}
+	config.Cfg.Aerospike.BackupMetricsAllowlist = []string{"recs_*", "job", "achieved_consistency"}
+	config.Cfg.Aerospike.BackupMetricsBlocklist = []string{"recs_filtered"}
 	config.Cfg.Aerospike.RestoreMetricsAllowlist = []string{"applied"}
 	sharedState.ClusterName = "c1"
 	sharedState.Service = "10.0.0.1:3000"
 	bw := NewBackupRestoreStatsProcessor(sharedState)
 
 	raw := map[string]string{
-		KEY_BACKUP_STATUS:  "job-id=b1:ns=test:state=RUNNING:recs-backed-up=5:recs-filtered=2:bytes-backed-up=9",
+		KEY_BACKUP_STATUS:  "job-id=b1:ns=test:state=RUNNING:recs_backed_up=5:recs_filtered=2:bytes_backed_up=9:achieved_consistency=-",
 		KEY_RESTORE_STATUS: "job-id=r1:ns=test:state=ACTIVE:applied=7:failed=3",
 	}
 
@@ -247,10 +262,12 @@ func TestBackupRestoreAllowlistAndBlocklist(t *testing.T) {
 		allowed[string(m.Context)+"/"+m.Name] = m.IsAllowed
 	}
 
-	// recs-* matches the allowlist, but recs-filtered is blocked; bytes-backed-up matches neither
-	assert.True(t, allowed["backup/recs-backed-up"])
-	assert.False(t, allowed["backup/recs-filtered"])
-	assert.False(t, allowed["backup/bytes-backed-up"])
+	// patterns use the server's spelling: recs_* matches the allowlist, but recs_filtered is blocked;
+	// bytes_backed_up matches neither
+	assert.True(t, allowed["backup/recs_backed_up"])
+	assert.False(t, allowed["backup/recs_filtered"])
+	assert.False(t, allowed["backup/bytes_backed_up"])
+	assert.True(t, allowed["backup/achieved_consistency"])
 
 	// the job gauge is filtered too, since it is built through the same check
 	assert.True(t, allowed["backup/job"])
@@ -259,4 +276,82 @@ func TestBackupRestoreAllowlistAndBlocklist(t *testing.T) {
 	assert.True(t, allowed["restore/applied"])
 	assert.False(t, allowed["restore/failed"])
 	assert.False(t, allowed["restore/job"])
+}
+
+// TestBackupRestoreMetricType checks that backup counters are found under either spelling, and that
+// everything else, including every restore stat, is a gauge.
+func TestBackupRestoreMetricType(t *testing.T) {
+	for _, stat := range []string{"recs_backed_up", "recs-backed-up", "bytes_base", "partitions_scanned", "partitions-flushed", "backpressure_activations", "upload_permanent_failures"} {
+		assert.Equal(t, commons.MetricTypeCounter, backupRestoreMetricType(commons.CTX_BACKUP, fieldKey(stat)), stat)
+	}
+
+	for _, stat := range []string{"progress_pct", "total_buffers_allocated", "partitions_owned", "recs_per_sec", "upload_q_depth", "backup-rps", "start_time", "job"} {
+		assert.Equal(t, commons.MetricTypeGauge, backupRestoreMetricType(commons.CTX_BACKUP, fieldKey(stat)), stat)
+	}
+
+	assert.Equal(t, commons.MetricTypeGauge, backupRestoreMetricType(commons.CTX_RESTORE, fieldKey("recs_backed_up")),
+		"restore stats stay gauges until their types are confirmed")
+}
+
+// TestBackupRestoreSkippedDuringCheckpointSave checks that backup-status and restore-status are not
+// requested while a checkpoint save runs, like the other processors.
+func TestBackupRestoreSkippedDuringCheckpointSave(t *testing.T) {
+	state := useProcessorConfig(t)
+	state.Build = "8.2.2.0"
+	bw := NewBackupRestoreStatsProcessor(state)
+
+	assert.Equal(t, []string{KEY_BACKUP_STATUS, KEY_RESTORE_STATUS}, bw.PassTwoKeys(nil))
+
+	state.CheckpointSaveInProgress = true
+	assert.Nil(t, bw.PassTwoKeys(nil))
+}
+
+// TestBackupRestoreLiveBackupRecord feeds the processor a whole backup-status record captured from an
+// 8.2.2.0 server. Every numeric stat must be exported under the server's spelling, with the types
+// agreed so far, and the text fields must not leak out as metrics.
+func TestBackupRestoreLiveBackupRecord(t *testing.T) {
+	state := useProcessorConfig(t)
+	bw := NewBackupRestoreStatsProcessor(state)
+
+	metrics, err := bw.Refresh(nil, map[string]string{KEY_BACKUP_STATUS: backupStatus822})
+	require.NoError(t, err)
+
+	got := map[string]AerospikeStat{}
+	for _, m := range metrics {
+		require.Equal(t, commons.CTX_BACKUP, m.Context)
+		got[m.Name] = m
+	}
+
+	// every field of the record is a metric, except the identifiers and the text fields
+	notMetrics := map[string]bool{"job-id": true, "ns": true, "state": true, "backup-policy": true}
+	for name, value := range commons.ParseStats(backupStatus822, ":") {
+		if notMetrics[name] {
+			continue
+		}
+		_, exported := got[name]
+		assert.True(t, exported, "%s=%s is missing from the output", name, value)
+	}
+	assert.Equal(t, 38, len(got), "37 stats plus the job gauge")
+	_, ok := got["backup-policy"]
+	assert.False(t, ok, "a text setting is not a metric")
+
+	counters := 0
+	for name, m := range got {
+		if m.MType == commons.MetricTypeCounter {
+			counters++
+			assert.True(t, backupCounterStats[fieldKey(name)], "%s must not be a counter", name)
+		}
+	}
+	assert.Equal(t, len(backupCounterStats), counters, "every listed counter is in this record")
+
+	for _, name := range []string{"progress_pct", "total_buffers_allocated", "recs_per_sec", "upload_q_depth", "backup-rps", "change_stream_active"} {
+		assert.Equal(t, commons.MetricTypeGauge, got[name].MType, name)
+	}
+
+	assert.Equal(t, 29.52, got["progress_pct"].Value)
+	assert.Equal(t, 144.0, got["total_buffers_allocated"].Value)
+	assert.Equal(t, 0.0, got["backpressure_active"].Value)
+	assert.Equal(t, 1795531891499.0, got["start_time"].Value)
+	assertLabel(t, got[STAT_JOB], commons.METRIC_LABEL_STATE, "BASE_SCAN_ACTIVE")
+	assertLabel(t, got["recs_backed_up"], commons.METRIC_LABEL_JOB_ID, "261124T145131-hhj8")
 }

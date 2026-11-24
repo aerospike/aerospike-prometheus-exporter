@@ -257,13 +257,13 @@
 
       # In-server backup and restore metrics (backup-status and restore-status), available from Aerospike 8.2.1.
       # Commenting these out collects every backup and restore stat the server emits.
-      # Patterns match the stat name exactly as the server prints it, with hyphens, for example
-      # "recs-backed-up" or "bytes-*" -- not the exported name aerospike_backup_recs_backed_up.
-      # Two stats are added by the exporter and can be matched too:
+      # Patterns match the stat name exactly as the server prints it, for example "recs_backed_up" or "bytes_*"
+      # (settings such as "backup-rps" keep their hyphens) -- not the exported name aerospike_backup_recs_backed_up.
+      # Two stats are exported as gauges by the exporter and can be matched too:
       #   "job"                  -> aerospike_backup_job / aerospike_restore_job (one series per job, labeled with state)
-      #   "achieved-consistency" -> aerospike_backup_achieved_consistency
+      #   "achieved_consistency" -> aerospike_backup_achieved_consistency (0 for "-", 1 for relaxed, 2 for strict)
       # to exclude or stop all backup or restore metrics, use ["*"] in the blocklist
-      # example: backup_metrics_allowlist = ["job", "progress-pct", "recs-*", "bytes-*", "start-time", "finish-time"]
+      # example: backup_metrics_allowlist = ["job", "progress_pct", "recs_*", "bytes_*", "start_time", "finish_time"]
       # backup_metrics_allowlist = []
       # backup_metrics_blocklist = []
       # restore_metrics_allowlist = []
