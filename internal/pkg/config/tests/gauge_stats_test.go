@@ -71,6 +71,8 @@ func TestIsAGaugeTrue(t *testing.T) {
 	gaugeList := config.GaugeStatHandler
 
 	assert.Equal(t, gaugeList.NamespaceStats["cache_read_pct"], true)
+	// no hyphen in the name, so it is a gauge only if the toml key matches the server stat exactly
+	assert.True(t, gaugeList.NamespaceStats["sindex_equality_filter_bytes"])
 	assert.Equal(t, gaugeList.NodeStats["cluster_clock_skew_stop_writes_sec"], true)
 
 	assert.Equal(t, gaugeList.SindexStats["entries_per_rec"], true)
