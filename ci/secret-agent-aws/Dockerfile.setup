@@ -1,0 +1,8 @@
+FROM alpine:3.24
+
+RUN apk add --no-cache aws-cli jq openssl
+
+COPY scripts/ /scripts/
+
+ENTRYPOINT ["/bin/sh", "/scripts/setup.sh"]
+CMD ["setup"]

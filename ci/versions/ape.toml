@@ -1,0 +1,9 @@
+[Agent]
+bind = ":9145"
+refresh_system_stats = false
+log_level = "info"
+
+[Aerospike]
+db_host = "aerospike"
+db_port = 3000
+timeout = 10
