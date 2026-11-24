@@ -132,6 +132,41 @@ func TestNodeStatsProcessorCheckpointStatusShapes(t *testing.T) {
 	assert.False(t, ok, "is_parked=true stops the rest of the refresh")
 }
 
+// TestNodeStatsProcessorCheckpointStatusNodeRecord covers 8.2.2, where the node-level fields come as
+// their own node: record and the namespace records no longer carry is_parked or park_ms.
+func TestNodeStatsProcessorCheckpointStatusNodeRecord(t *testing.T) {
+	idle := "node:is_parked=false:park_ms=0;test:state=none:files_completed=0:files_total=0;" +
+		"bar:state=none:files_completed=0:files_total=0"
+	metrics := refreshCheckpoint(t, idle)
+
+	_, ok := findStat(metrics, "client_connections")
+	assert.True(t, ok, "an idle node record must not be read as checkpoint-shutdown")
+	_, ok = findStatWithLabel(metrics, "checkpoint_is_parked", commons.METRIC_LABEL_NS, "node")
+	assert.False(t, ok, "the node record is a signal, not a namespace")
+	completed, ok := findStatWithLabel(metrics, "checkpoint_files_completed", commons.METRIC_LABEL_NS, "bar")
+	require.True(t, ok)
+	assertLabel(t, completed, commons.METRIC_LABEL_CHECKPOINT_STATUS, "none")
+
+	metrics = refreshCheckpoint(t, "node:is_parked=true:park_ms=12;test:state=none:files_completed=0:files_total=0")
+	_, ok = findStat(metrics, "client_connections")
+	assert.False(t, ok, "is_parked=true on the node record stops the rest of the refresh")
+
+	metrics = refreshCheckpoint(t, "node:is_parked=false:park_ms=0;test:state=saving:files_completed=2:files_total=4")
+	_, ok = findStat(metrics, "client_connections")
+	assert.False(t, ok, "a namespace state other than none still stops the rest of the refresh")
+
+	metrics = refreshCheckpoint(t, "node:is_parked=false:park_ms=0;node:state=none:files_completed=3:files_total=4")
+	completed, ok = findStatWithLabel(metrics, "checkpoint_files_completed", commons.METRIC_LABEL_NS, "node")
+	require.True(t, ok, "a namespace named node still reports, since it has a state")
+	assert.Equal(t, 3.0, completed.Value)
+	_, ok = findStat(metrics, "client_connections")
+	assert.True(t, ok)
+
+	metrics = refreshCheckpoint(t, "node;test:state=none:files_completed=0:files_total=0")
+	_, ok = findStat(metrics, "client_connections")
+	assert.True(t, ok, "a record without stats is skipped")
+}
+
 func refreshCheckpoint(t *testing.T, body string) []AerospikeStat {
 	t.Helper()
 
