@@ -20,6 +20,23 @@ for version in $versions; do
 		data_in_memory=false
 	fi
 	project="ape-ver-$(printf '%s' "$version" | tr '.' '-')"
+
+	# A registry or CDN reset while pulling is not a test failure. Retry the pull before running.
+	pulled=false
+	for attempt in 1 2 3; do
+		if AEROSPIKE_VERSION="$version" DATA_IN_MEMORY="$data_in_memory" docker compose -p "$project" pull --quiet; then
+			pulled=true
+			break
+		fi
+		echo "image pull attempt ${attempt} of 3 failed for ${version}" >&2
+		sleep $((attempt * 10))
+	done
+	if [[ $pulled == false ]]; then
+		echo "could not pull the images for ${version}" >&2
+		status=1
+		continue
+	fi
+
 	if ! AEROSPIKE_VERSION="$version" DATA_IN_MEMORY="$data_in_memory" docker compose -p "$project" up --abort-on-container-exit --exit-code-from tester; then
 		status=1
 	fi
