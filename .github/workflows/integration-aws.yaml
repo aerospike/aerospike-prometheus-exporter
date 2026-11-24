@@ -42,16 +42,28 @@ jobs:
       # sends: refs/heads/master and refs/heads/dev for a push, and pull_request for a
       # pull request. The branch filters above limit pull requests to master and dev.
       # It can read and write APE_IT_AWS_SECRET_ARN.
+      #
+      # TODO: assume-role currently fails in CI. Do not fail the check on it for now (reviewer
+      # request). The AWS test steps below are skipped when the role cannot be assumed, and a
+      # test failure with valid credentials still fails the job. Remove continue-on-error and
+      # the `if` gates once the role trust policy is fixed.
       - name: Configure AWS credentials
+        id: aws-creds
+        continue-on-error: true
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ secrets.APE_IT_AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Skip AWS integration (assume role failed)
+        if: steps.aws-creds.outcome != 'success'
+        run: echo "::warning title=AWS integration skipped::Could not assume the AWS role; AWS integration tests were skipped."
+
       # One job, several runs in a row. Every run writes the same shared secret and scrubs it,
       # so they must not overlap. The runs together cover each transport and each PEM encoding.
       # The first run also covers the optional plain-text secret.
       - name: Secret Agent AWS integration (tcp, base64 PEM)
+        if: steps.aws-creds.outcome == 'success'
         env:
           APE_IT_SA_TRANSPORT: tcp
           APE_IT_PEM_ENCODING: base64
@@ -62,6 +74,7 @@ jobs:
         run: make test-integration-aws
 
       - name: Secret Agent AWS integration (tcp, text PEM)
+        if: steps.aws-creds.outcome == 'success'
         env:
           APE_IT_SA_TRANSPORT: tcp
           APE_IT_PEM_ENCODING: text
@@ -69,6 +82,7 @@ jobs:
         run: make test-integration-aws
 
       - name: Secret Agent AWS integration (mtls, base64 PEM)
+        if: steps.aws-creds.outcome == 'success'
         env:
           APE_IT_SA_TRANSPORT: mtls
           APE_IT_PEM_ENCODING: base64
@@ -76,6 +90,7 @@ jobs:
         run: make test-integration-aws
 
       - name: Secret Agent AWS integration (uds, text PEM)
+        if: steps.aws-creds.outcome == 'success'
         env:
           APE_IT_SA_TRANSPORT: uds
           APE_IT_PEM_ENCODING: text
