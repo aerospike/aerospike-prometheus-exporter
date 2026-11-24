@@ -182,3 +182,69 @@ func TestFetchUsesOneDeadlineForTheWholeAttempt(t *testing.T) {
 	require.Less(t, elapsed, 1300*time.Millisecond, "one 1s deadline, not 1s per step")
 	require.NotContains(t, err.Error(), "late")
 }
+
+// A server that accepts the connection and never answers must not hold an attempt past the retry
+// deadline, even when the client timeout is much longer.
+func TestFetchWithRetryCapsAnAttemptAtTheRetryDeadline(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = ln.Close() })
+
+	go func() {
+		for {
+			conn, acceptErr := ln.Accept()
+			if acceptErr != nil {
+				return
+			}
+
+			// Hold the connection open and never reply.
+			t.Cleanup(func() { _ = conn.Close() })
+		}
+	}()
+
+	client := newTestClient(t, RawConfig{
+		Address:        "127.0.0.1",
+		Port:           portOf(t, ln),
+		TimeoutSeconds: 10,
+	}, nil)
+
+	policy := RetryPolicy{Until: time.Now().Add(50 * time.Millisecond), Interval: 10 * time.Millisecond}
+
+	start := time.Now()
+	_, err = FetchWithRetry(context.Background(), client, "APE", "Password", policy)
+	elapsed := time.Since(start)
+
+	require.Error(t, err)
+	require.True(t, IsRetryable(err), "a timeout is retryable: %v", err)
+	require.GreaterOrEqual(t, elapsed, 40*time.Millisecond)
+	require.Less(t, elapsed, 500*time.Millisecond, "the attempt must end near 50ms, not at the 10s client timeout")
+}
+
+// The caller's context deadline also caps the attempt when it is the earliest.
+func TestFetchHonorsAnEarlierCallerDeadline(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = ln.Close() })
+
+	go func() {
+		for {
+			conn, acceptErr := ln.Accept()
+			if acceptErr != nil {
+				return
+			}
+
+			t.Cleanup(func() { _ = conn.Close() })
+		}
+	}()
+
+	client := newTestClient(t, RawConfig{Address: "127.0.0.1", Port: portOf(t, ln), TimeoutSeconds: 10}, nil)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	start := time.Now()
+	_, err = client.Fetch(ctx, "APE", "Password")
+
+	require.Error(t, err)
+	require.Less(t, time.Since(start), 500*time.Millisecond)
+}

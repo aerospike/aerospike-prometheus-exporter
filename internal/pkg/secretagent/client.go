@@ -62,8 +62,9 @@ func (c *secretAgentClient) Close() error {
 	return nil
 }
 
-// Fetch makes one attempt. The configured timeout is a single deadline for the whole
-// attempt: dial (including the TLS handshake), write, and read share it.
+// Fetch makes one attempt. The attempt ends at the earliest of the configured timeout and the
+// deadline of ctx. That is a single deadline for the whole attempt: dial (including the TLS
+// handshake), write, and read share it.
 func (c *secretAgentClient) Fetch(ctx context.Context, resource, key string) ([]byte, error) {
 	if resource == "" || key == "" {
 		return nil, errors.New("secret agent resource and key are required")
@@ -77,6 +78,11 @@ func (c *secretAgentClient) Fetch(ctx context.Context, resource, key string) ([]
 
 	ctx, cancel := context.WithDeadline(ctx, deadline)
 	defer cancel()
+
+	// WithDeadline keeps an earlier caller deadline, so this is the earliest of the two.
+	if effective, ok := ctx.Deadline(); ok {
+		deadline = effective
+	}
 
 	conn, err := c.dial(ctx)
 	if err != nil {
@@ -187,13 +193,25 @@ type RetryPolicy struct {
 
 // FetchWithRetry fetches one secret and retries only errors that IsRetryable accepts,
 // until the policy's deadline. Any other error is returned at once.
+// Each attempt is also capped at the policy deadline, so an attempt that is still waiting on
+// a silent server cannot run past it. The earliest of the caller's context deadline, the
+// policy deadline, and the client's own timeout ends the attempt.
 func FetchWithRetry(ctx context.Context, fetcher Fetcher, resource, key string, policy RetryPolicy) ([]byte, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
+	attemptCtx := ctx
+
+	if !policy.Until.IsZero() {
+		var cancel context.CancelFunc
+
+		attemptCtx, cancel = context.WithDeadline(ctx, policy.Until)
+		defer cancel()
+	}
+
 	for {
-		secret, err := fetcher.Fetch(ctx, resource, key)
+		secret, err := fetcher.Fetch(attemptCtx, resource, key)
 		if err == nil || !IsRetryable(err) {
 			return secret, err
 		}
@@ -207,7 +225,7 @@ func FetchWithRetry(ctx context.Context, fetcher Fetcher, resource, key string, 
 		}
 
 		select {
-		case <-ctx.Done():
+		case <-attemptCtx.Done():
 			return nil, err
 		case <-time.After(policy.Interval):
 		}
