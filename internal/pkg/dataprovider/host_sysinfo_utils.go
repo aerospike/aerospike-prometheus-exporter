@@ -178,7 +178,9 @@ func parseSysVSharedMemInfo(key int64, shmFields []string) map[string]string {
 }
 
 func decodeAerospikeShmKey(raw int64) AerospikeShmKeyInfo {
-	u := uint64(raw)
+	// sysvipc keys are 32-bit. ParseInt sign-extends a negative key into int64,
+	// which would render hexKey as 0xffffffffae001100 instead of 0xae001100.
+	u := uint64(uint32(raw))
 
 	prefix := byte(u >> 24)
 

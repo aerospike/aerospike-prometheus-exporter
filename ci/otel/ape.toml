@@ -1,0 +1,20 @@
+[Agent]
+enable_prometheus = false
+enable_open_telemetry = true
+refresh_system_stats = false
+log_file = "/logs/ape.log"
+log_level = "info"
+
+[Agent.OpenTelemetry]
+service_name = "ape-otel-it"
+http_endpoint = "http://otel-collector:4318/v1/metrics"
+push_interval = 1
+server_stat_fetch_interval = 1
+counter_temporality = "delta"
+all_metrics_as_gauges = true
+metric_name_prefix = "aerospike.server"
+metric_context_separator = "period"
+
+[Aerospike]
+db_host = "aerospike"
+db_port = 3000

@@ -7,11 +7,13 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -20,6 +22,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/secretagent"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -75,7 +78,15 @@ func ValidateBasicAuth(r *http.Request, username string, password string) bool {
 // 3. "env:<environment-variable-that-contains-secret>" (environment variable containing secret)
 // 4. "env-b64:<environment-variable-that-contains-base64-encoded-secret>" (environment variable containing base64 encoded secret)
 // 5. "b64:<base64-encoded-secret>" (base64 encoded secret)
+// 6. "secrets:<resource>:<key>" (text value fetched from the configured Secret Agent)
+// 7. "secrets:b64:<resource>:<key>" (base64 value fetched from the configured Secret Agent and decoded once)
+// A value with ':' whose text before the first ':' looks like a source name ("evn:DB_PASSWORD") is rejected as a likely typo.
+// A value like "Bearer abc:def" is literal text.
 func GetSecret(secretConfig string) ([]byte, error) {
+	if secretagent.IsSecretReference(secretConfig) {
+		return fetchConfiguredSecret(secretConfig)
+	}
+
 	secretSource := strings.SplitN(secretConfig, ":", 2)
 
 	if len(secretSource) == 2 {
@@ -96,13 +107,32 @@ func GetSecret(secretConfig string) ([]byte, error) {
 
 		case "b64":
 			return GetValueFromBase64(secretSource[1])
-
-		default:
-			return nil, fmt.Errorf("invalid source: %s", secretSource[0])
 		}
 	}
 
+	if hasUnknownSourcePrefix(secretConfig) {
+		return nil, errUnknownSourcePrefix
+	}
+
+	// Any other value is literal text, including one that contains ':' such as "Bearer abc:def".
 	return []byte(secretConfig), nil
+}
+
+// schemeToken matches the text before the first ':' when it looks like a source name, such as "evn".
+// "Bearer abc:def" does not match because of the space, so it stays literal text.
+var schemeToken = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9.+-]*$`)
+
+// errUnknownSourcePrefix never includes the value: it may be a password.
+var errUnknownSourcePrefix = errors.New("value starts with an unknown source before ':' " +
+	"(supported: file:, env:, env-b64:, b64:, secrets:); " +
+	"to use a literal value that looks like this, store it with b64:, env: or file: instead")
+
+// hasUnknownSourcePrefix reports whether value looks like "<source>:<rest>" for a source that is not supported,
+// which is almost always a typo such as "evn:DB_PASSWORD". The supported sources are handled before this is called.
+func hasUnknownSourcePrefix(value string) bool {
+	prefix, _, found := strings.Cut(value, ":")
+
+	return found && schemeToken.MatchString(prefix)
 }
 
 // Get decoded base64 value from environment variable
@@ -164,7 +194,12 @@ func LoadCACert(certConfig string) (*x509.CertPool, error) {
 			return nil, err
 		}
 
-		certificates.AppendCertsFromPEM(caCert)
+		// AppendCertsFromPEM adds nothing and returns false for a value that is not PEM,
+		// for example base64 read with secrets: instead of secrets:b64:. Continuing would
+		// silently fall back to the system roots. The error never includes the bytes.
+		if !certificates.AppendCertsFromPEM(caCert) {
+			return nil, errors.New("failed to parse CA certificate: no PEM certificate found")
+		}
 	}
 
 	return certificates, nil
@@ -253,7 +288,13 @@ func GetFullHost() string {
 // 2. "file:<file-path>" (certificate file path)
 // 3. "env-b64:<environment-variable-that-contains-base64-encoded-certificate>" (environment variable containing base64 encoded certificate)
 // 4. "b64:<base64-encoded-certificate>" (base64 encoded certificate)
+// 5. "secrets:<resource>:<key>" (text certificate fetched from the configured Secret Agent)
+// 6. "secrets:b64:<resource>:<key>" (base64 certificate fetched from the configured Secret Agent and decoded once)
 func getCertificate(certConfig string) ([]byte, error) {
+	if secretagent.IsSecretReference(certConfig) {
+		return fetchConfiguredSecret(certConfig)
+	}
+
 	certificateSource := strings.SplitN(certConfig, ":", 2)
 
 	if len(certificateSource) == 2 {
@@ -266,13 +307,14 @@ func getCertificate(certConfig string) ([]byte, error) {
 
 		case "b64":
 			return GetValueFromBase64(certificateSource[1])
-
-		default:
-			return nil, fmt.Errorf("invalid source %s", certificateSource[0])
 		}
 	}
 
-	// Assume certConfig is a file path (backward compatible)
+	if hasUnknownSourcePrefix(certConfig) {
+		return nil, errUnknownSourcePrefix
+	}
+
+	// Any other value is a file path (backward compatible), including one that contains ':'.
 	return readFromFile(certConfig)
 }
 

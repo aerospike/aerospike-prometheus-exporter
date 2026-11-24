@@ -1,0 +1,83 @@
+name: Integration AWS
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches:
+      - master
+      - dev
+  workflow_dispatch:
+
+# AWS runs write to one shared secret and scrub it afterwards. Serialize them
+# in their own group and never cancel a running job, so an overlapping run
+# cannot replace the material or scrub it while another run reads it.
+concurrency:
+  group: integration-aws
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  secret-agent-aws:
+    name: secret agent aws
+    # A fork pull request does not receive the AWS secrets, and its code would
+    # run with the role. Same-repository pull requests and pushes to master and dev do.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Short-lived credentials from OIDC. The role must trust the ref GitHub
+      # sends: refs/heads/master and refs/heads/dev for a push, and pull_request for a
+      # pull request. The branch filters above limit pull requests to master and dev.
+      # It can read and write APE_IT_AWS_SECRET_ARN.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.APE_IT_AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # One job, several runs in a row. Every run writes the same shared secret and scrubs it,
+      # so they must not overlap. The runs together cover each transport and each PEM encoding.
+      # The first run also covers the optional plain-text secret.
+      - name: Secret Agent AWS integration (tcp, base64 PEM)
+        env:
+          APE_IT_SA_TRANSPORT: tcp
+          APE_IT_PEM_ENCODING: base64
+          APE_IT_AWS_SECRET_ARN: ${{ secrets.APE_IT_AWS_SECRET_ARN }}
+          APE_IT_AWS_PLAIN_SECRET_ARN: ${{ secrets.APE_IT_AWS_PLAIN_SECRET_ARN }}
+          APE_IT_PLAIN_USERNAME: ${{ secrets.APE_IT_PLAIN_USERNAME }}
+          APE_IT_PLAIN_PASSWORD: ${{ secrets.APE_IT_PLAIN_PASSWORD }}
+        run: make test-integration-aws
+
+      - name: Secret Agent AWS integration (tcp, text PEM)
+        env:
+          APE_IT_SA_TRANSPORT: tcp
+          APE_IT_PEM_ENCODING: text
+          APE_IT_AWS_SECRET_ARN: ${{ secrets.APE_IT_AWS_SECRET_ARN }}
+        run: make test-integration-aws
+
+      - name: Secret Agent AWS integration (mtls, base64 PEM)
+        env:
+          APE_IT_SA_TRANSPORT: mtls
+          APE_IT_PEM_ENCODING: base64
+          APE_IT_AWS_SECRET_ARN: ${{ secrets.APE_IT_AWS_SECRET_ARN }}
+        run: make test-integration-aws
+
+      - name: Secret Agent AWS integration (uds, text PEM)
+        env:
+          APE_IT_SA_TRANSPORT: uds
+          APE_IT_PEM_ENCODING: text
+          APE_IT_AWS_SECRET_ARN: ${{ secrets.APE_IT_AWS_SECRET_ARN }}
+        run: make test-integration-aws

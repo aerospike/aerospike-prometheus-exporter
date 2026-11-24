@@ -7,6 +7,7 @@ import (
 	"github.com/BurntSushi/toml"
 
 	aslog "github.com/aerospike/aerospike-client-go/v8/logger"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/secretagent"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -37,6 +38,18 @@ type Config struct {
 
 		BasicAuthUsername string `toml:"basic_auth_username"`
 		BasicAuthPassword string `toml:"basic_auth_password"`
+
+		SecretAgent struct {
+			Address           string `toml:"address"`
+			Port              uint16 `toml:"port"`
+			SocketPath        string `toml:"socket_path"`
+			TLSName           string `toml:"tls_name"`
+			CAFile            string `toml:"ca_file"`
+			CertFile          string `toml:"cert_file"`
+			KeyFile           string `toml:"key_file"`
+			KeyFilePassphrase string `toml:"key_file_passphrase"`
+			Timeout           uint16 `toml:"timeout"`
+		} `toml:"SecretAgent"`
 
 		Otel struct {
 			ServiceName             string            `toml:"service_name"`
@@ -291,6 +304,15 @@ func (c *Config) FetchCloudInfo(md toml.MetaData) {
 		cloudLabels := CollectCloudDetails()
 		log.Debugf("Adding Cloud Info to Metric Labels %s", cloudLabels)
 
+		if len(cloudLabels) == 0 {
+			return
+		}
+
+		// labels is omitted from the toml when cloud_provider is set on its own.
+		if c.Agent.MetricLabels == nil {
+			c.Agent.MetricLabels = make(map[string]string)
+		}
+
 		for k, v := range cloudLabels {
 
 			if len(v) == 0 {
@@ -324,6 +346,23 @@ func (c *Config) FetchKubernetesInfo(md toml.MetaData) {
 	}
 }
 
+// SecretAgentConfigs returns the raw [Agent.SecretAgent] block for validation and client setup.
+func (c *Config) SecretAgentConfigs() secretagent.RawConfig {
+	settings := c.Agent.SecretAgent
+
+	return secretagent.RawConfig{
+		Address:           settings.Address,
+		Port:              settings.Port,
+		SocketPath:        settings.SocketPath,
+		TLSName:           settings.TLSName,
+		CAFile:            settings.CAFile,
+		CertFile:          settings.CertFile,
+		KeyFile:           settings.KeyFile,
+		KeyFilePassphrase: settings.KeyFilePassphrase,
+		TimeoutSeconds:    settings.Timeout,
+	}
+}
+
 // Initialize exporter configuration
 func InitConfig(configFile string) {
 	// to print everything out regarding reading the config in app init
@@ -348,6 +387,10 @@ func InitConfig(configFile string) {
 
 	aslog.Logger.SetLogger(log.StandardLogger())
 	setLogLevel(Cfg.Agent.LogLevel)
+
+	if _, err = secretagent.Parse(Cfg.SecretAgentConfigs()); err != nil {
+		log.Fatalf("Invalid [Agent.SecretAgent] configuration: %s", err)
+	}
 
 	Cfg.ValidateAndUpdate(md)
 	Cfg.FetchCloudInfo(md)
