@@ -1,0 +1,38 @@
+name: ape-prometheus
+
+services:
+  aerospike:
+    image: aerospike/aerospike-server:7.2.0.11
+    environment:
+      NAMESPACE: test
+      DATA_IN_MEMORY: "true"
+      MEM_GB: "1"
+    healthcheck:
+      test: ["CMD", "asinfo", "-v", "status"]
+      interval: 2s
+      timeout: 5s
+      retries: 40
+      start_period: 5s
+
+  ape:
+    image: golang:${CI_GO_VERSION:?set by make from go.mod}
+    working_dir: /src
+    environment:
+      CGO_ENABLED: "0"
+    command: ["go", "run", "./cmd", "--config", "/etc/ape/ape.toml", "--gauge-list", "/src/configs/gauge_stats_list.toml"]
+    volumes:
+      - ../..:/src
+      - ./ape.toml:/etc/ape/ape.toml:ro
+    depends_on:
+      aerospike:
+        condition: service_healthy
+
+  # The tester runs on the server image for asinfo, which creates and drops a secondary index, and for curl.
+  tester:
+    image: aerospike/aerospike-server:7.2.0.11
+    volumes:
+      - ./scripts/check.sh:/scripts/check.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/check.sh"]
+    depends_on:
+      ape:
+        condition: service_started
