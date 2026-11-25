@@ -20,6 +20,7 @@ const (
 
 	// STAT_ACHIEVED_CONSISTENCY is a gauge whose value is the consistency level reached:
 	// 0 while it is "-", 1 for relaxed, 2 for strict. The level is also the label.
+	// It is matched with fieldKey, and the metric keeps the server's spelling (achieved_consistency on 8.2.2).
 	STAT_ACHIEVED_CONSISTENCY = "achieved-consistency"
 
 	// BACKUP_RESTORE_MIN_BUILD is the first server build that reports backup-status and restore-status.
@@ -104,47 +105,56 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 	for i := range jobRecords {
 		stats := commons.ParseStats(jobRecords[i], ":")
 
+		// fields looked up by their hyphenated name, whichever spelling the server used
+		fields := make(map[string]string, len(stats))
+		for stat, value := range stats {
+			fields[fieldKey(stat)] = value
+		}
+
 		// records without a job-id are not jobs, e.g. restore-status "ns=<name>:ns-state=<STATE>"
-		jobID, hasJobID := stats["job-id"]
+		jobID, hasJobID := fields["job-id"]
 		if !hasJobID {
 			continue
 		}
 
 		labels := []string{commons.METRIC_LABEL_CLUSTER_NAME, commons.METRIC_LABEL_SERVICE, commons.METRIC_LABEL_NS, commons.METRIC_LABEL_JOB_ID}
-		labelValues := []string{bw.sharedState.ClusterName, bw.sharedState.Service, stats["ns"], jobID}
+		labelValues := []string{bw.sharedState.ClusterName, bw.sharedState.Service, fields["ns"], jobID}
 
 		// the job is also emitted as its own gauge so the number of jobs in each state can be counted:
 		// aerospike_backup_job{job_id="b1",state="BASE_SCAN_ACTIVE"} 1
 		// the remaining labels are conditional, so each is added only when the server emitted it
-		if state, hasState := stats["state"]; hasState {
+		if state, hasState := fields["state"]; hasState {
 			jobLabels := append(labels, commons.METRIC_LABEL_STATE)
 			jobLabelValues := append(labelValues, state)
 
 			// restore rows name their lane, the namespace's restore gate, and — when restoring a
 			// list of backups or a frozen layout — which backup and which cluster key
-			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_KIND, stats["kind"])
-			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_NS_STATE, stats["ns-state"])
-			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_BACKUP_ID, stats["backup-id"])
-			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_CLUSTER_KEY, stats["cluster-key"])
+			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_KIND, fields["kind"])
+			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_NS_STATE, fields["ns-state"])
+			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_BACKUP_ID, fields["backup-id"])
+			jobLabels, jobLabelValues = appendLabelIfPresent(jobLabels, jobLabelValues, commons.METRIC_LABEL_CLUSTER_KEY, fields["cluster-key"])
 
 			allMetricsToSend = append(allMetricsToSend, bw.jobMetric(context, metrics, jobLabels, jobLabelValues))
 		}
 
-		// achieved-consistency is an enum ("-", "relaxed", "strict"), so it is its own gauge
-		// valued by the level reached and labeled with the level, rather than a number
-		if consistency, hasConsistency := stats[STAT_ACHIEVED_CONSISTENCY]; hasConsistency {
-			allMetricsToSend = append(allMetricsToSend,
-				bw.achievedConsistencyMetric(context, metrics, consistency, labels, labelValues))
-		}
-
 		for stat, value := range stats {
-			// identifiers and non-numeric descriptors are used as labels, not as metrics.
-			// cluster-key is hex, so an all-digit key would otherwise slip through as a number.
-			if stat == "job-id" || stat == "ns" || stat == "cluster-key" || stat == "backup-id" || stat == STAT_ACHIEVED_CONSISTENCY {
+			key := fieldKey(stat)
+
+			// achieved-consistency is an enum ("-", "relaxed", "strict"), so it is its own gauge
+			// valued by the level reached and labeled with the level, rather than a number
+			if key == STAT_ACHIEVED_CONSISTENCY {
+				allMetricsToSend = append(allMetricsToSend,
+					bw.achievedConsistencyMetric(context, metrics, stat, value, labels, labelValues))
 				continue
 			}
 
-			pv, ok := numericValue(stat, value)
+			// identifiers and non-numeric descriptors are used as labels, not as metrics.
+			// cluster-key is hex, so an all-digit key would otherwise slip through as a number.
+			if key == "job-id" || key == "ns" || key == "cluster-key" || key == "backup-id" {
+				continue
+			}
+
+			pv, ok := numericValue(key, value)
 			if !ok {
 				continue
 			}
@@ -154,10 +164,9 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 			if !exists {
 				allowed := isMetricAllowed(context, stat)
 				asMetric = NewAerospikeStat(context, stat, allowed)
-				// every backup/restore stat is a gauge for now. The default rule types a stat by its name
-				// (no hyphen -> counter), which disagrees with the spec for fields like outstanding and
-				// covered; revisit once the server team confirms each field's type.
-				asMetric.MType = commons.MetricTypeGauge
+				// the type comes from gauge_stats_list.toml (backup_gauge_stats / restore_gauge_stats),
+				// the same as the other contexts: listed is a gauge, unlisted is a counter
+				asMetric.MType = backupRestoreMetricType(context, stat)
 				metrics[stat] = asMetric
 			}
 
@@ -167,6 +176,23 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 	}
 
 	return allMetricsToSend
+}
+
+// backupRestoreMetricType reads the stat's type from gauge_stats_list.toml. The name is matched with
+// underscores read as hyphens, so both spellings resolve to the same entry.
+func backupRestoreMetricType(context commons.ContextType, stat string) commons.MetricType {
+	if isGauge(context, fieldKey(stat)) {
+		return commons.MetricTypeGauge
+	}
+
+	return commons.MetricTypeCounter
+}
+
+// fieldKey is a field's name with underscores read as hyphens. Earlier builds print every field with
+// hyphens (start-time); 8.2.2 prints stats with underscores (start_time, progress_pct) and keeps hyphens
+// on identifiers and settings (job-id, backup-rps). Metrics keep the server's own spelling.
+func fieldKey(stat string) string {
+	return strings.ReplaceAll(stat, "_", "-")
 }
 
 // isValidStatusResponse reports whether a status response holds job records rather than a command
@@ -211,15 +237,15 @@ func consistencyLevel(value string) float64 {
 
 // achievedConsistencyMetric emits one gauge per job for the consistency level reached.
 // The level is both the value and the label, so it can be read as a number or filtered by name.
-func (bw *BackupRestoreStatsProcessor) achievedConsistencyMetric(context commons.ContextType, metrics map[string]AerospikeStat, consistency string, labels []string, labelValues []string) AerospikeStat {
+func (bw *BackupRestoreStatsProcessor) achievedConsistencyMetric(context commons.ContextType, metrics map[string]AerospikeStat, stat string, consistency string, labels []string, labelValues []string) AerospikeStat {
 
-	asMetric, exists := metrics[STAT_ACHIEVED_CONSISTENCY]
+	asMetric, exists := metrics[stat]
 
 	if !exists {
-		allowed := isMetricAllowed(context, STAT_ACHIEVED_CONSISTENCY)
-		asMetric = NewAerospikeStat(context, STAT_ACHIEVED_CONSISTENCY, allowed)
+		allowed := isMetricAllowed(context, stat)
+		asMetric = NewAerospikeStat(context, stat, allowed)
 		asMetric.MType = commons.MetricTypeGauge
-		metrics[STAT_ACHIEVED_CONSISTENCY] = asMetric
+		metrics[stat] = asMetric
 	}
 
 	asMetric.updateValues(consistencyLevel(consistency),

@@ -29,6 +29,8 @@
       # 1. Certificate file path                                      - "file:<file-path>"
       # 2. Environment variable containing base64 encoded certificate - "env-b64:<environment-variable-that-contains-base64-encoded-certificate>"
       # 3. Base64 encoded certificate                                 - "b64:<base64-encoded-certificate>"
+      # 4. Secret Agent reference, text SecretValue                     - "secrets:<resource>:<key>"
+      # 5. Secret Agent reference, base64 SecretValue                   - "secrets:b64:<resource>:<key>"
       # Applicable to 'root_ca', 'cert_file' and 'key_file' configurations.
 
       # Server certificate
@@ -51,6 +53,8 @@
       # 3. Passphrase via environment variable                                      - "env:<environment-variable-that-holds-passphrase>"
       # 4. Passphrase via environment variable containing base64 encoded passphrase - "env-b64:<environment-variable-that-contains-base64-encoded-passphrase>"
       # 5. Passphrase in base64 encoded form                                        - "b64:<base64-encoded-passphrase>"
+      # 6. Secret Agent reference, text SecretValue                                - "secrets:<resource>:<key>"
+      # 7. Secret Agent reference, base64 SecretValue                              - "secrets:b64:<resource>:<key>"
       key_file_passphrase = ""
 
       # prometheus binding port
@@ -63,8 +67,35 @@
       # 3. Credential via environment variable                                      - "env:<environment-variable-that-contains-credential>"
       # 4. Credential via environment variable containing base64 encoded credential - "env-b64:<environment-variable-that-contains-base64-encoded-credential>"
       # 5. Credential in base64 encoded form                                        - "b64:<base64-encoded-credential>"
+      # 6. Secret Agent reference, text SecretValue                                - "secrets:<resource>:<key>"
+      # 7. Secret Agent reference, base64 SecretValue                              - "secrets:b64:<resource>:<key>"
       basic_auth_username = ""
       basic_auth_password = ""
+
+# Secret Agent is optional. Leave this section empty to keep existing configuration behavior.
+# Connection mode is inferred:
+# NOTE: Do not set both a TCP endpoint and socket_path.
+# NOTE: ca_file, cert_file, key_file and key_file_passphrase in this section cannot use secrets: references.
+# TLS certificate verification is always enabled.
+# timeout is in seconds and covers one whole attempt: connect, TLS handshake, request and reply.
+# At startup APE retries for up to 30 seconds in total while Secret Agent is not reachable, for example a sidecar that is still starting.
+# Secrets are read once at startup. Restart APE to pick up a changed value.
+# A secret is used exactly as Secret Agent returns it. A trailing space or newline is part of the value.
+# [Agent.SecretAgent]
+      # TCP - address and port use TCP
+      # TCP - tls/mtls - address, port, tls_name and ca_file use TLS; cert_file and key_file together use mutual TLS
+      # address = "127.0.0.1"
+      # port = 3005
+      # tls_name = ""
+      # ca_file = ""
+      # cert_file = ""
+      # key_file = ""
+      # key_file_passphrase = ""
+      # timeout = 5
+      
+      # UDS - socket_path alone uses a Unix domain socket
+      # socket_path = ""
+
 
 [Agent.OpenTelemetry]
       # OTel service-name
@@ -86,6 +117,7 @@
       # OTel headers, 
       # NOTE: Each header will be a "<key>"="<value>" pair and each header is comma separated
       # Example: "api-key"="<api-key>","Authorization"="Api-Token <token>"
+      # Header Values support "b64:<base64-encoded-value>", "secrets:<resource>:<key>" and "secrets:b64:<resource>:<key>".
       headers = {}
 
       # OTel server-stat fetch interval (default 15, not recommended to to reduce this)
@@ -123,6 +155,8 @@
       # 1. Certificate file path                                      - "file:<file-path>"
       # 2. Environment variable containing base64 encoded certificate - "env-b64:<environment-variable-that-contains-base64-encoded-certificate>"
       # 3. Base64 encoded certificate                                 - "b64:<base64-encoded-certificate>"
+      # 4. Secret Agent reference, text SecretValue                     - "secrets:<resource>:<key>"
+      # 5. Secret Agent reference, base64 SecretValue                   - "secrets:b64:<resource>:<key>"
       # Applicable to 'root_ca', 'cert_file' and 'key_file' configurations.
 
       # root certificate file
@@ -140,6 +174,8 @@
       # 3. Passphrase via environment variable                                      - "env:<environment-variable-that-holds-passphrase>"
       # 4. Passphrase via environment variable containing base64 encoded passphrase - "env-b64:<environment-variable-that-contains-base64-encoded-passphrase>"
       # 5. Passphrase in base64 encoded form                                        - "b64:<base64-encoded-passphrase>"
+      # 6. Secret Agent reference, text SecretValue                                - "secrets:<resource>:<key>"
+      # 7. Secret Agent reference, base64 SecretValue                              - "secrets:b64:<resource>:<key>"
       key_file_passphrase = ""
 
       # node TLS name for authentication
@@ -152,6 +188,8 @@
       # 3. Credential via environment variable                                      - "env:<environment-variable-that-contains-credential>"
       # 4. Credential via environment variable containing base64 encoded credential - "env-b64:<environment-variable-that-contains-base64-encoded-credential>"
       # 5. Credential in base64 encoded form                                        - "b64:<base64-encoded-credential>"
+      # 6. Secret Agent reference, text SecretValue                                - "secrets:<resource>:<key>"
+      # 7. Secret Agent reference, base64 SecretValue                              - "secrets:b64:<resource>:<key>"
       # Applicable to 'user' and 'password' configurations.
 
       # database user
@@ -219,13 +257,13 @@
 
       # In-server backup and restore metrics (backup-status and restore-status), available from Aerospike 8.2.1.
       # Commenting these out collects every backup and restore stat the server emits.
-      # Patterns match the stat name exactly as the server prints it, with hyphens, for example
-      # "recs-backed-up" or "bytes-*" -- not the exported name aerospike_backup_recs_backed_up.
-      # Two stats are added by the exporter and can be matched too:
+      # Patterns match the stat name exactly as the server prints it, for example "recs_backed_up" or "bytes_*"
+      # (settings such as "backup-rps" keep their hyphens) -- not the exported name aerospike_backup_recs_backed_up.
+      # Two stats are exported as gauges by the exporter and can be matched too:
       #   "job"                  -> aerospike_backup_job / aerospike_restore_job (one series per job, labeled with state)
-      #   "achieved-consistency" -> aerospike_backup_achieved_consistency
+      #   "achieved_consistency" -> aerospike_backup_achieved_consistency (0 for "-", 1 for relaxed, 2 for strict)
       # to exclude or stop all backup or restore metrics, use ["*"] in the blocklist
-      # example: backup_metrics_allowlist = ["job", "progress-pct", "recs-*", "bytes-*", "start-time", "finish-time"]
+      # example: backup_metrics_allowlist = ["job", "progress_pct", "recs_*", "bytes_*", "start_time", "finish_time"]
       # backup_metrics_allowlist = []
       # backup_metrics_blocklist = []
       # restore_metrics_allowlist = []

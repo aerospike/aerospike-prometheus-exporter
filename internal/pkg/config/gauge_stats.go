@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 
@@ -25,6 +26,11 @@ type GaugeStats struct {
 	// System Info Gauges
 	SysInfo []string `toml:"system_info_gauge_stats"`
 
+	// Backup and restore status stats. Names are matched with underscores read as hyphens, so the
+	// same entry covers the hyphen spelling used by earlier builds and the underscore spelling of 8.2.2+.
+	Backup  []string `toml:"backup_gauge_stats"`
+	Restore []string `toml:"restore_gauge_stats"`
+
 	// why below maps?
 	// all gauge stats are added and mapped as true after reading from toml file
 	NamespaceStats map[string]bool
@@ -35,6 +41,9 @@ type GaugeStats struct {
 
 	// System Info Gauges
 	SysInfoStats map[string]bool
+
+	BackupStats  map[string]bool
+	RestoreStats map[string]bool
 }
 
 // Initialize exporter configuration
@@ -70,7 +79,24 @@ func InitGaugeStats(pGaugeStatsFile string) {
 	GaugeStatHandler.SysInfoStats = GaugeStatHandler.createMapFromArray(GaugeStatHandler.SysInfo)
 	GaugeStatHandler.SysInfo = nil
 
+	// Backup and restore: a stat is a gauge only when it is listed. Unlisted stats are counters.
+	GaugeStatHandler.BackupStats = GaugeStatHandler.createMapFromArray(normalizeStatNames(GaugeStatHandler.Backup))
+	GaugeStatHandler.RestoreStats = GaugeStatHandler.createMapFromArray(normalizeStatNames(GaugeStatHandler.Restore))
+	GaugeStatHandler.Backup = nil
+	GaugeStatHandler.Restore = nil
+
 	log.Debugln("# of Gauge Keys defined at Gauge Stat level are: ", len(md.Keys()))
+}
+
+// normalizeStatNames reads underscores as hyphens, the same rule the backup and restore processor applies
+// to the stat names it receives.
+func normalizeStatNames(pArrStats []string) []string {
+	normalized := make([]string, 0, len(pArrStats))
+	for _, stat := range pArrStats {
+		normalized = append(normalized, strings.ReplaceAll(stat, "_", "-"))
+	}
+
+	return normalized
 }
 
 /**

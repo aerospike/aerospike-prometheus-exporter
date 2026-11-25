@@ -147,6 +147,10 @@ func isGauge(pContextType commons.ContextType, pStat string) bool {
 		return config.GaugeStatHandler.SindexStats[pStat]
 	case commons.CTX_XDR:
 		return config.GaugeStatHandler.XdrStats[pStat]
+	case commons.CTX_BACKUP:
+		return config.GaugeStatHandler.BackupStats[pStat]
+	case commons.CTX_RESTORE:
+		return config.GaugeStatHandler.RestoreStats[pStat]
 	}
 
 	// any sysinfo_ check if it exists in gauge_stats_list.toml
@@ -172,10 +176,14 @@ func GetMetricType(pContext commons.ContextType, pRawMetricName string) commons.
 		return commons.MetricTypeGauge
 	}
 
-	tmpRawMetricName := strings.ReplaceAll(pRawMetricName, commons.STORAGE_ENGINE, "")
-
-	if strings.Contains(tmpRawMetricName, "-") ||
-		isGauge(pContext, tmpRawMetricName) {
+	// array stats are built as storage-engine_<type>_<stat>, gauge_stats_list.toml keys them as storage-engine.<type>.<stat>
+	if strings.HasPrefix(pRawMetricName, commons.STORAGE_ENGINE+"_") {
+		parts := strings.SplitN(pRawMetricName, "_", 3)
+		if len(parts) == 3 && isGauge(pContext, strings.Join(parts, ".")) {
+			return commons.MetricTypeGauge
+		}
+	} else if strings.Contains(strings.TrimPrefix(pRawMetricName, commons.STORAGE_ENGINE), "-") ||
+		isGauge(pContext, pRawMetricName) {
 		return commons.MetricTypeGauge
 	}
 

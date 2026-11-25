@@ -37,9 +37,51 @@ xdr_gauge_stats = [
 ]	
 
 #
-# Backup and Restore : below section define all Backup and Restore stats which are treated as Gauges 
+# Backup : below section define all backup-status stats which are treated as Gauges.
+# Names are read with underscores as hyphens, so "progress_pct" and "progress-pct" are the same entry.
+# A backup stat that is not listed here is exported as a Counter.
 #
-backup_and_restore = [
+backup_gauge_stats = [
+
+	# settings
+	"backup-rps",
+	"backup-worker-threads",
+	"backup-upload-threads",
+	"backup-s3-throughput-target-gbps",
+
+	# current level, state and flags
+	"progress_pct",
+	"partitions_owned",
+	"partitions_count_pending",
+	"change_stream_active",
+	"backpressure_active",
+	"upload_q_depth",
+	"upload_q_cap",
+	"buffers_in_use",
+	"buffers_scan_cap",
+	"total_buffers_allocated",
+	"last_lap_ms",
+
+	# rates
+	"recs_per_sec",
+	"bytes_in_per_sec",
+	"bytes_out_per_sec",
+
+	# timestamps, exported as unix milliseconds
+	"start_time",
+	"finish_time",
+]
+
+#
+# Restore : below section define all restore-status stats which are treated as Gauges.
+# A restore stat that is not listed here is exported as a Counter, so add a stat here once its type is confirmed.
+#
+restore_gauge_stats = [
+
+	"progress-pct",
+	"applied",
+	"joiner",
+	"done",
 ]
 
 #

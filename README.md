@@ -18,7 +18,7 @@ For more details about Aerospike Server Config refer [Aerospike System Config re
 
 #### Pre Requisites
 
-- Install Go v1.26.8+
+- Install Go v1.26.11+
 
 #### Steps
 
@@ -63,6 +63,53 @@ For more details about Aerospike Server Config refer [Aerospike System Config re
   docker run -itd --name exporter1 -e AS_HOST=172.17.0.2 -e AS_PORT=3000 -e METRIC_LABELS="type='development',source='aerospike'" aerospike/aerospike-prometheus-exporter:latest
   ```
 
+#### How the image is configured
+
+The image listens on port 9145. Add `-p 9145:9145` to reach `/metrics` from the host, and set `AS_HOST` to an address the container can reach. `docker logs <container>` shows whether the exporter connected.
+
+The image does not carry a finished `ape.toml`. When the container starts, `docker-entrypoint.sh` renders `/etc/aerospike-prometheus-exporter/ape.toml` from `ape.toml.template` and the container's environment variables, then starts the exporter. An option is written only when its variable has a value. Otherwise its line stays commented out and the exporter uses its own default. The main variables are:
+
+| Variable | Default | Sets |
+|---|---|---|
+| `AS_HOST`, `AS_PORT` | none, `3000` | The Aerospike node to scrape |
+| `AS_AUTH_USER`, `AS_AUTH_PASSWORD`, `AS_AUTH_MODE` | unset | Aerospike credentials and authentication mode |
+| `AS_ROOT_CA`, `AS_CERT_FILE`, `AS_KEY_FILE`, `AS_KEY_FILE_PASSPHRASE`, `AS_NODE_TLS_NAME` | unset | TLS or mutual TLS to Aerospike |
+| `AGENT_BIND_HOST`, `AGENT_BIND_PORT` | all interfaces, `9145` | Where the exporter listens |
+| `AGENT_CERT_FILE`, `AGENT_KEY_FILE`, `AGENT_ROOT_CA`, `AGENT_KEY_FILE_PASSPHRASE` | unset | HTTPS, and mutual TLS when `AGENT_ROOT_CA` is set, between Prometheus and the exporter |
+| `BASIC_AUTH_USERNAME`, `BASIC_AUTH_PASSWORD` | unset | Basic authentication on `/metrics` |
+| `METRIC_LABELS` | `latitude="0",longitude="0"` | Labels added to every metric |
+| `AGENT_LOG_LEVEL`, `AGENT_LOG_FILE` | `info`, console | Logging |
+| `AGENT_PROMETHEUS`, `AGENT_OPEN_TELEMETRY` | `true`, `false` | Which outputs are on. The OpenTelemetry settings are the `AGENT_OTEL_*` variables |
+| `AGENT_SECRET_AGENT_ADDRESS`, `_PORT`, `_SOCKET_PATH`, `_TLS_NAME`, `_CA_FILE`, `_CERT_FILE`, `_KEY_FILE`, `_KEY_FILE_PASSPHRASE`, `_TIMEOUT` | unset | The Secret Agent connection (see [Secret Agent](#secret-agent)) |
+| `NAMESPACE_`, `SET_`, `NODE_`, `XDR_`, `JOB_`, `SINDEX_` `METRICS_ALLOWLIST` and `METRICS_BLOCKLIST` | unset | Metric allow and block lists. Each value is a list of quoted names, for example `NAMESPACE_METRICS_ALLOWLIST='"ns1","ns2"'` |
+
+`docker-entrypoint.sh` and `configs/ape.toml.template` list every variable. The secret-valued variables (`AS_AUTH_PASSWORD`, `BASIC_AUTH_PASSWORD`, the certificate and key variables, and the OpenTelemetry headers) accept the same forms as `ape.toml`: a plain value, `file:`, `env:`, `env-b64:`, `b64:`, `secrets:` and `secrets:b64:`.
+
+Files such as certificates must be inside the container, so mount them and point the variable at the path, for example `-v /etc/ape/certs:/certs:ro -e AS_ROOT_CA=file:/certs/ca.pem`.
+
+To read secrets from Secret Agent, set the connection variables and use `secrets:` references as the values:
+
+```bash
+docker run -d --name exporter1 -p 9145:9145 \
+  -e AS_HOST=172.17.0.2 \
+  -e AGENT_SECRET_AGENT_ADDRESS=secret-agent -e AGENT_SECRET_AGENT_PORT=3005 \
+  -e AS_AUTH_USER=secrets:APE:DbUser -e AS_AUTH_PASSWORD=secrets:APE:DbPassword \
+  aerospike/aerospike-prometheus-exporter:latest
+```
+
+The exporter fetches these once at startup and waits up to 30 seconds for Secret Agent to become reachable.
+
+To use your own `ape.toml`, mount it at a different path and pass `--config`. The image starts the exporter with whatever arguments you give it:
+
+```bash
+docker run -d --name exporter1 -p 9145:9145 -v /etc/ape/ape.toml:/conf/ape.toml:ro \
+  aerospike/aerospike-prometheus-exporter:latest --config /conf/ape.toml
+```
+
+Do not mount a file over `/etc/aerospike-prometheus-exporter/ape.toml`. The entrypoint writes the rendered file there, so a read-only mount makes the container fail at start and a writable mount overwrites your file on the host.
+
+To set the version printed at startup, build with `docker build --build-arg VERSION=<version> .`. `make docker` does this. `make test-integration-docker` builds the image, checks the rendered configuration, and scrapes a live server with it.
+
 ### `RPM`, `DEB` and `tar` Package
 
 ####  Pre Requisites
@@ -79,7 +126,7 @@ For more details about Aerospike Server Config refer [Aerospike System Config re
 
 ####  Pre Requisites for a FIPS build
 
-To generate a FIPS compatible exporter you need Go 1.26.8 or above or have a FIPS enabled OS and OpenSSL.
+To generate a FIPS compatible exporter you need Go 1.26.11 or above or have a FIPS enabled OS and OpenSSL.
 
 Aerospike Exporter internally using boringcrypto library for FIPS complaince crypto operations
 
@@ -248,6 +295,7 @@ make release-docker-multi-arch
     # supported cloud provider values are - AWS, Azure and GCP
     cloud_provider = aws
     ```
+    The cloud details are added to the metric labels. `labels` does not need to be set for this to work.
 
 - Update exporter's refresh_system_stats to get few system metrics like open-filefd, memory, network recv/trans packets etc.,
     ```toml
@@ -363,22 +411,22 @@ make release-docker-multi-arch
     # sindex_metrics_blocklist = []
     ```
 
-- In-server backup and restore metrics come from the `backup-status` and `restore-status` info commands (Aerospike 8.2.1 and above). Filter them with their own allowlist and blocklist. Patterns match the stat name exactly as the server prints it, with hyphens (for example `recs-backed-up` or `bytes-*`), not the exported metric name `aerospike_backup_recs_backed_up`. Two stats are added by the exporter and can be matched as well: `job` (exported as `aerospike_backup_job` / `aerospike_restore_job`, one series per job labeled with its `state`) and `achieved-consistency` (exported as `aerospike_backup_achieved_consistency`). As with the other lists, the blocklist wins when a stat matches both.
+- In-server backup and restore metrics come from the `backup-status` and `restore-status` info commands (Aerospike 8.2.1 and above). Filter them with their own allowlist and blocklist. Patterns match the stat name exactly as the server prints it (for example `recs_backed_up` or `bytes_*`; settings such as `backup-rps` keep their hyphens), not the exported metric name `aerospike_backup_recs_backed_up`. Two stats are exported as gauges by the exporter and can be matched as well: `job` (exported as `aerospike_backup_job` / `aerospike_restore_job`, one series per job labeled with its `state`) and `achieved_consistency` (exported as `aerospike_backup_achieved_consistency`: 0 for `-`, 1 for relaxed, 2 for strict). As with the other lists, the blocklist wins when a stat matches both.
     ```toml
     [Aerospike]
     # Backup metrics allowlist, An empty list will include all metrics.
     backup_metrics_allowlist = [
     "job",
-    "progress-pct",
-    "recs-*",
-    "bytes-*",
-    "start-time",
-    "finish-time"
+    "progress_pct",
+    "recs_*",
+    "bytes_*",
+    "start_time",
+    "finish_time"
     ]
 
     # Backup metrics blocklist, An empty list means all metrics are allowed.
     backup_metrics_blocklist = [
-    "recs-filtered"
+    "recs_filtered"
     ]
 
     # Restore metrics, to exclude or stop all metrics, use ["*"]
@@ -474,6 +522,104 @@ make release-docker-multi-arch
     # Default: 0 (export all threshold buckets).
     latency_buckets_count=0
     ```
+
+## Secret Agent
+
+Secret Agent support is optional. An existing `ape.toml` keeps working when `[Agent.SecretAgent]` is absent.
+
+APE uses the same Secret Agent transports as Aerospike Server: plain TCP, TCP with TLS, TCP with mutual TLS, and a Unix domain socket. HTTP and HTTPS are not used. Set either `socket_path` or `address` and `port`. TLS is selected when `tls_name` and `ca_file` are set, and mutual TLS also requires `cert_file` and `key_file`. Certificate verification stays enabled. The certificates used to connect to Secret Agent cannot themselves be `secrets:` references.
+
+Sensitive configuration values can use a Secret Agent reference. APE fetches that value during startup, before it initializes the Aerospike connection, the Prometheus listener, or OpenTelemetry. `secrets:<resource>:<key>` uses `SecretValue` as text, including a PEM certificate. `secrets:b64:<resource>:<key>` base64-decodes `SecretValue` once. Use the base64 form when the stored value is base64, or when Secret Agent `convert-to-base64` is enabled. Existing direct text, `file:`, `env:`, `env-b64:`, and `b64:` values continue to work.
+
+How values are handled:
+
+- **Read once.** Secrets are fetched at startup and kept until APE exits. Restart APE to pick up a changed value in Secret Agent, a cloud secret store, or a vault.
+- **Used as stored.** The value is not trimmed. A trailing space or newline stored with the secret is part of the secret, so a wrong value fails where it is used, for example as an authentication error. A `file:` value is different: it drops one trailing newline and all carriage returns.
+- **Base64.** `secrets:b64:` accepts wrapped base64, such as the 76-column output of GNU `base64`, and ignores spaces and tabs inside it.
+- **CA certificates.** A `root_ca` or `ca_file` whose value is not PEM stops APE at startup. A common cause is a base64 value read with `secrets:` instead of `secrets:b64:`.
+- **Typos.** A value that looks like `<source>:<rest>` with a source APE does not know, for example `evn:DB_PASSWORD`, is an error and not a literal password. A value with a space before the colon, such as `Bearer abc:def`, stays literal text. To use a literal value that looks like a source, store it with `b64:`, `env:`, or `file:`.
+- **Startup retry.** While Secret Agent is not reachable, APE retries for up to 30 seconds in total across all secrets, then stops. Only connection and timeout errors are retried. A missing key, an Error from Secret Agent, a bad certificate, or bad base64 stops APE immediately. `timeout` is one deadline for each attempt.
+- **Only enabled sections.** OpenTelemetry headers are resolved only when OpenTelemetry is enabled, and the Prometheus listener values only when Prometheus is enabled.
+- **Plain TCP.** APE logs a warning when it reaches Secret Agent over plain TCP at an address that is not loopback, because secrets then cross the network unencrypted. Use TLS or a Unix socket.
+
+```toml
+[Agent.SecretAgent]
+address = "127.0.0.1"
+port = 3005
+timeout = 5
+
+[Aerospike]
+user = "secrets:APE:DbUser"
+password = "secrets:APE:DbPassword"
+cert_file = "secrets:b64:APE:Cert"
+```
+
+`make test` runs the in-process unit tests and does not need Docker. `make test-integration` runs every Docker suite that can run on a laptop: Secret Agent, then OpenTelemetry, then the processor info suite, then the user-stats suite, then a Prometheus scrape of Community 7.2, then the release image. `make test-integration-aws` stays separate because it needs AWS credentials and a Secrets Manager secret.
+
+`make test-integration-processor` starts one Enterprise server from `ci/processor/aerospike.conf`, runs the namespace and node info commands, and passes those strings to the processors. It checks that every numeric field is emitted, including storage-engine and flash index array stats. The test also creates secondary index `name_idx`, writes and reads records, and checks the set, sindex, and latency processors against those responses. Set `APE_IT_FEATURE_KEY_FILE` to an Enterprise feature key on the host. The key is mounted into the container and is not committed. When the variable is unset the command prints a skip message and exits 0.
+
+`make test-integration-users` starts a separate Enterprise server with `security` and `enable-quotas` enabled. The server's default `admin` / `admin` user creates `u13user`, `phani`, and `u1phani`. `asbench` then runs as each of those users, and the user processor is checked against `QueryUsers` while that load is running. Connections and single-record read and write rates must be above zero. The roles have no rate quota, so the quota stats are present and zero. Set `APE_IT_FEATURE_KEY_FILE` to an Enterprise feature key on the host. When the variable is unset the command prints a skip message and exits 0.
+
+`make test-integration-versions` starts a Community server with the image's own configuration, runs the exporter, and waits until `/metrics` shows `aerospike_node_up` 1 plus a namespace stat and a node stat. Server 5.7 uses the image's file-backed device namespace, because that image rejects `file` inside `storage-engine memory`. The default tag is `7.2.0.11`. Set `APE_IT_SERVER_VERSIONS` to a space-separated list of tags to scrape more than one release. The Integrations server versions workflow scrapes 5.7, 6.4, 7.2, 8.0, 8.1, and 8.2 on pull requests to master and dev, and nightly at 03:00 UTC. The Integration workflow scrapes 7.2 on branch pushes.
+
+`make test-integration-docker` builds the image from the Dockerfile. It checks the rendered `ape.toml`: a Secret Agent key is active only when its environment variable is set, and the other Secret Agent keys stay commented. It then starts that image against a Community server. The image entrypoint renders `ape.toml` from `AS_HOST`, and the test waits until `/metrics` shows `aerospike_node_up` 1 plus a namespace stat and a node stat. The default server tag is `7.2.0.11`. Set `APE_IT_DOCKER_SERVER` to scrape a different tag.
+
+`make test-integration-secret-agent` starts Secret Agent with its file backend. Two exporters are started from `ape.toml` files: `ci/secret-agent/ape.toml` connects to Secret Agent over TCP, and `ci/secret-agent/ape-uds.toml` connects over a Unix socket. That suite generates TLS material at runtime and does not commit certificates or private keys. The same runtime material is stored for Secret Agent as text and as base64, then fetched with `secrets:` and `secrets:b64:` and used for a mutual-TLS handshake.
+
+`make test-integration-otel` runs the OpenTelemetry exporter against an OpenTelemetry collector. Compose starts a single-node Aerospike Community Edition server, the collector, and the exporter. The exporter sends OTLP over HTTP to `http://otel-collector:4318/v1/metrics`. The collector writes metrics to a file, and the test waits until `aerospike.server.node_up` and `aerospike.server.node_stats.cluster_size` are present. The gRPC client uses TLS, so this suite uses `http_endpoint`.
+
+### AWS Secrets Manager TLS/mTLS suite
+
+`make test-integration-aws` runs the exporter's HTTPS listener end to end with certificates that come from AWS Secrets Manager through Secret Agent. Each run generates a fresh CA, server certificate, encrypted and unencrypted server keys, and client certificates. It writes them to the secret, starts Secret Agent and the exporter, runs the checks, and then removes the containers and the generated files. The secret value is replaced with a placeholder at the end of the run. When `APE_IT_AWS_SECRET_ARN` is unset the command prints a skip message and exits 0, so CI can run it before that secret exists. `make test-integration` does not read this variable.
+
+The secret must be disposable test data. The suite refuses to write to it unless it carries the tag `ape-integration-test=true`:
+
+```sh
+aws secretsmanager tag-resource --secret-id "$ARN" --tags Key=ape-integration-test,Value=true
+APE_IT_AWS_SECRET_ARN="$ARN" make test-integration-aws
+```
+
+AWS credentials come from the default chain. `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, and `AWS_PROFILE` are passed through, and `~/.aws` is mounted read-only. With SSO, export temporary credentials first, for example `eval "$(aws configure export-credentials --format env)"`. The identity needs `secretsmanager:DescribeSecret`, `secretsmanager:PutSecretValue`, and `secretsmanager:GetSecretValue` on that secret.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `APE_IT_AWS_SECRET_ARN` | unset skips the suite | Disposable secret that the suite overwrites on each run. It writes the keys itself, listed below |
+| `APE_IT_AWS_REGION` | region in the ARN | Region for Secret Agent and the AWS CLI |
+| `APE_IT_AWS_MISSING_SECRET_ARN` | a non-existent ARN in the same account | Used for the missing-secret check |
+| `APE_IT_SA_TRANSPORT` | `tcp` | `tcp`, `tls`, `mtls`, or `uds` between the exporter and Secret Agent |
+| `APE_IT_PEM_ENCODING` | `base64` | `base64` stores PEM values base64-encoded and reads them with `secrets:b64:`. `text` stores PEM as text and reads it with `secrets:` |
+| `APE_IT_SA_BACKEND` | `aws` | `file` runs the same checks with Secret Agent's file backend and no AWS access |
+| `APE_IT_AWS_PLAIN_SECRET_ARN` | unset skips that one test | Secret whose `username` and `password` keys are plain text. A second Secret Agent has `convert-to-base64` on and the exporter reads them with `secrets:b64:APEPlain:username` and `secrets:b64:APEPlain:password` |
+| `APE_IT_PLAIN_USERNAME` | required with the plain ARN | Expected `username` value |
+| `APE_IT_PLAIN_PASSWORD` | required with the plain ARN | Expected `password` value |
+
+The default is base64 because Aerospike's Secret Agent guidance is to store multi-line values such as certificates base64-encoded in AWS Secrets Manager. Passphrases are single-line and are read with `secrets:`.
+
+The suite checks HTTPS with a trusted CA and an untrusted CA, mutual TLS with a valid client certificate, no client certificate, and a certificate from another CA, an encrypted server key unlocked by a passphrase from the secret, and startup failure for a wrong passphrase, an unknown alias, a missing key, and a missing AWS secret. It also checks that exporter output never contains a passphrase or private-key material.
+
+Each run writes these keys to the secret, so the suite does not depend on data you create by hand:
+
+| Key | Stored as | What it checks |
+|---|---|---|
+| `cert_file`, `key_file`, `key_file_plain`, `root_ca` | `APE_IT_PEM_ENCODING` | TLS material read with `secrets:` or `secrets:b64:` |
+| `key_file_passphrase`, `key_file_passphrase_invalid` | text | Correct and wrong passphrase for the encrypted key |
+| `pw_trailing_space` | text, ends in a space | The password is used as stored: the exact value is accepted and the same value without the space is rejected |
+| `pw_trailing_newline` | text, ends in a newline | Same, for a trailing newline |
+| `pw_with_colon` | text, contains `:` | A value with colons is used as is |
+| `cert_file_b64_wrapped` | base64 wrapped at 76 columns | `secrets:b64:` accepts wrapped base64 |
+| `root_ca_b64` | base64 on one line | `secrets:b64:` loads it as the mutual-TLS CA, and `secrets:` fails startup with "no PEM certificate found" |
+
+It also checks without any secret in the secret: a literal `Bearer ape:9f3c` password stays literal, a `evn:DB_PASSWORD` password stops startup with an unknown-source error that does not repeat the value, and startup waits for a Secret Agent that appears a few seconds late and gives up after about 30 seconds when it never does. The last check forwards a local port to the agent, so it is skipped for the `uds` transport and adds about 35 seconds to each run.
+
+The GitHub Actions job runs the suite four times in a row, because every run uses the same secret: `tcp` with base64 PEM, `tcp` with text PEM, `mtls` with base64 PEM, and `uds` with text PEM. Locally, set `APE_IT_SA_TRANSPORT` and `APE_IT_PEM_ENCODING` to run any other combination.
+
+A separate secret covers plain text that Secret Agent base64-encodes. Create it with these keys, leave the values as text, and tag it `ape-integration-test=true`:
+
+```json
+{"username": "<plain username>", "password": "<plain password>"}
+```
+
+The suite does not write this secret. Set `APE_IT_AWS_PLAIN_SECRET_ARN`, `APE_IT_PLAIN_USERNAME`, and `APE_IT_PLAIN_PASSWORD`. The exporter reads `secrets:b64:APEPlain:username` and `secrets:b64:APEPlain:password`. Without the ARN, that one test is skipped.
 
 ## Pseudo Metrics
 

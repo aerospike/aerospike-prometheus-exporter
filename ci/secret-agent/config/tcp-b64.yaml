@@ -1,0 +1,13 @@
+service:
+  tcp:
+    endpoint: 0.0.0.0:3005
+
+secret-manager:
+  file:
+    convert-to-base64: false
+    resources:
+      APE: /secrets/ape-b64.json
+      Certs: /certs/material.json
+
+log:
+  level: info
