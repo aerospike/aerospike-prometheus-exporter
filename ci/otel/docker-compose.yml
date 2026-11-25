@@ -40,13 +40,14 @@ services:
       otel-collector:
         condition: service_started
 
+  # The tester runs on the server image only for asinfo, which creates and drops a secondary index.
   tester:
-    image: alpine:3.24
+    image: aerospike/aerospike-server:7.2.0.11
     volumes:
       - ./scripts/wait.sh:/scripts/wait.sh:ro
       - otel-output:/output:ro
       - logs:/logs:ro
-    command: ["/bin/sh", "/scripts/wait.sh"]
+    entrypoint: ["/bin/sh", "/scripts/wait.sh"]
     depends_on:
       ape:
         condition: service_started

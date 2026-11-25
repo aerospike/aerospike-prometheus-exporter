@@ -63,8 +63,8 @@ type OtelExecutor struct {
 	counters         map[string]*CounterMetrics
 	nodeUpMetricName string
 
-	// keys of backup/restore series, swept when a job or a job's label set is no longer reported
-	perJobKeys map[string]struct{}
+	// keys of the series a server refresh returned, swept when a later completed refresh no longer returns them
+	sweptKeys map[string]struct{}
 
 	meterProvider *sdkmetric.MeterProvider
 	// metricExporter sdkmetric.Exporter
@@ -109,7 +109,7 @@ func (oe *OtelExecutor) Initialize() error {
 	oe.gauges = make(map[string]*GaugeMetrics)
 	oe.floatGauges = make(map[string]*FloatGaugeMetrics)
 	oe.counters = make(map[string]*CounterMetrics)
-	oe.perJobKeys = make(map[string]struct{})
+	oe.sweptKeys = make(map[string]struct{})
 
 	defaultContext := context.Background()
 

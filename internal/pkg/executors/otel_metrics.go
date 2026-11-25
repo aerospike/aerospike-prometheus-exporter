@@ -41,20 +41,35 @@ func (oe *OtelExecutor) getCommonLabels() []attribute.KeyValue {
 	return attrkv
 }
 
-// isBackupRestoreContext reports whether a context's series belong to short-lived backup or restore jobs.
-// Their label sets (job_id, state, ns_state, ...) change as jobs run and age out, so stale ones must stop
-// reporting. Their gauges can also carry fractions (progress-pct=42.50), so they are exported as float64.
+// isBackupRestoreContext reports whether a context's series belong to backup or restore jobs.
+// Their gauges can carry fractions (progress-pct=42.50), so they are exported as float64, while the gauges of
+// every other context stay int64 so their exported value type does not change.
 func isBackupRestoreContext(context commons.ContextType) bool {
 	return context == commons.CTX_BACKUP || context == commons.CTX_RESTORE
 }
 
-// processAndPushStats records the latest values. When sweepPerJob is set, backup and restore series
-// that were not part of this refresh are unregistered, so a finished job or a job's previous state
-// does not keep reporting its last value forever.
-func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
-	commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat, sweepPerJob bool) {
+// isSweepExempt reports whether a series is left alone by the sweep. The index-pressure stats are fetched
+// only every few minutes, so the refreshes in between do not return them by design.
+func isSweepExempt(stat statprocessors.AerospikeStat) bool {
+	return statprocessors.IsIntervalFetchedStat(stat)
+}
 
-	seenPerJobKeys := map[string]struct{}{}
+// isPartialRefresh reports whether the latest server refresh was cut short. While a checkpoint save runs only
+// build and checkpoint-status are requested, so every other series is missing from that refresh, and sweeping
+// would drop all of them for the length of the save.
+func (oe *OtelExecutor) isPartialRefresh() bool {
+	return oe.sharedState != nil && oe.sharedState.CheckpointSaveInProgress
+}
+
+// processAndPushStats records the latest values. When sweep is set, the stats are the result of a server
+// refresh: every series that refresh returned is remembered, and a series remembered from an earlier refresh
+// that this one did not return is unregistered. A job that finished, a job's previous state, a histogram that
+// is disabled or renamed (latencies in ms and then in us), or a stat the server no longer reports then stops
+// exporting its last value. System info is a separate refresh and is never swept (sweep is false).
+func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
+	commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat, sweep bool) {
+
+	seenSweptKeys := map[string]struct{}{}
 
 	// create the required metered objects
 	for _, stat := range refreshStats {
@@ -89,9 +104,9 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 
 		metricKey := oe.constructMetricKey(qualifiedName, labels)
 
-		if isBackupRestoreContext(stat.Context) {
-			seenPerJobKeys[metricKey] = struct{}{}
-			oe.perJobKeys[metricKey] = struct{}{}
+		if sweep && !isSweepExempt(stat) {
+			seenSweptKeys[metricKey] = struct{}{}
+			oe.sweptKeys[metricKey] = struct{}{}
 		}
 
 		// Use or Create Otel metric
@@ -140,15 +155,15 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 		}
 	}
 
-	if sweepPerJob {
-		oe.sweepStalePerJobMetrics(seenPerJobKeys)
+	if sweep && !oe.isPartialRefresh() {
+		oe.sweepStaleSeries(seenSweptKeys)
 	}
 }
 
-// sweepStalePerJobMetrics unregisters every backup or restore series not seen in the latest refresh.
+// sweepStaleSeries unregisters every series remembered from a server refresh that the latest one did not return.
 // Once its callback stops observing, the SDK no longer exports that attribute set.
-func (oe *OtelExecutor) sweepStalePerJobMetrics(seen map[string]struct{}) {
-	for key := range oe.perJobKeys {
+func (oe *OtelExecutor) sweepStaleSeries(seen map[string]struct{}) {
+	for key := range oe.sweptKeys {
 		if _, ok := seen[key]; ok {
 			continue
 		}
@@ -168,8 +183,8 @@ func (oe *OtelExecutor) sweepStalePerJobMetrics(seen map[string]struct{}) {
 			delete(oe.counters, key)
 		}
 
-		delete(oe.perJobKeys, key)
-		log.Debugf("otel: stopped reporting stale backup/restore series %s", key)
+		delete(oe.sweptKeys, key)
+		log.Debugf("otel: stopped reporting series that is no longer returned: %s", key)
 	}
 }
 

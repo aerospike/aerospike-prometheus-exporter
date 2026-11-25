@@ -76,6 +76,16 @@ func (nw *NamespaceStatsProcessor) PassOneKeys() []string {
 // server-side backup or restore makes (SERVER-698). They are always in milliseconds.
 var objectStoreLatencyHistograms = []string{"object-store-put", "object-store-get", "object-store-list", "object-store-delete"}
 
+// INDEX_PRESSURE_STAT_PREFIX starts the name of every index-pressure stat.
+const INDEX_PRESSURE_STAT_PREFIX = "index_pressure_"
+
+// IsIntervalFetchedStat reports whether a stat is only fetched every few minutes, so most refreshes do not
+// return it by design: the index-pressure stats, fetched every index_pressure_stats_fetch_interval minutes.
+// An exporter that drops a series when a refresh no longer returns it must leave these alone.
+func IsIntervalFetchedStat(stat AerospikeStat) bool {
+	return stat.Context == commons.CTX_NAMESPACE && strings.HasPrefix(stat.Name, INDEX_PRESSURE_STAT_PREFIX)
+}
+
 // OBJECT_STORE_HISTOGRAMS_MIN_BUILD is the first server build that has the object-store histograms.
 // They ship with in-server backup and restore, so they follow the same build gate; older servers
 // answer "bad hist name", which would be four wasted info commands per namespace on every scrape.
@@ -161,7 +171,7 @@ func (nw *NamespaceStatsProcessor) refreshIndexPressure(singleInfoKey string, ra
 	stats := strings.Split(indexPresssureStats, ";")
 
 	// metric-names - first element is un-used, as we send namespace as a label, this also keeps the index-numbers same as the server-stats
-	indexPressureMetricNames := []string{"index_pressure_namespace", "index_pressure_total_memory", "index_pressure_dirty_memory"}
+	indexPressureMetricNames := []string{INDEX_PRESSURE_STAT_PREFIX + "namespace", INDEX_PRESSURE_STAT_PREFIX + "total_memory", INDEX_PRESSURE_STAT_PREFIX + "dirty_memory"}
 
 	var allMetricsToSend = []AerospikeStat{}
 
