@@ -1,6 +1,8 @@
 package statprocessors
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -26,7 +28,7 @@ func TestBackupRestorePassTwoKeysBuildGate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sharedState := useProcessorConfig(t)
+			sharedState := backupState(t)
 			sharedState.Build = tt.build
 			bw := NewBackupRestoreStatsProcessor(sharedState)
 
@@ -42,7 +44,7 @@ func TestBackupRestorePassTwoKeysBuildGate(t *testing.T) {
 }
 
 func TestBackupRestoreRefreshParsesJobs(t *testing.T) {
-	sharedState := useProcessorConfig(t)
+	sharedState := backupState(t)
 	sharedState.ClusterName = "c1"
 	sharedState.Service = "10.0.0.1:3000"
 	sharedState.Build = "8.2.1.0"
@@ -151,7 +153,7 @@ func TestBackupRestoreRefreshParsesJobs(t *testing.T) {
 // TestBackupRestoreUnderscoreFieldNames covers 8.2.2, which prints stats with underscores (start_time,
 // progress_pct) and keeps hyphens on identifiers (job-id). Both spellings must give the same metrics.
 func TestBackupRestoreUnderscoreFieldNames(t *testing.T) {
-	sharedState := useProcessorConfig(t)
+	sharedState := backupState(t)
 	bw := NewBackupRestoreStatsProcessor(sharedState)
 
 	raw := map[string]string{
@@ -215,7 +217,7 @@ func TestBackupRestoreUnderscoreFieldNames(t *testing.T) {
 // TestBackupRestoreErrorTextInsideJob checks that a job whose error-reason contains "error:" does not
 // make the whole response look like a failed command, while a real command error still emits nothing.
 func TestBackupRestoreErrorTextInsideJob(t *testing.T) {
-	bw := NewBackupRestoreStatsProcessor(useProcessorConfig(t))
+	bw := NewBackupRestoreStatsProcessor(backupState(t))
 
 	raw := map[string]string{
 		KEY_BACKUP_STATUS: "job-id=b1:ns=test:state=BASE_SCAN_ACTIVE:progress-pct=10.00;" +
@@ -241,7 +243,7 @@ func TestBackupRestoreErrorTextInsideJob(t *testing.T) {
 // TestBackupRestoreAllowlistAndBlocklist checks that backup_metrics_* and restore_metrics_* in
 // ape.toml filter the stats, the same way the namespace and node lists do.
 func TestBackupRestoreAllowlistAndBlocklist(t *testing.T) {
-	sharedState := useProcessorConfig(t)
+	sharedState := backupState(t)
 	config.Cfg.Aerospike.BackupMetricsAllowlist = []string{"recs_*", "job", "achieved_consistency"}
 	config.Cfg.Aerospike.BackupMetricsBlocklist = []string{"recs_filtered"}
 	config.Cfg.Aerospike.RestoreMetricsAllowlist = []string{"applied"}
@@ -278,25 +280,42 @@ func TestBackupRestoreAllowlistAndBlocklist(t *testing.T) {
 	assert.False(t, allowed["restore/job"])
 }
 
-// TestBackupRestoreMetricType checks that backup counters are found under either spelling, and that
-// everything else, including every restore stat, is a gauge.
+// TestBackupRestoreMetricType checks the types come from the shipped gauge_stats_list.toml: listed stats are
+// gauges and unlisted ones are counters, under either spelling. Restore is list-driven too, so an unlisted
+// restore stat is a counter.
 func TestBackupRestoreMetricType(t *testing.T) {
+	backupState(t)
+
 	for _, stat := range []string{"recs_backed_up", "recs-backed-up", "bytes_base", "partitions_scanned", "partitions-flushed", "backpressure_activations", "upload_permanent_failures"} {
-		assert.Equal(t, commons.MetricTypeCounter, backupRestoreMetricType(commons.CTX_BACKUP, fieldKey(stat)), stat)
+		assert.Equal(t, commons.MetricTypeCounter, backupRestoreMetricType(commons.CTX_BACKUP, stat), stat)
 	}
 
-	for _, stat := range []string{"progress_pct", "total_buffers_allocated", "partitions_owned", "recs_per_sec", "upload_q_depth", "backup-rps", "start_time", "job"} {
-		assert.Equal(t, commons.MetricTypeGauge, backupRestoreMetricType(commons.CTX_BACKUP, fieldKey(stat)), stat)
+	for _, stat := range []string{"progress_pct", "progress-pct", "total_buffers_allocated", "partitions_owned", "recs_per_sec", "upload_q_depth", "backup-rps", "start_time", "finish_time", "change_stream_active"} {
+		assert.Equal(t, commons.MetricTypeGauge, backupRestoreMetricType(commons.CTX_BACKUP, stat), stat)
 	}
 
-	assert.Equal(t, commons.MetricTypeGauge, backupRestoreMetricType(commons.CTX_RESTORE, fieldKey("recs_backed_up")),
-		"restore stats stay gauges until their types are confirmed")
+	assert.Equal(t, commons.MetricTypeGauge, backupRestoreMetricType(commons.CTX_RESTORE, "applied"))
+	assert.Equal(t, commons.MetricTypeGauge, backupRestoreMetricType(commons.CTX_RESTORE, "progress_pct"))
+	assert.Equal(t, commons.MetricTypeCounter, backupRestoreMetricType(commons.CTX_RESTORE, "failed"),
+		"a restore stat that is not listed is a counter")
+}
+
+// TestBackupRestoreShippedGaugeList checks the gauge_stats_list.toml that ships with the exporter, which
+// customers can edit, lists the stats the processor is expected to export as gauges.
+func TestBackupRestoreShippedGaugeList(t *testing.T) {
+	backupState(t)
+
+	assert.True(t, isGauge(commons.CTX_BACKUP, "progress-pct"))
+	assert.True(t, isGauge(commons.CTX_BACKUP, "start-time"), "start_time is written with underscores in the file")
+	assert.True(t, isGauge(commons.CTX_RESTORE, "progress-pct"))
+	assert.False(t, isGauge(commons.CTX_BACKUP, "recs-backed-up"), "the counters are not listed")
+	assert.False(t, isGauge(commons.CTX_BACKUP, "partitions-scanned"))
 }
 
 // TestBackupRestoreSkippedDuringCheckpointSave checks that backup-status and restore-status are not
 // requested while a checkpoint save runs, like the other processors.
 func TestBackupRestoreSkippedDuringCheckpointSave(t *testing.T) {
-	state := useProcessorConfig(t)
+	state := backupState(t)
 	state.Build = "8.2.2.0"
 	bw := NewBackupRestoreStatsProcessor(state)
 
@@ -310,7 +329,7 @@ func TestBackupRestoreSkippedDuringCheckpointSave(t *testing.T) {
 // 8.2.2.0 server. Every numeric stat must be exported under the server's spelling, with the types
 // agreed so far, and the text fields must not leak out as metrics.
 func TestBackupRestoreLiveBackupRecord(t *testing.T) {
-	state := useProcessorConfig(t)
+	state := backupState(t)
 	bw := NewBackupRestoreStatsProcessor(state)
 
 	metrics, err := bw.Refresh(nil, map[string]string{KEY_BACKUP_STATUS: backupStatus822})
@@ -337,12 +356,16 @@ func TestBackupRestoreLiveBackupRecord(t *testing.T) {
 
 	counters := 0
 	for name, m := range got {
+		if name == STAT_JOB || name == "achieved_consistency" {
+			continue
+		}
+		listed := isGauge(commons.CTX_BACKUP, fieldKey(name))
+		assert.Equal(t, listed, m.MType == commons.MetricTypeGauge, "%s is typed by the gauge list", name)
 		if m.MType == commons.MetricTypeCounter {
 			counters++
-			assert.True(t, backupCounterStats[fieldKey(name)], "%s must not be a counter", name)
 		}
 	}
-	assert.Equal(t, len(backupCounterStats), counters, "every listed counter is in this record")
+	assert.Equal(t, 18, counters, "the 8.2.2 record has 18 counters")
 
 	for _, name := range []string{"progress_pct", "total_buffers_allocated", "recs_per_sec", "upload_q_depth", "backup-rps", "change_stream_active"} {
 		assert.Equal(t, commons.MetricTypeGauge, got[name].MType, name)
@@ -354,4 +377,21 @@ func TestBackupRestoreLiveBackupRecord(t *testing.T) {
 	assert.Equal(t, 1795531891499.0, got["start_time"].Value)
 	assertLabel(t, got[STAT_JOB], commons.METRIC_LABEL_STATE, "BASE_SCAN_ACTIVE")
 	assertLabel(t, got["recs_backed_up"], commons.METRIC_LABEL_JOB_ID, "261124T145131-hhj8")
+}
+
+// backupState resets the processor config, then loads the gauge list that ships with the exporter, so the
+// backup and restore types are the ones customers get.
+func backupState(t *testing.T) *StatProcessorSharedState {
+	t.Helper()
+
+	state := useProcessorConfig(t)
+
+	original := config.GaugeStatHandler
+	t.Cleanup(func() { config.GaugeStatHandler = original })
+
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+	config.InitGaugeStats(filepath.Join(cwd, "..", "..", "..", "configs", "gauge_stats_list.toml"))
+
+	return state
 }

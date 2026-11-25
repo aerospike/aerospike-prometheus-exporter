@@ -85,7 +85,7 @@ func hasLabelValue(stat AerospikeStat, label string, value string) bool {
 // TestStatsRefresherEightTwoTwoFlow runs a full refresh against 8.2.2 output: backup metrics are exported,
 // and the node: record in checkpoint-status does not stop the node stats.
 func TestStatsRefresherEightTwoTwoFlow(t *testing.T) {
-	state := useProcessorConfig(t)
+	state := backupState(t)
 	server := newFakeServer("8.2.2.0", checkpointStatus822)
 
 	stats, err := NewStatsRefresher(server, state).Refresh()
@@ -126,7 +126,7 @@ func TestStatsRefresherEightTwoTwoFlow(t *testing.T) {
 // refresh: only build and checkpoint-status are requested, so nothing else, including backup and
 // restore, is sent to a server that cannot answer it. Everything comes back once the save is over.
 func TestStatsRefresherCheckpointSaveFlow(t *testing.T) {
-	state := useProcessorConfig(t)
+	state := backupState(t)
 	server := newFakeServer("8.2.2.0", checkpointStatus822)
 	refresher := NewStatsRefresher(server, state)
 
@@ -173,7 +173,7 @@ func TestStatsRefresherCheckpointSaveFlow(t *testing.T) {
 // asked for it, and still gets its node stats from the older checkpoint-status format, where is_parked is
 // on every namespace record and there is no node: record.
 func TestStatsRefresherBeforeBackupRestoreBuild(t *testing.T) {
-	state := useProcessorConfig(t)
+	state := backupState(t)
 	server := newFakeServer("8.2.0.0", "test:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0;"+
 		"bar:state=none:files_completed=0:files_total=0:is_parked=false:park_ms=0")
 

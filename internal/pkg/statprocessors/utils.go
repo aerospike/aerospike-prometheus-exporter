@@ -147,6 +147,10 @@ func isGauge(pContextType commons.ContextType, pStat string) bool {
 		return config.GaugeStatHandler.SindexStats[pStat]
 	case commons.CTX_XDR:
 		return config.GaugeStatHandler.XdrStats[pStat]
+	case commons.CTX_BACKUP:
+		return config.GaugeStatHandler.BackupStats[pStat]
+	case commons.CTX_RESTORE:
+		return config.GaugeStatHandler.RestoreStats[pStat]
 	}
 
 	// any sysinfo_ check if it exists in gauge_stats_list.toml

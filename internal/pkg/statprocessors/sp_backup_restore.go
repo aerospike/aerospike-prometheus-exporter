@@ -29,30 +29,6 @@ const (
 	BACKUP_RESTORE_MIN_BUILD = "8.2.1"
 )
 
-// backupCounterStats are the backup stats that only grow during a job, so they are counters.
-// Every other backup stat, and every restore stat, is a gauge. Names are matched with fieldKey,
-// so they work for both the hyphen and the 8.2.2 underscore spelling.
-var backupCounterStats = map[string]bool{
-	"recs-backed-up":            true,
-	"recs-base":                 true,
-	"recs-query-incr":           true,
-	"recs-change-incr":          true,
-	"bytes-backed-up":           true,
-	"bytes-base":                true,
-	"bytes-query-incr":          true,
-	"bytes-change-incr":         true,
-	"recs-filtered":             true,
-	"recs-filter-exits":         true,
-	"recs-degenerate":           true,
-	"recs-skipped-xdr-tomb":     true,
-	"recs-read-failed":          true,
-	"count-read-failures":       true,
-	"partitions-flushed":        true,
-	"partitions-scanned":        true,
-	"backpressure-activations":  true,
-	"upload-permanent-failures": true,
-}
-
 // BackupRestoreStatsProcessor exports the per-node status of in-server backup and restore jobs.
 // Both info commands are enterprise-only and gated behind --preview backup-restore, so on any
 // other node the response is an error and nothing is emitted.
@@ -188,10 +164,9 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 			if !exists {
 				allowed := isMetricAllowed(context, stat)
 				asMetric = NewAerospikeStat(context, stat, allowed)
-				// types come from backupCounterStats, not from the name: 8.2.2 prints every stat with
-				// underscores, so the default rule (no hyphen -> counter) would make rates and queue
-				// depths counters too. Restore stats stay gauges until their types are confirmed.
-				asMetric.MType = backupRestoreMetricType(context, key)
+				// the type comes from gauge_stats_list.toml (backup_gauge_stats / restore_gauge_stats),
+				// the same as the other contexts: listed is a gauge, unlisted is a counter
+				asMetric.MType = backupRestoreMetricType(context, stat)
 				metrics[stat] = asMetric
 			}
 
@@ -203,12 +178,14 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 	return allMetricsToSend
 }
 
-func backupRestoreMetricType(context commons.ContextType, key string) commons.MetricType {
-	if context == commons.CTX_BACKUP && backupCounterStats[key] {
-		return commons.MetricTypeCounter
+// backupRestoreMetricType reads the stat's type from gauge_stats_list.toml. The name is matched with
+// underscores read as hyphens, so both spellings resolve to the same entry.
+func backupRestoreMetricType(context commons.ContextType, stat string) commons.MetricType {
+	if isGauge(context, fieldKey(stat)) {
+		return commons.MetricTypeGauge
 	}
 
-	return commons.MetricTypeGauge
+	return commons.MetricTypeCounter
 }
 
 // fieldKey is a field's name with underscores read as hyphens. Earlier builds print every field with

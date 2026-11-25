@@ -3,10 +3,12 @@ package config_test
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -101,4 +103,27 @@ func TestNoGaugeExists(t *testing.T) {
 	gaugeList := config.GaugeStatHandler
 
 	assert.Equal(t, gaugeList.NamespaceStats["non-existing-key"], false)
+}
+
+// TestGaugeStatsBackupRestoreKeysAreNormalised checks that backup_gauge_stats and restore_gauge_stats are read,
+// and that an entry written with underscores matches the hyphen spelling the processor looks up.
+func TestGaugeStatsBackupRestoreKeysAreNormalised(t *testing.T) {
+	original := config.GaugeStatHandler
+	t.Cleanup(func() { config.GaugeStatHandler = original })
+
+	path := filepath.Join(t.TempDir(), "gauges.toml")
+	require.NoError(t, os.WriteFile(path, []byte(`
+backup_gauge_stats = ["progress_pct", "backup-rps", "start_time"]
+restore_gauge_stats = ["progress-pct"]
+`), 0o600))
+
+	config.InitGaugeStats(path)
+
+	assert.True(t, config.GaugeStatHandler.BackupStats["progress-pct"])
+	assert.True(t, config.GaugeStatHandler.BackupStats["backup-rps"])
+	assert.True(t, config.GaugeStatHandler.BackupStats["start-time"])
+	assert.False(t, config.GaugeStatHandler.BackupStats["progress_pct"], "entries are stored with hyphens")
+	assert.True(t, config.GaugeStatHandler.RestoreStats["progress-pct"])
+	assert.False(t, config.GaugeStatHandler.RestoreStats["backup-rps"], "a restore entry does not leak into backup")
+	assert.Nil(t, config.GaugeStatHandler.Backup, "the read array is emptied once mapped")
 }
