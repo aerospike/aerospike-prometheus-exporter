@@ -127,8 +127,8 @@ func TestBackupRestoreRefreshParsesJobs(t *testing.T) {
 	restoreApplied, ok := byKey["restore/applied/r1"]
 	require.True(t, ok)
 	assert.Equal(t, 7.0, restoreApplied.Value)
-	// every backup/restore stat is a gauge for now, including names without a hyphen
-	assert.Equal(t, commons.MetricTypeGauge, restoreApplied.MType)
+	// applied is a counter in the server contract, and is not in restore_gauge_stats
+	assert.Equal(t, commons.MetricTypeCounter, restoreApplied.MType)
 	assert.Equal(t, []string{"c1", "10.0.0.1:3000", "test", "r1"}, restoreApplied.LabelValues)
 
 	// timestamps become unix milliseconds; finish-time is "-" while the job is still running and is exported as 0
@@ -191,10 +191,10 @@ func TestBackupRestoreUnderscoreFieldNames(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, commons.MetricTypeGauge, rps.MType)
 
-	// restore stats stay gauges until their types are confirmed
+	// applied is a counter in the server contract
 	applied, ok := byKey["restore/applied"]
 	require.True(t, ok)
-	assert.Equal(t, commons.MetricTypeGauge, applied.MType)
+	assert.Equal(t, commons.MetricTypeCounter, applied.MType)
 
 	consistency, ok := byKey["backup/achieved_consistency"]
 	require.True(t, ok, "the consistency gauge keeps the server's spelling")
@@ -286,18 +286,27 @@ func TestBackupRestoreAllowlistAndBlocklist(t *testing.T) {
 func TestBackupRestoreMetricType(t *testing.T) {
 	backupState(t)
 
-	for _, stat := range []string{"recs_backed_up", "recs-backed-up", "bytes_base", "partitions_scanned", "partitions-flushed", "backpressure_activations", "upload_permanent_failures"} {
+	for _, stat := range []string{"recs_backed_up", "recs-backed-up", "bytes_base", "backpressure_activations", "count_read_failures", "upload_permanent_failures"} {
 		assert.Equal(t, commons.MetricTypeCounter, backupRestoreMetricType(commons.CTX_BACKUP, stat), stat)
 	}
 
-	for _, stat := range []string{"progress_pct", "progress-pct", "total_buffers_allocated", "partitions_owned", "recs_per_sec", "upload_q_depth", "backup-rps", "start_time", "finish_time", "change_stream_active"} {
+	// partitions-flushed, partitions-scanned and drain-blocked-migrations are gauges in the server contract
+	for _, stat := range []string{"progress_pct", "progress-pct", "total_buffers_allocated", "partitions_owned", "recs_per_sec", "upload_q_depth", "backup-rps", "start_time", "finish_time", "change_stream_active",
+		"partitions_scanned", "partitions-scanned", "partitions_flushed", "partitions-flushed", "drain_blocked_migrations", "drain-blocked-migrations"} {
 		assert.Equal(t, commons.MetricTypeGauge, backupRestoreMetricType(commons.CTX_BACKUP, stat), stat)
 	}
 
-	assert.Equal(t, commons.MetricTypeGauge, backupRestoreMetricType(commons.CTX_RESTORE, "applied"))
-	assert.Equal(t, commons.MetricTypeGauge, backupRestoreMetricType(commons.CTX_RESTORE, "progress_pct"))
-	assert.Equal(t, commons.MetricTypeCounter, backupRestoreMetricType(commons.CTX_RESTORE, "failed"),
-		"a restore stat that is not listed is a counter")
+	// the restore counters of the server contract, and a stat that is not listed
+	for _, stat := range []string{"total", "applied", "deletes", "filtered", "filtered_not_ours", "failed", "clear_zeroed_bytes", "ttl_extended", "ttl_clamped", "delete_absent", "not-a-stat"} {
+		assert.Equal(t, commons.MetricTypeCounter, backupRestoreMetricType(commons.CTX_RESTORE, stat), stat)
+	}
+
+	// the restore gauges of the server contract, under either spelling
+	for _, stat := range []string{"restore-rps", "progress_pct", "progress-pct", "start_time", "finish_time", "recs_per_sec", "last_lap_ms", "pids_in_scope",
+		"missing_layout_nodes", "n_done_nodes", "pending_q_depth", "pending_q_cap", "clear_ms", "joiner", "placeholder", "done",
+		"outstanding", "max_inflight", "max-inflight", "covered", "cluster_wide", "cluster-wide", "ignore_record_error", "backup_entry", "backup_entries", "extra_ttl"} {
+		assert.Equal(t, commons.MetricTypeGauge, backupRestoreMetricType(commons.CTX_RESTORE, stat), stat)
+	}
 }
 
 // TestBackupRestoreShippedGaugeList checks the gauge_stats_list.toml that ships with the exporter, which
@@ -309,7 +318,11 @@ func TestBackupRestoreShippedGaugeList(t *testing.T) {
 	assert.True(t, isGauge(commons.CTX_BACKUP, "start-time"), "start_time is written with underscores in the file")
 	assert.True(t, isGauge(commons.CTX_RESTORE, "progress-pct"))
 	assert.False(t, isGauge(commons.CTX_BACKUP, "recs-backed-up"), "the counters are not listed")
-	assert.False(t, isGauge(commons.CTX_BACKUP, "partitions-scanned"))
+	assert.True(t, isGauge(commons.CTX_BACKUP, "partitions-scanned"))
+	assert.True(t, isGauge(commons.CTX_BACKUP, "partitions-flushed"))
+	assert.True(t, isGauge(commons.CTX_BACKUP, "drain-blocked-migrations"))
+	assert.False(t, isGauge(commons.CTX_RESTORE, "applied"), "applied is a counter in the server contract")
+	assert.True(t, isGauge(commons.CTX_RESTORE, "clear-ms"))
 }
 
 // TestBackupRestoreSkippedDuringCheckpointSave checks that backup-status and restore-status are not
@@ -365,9 +378,9 @@ func TestBackupRestoreLiveBackupRecord(t *testing.T) {
 			counters++
 		}
 	}
-	assert.Equal(t, 18, counters, "the 8.2.2 record has 18 counters")
+	assert.Equal(t, 16, counters, "the 8.2.2 record has 16 counters, partitions_scanned and partitions_flushed are gauges")
 
-	for _, name := range []string{"progress_pct", "total_buffers_allocated", "recs_per_sec", "upload_q_depth", "backup-rps", "change_stream_active"} {
+	for _, name := range []string{"progress_pct", "total_buffers_allocated", "recs_per_sec", "upload_q_depth", "backup-rps", "change_stream_active", "partitions_scanned", "partitions_flushed"} {
 		assert.Equal(t, commons.MetricTypeGauge, got[name].MType, name)
 	}
 
@@ -432,30 +445,98 @@ func TestBackupRestoreSourceConsistencyIsLabel(t *testing.T) {
 	assert.False(t, ok)
 
 	for _, name := range []string{"restore-rps", "restore-worker-threads", "restore-download-threads", "start_time",
-		"pids_in_scope", "placeholder", "node_done", "exit_cap_hit", "recs_per_sec", "last_lap_ms"} {
+		"pids_in_scope", "placeholder", "node_done", "exit_cap_hit", "recs_per_sec", "last_lap_ms", "clear_ms"} {
 		stat, ok := byKey["restore/"+name]
 		require.True(t, ok, "%s is exported", name)
 		assert.Equal(t, commons.MetricTypeGauge, stat.MType, "%s is a gauge in the shipped list", name)
 	}
 }
 
-// TestBackupRestoreSourceConsistencyLevels checks the level for each source_consistency value, including "-".
-func TestBackupRestoreSourceConsistencyLevels(t *testing.T) {
+// TestBackupRestoreConsistencyLevels checks the level for each consistency value the server contract lists
+// (-, fuzzy, strict) on achieved_consistency (backup) and source_consistency (restore): fuzzy is level 1 and
+// the value is also the label. relaxed is the older name for fuzzy and maps to the same level.
+func TestBackupRestoreConsistencyLevels(t *testing.T) {
 	state := backupState(t)
 	bw := NewBackupRestoreStatsProcessor(state)
 
-	cases := map[string]float64{"-": 0, "relaxed": 1, "strict": 2}
+	cases := map[string]float64{"-": 0, "fuzzy": 1, "strict": 2, "relaxed": 1}
 	for value, level := range cases {
 		metrics, err := bw.Refresh(nil, map[string]string{
+			KEY_BACKUP_STATUS:  "job-id=b1:ns=test:state=COMPLETE:achieved_consistency=" + value,
 			KEY_RESTORE_STATUS: "job-id=r1:ns=test:state=ACTIVE:source_consistency=" + value,
 		})
 		require.NoError(t, err)
 
+		achieved, ok := findStat(metrics, "achieved_consistency")
+		require.True(t, ok, "value %s", value)
+		assert.Equal(t, level, achieved.Value, "achieved_consistency=%s", value)
+		assertLabel(t, achieved, commons.METRIC_LABEL_ACHIEVED_CONSISTENCY, value)
+
 		source, ok := findStat(metrics, "source_consistency")
 		require.True(t, ok, "value %s", value)
-		assert.Equal(t, level, source.Value, "value %s", value)
+		assert.Equal(t, level, source.Value, "source_consistency=%s", value)
 		assertLabel(t, source, commons.METRIC_LABEL_SOURCE_CONSISTENCY, value)
 	}
+}
+
+// TestBackupRestoreFuzzyRestoreRecord feeds a fuzzy (restore-via-writes) restore-status record, laid out as in
+// the server contract, with the 8.2.2 underscore names. The fuzzy fields are typed from the shipped gauge list:
+// outstanding, max_inflight, covered, cluster_wide, ignore_record_error and the backup-list fields are gauges,
+// while total, applied, deletes, filtered, failed and the ttl and delete-absent counts are counters.
+func TestBackupRestoreFuzzyRestoreRecord(t *testing.T) {
+	state := backupState(t)
+	bw := NewBackupRestoreStatsProcessor(state)
+
+	record := "job-id=fz1:ns=test:kind=fuzzy:state=ACTIVE:restore-rps=1000:restore-worker-threads=4:restore-download-threads=4:" +
+		"ns_state=READY:start_time=2026-11-25 09.00.00.000 UTC:finish_time=-:total=1000:applied=900:deletes=40:filtered=60:" +
+		"failed=0:recs_per_sec=210:ignore_record_error=true:outstanding=12:max_inflight=64:covered=100:cluster_wide=400:" +
+		"progress_pct=25.00:source_consistency=fuzzy:backup_id=daily3:backup_entry=2:backup_entries=3:extra_ttl=60:" +
+		"ttl_extended=5:ttl_clamped=1:delete_absent=2:last_lap_ms=120"
+
+	metrics, err := bw.Refresh(nil, map[string]string{KEY_RESTORE_STATUS: record})
+	require.NoError(t, err)
+
+	byKey := map[string]AerospikeStat{}
+	for _, m := range metrics {
+		require.Equal(t, commons.CTX_RESTORE, m.Context)
+		byKey[m.Name] = m
+	}
+
+	gauges := map[string]float64{
+		"ignore_record_error": 1, "outstanding": 12, "max_inflight": 64, "covered": 100, "cluster_wide": 400,
+		"backup_entry": 2, "backup_entries": 3, "extra_ttl": 60, "progress_pct": 25, "recs_per_sec": 210,
+		"last_lap_ms": 120, "restore-rps": 1000, "finish_time": 0,
+	}
+	for name, value := range gauges {
+		stat, ok := byKey[name]
+		require.True(t, ok, "%s is exported", name)
+		assert.Equal(t, commons.MetricTypeGauge, stat.MType, "%s is a gauge", name)
+		assert.Equal(t, value, stat.Value, name)
+	}
+
+	counters := map[string]float64{
+		"total": 1000, "applied": 900, "deletes": 40, "filtered": 60, "failed": 0,
+		"ttl_extended": 5, "ttl_clamped": 1, "delete_absent": 2,
+	}
+	for name, value := range counters {
+		stat, ok := byKey[name]
+		require.True(t, ok, "%s is exported", name)
+		assert.Equal(t, commons.MetricTypeCounter, stat.MType, "%s is a counter", name)
+		assert.Equal(t, value, stat.Value, name)
+	}
+
+	source, ok := byKey["source_consistency"]
+	require.True(t, ok)
+	assert.Equal(t, 1.0, source.Value, "fuzzy is level 1")
+	assert.Equal(t, commons.MetricTypeGauge, source.MType)
+	assertLabel(t, source, commons.METRIC_LABEL_SOURCE_CONSISTENCY, "fuzzy")
+
+	job, ok := byKey[STAT_JOB]
+	require.True(t, ok)
+	assertLabel(t, job, commons.METRIC_LABEL_KIND, "fuzzy")
+	assertLabel(t, job, commons.METRIC_LABEL_BACKUP_ID, "daily3")
+	_, ok = byKey["backup_id"]
+	assert.False(t, ok, "backup_id is a label, never a metric")
 }
 
 // TestBackupRestoreFinishedRestoreJob checks a restore-status record after the job completed. finish_time is

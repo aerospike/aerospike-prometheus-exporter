@@ -19,7 +19,7 @@ const (
 	STAT_JOB = "job"
 
 	// STAT_ACHIEVED_CONSISTENCY is a gauge whose value is the consistency level reached:
-	// 0 while it is "-", 1 for relaxed, 2 for strict. The level is also the label.
+	// 0 while it is "-", 1 for fuzzy, 2 for strict. The level is also the label.
 	// It is matched with fieldKey, and the metric keeps the server's spelling (achieved_consistency on 8.2.2).
 	STAT_ACHIEVED_CONSISTENCY = "achieved-consistency"
 
@@ -144,7 +144,7 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 		for stat, value := range stats {
 			key := fieldKey(stat)
 
-			// achieved-consistency and source-consistency are enums ("-", "relaxed", "strict"), so each is
+			// achieved-consistency and source-consistency are enums ("-", "fuzzy", "strict"), so each is
 			// its own gauge valued by the level and labeled with it, rather than a number
 			if key == STAT_ACHIEVED_CONSISTENCY {
 				allMetricsToSend = append(allMetricsToSend,
@@ -233,10 +233,11 @@ func (bw *BackupRestoreStatsProcessor) jobMetric(context commons.ContextType, me
 }
 
 // consistencyLevel maps a consistency enum (achieved-consistency or source-consistency) to a number:
-// nothing yet, relaxed, strict.
+// 0 for "-" (nothing yet), 1 for fuzzy, 2 for strict. The server contract lists -, fuzzy and strict.
+// relaxed is the name earlier builds used for fuzzy, so it maps to the same level.
 func consistencyLevel(value string) float64 {
 	switch strings.ToLower(value) {
-	case "relaxed":
+	case "fuzzy", "relaxed":
 		return 1
 	case "strict":
 		return 2
