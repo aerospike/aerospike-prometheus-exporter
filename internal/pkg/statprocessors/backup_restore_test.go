@@ -395,3 +395,102 @@ func backupState(t *testing.T) *StatProcessorSharedState {
 
 	return state
 }
+
+// TestBackupRestoreSourceConsistencyIsLabel checks restore-status from the 8.2.1+ build, where source_consistency
+// is the consistency a restore was asked for. Like achieved_consistency it is a gauge valued by the level, with
+// the level as a label. The record also covers the restore settings, flags and levels that the shipped list types as gauges.
+func TestBackupRestoreSourceConsistencyIsLabel(t *testing.T) {
+	state := backupState(t)
+	bw := NewBackupRestoreStatsProcessor(state)
+
+	record := "job-id=261125T073858-k16l:ns=test:kind=cold:state=ACTIVE:restore-rps=0:restore-worker-threads=8:" +
+		"restore-download-threads=8:ns_state=RESTORING:start_time=2026-11-25 07.38.58.774 UTC:joiner=false:" +
+		"placeholder=false:pids_in_scope=4096:progress_pct=66.74:missing_layout_nodes=0:n_done_nodes=0:" +
+		"source_consistency=strict:ref_time=533288338:cluster_key=BF60EE7585F1:node_done=false:done=false:" +
+		"clear=none:clear_zeroed_bytes=134217728:clear_ms=6875:total=2846:applied=2598:deletes=0:filtered=248:" +
+		"filtered_not_ours=0:filter_exits=0:exit_shadowed=0:exit_cap_hit=false:failed=0:recs_per_sec=117:" +
+		"pending_q_depth=0:pending_q_cap=16:last_lap_ms=24"
+
+	metrics, err := bw.Refresh(nil, map[string]string{KEY_RESTORE_STATUS: record})
+	require.NoError(t, err)
+
+	byKey := map[string]AerospikeStat{}
+	for _, m := range metrics {
+		byKey[string(m.Context)+"/"+m.Name] = m
+	}
+
+	source, ok := byKey["restore/source_consistency"]
+	require.True(t, ok, "source_consistency is exported under the server's spelling")
+	assert.Equal(t, 2.0, source.Value, "strict is level 2")
+	assert.Equal(t, commons.MetricTypeGauge, source.MType)
+	assertLabel(t, source, commons.METRIC_LABEL_SOURCE_CONSISTENCY, "strict")
+	assert.Zero(t, countNamed(metrics, "source-consistency"))
+	assert.Equal(t, 1, countNamed(metrics, "source_consistency"), "exported once, as the consistency gauge")
+
+	// clear=none is text, so it is not a metric and not a label
+	_, ok = byKey["restore/clear"]
+	assert.False(t, ok)
+
+	for _, name := range []string{"restore-rps", "restore-worker-threads", "restore-download-threads", "start_time",
+		"pids_in_scope", "placeholder", "node_done", "exit_cap_hit", "recs_per_sec", "last_lap_ms"} {
+		stat, ok := byKey["restore/"+name]
+		require.True(t, ok, "%s is exported", name)
+		assert.Equal(t, commons.MetricTypeGauge, stat.MType, "%s is a gauge in the shipped list", name)
+	}
+}
+
+// TestBackupRestoreSourceConsistencyLevels checks the level for each source_consistency value, including "-".
+func TestBackupRestoreSourceConsistencyLevels(t *testing.T) {
+	state := backupState(t)
+	bw := NewBackupRestoreStatsProcessor(state)
+
+	cases := map[string]float64{"-": 0, "relaxed": 1, "strict": 2}
+	for value, level := range cases {
+		metrics, err := bw.Refresh(nil, map[string]string{
+			KEY_RESTORE_STATUS: "job-id=r1:ns=test:state=ACTIVE:source_consistency=" + value,
+		})
+		require.NoError(t, err)
+
+		source, ok := findStat(metrics, "source_consistency")
+		require.True(t, ok, "value %s", value)
+		assert.Equal(t, level, source.Value, "value %s", value)
+		assertLabel(t, source, commons.METRIC_LABEL_SOURCE_CONSISTENCY, value)
+	}
+}
+
+// TestBackupRestoreFinishedRestoreJob checks a restore-status record after the job completed. finish_time is
+// now present, so it is exported like the backup finish_time (a gauge, unix milliseconds). The job is a gauge
+// in state COMPLETE, and done, node_done and the source consistency level are exported.
+func TestBackupRestoreFinishedRestoreJob(t *testing.T) {
+	state := backupState(t)
+	bw := NewBackupRestoreStatsProcessor(state)
+
+	record := "job-id=261125T073858-k16l:ns=test:kind=cold:state=COMPLETE:restore-rps=0:restore-worker-threads=8:" +
+		"restore-download-threads=8:ns_state=NONE:start_time=2026-11-25 07.38.58.774 UTC:" +
+		"finish_time=2026-11-25 07.48.16.841 UTC:joiner=false:placeholder=false:pids_in_scope=4096:" +
+		"progress_pct=100.00:missing_layout_nodes=0:n_done_nodes=1:source_consistency=strict:ref_time=533288338:" +
+		"cluster_key=BF60EE7585F1:node_done=true:done=true:clear=none:clear_zeroed_bytes=134217728:clear_ms=6875:" +
+		"total=9839:applied=8989:deletes=0:filtered=850:filtered_not_ours=0:filter_exits=0:exit_shadowed=0:" +
+		"exit_cap_hit=false:failed=0:recs_per_sec=95:pending_q_depth=0:pending_q_cap=0"
+
+	metrics, err := bw.Refresh(nil, map[string]string{KEY_RESTORE_STATUS: record})
+	require.NoError(t, err)
+
+	byKey := map[string]AerospikeStat{}
+	for _, m := range metrics {
+		byKey[string(m.Context)+"/"+m.Name] = m
+	}
+
+	finish, ok := byKey["restore/finish_time"]
+	require.True(t, ok, "finish_time is exported once the job has finished")
+	assert.Equal(t, commons.MetricTypeGauge, finish.MType)
+	assert.Equal(t, float64(time.Date(2026, 11, 25, 7, 48, 16, int(841*time.Millisecond), time.UTC).UnixMilli()), finish.Value)
+
+	done, ok := byKey["restore/done"]
+	require.True(t, ok)
+	assert.Equal(t, 1.0, done.Value)
+
+	job, ok := byKey["restore/job"]
+	require.True(t, ok)
+	assert.Equal(t, []string{"COMPLETE", "cold", "NONE", "BF60EE7585F1"}, job.LabelValues[4:])
+}

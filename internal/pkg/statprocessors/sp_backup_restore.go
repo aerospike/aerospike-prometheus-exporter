@@ -23,6 +23,10 @@ const (
 	// It is matched with fieldKey, and the metric keeps the server's spelling (achieved_consistency on 8.2.2).
 	STAT_ACHIEVED_CONSISTENCY = "achieved-consistency"
 
+	// STAT_SOURCE_CONSISTENCY is the consistency a restore job was asked for, reported in restore-status.
+	// It is handled like achieved-consistency: a gauge valued by the level, labeled with the level.
+	STAT_SOURCE_CONSISTENCY = "source-consistency"
+
 	// BACKUP_RESTORE_MIN_BUILD is the first server build that reports backup-status and restore-status.
 	// Keep this at 8.2.1. For local testing against an 8.1.1 server, change it locally only and do
 	// not commit that change.
@@ -140,11 +144,16 @@ func (bw *BackupRestoreStatsProcessor) refreshJobs(context commons.ContextType, 
 		for stat, value := range stats {
 			key := fieldKey(stat)
 
-			// achieved-consistency is an enum ("-", "relaxed", "strict"), so it is its own gauge
-			// valued by the level reached and labeled with the level, rather than a number
+			// achieved-consistency and source-consistency are enums ("-", "relaxed", "strict"), so each is
+			// its own gauge valued by the level and labeled with it, rather than a number
 			if key == STAT_ACHIEVED_CONSISTENCY {
 				allMetricsToSend = append(allMetricsToSend,
-					bw.achievedConsistencyMetric(context, metrics, stat, value, labels, labelValues))
+					bw.consistencyMetric(context, metrics, stat, value, commons.METRIC_LABEL_ACHIEVED_CONSISTENCY, labels, labelValues))
+				continue
+			}
+			if key == STAT_SOURCE_CONSISTENCY {
+				allMetricsToSend = append(allMetricsToSend,
+					bw.consistencyMetric(context, metrics, stat, value, commons.METRIC_LABEL_SOURCE_CONSISTENCY, labels, labelValues))
 				continue
 			}
 
@@ -223,7 +232,8 @@ func (bw *BackupRestoreStatsProcessor) jobMetric(context commons.ContextType, me
 	return asMetric
 }
 
-// consistencyLevel maps the achieved-consistency enum to a number: nothing yet, relaxed, strict.
+// consistencyLevel maps a consistency enum (achieved-consistency or source-consistency) to a number:
+// nothing yet, relaxed, strict.
 func consistencyLevel(value string) float64 {
 	switch strings.ToLower(value) {
 	case "relaxed":
@@ -235,9 +245,9 @@ func consistencyLevel(value string) float64 {
 	}
 }
 
-// achievedConsistencyMetric emits one gauge per job for the consistency level reached.
+// consistencyMetric emits one gauge per job for a consistency enum (achieved or source consistency).
 // The level is both the value and the label, so it can be read as a number or filtered by name.
-func (bw *BackupRestoreStatsProcessor) achievedConsistencyMetric(context commons.ContextType, metrics map[string]AerospikeStat, stat string, consistency string, labels []string, labelValues []string) AerospikeStat {
+func (bw *BackupRestoreStatsProcessor) consistencyMetric(context commons.ContextType, metrics map[string]AerospikeStat, stat string, consistency string, label string, labels []string, labelValues []string) AerospikeStat {
 
 	asMetric, exists := metrics[stat]
 
@@ -249,7 +259,7 @@ func (bw *BackupRestoreStatsProcessor) achievedConsistencyMetric(context commons
 	}
 
 	asMetric.updateValues(consistencyLevel(consistency),
-		append(labels, commons.METRIC_LABEL_ACHIEVED_CONSISTENCY), append(labelValues, consistency))
+		append(labels, label), append(labelValues, consistency))
 
 	return asMetric
 }

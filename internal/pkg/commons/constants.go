@@ -39,6 +39,7 @@ const (
 	METRIC_LABEL_BACKUP_ID                 = "backup_id"
 	METRIC_LABEL_CLUSTER_KEY               = "cluster_key"
 	METRIC_LABEL_ACHIEVED_CONSISTENCY      = "achieved_consistency"
+	METRIC_LABEL_SOURCE_CONSISTENCY        = "source_consistency"
 )
 
 // constants used to identify type of metrics

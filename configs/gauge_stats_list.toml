@@ -78,10 +78,28 @@ backup_gauge_stats = [
 #
 restore_gauge_stats = [
 
+	# settings
+	"restore-rps",
+	"restore-worker-threads",
+	"restore-download-threads",
+	# levels, rates and timestamps
 	"progress-pct",
+	"start-time",
+	"finish-time",
+	"pids-in-scope",
+	"missing-layout-nodes",
+	"n-done-nodes",
+	"pending-q-depth",
+	"pending-q-cap",
+	"recs-per-sec",
+	"last-lap-ms",
 	"applied",
+	# flags
 	"joiner",
+	"placeholder",
+	"node-done",
 	"done",
+	"exit-cap-hit",
 ]
 
 #
