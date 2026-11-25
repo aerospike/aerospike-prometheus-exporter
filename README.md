@@ -81,7 +81,7 @@ The image does not carry a finished `ape.toml`. When the container starts, `dock
 | `AGENT_LOG_LEVEL`, `AGENT_LOG_FILE` | `info`, console | Logging |
 | `AGENT_PROMETHEUS`, `AGENT_OPEN_TELEMETRY` | `true`, `false` | Which outputs are on. The OpenTelemetry settings are the `AGENT_OTEL_*` variables |
 | `AGENT_SECRET_AGENT_ADDRESS`, `_PORT`, `_SOCKET_PATH`, `_TLS_NAME`, `_CA_FILE`, `_CERT_FILE`, `_KEY_FILE`, `_KEY_FILE_PASSPHRASE`, `_TIMEOUT` | unset | The Secret Agent connection (see [Secret Agent](#secret-agent)) |
-| `NAMESPACE_`, `SET_`, `NODE_`, `XDR_`, `JOB_`, `SINDEX_` `METRICS_ALLOWLIST` and `METRICS_BLOCKLIST` | unset | Metric allow and block lists. Each value is a list of quoted names, for example `NAMESPACE_METRICS_ALLOWLIST='"ns1","ns2"'` |
+| `NAMESPACE_`, `SET_`, `NODE_`, `XDR_`, `JOB_`, `SINDEX_`, `BACKUP_`, `RESTORE_` `METRICS_ALLOWLIST` and `METRICS_BLOCKLIST` | unset | Metric allow and block lists. Each value is a list of quoted names, for example `NAMESPACE_METRICS_ALLOWLIST='"ns1","ns2"'` or `BACKUP_METRICS_ALLOWLIST='"progress_pct","recs_*"'` |
 
 `docker-entrypoint.sh` and `configs/ape.toml.template` list every variable. The secret-valued variables (`AS_AUTH_PASSWORD`, `BASIC_AUTH_PASSWORD`, the certificate and key variables, and the OpenTelemetry headers) accept the same forms as `ape.toml`: a plain value, `file:`, `env:`, `env-b64:`, `b64:`, `secrets:` and `secrets:b64:`.
 
@@ -330,6 +330,10 @@ make release-docker-multi-arch
         headers = {}
     ```
 
+- OTel series follow what the server returns. When the server stops returning a stat, the exporter stops reporting that series instead of repeating its last value, as the Prometheus output already does. This covers a dropped secondary index, a disabled or renamed latency histogram (for example when `microsecond-histograms` changes the unit from `ms` to `us`), a removed namespace, and a backup or restore job that has finished or moved to another state. If a dashboard or alert on your OTel backend relies on a flat line for such a stat, change it to treat a missing series as expected. A few cases are left alone: the index-pressure stats, which are only fetched every `index_pressure_stats_fetch_interval` minutes, keep their last value in between; a refresh cut short by a checkpoint save drops nothing; and the system stats from `refresh_system_stats` are never dropped.
+
+    The exporter skips the first exports after it starts and after it reconnects to the server, so a counter does not send a large first delta. It does not skip a series that comes back on its own while the server stays connected, so with `all_metrics_as_gauges = false` and delta temporality, a series that returns after a gap can send a large first delta. The default for `all_metrics_as_gauges` in the Docker image is `true`, which is not affected.
+
 - Use allowlist and blocklist to filter out required metrics (optional). The allowlist and blocklist supports standard wildcards (globbing patterns which include - `? (question mark)`, `* (asterisk)`, `[ ] (square brackets)`, `{ } (curly brackets)`, `[!]` and `\ (backslash)`) for bulk metrics filtering. For example,
     ```toml
     [Aerospike]
@@ -411,7 +415,7 @@ make release-docker-multi-arch
     # sindex_metrics_blocklist = []
     ```
 
-- In-server backup and restore metrics come from the `backup-status` and `restore-status` info commands (Aerospike 8.2.1 and above). Filter them with their own allowlist and blocklist. Patterns match the stat name exactly as the server prints it (for example `recs_backed_up` or `bytes_*`; settings such as `backup-rps` keep their hyphens), not the exported metric name `aerospike_backup_recs_backed_up`. Three stats are exported as gauges by the exporter and can be matched as well: `job` (exported as `aerospike_backup_job` / `aerospike_restore_job`, one series per job labeled with its `state`) `achieved_consistency` (exported as `aerospike_backup_achieved_consistency`: 0 for `-`, 1 for relaxed, 2 for strict), and `source_consistency` (exported as `aerospike_restore_source_consistency`, with the same levels). As with the other lists, the blocklist wins when a stat matches both.
+- In-server backup and restore metrics come from the `backup-status` and `restore-status` info commands (Aerospike 8.2.1 and above). Filter them with their own allowlist and blocklist. Patterns match the stat name exactly as the server prints it (for example `recs_backed_up` or `bytes_*`; settings such as `backup-rps` keep their hyphens), not the exported metric name `aerospike_backup_recs_backed_up`. Three stats are exported as gauges by the exporter and can be matched as well: `job` (exported as `aerospike_backup_job` / `aerospike_restore_job`, one series per job labeled with its `state`) `achieved_consistency` (exported as `aerospike_backup_achieved_consistency`: 0 for `-`, 1 for fuzzy, 2 for strict), and `source_consistency` (exported as `aerospike_restore_source_consistency`, with the same levels). As with the other lists, the blocklist wins when a stat matches both.
     ```toml
     [Aerospike]
     # Backup metrics allowlist, An empty list will include all metrics.
@@ -554,7 +558,7 @@ password = "secrets:APE:DbPassword"
 cert_file = "secrets:b64:APE:Cert"
 ```
 
-`make test` runs the in-process unit tests and does not need Docker. `make test-integration` runs every Docker suite that can run on a laptop: Secret Agent, then OpenTelemetry, then the processor info suite, then the user-stats suite, then a Prometheus scrape of Community 7.2, then the release image. `make test-integration-aws` stays separate because it needs AWS credentials and a Secrets Manager secret.
+`make test` runs the in-process unit tests and does not need Docker. `make test-integration` runs every Docker suite that can run on a laptop: Secret Agent, then OpenTelemetry, then the Prometheus listener, then the processor info suite, then the user-stats suite, then a Prometheus scrape of Community 7.2, then the release image. `make test-integration-aws` stays separate because it needs AWS credentials and a Secrets Manager secret.
 
 `make test-integration-processor` starts one Enterprise server from `ci/processor/aerospike.conf`, runs the namespace and node info commands, and passes those strings to the processors. It checks that every numeric field is emitted, including storage-engine and flash index array stats. The test also creates secondary index `name_idx`, writes and reads records, and checks the set, sindex, and latency processors against those responses. Set `APE_IT_FEATURE_KEY_FILE` to an Enterprise feature key on the host. The key is mounted into the container and is not committed. When the variable is unset the command prints a skip message and exits 0.
 
@@ -566,7 +570,9 @@ cert_file = "secrets:b64:APE:Cert"
 
 `make test-integration-secret-agent` starts Secret Agent with its file backend. Two exporters are started from `ape.toml` files: `ci/secret-agent/ape.toml` connects to Secret Agent over TCP, and `ci/secret-agent/ape-uds.toml` connects over a Unix socket. That suite generates TLS material at runtime and does not commit certificates or private keys. The same runtime material is stored for Secret Agent as text and as base64, then fetched with `secrets:` and `secrets:b64:` and used for a mutual-TLS handshake.
 
-`make test-integration-otel` runs the OpenTelemetry exporter against an OpenTelemetry collector. Compose starts a single-node Aerospike Community Edition server, the collector, and the exporter. The exporter sends OTLP over HTTP to `http://otel-collector:4318/v1/metrics`. The collector writes metrics to a file, and the test waits until `aerospike.server.node_up` and `aerospike.server.node_stats.cluster_size` are present. The gRPC client uses TLS, so this suite uses `http_endpoint`.
+`make test-integration-otel` runs the OpenTelemetry exporter against an OpenTelemetry collector. Compose starts a single-node Aerospike Community Edition server, the collector, and the exporter. The exporter sends OTLP over HTTP to `http://otel-collector:4318/v1/metrics`. The collector writes metrics to a file, and the test waits until `aerospike.server.node_up` and `aerospike.server.node_stats.cluster_size` are present. It then creates a secondary index on the server and checks that its `aerospike.server.sindex.*` series are exported, drops the index and checks that those series stop while `cluster_size` keeps reporting, and creates the index again and checks that the series return. The tester container runs on the server image so it can use `asinfo`. The gRPC client uses TLS, so this suite uses `http_endpoint`.
+
+`make test-integration-prometheus` runs the exporter's HTTP listener against a single-node Community server with basic auth turned on. The test checks that `/health` and `/` answer without credentials, and that `/metrics` answers 401 with no credentials, a wrong password or a wrong user, and 200 with the right ones. It then creates a secondary index on the server and checks that `aerospike_sindex_*` is in the scrape, drops the index and checks that the series are gone while `aerospike_node_stats_*` keeps reporting, and creates the index again and checks that the series return. The tester container runs on the server image so it can use `asinfo` and `curl`.
 
 ### AWS Secrets Manager TLS/mTLS suite
 
