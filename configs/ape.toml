@@ -262,7 +262,7 @@
       # Two stats are exported as gauges by the exporter and can be matched too:
       #   "job"                  -> aerospike_backup_job / aerospike_restore_job (one series per job, labeled with state)
       #   "achieved_consistency" -> aerospike_backup_achieved_consistency (0 for "-", 1 for fuzzy, 2 for strict)
-      #   "source_consistency"   -> aerospike_restore_source_consistency (same levels; the consistency a restore was asked for)
+      #   "source_consistency"   -> aerospike_restore_source_consistency (same levels; the achieved consistency of the source backups read so far)
       # to exclude or stop all backup or restore metrics, use ["*"] in the blocklist
       # example: backup_metrics_allowlist = ["job", "progress_pct", "recs_*", "bytes_*", "start_time", "finish_time"]
       # backup_metrics_allowlist = []

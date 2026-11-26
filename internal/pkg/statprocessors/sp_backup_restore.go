@@ -23,7 +23,7 @@ const (
 	// It is matched with fieldKey, and the metric keeps the server's spelling (achieved_consistency on 8.2.2).
 	STAT_ACHIEVED_CONSISTENCY = "achieved-consistency"
 
-	// STAT_SOURCE_CONSISTENCY is the consistency a restore job was asked for, reported in restore-status.
+	// STAT_SOURCE_CONSISTENCY is the achieved consistency of the source backups a restore job has read so far, reported in restore-status.
 	// It is handled like achieved-consistency: a gauge valued by the level, labeled with the level.
 	STAT_SOURCE_CONSISTENCY = "source-consistency"
 
