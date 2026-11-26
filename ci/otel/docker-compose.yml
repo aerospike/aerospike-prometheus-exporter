@@ -5,6 +5,11 @@ services:
     # Enterprise, for the flash indexes behind index-pressure. The image brings its own evaluation feature key.
     image: aerospike/aerospike-server-enterprise:8.2.0.0
     user: "0:0"
+    # proto-fd-max needs more open files than the 1024 that GitHub runners give a container by default
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     entrypoint: ["/bin/bash", "-c"]
     # The restart phase recreates the server with the config that has no bar namespace.
     command:

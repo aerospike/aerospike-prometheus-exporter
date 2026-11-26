@@ -21,23 +21,35 @@ cleanup() {
 }
 trap cleanup EXIT
 
-run_phase() {
-	echo "===== $suite: $1 phase ====="
-	# --no-deps keeps compose from recreating the server, which it would do if its config differed
-	if ! "${compose[@]}" run --rm -T --no-deps tester "$1"; then
-		echo "----- exporter and server logs -----" >&2
-		"${compose[@]}" logs --no-color --tail 60 ape aerospike >&2 || true
+show_logs() {
+	echo "----- exporter and server logs -----" >&2
+	"${compose[@]}" logs --no-color --tail 60 ape aerospike >&2 || true
+}
+
+# start ARG...: compose up and wait, printing the logs if a service fails to start
+start() {
+	if ! "${compose[@]}" up -d --wait "$@"; then
+		show_logs
 		return 1
 	fi
 }
 
-"${compose[@]}" up -d --wait "$@"
+run_phase() {
+	echo "===== $suite: $1 phase ====="
+	# --no-deps keeps compose from recreating the server, which it would do if its config differed
+	if ! "${compose[@]}" run --rm -T --no-deps tester "$1"; then
+		show_logs
+		return 1
+	fi
+}
+
+start "$@"
 run_phase before
 
 echo "===== $suite: restarting the server without the bar namespace ====="
 # the compose file reads this for the server's config, so keep it set for every later compose command
 export APE_IT_AEROSPIKE_CONF=aerospike-one-namespace.conf
-"${compose[@]}" up -d --wait --force-recreate --no-deps aerospike
+start --force-recreate --no-deps aerospike
 run_phase after
 
 echo "$suite restart suite passed"
