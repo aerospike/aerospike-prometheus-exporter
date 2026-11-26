@@ -37,6 +37,91 @@ xdr_gauge_stats = [
 ]	
 
 #
+# Backup : below section define all backup-status stats which are treated as Gauges.
+# Names are read with underscores as hyphens, so "progress_pct" and "progress-pct" are the same entry.
+# A backup stat that is not listed here is exported as a Counter.
+#
+backup_gauge_stats = [
+
+	# settings
+	"backup-rps",
+	"backup-worker-threads",
+	"backup-upload-threads",
+	"backup-s3-throughput-target-gbps",
+
+	# current level, state and flags
+	"progress_pct",
+	"partitions_owned",
+	"partitions_scanned",
+	"partitions_flushed",
+	"partitions_count_pending",
+	"drain_blocked_migrations",
+	"change_stream_active",
+	"backpressure_active",
+	"upload_q_depth",
+	"upload_q_cap",
+	"buffers_in_use",
+	"buffers_scan_cap",
+	"total_buffers_allocated",
+	"last_lap_ms",
+
+	# rates
+	"recs_per_sec",
+	"bytes_in_per_sec",
+	"bytes_out_per_sec",
+
+	# timestamps, exported as unix milliseconds
+	"start_time",
+	"finish_time",
+]
+
+#
+# Restore : below section define all restore-status stats which are treated as Gauges.
+# Names are read with underscores as hyphens. A restore stat that is not listed here is exported as a Counter.
+# The counters in the server contract are total, applied, deletes, filtered, filtered-not-ours, failed,
+# clear-zeroed-bytes, ttl-extended, ttl-clamped and delete-absent.
+#
+restore_gauge_stats = [
+
+	# settings
+	"restore-rps",
+	"restore-worker-threads",
+	"restore-download-threads",
+
+	# levels, rates and timestamps (both lanes)
+	"progress-pct",
+	"start-time",
+	"finish-time",
+	"recs-per-sec",
+	"last-lap-ms",
+
+	# cold restore
+	"pids-in-scope",
+	"missing-layout-nodes",
+	"n-done-nodes",
+	"pending-q-depth",
+	"pending-q-cap",
+	"clear-ms",
+	"joiner",
+	"placeholder",
+	"node-done",
+	"done",
+	"exit-cap-hit",
+
+	# fuzzy restore (restore-via-writes)
+	"outstanding",
+	"max-inflight",
+	"covered",
+	"cluster-wide",
+	"ignore-record-error",
+
+	# backup lists
+	"backup-entry",
+	"backup-entries",
+	"extra-ttl",
+]
+
+#
 # Sindex: below section define all Sindex stats which are treated as Gauges 
 #
 sindex_gauge_stats = [

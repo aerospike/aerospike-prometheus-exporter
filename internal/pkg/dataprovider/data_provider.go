@@ -18,23 +18,15 @@ type DataProvider interface {
 var dpPromAerospikeServer = NewAerospikeProvider()
 var dpOtelAerospikeServer = NewAerospikeProvider()
 
-var dpMockServer = NewMockAerospikeServer()
-
 var dpSysInfoProvider = &SystemInfoProvider{}
 
 func GetProvider(executorMode string) DataProvider {
-
-	if is_Mock_Initialized == 1 {
-		return dpMockServer
-	}
 
 	switch executorMode {
 	case commons.EXECUTOR_MODE_PROM:
 		return dpPromAerospikeServer
 	case commons.EXECUTOR_MODE_OTEL:
 		return dpOtelAerospikeServer
-	case "mock":
-		return dpMockServer
 	default:
 		return dpPromAerospikeServer
 	}

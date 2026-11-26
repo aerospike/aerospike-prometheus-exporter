@@ -1,0 +1,33 @@
+name: ape-docker-image
+
+services:
+  aerospike:
+    image: aerospike/aerospike-server:${AEROSPIKE_VERSION:-7.2.0.11}
+    environment:
+      NAMESPACE: test
+      DATA_IN_MEMORY: "true"
+      MEM_GB: "1"
+    healthcheck:
+      test: ["CMD", "asinfo", "-v", "status"]
+      interval: 2s
+      timeout: 5s
+      retries: 40
+      start_period: 10s
+
+  ape:
+    image: ${APE_IT_DOCKER_IMAGE:?built by ci/docker/run.sh}
+    environment:
+      AS_HOST: aerospike
+      AS_PORT: "3000"
+    depends_on:
+      aerospike:
+        condition: service_healthy
+
+  tester:
+    image: alpine:3.24
+    command: ["/bin/sh", "/scripts/check.sh"]
+    volumes:
+      - ./check.sh:/scripts/check.sh:ro
+    depends_on:
+      ape:
+        condition: service_started

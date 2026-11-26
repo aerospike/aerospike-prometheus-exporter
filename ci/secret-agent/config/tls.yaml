@@ -1,0 +1,15 @@
+service:
+  tcp:
+    endpoint: 0.0.0.0:3005
+    tls:
+      cert-file: /certs/server.crt
+      key-file: /certs/server.key
+
+secret-manager:
+  file:
+    convert-to-base64: true
+    resources:
+      APE: /secrets/ape.json
+
+log:
+  level: info

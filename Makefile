@@ -2,6 +2,9 @@
 # Include all common variables
 include Makefile.vars
 
+# Go toolchain used by the CI compose images. Read from go.mod so the version is set in one place.
+export CI_GO_VERSION := $(shell awk '/^go /{print $$2; exit}' go.mod)
+
 # Builds exporter binary
 .PHONY: exporter
 exporter:
@@ -32,7 +35,54 @@ lint:
 .PHONY: test
 test: ## Run all the test-cases defined in this folder.
 	## for verbose mode use go test -v ./...	
-	go test ./...	
+	go test ./...
+
+.PHONY: test-integration
+test-integration: ## Run the laptop Docker suites: Secret Agent, OpenTelemetry, the Prometheus listener, the processor info server, user stats, the 7.2 scrape, and the release image. AWS stays in test-integration-aws.
+	status=0; \
+	$(MAKE) test-integration-secret-agent || status=$$?; \
+	$(MAKE) test-integration-otel || status=$$?; \
+	$(MAKE) test-integration-prometheus || status=$$?; \
+	$(MAKE) test-integration-processor || status=$$?; \
+	$(MAKE) test-integration-users || status=$$?; \
+	$(MAKE) test-integration-versions || status=$$?; \
+	$(MAKE) test-integration-docker || status=$$?; \
+	exit $$status
+
+.PHONY: test-integration-secret-agent
+test-integration-secret-agent: ## Run the Docker Secret Agent suite.
+	docker compose -f ci/secret-agent/docker-compose.yml up --abort-on-container-exit --exit-code-from tester; \
+	status=$$?; \
+	docker compose -f ci/secret-agent/docker-compose.yml down -v; \
+	exit $$status
+
+.PHONY: test-integration-otel
+test-integration-otel: ## Run the OpenTelemetry exporter against an OTel collector, before and after a server restart.
+	ci/common/run-restart-suite.sh ci/otel aerospike otel-collector ape
+
+.PHONY: test-integration-prometheus
+test-integration-prometheus: ## Scrape the exporter's HTTP listener: routes, basic auth, and series that stop reporting, before and after a server restart.
+	ci/common/run-restart-suite.sh ci/prometheus aerospike ape
+
+.PHONY: test-integration-processor
+test-integration-processor: ## Feed live asinfo output into the namespace and node processors. Skips when APE_IT_FEATURE_KEY_FILE is unset.
+	ci/processor/run.sh
+
+.PHONY: test-integration-users
+test-integration-users: ## Create three users, run asbench as each, and check user stats. Skips when APE_IT_FEATURE_KEY_FILE is unset.
+	ci/users/run.sh
+
+.PHONY: test-integration-versions
+test-integration-versions: ## Scrape the exporter against Community servers. Default tag is 7.2.0.11. Set APE_IT_SERVER_VERSIONS for more.
+	ci/versions/run.sh
+
+.PHONY: test-integration-aws
+test-integration-aws: ## Run the TLS/mTLS suite with Secret Agent and AWS Secrets Manager. Skips when APE_IT_AWS_SECRET_ARN is unset.
+	ci/secret-agent-aws/run.sh
+
+.PHONY: test-integration-docker
+test-integration-docker: ## Build the release image, check Secret Agent env rendering, and scrape a Community server.
+	ci/docker/run.sh
 
 # Builds RPM, DEB and TAR packages
 # Requires FPM package manager

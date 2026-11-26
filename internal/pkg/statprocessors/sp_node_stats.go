@@ -19,6 +19,7 @@ const (
 
 const (
 	CMD_INFOKEY_CHECKPOINT_STATUS = "checkpoint-status"
+	CHECKPOINT_NODE_RECORD        = "node"
 	CMD_INFOKEY_USER_AGENTS       = "user-agents"
 	CMD_SMD_INFO                  = "smd-info"
 )
@@ -368,8 +369,22 @@ func (sw *NodeStatsProcessor) handleCheckpointStatusStats(rawMetrics map[string]
 		}
 
 		values := strings.SplitN(stat, ":", 2)
+		if len(values) < 2 {
+			log.Debug("checkpoint-status record has no stats: ", stat)
+			continue
+		}
+
 		ns := values[0]
 		cpstats := commons.ParseStats(values[1], ":")
+
+		// from 8.2.2 the node-level fields come as their own record, node:is_parked=false:park_ms=0,
+		// with no state. It is a signal like the bare is_parked line above, not a namespace.
+		if _, hasState := cpstats["state"]; ns == CHECKPOINT_NODE_RECORD && !hasState {
+			if cpstats["is_parked"] == "true" {
+				counter++
+			}
+			continue
+		}
 
 		cpstatus := cpstats["state"]
 

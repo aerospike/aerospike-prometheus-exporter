@@ -1,0 +1,50 @@
+name: ape-prometheus
+
+services:
+  aerospike:
+    # Enterprise, for the flash indexes behind index-pressure. The image brings its own evaluation feature key.
+    image: aerospike/aerospike-server-enterprise:8.2.0.0
+    user: "0:0"
+    # proto-fd-max needs more open files than the 1024 that GitHub runners give a container by default
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    entrypoint: ["/bin/bash", "-c"]
+    # The restart phase recreates the server with the config that has no bar namespace.
+    command:
+      - |
+        set -euo pipefail
+        mkdir -p /opt/aerospike/data/test_index /opt/aerospike/data/bar_index /var/run/aerospike
+        exec asd --config-file /etc/ape-it/aerospike.conf --foreground
+    volumes:
+      - ../common/${APE_IT_AEROSPIKE_CONF:-aerospike-two-namespaces.conf}:/etc/ape-it/aerospike.conf:ro
+    healthcheck:
+      test: ["CMD", "asinfo", "-v", "status"]
+      interval: 2s
+      timeout: 5s
+      retries: 40
+      start_period: 5s
+
+  ape:
+    image: golang:${CI_GO_VERSION:?set by make from go.mod}
+    working_dir: /src
+    environment:
+      CGO_ENABLED: "0"
+    command: ["go", "run", "./cmd", "--config", "/etc/ape/ape.toml", "--gauge-list", "/src/configs/gauge_stats_list.toml"]
+    volumes:
+      - ../..:/src
+      - ./ape.toml:/etc/ape/ape.toml:ro
+    depends_on:
+      aerospike:
+        condition: service_healthy
+
+  # The tester runs on the server image for asinfo, which creates and drops a secondary index, and for curl.
+  tester:
+    image: aerospike/aerospike-server:7.2.0.11
+    volumes:
+      - ./scripts/check.sh:/scripts/check.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/check.sh"]
+    depends_on:
+      ape:
+        condition: service_started

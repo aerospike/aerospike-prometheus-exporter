@@ -41,11 +41,60 @@ func (oe *OtelExecutor) getCommonLabels() []attribute.KeyValue {
 	return attrkv
 }
 
+// isBackupRestoreContext reports whether a context's series belong to backup or restore jobs.
+// Their gauges can carry fractions (progress-pct=42.50), so they are exported as float64, while the gauges of
+// every other context stay int64 so their exported value type does not change.
+func isBackupRestoreContext(context commons.ContextType) bool {
+	return context == commons.CTX_BACKUP || context == commons.CTX_RESTORE
+}
+
+// isIndexPressureSeries reports whether a series is fetched only every few minutes. The refreshes in between
+// do not return it by design, so it is tracked apart from the other series and swept only by a refresh that
+// fetched it.
+func isIndexPressureSeries(stat statprocessors.AerospikeStat) bool {
+	return statprocessors.IsIntervalFetchedStat(stat)
+}
+
+// isPartialRefresh reports whether the latest server refresh was cut short. While a checkpoint save runs only
+// build and checkpoint-status are requested, so every other series is missing from that refresh, and sweeping
+// would drop all of them for the length of the save. The state is kept for the whole refresh, also when the
+// save ends between its two passes.
+func (oe *OtelExecutor) isPartialRefresh() bool {
+	return oe.sharedState.IsPartialRefresh()
+}
+
+// isIndexPressureFetched reports whether the latest server refresh ran the index-pressure command and got a
+// valid answer, which is the only kind of refresh that confirms a namespace is gone.
+func (oe *OtelExecutor) isIndexPressureFetched() bool {
+	return oe.sharedState != nil && oe.sharedState.IndexPressureFetched
+}
+
+// processAndPushStats records the latest values. When sweep is set, the stats are the result of a server
+// refresh: every series that refresh returned is remembered, and a series remembered from an earlier refresh
+// that this one did not return is unregistered. A job that finished, a job's previous state, a histogram that
+// is disabled or renamed (latencies in ms and then in us), or a stat the server no longer reports then stops
+// exporting its last value. System info is a separate refresh and is never swept (sweep is false).
 func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
-	commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat) {
+	commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat, sweep bool) {
+
+	seenSweptKeys := map[string]struct{}{}
+	seenIndexPressureKeys := map[string]struct{}{}
+
+	if oe.sweptKeys == nil {
+		oe.sweptKeys = map[string]struct{}{}
+	}
+
+	if oe.indexPressureKeys == nil {
+		oe.indexPressureKeys = map[string]struct{}{}
+	}
 
 	// create the required metered objects
 	for _, stat := range refreshStats {
+
+		// honour the *_metrics_allowlist / *_metrics_blocklist configuration, as the Prometheus path does
+		if !stat.IsAllowed {
+			continue
+		}
 
 		// In OTEL all contexts have '.' separated names and actual stat can have _ etc.,
 		//  Example: aerospike.server.namespace.master_objects
@@ -72,6 +121,16 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 
 		metricKey := oe.constructMetricKey(qualifiedName, labels)
 
+		if sweep {
+			if isIndexPressureSeries(stat) {
+				seenIndexPressureKeys[metricKey] = struct{}{}
+				oe.indexPressureKeys[metricKey] = struct{}{}
+			} else {
+				seenSweptKeys[metricKey] = struct{}{}
+				oe.sweptKeys[metricKey] = struct{}{}
+			}
+		}
+
 		// Use or Create Otel metric
 		switch stat.MType {
 		case commons.MetricTypeCounter:
@@ -95,6 +154,18 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 
 		case commons.MetricTypeGauge:
 
+			// backup and restore gauges keep their fractional part, other gauges stay int64 so the
+			// value type of metrics that are already exported does not change
+			if isBackupRestoreContext(stat.Context) {
+				fMetric := oe.getFloatGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
+
+				if fMetric != nil {
+					fMetric.store(stat.Value)
+				}
+
+				break
+			}
+
 			gMetric := oe.getGaugeMetric(metricKey, meter, qualifiedName, desc, labels)
 
 			if gMetric != nil {
@@ -104,6 +175,53 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 		default:
 			log.Errorf("Unknown metric type: %d", stat.MType)
 		}
+	}
+
+	if sweep && !oe.isPartialRefresh() {
+		oe.sweepStaleSeries(oe.sweptKeys, seenSweptKeys)
+
+		// index-pressure series stay between the scheduled fetches, and go only when a fetch no longer lists them
+		if oe.isIndexPressureFetched() {
+			oe.sweepStaleSeries(oe.indexPressureKeys, seenIndexPressureKeys)
+		}
+	}
+}
+
+// sweepStaleSeries unregisters every series in tracked that the latest refresh did not return (seen), and forgets it.
+// Once its callback stops observing, the SDK no longer exports that attribute set.
+func (oe *OtelExecutor) sweepStaleSeries(tracked map[string]struct{}, seen map[string]struct{}) {
+	for key := range tracked {
+		if _, ok := seen[key]; ok {
+			continue
+		}
+
+		if gd, ok := oe.gauges[key]; ok {
+			unregister(key, gd.registration)
+			delete(oe.gauges, key)
+		}
+
+		if fd, ok := oe.floatGauges[key]; ok {
+			unregister(key, fd.registration)
+			delete(oe.floatGauges, key)
+		}
+
+		if cd, ok := oe.counters[key]; ok {
+			unregister(key, cd.registration)
+			delete(oe.counters, key)
+		}
+
+		delete(tracked, key)
+		log.Debugf("otel: stopped reporting series that is no longer returned: %s", key)
+	}
+}
+
+func unregister(key string, registration metric.Registration) {
+	if registration == nil {
+		return
+	}
+
+	if err := registration.Unregister(); err != nil {
+		log.Warnf("otel: failed to unregister callback for %s: %v", key, err)
 	}
 }
 
@@ -146,7 +264,7 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 	gd.value.Store(0)
 
 	// Register callback ONCE
-	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+	gd.registration, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
 
 		// We send a value only if we are conected and correct value is available
 		if oe.dataProvider.IsServerConnected() {
@@ -162,6 +280,46 @@ func (oe *OtelExecutor) getGaugeMetric(key string, meter metric.Meter, metricNam
 
 	oe.gauges[key] = gd
 	return gd
+}
+
+// getFloatGaugeMetric is getGaugeMetric for values that keep their fractional part.
+func (oe *OtelExecutor) getFloatGaugeMetric(key string, meter metric.Meter, metricName string,
+	desc string, labels []attribute.KeyValue) *FloatGaugeMetrics {
+
+	// Fast path
+	if fd, ok := oe.floatGauges[key]; ok {
+		return fd
+	}
+
+	og, err := meter.Float64ObservableGauge(metricName, metric.WithDescription(desc))
+
+	if err != nil {
+		log.Fatalf("Error while creating object for float gauge stat %s: %v", metricName, err)
+		return nil
+	}
+
+	fd := &FloatGaugeMetrics{
+		instrument: og,
+		labels:     labels,
+	}
+
+	// Register callback ONCE
+	fd.registration, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+
+		// We send a value only if we are conected and correct value is available
+		if oe.dataProvider.IsServerConnected() {
+			o.ObserveFloat64(fd.instrument, fd.load(), metric.WithAttributes(labels...))
+		}
+
+		return nil
+	}, og)
+
+	if err != nil {
+		log.Fatalf("Error while RegisterCallback for Float Gauge stat %s: %v", metricName, err)
+	}
+
+	oe.floatGauges[key] = fd
+	return fd
 }
 
 func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricName string,
@@ -190,7 +348,7 @@ func (oe *OtelExecutor) getCounterMetric(key string, meter metric.Meter, metricN
 	cd.value.Store(0)
 
 	// Register callback ONCE for this instrument
-	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+	cd.registration, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
 
 		// We send a value only if we are conected and correct value is available
 		if oe.dataProvider.IsServerConnected() {

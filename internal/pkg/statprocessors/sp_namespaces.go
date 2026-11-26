@@ -72,6 +72,33 @@ func (nw *NamespaceStatsProcessor) PassOneKeys() []string {
 	return []string{KEY_NS_METADATA}
 }
 
+// objectStoreLatencyHistograms are the per-namespace histograms that time each object-store call a
+// server-side backup or restore makes (SERVER-698). They are always in milliseconds.
+var objectStoreLatencyHistograms = []string{"object-store-put", "object-store-get", "object-store-list", "object-store-delete"}
+
+// INDEX_PRESSURE_STAT_PREFIX starts the name of every index-pressure stat.
+const INDEX_PRESSURE_STAT_PREFIX = "index_pressure_"
+
+// IsIntervalFetchedStat reports whether a stat is only fetched every few minutes, so most refreshes do not
+// return it by design: the index-pressure stats, fetched every index_pressure_stats_fetch_interval minutes.
+// An exporter that drops a series when a refresh no longer returns it must leave these alone.
+func IsIntervalFetchedStat(stat AerospikeStat) bool {
+	return stat.Context == commons.CTX_NAMESPACE && strings.HasPrefix(stat.Name, INDEX_PRESSURE_STAT_PREFIX)
+}
+
+// OBJECT_STORE_HISTOGRAMS_MIN_BUILD is the first server build that has the object-store histograms.
+// They ship with in-server backup and restore, so they follow the same build gate; older servers
+// answer "bad hist name", which would be four wasted info commands per namespace on every scrape.
+const OBJECT_STORE_HISTOGRAMS_MIN_BUILD = BACKUP_RESTORE_MIN_BUILD
+
+// objectStoreHistogramsSupported reports whether the connected server has the object-store histograms.
+// An unknown or unparseable build is treated as unsupported.
+func (nw *NamespaceStatsProcessor) objectStoreHistogramsSupported() bool {
+	ge, err := isBuildVersionGreaterThanOrEqual(nw.sharedState.Build, OBJECT_STORE_HISTOGRAMS_MIN_BUILD)
+
+	return err == nil && ge
+}
+
 func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) []string {
 	if nw.sharedState.CheckpointSaveInProgress {
 		log.Tracef("namespace-passtwokeys:nil")
@@ -82,6 +109,11 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 	nsList := strings.Split(s, ";")
 
 	log.Tracef("namespaces:%s", s)
+
+	// a namespace that a restarted server no longer has must stop getting latency and roster commands
+	if isValidResponse(s) {
+		nw.forgetRemovedNamespaces(nsList)
+	}
 
 	var infoKeys []string
 	for _, ns := range nsList {
@@ -106,6 +138,29 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 	log.Tracef("namespace-passtwokeys:%s", infoKeys)
 
 	return infoKeys
+}
+
+// forgetRemovedNamespaces drops the per-namespace state of every namespace that is not in the latest successful
+// namespaces response. The latency histograms are requested from NamespaceLatencyBenchmarks on every
+// collection, so an entry that is kept for a removed namespace keeps costing info commands that return nothing.
+func (nw *NamespaceStatsProcessor) forgetRemovedNamespaces(current []string) {
+	live := make(map[string]struct{}, len(current))
+	for _, ns := range current {
+		live[ns] = struct{}{}
+	}
+
+	for ns := range nw.sharedState.NamespaceLatencyBenchmarks {
+		if _, ok := live[ns]; !ok {
+			delete(nw.sharedState.NamespaceLatencyBenchmarks, ns)
+			log.Debugf("namespace %s is no longer on the server, its latency commands are dropped", ns)
+		}
+	}
+
+	for ns := range nw.namespaceSCstatus {
+		if _, ok := live[ns]; !ok {
+			delete(nw.namespaceSCstatus, ns)
+		}
+	}
 }
 
 func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
@@ -139,12 +194,20 @@ func (nw *NamespaceStatsProcessor) refreshIndexPressure(singleInfoKey string, ra
 
 	log.Tracef("namespace-index-pressure-stats:%s:%s", singleInfoKey, indexPresssureStats)
 
+	// an error or an empty answer says nothing about which namespaces exist
+	if !isValidResponse(indexPresssureStats) {
+		return nil
+	}
+
+	// a valid answer is the complete list of namespaces, so series of a namespace missing from it are gone
+	nw.sharedState.IndexPressureFetched = true
+
 	// Server index-pressure output: test:0:0;bar_device:0:0;materials:0:0
 	//  each namespace is split with semi-colon
 	stats := strings.Split(indexPresssureStats, ";")
 
 	// metric-names - first element is un-used, as we send namespace as a label, this also keeps the index-numbers same as the server-stats
-	indexPressureMetricNames := []string{"index_pressure_namespace", "index_pressure_total_memory", "index_pressure_dirty_memory"}
+	indexPressureMetricNames := []string{INDEX_PRESSURE_STAT_PREFIX + "namespace", INDEX_PRESSURE_STAT_PREFIX + "total_memory", INDEX_PRESSURE_STAT_PREFIX + "dirty_memory"}
 
 	var allMetricsToSend = []AerospikeStat{}
 
@@ -289,6 +352,17 @@ func (nw *NamespaceStatsProcessor) refreshNamespaceStats(singleInfoKey string, r
 	}
 	// append default re-repl, as this auto-enabled, but not coming as part of latencies, we need this as namespace is available only here
 	nw.sharedState.NamespaceLatencyBenchmarks[nsName]["re-repl"] = "{" + nsName + "}-" + "re-repl"
+
+	// object-store histograms are always on from the gated build, but plain latencies: does not list them,
+	// so they are requested by name. On older servers they are not registered, and any left over are removed.
+	supported := nw.objectStoreHistogramsSupported()
+	for _, hist := range objectStoreLatencyHistograms {
+		if supported {
+			nw.sharedState.NamespaceLatencyBenchmarks[nsName][hist] = "{" + nsName + "}-" + hist
+		} else {
+			delete(nw.sharedState.NamespaceLatencyBenchmarks[nsName], hist)
+		}
+	}
 
 	// check if strong_consistency stat is coming and enabled for the namespace
 	//   we may have combinations of SC and non-SC namespaces in the same cluster, always check for each namespace.
