@@ -1,9 +1,13 @@
 package statprocessors
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
+	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/config"
 	log "github.com/sirupsen/logrus"
 	logtest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -125,4 +129,90 @@ func TestSindexOtherNonNumericStatIsNotAWarning(t *testing.T) {
 	for _, entry := range entries {
 		assert.Greater(t, int(entry.Level), int(log.WarnLevel), entry.Message)
 	}
+}
+
+// loadShippedGaugeList loads the gauge_stats_list.toml that ships with the exporter, so a typo in a
+// stat name there shows up as a counter here.
+func loadShippedGaugeList(t *testing.T) {
+	t.Helper()
+
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+	config.InitGaugeStats(filepath.Join(cwd, "..", "..", "..", "configs", "gauge_stats_list.toml"))
+}
+
+// TestEqualityFilterMetricsWhenTheFilterIsOn covers R11 of the equality query filter spec: with
+// enable-sindex-equality-filter on, a scrape has the per-index and the namespace filter metrics.
+// The replies are written the way the spec describes them.
+func TestEqualityFilterMetricsWhenTheFilterIsOn(t *testing.T) {
+	state := useProcessorConfig(t)
+	loadShippedGaugeList(t)
+
+	nsKey := "namespace/test"
+	namespaces := NewNamespaceStatsProcessor(state)
+	namespaces.PassTwoKeys(map[string]string{KEY_NS_METADATA: "test"})
+	nsStats, err := namespaces.Refresh([]string{nsKey}, map[string]string{
+		nsKey: "objects=5;enable-sindex-equality-filter=true;sindex_equality_filter_bytes=8192",
+	})
+	require.NoError(t, err)
+
+	flag, ok := findStat(nsStats, "enable-sindex-equality-filter")
+	require.True(t, ok, "the setting that turns the filter on is exported with the namespace config")
+	assert.Equal(t, 1.0, flag.Value)
+	assert.Equal(t, commons.MetricTypeGauge, flag.MType)
+	assertLabel(t, flag, commons.METRIC_LABEL_NS, "test")
+
+	total, ok := findStat(nsStats, "sindex_equality_filter_bytes")
+	require.True(t, ok, "the namespace total of filter memory is exported")
+	assert.Equal(t, 8192.0, total.Value)
+	assert.Equal(t, commons.MetricTypeGauge, total.MType)
+	assertLabel(t, total, commons.METRIC_LABEL_NS, "test")
+
+	sindexKey := "sindex-stat:namespace=test;indexname=idx"
+	sindexes := NewSindexStatsProcessor(state)
+	stats, err := sindexes.Refresh([]string{sindexKey}, map[string]string{
+		sindexKey: "entries=100;equality_filter_state=ready;equality_filter_bytes=4096;equality_filter_saturated_partitions=2",
+	})
+	require.NoError(t, err)
+
+	for name, want := range map[string]float64{
+		"equality_filter_state":                2,
+		"equality_filter_bytes":                4096,
+		"equality_filter_saturated_partitions": 2,
+	} {
+		stat, ok := findStat(stats, name)
+		require.True(t, ok, "%s is exported for each index", name)
+		assert.Equal(t, want, stat.Value, name)
+		assert.Equal(t, commons.MetricTypeGauge, stat.MType, "%s must be a gauge", name)
+		assertLabel(t, stat, commons.METRIC_LABEL_NS, "test")
+		assertLabel(t, stat, commons.METRIC_LABEL_SINDEX, "idx")
+	}
+}
+
+// With the filter off the server reports its state and no memory, and the setting is false.
+func TestEqualityFilterMetricsWhenTheFilterIsOff(t *testing.T) {
+	state := useProcessorConfig(t)
+	loadShippedGaugeList(t)
+
+	nsKey := "namespace/test"
+	namespaces := NewNamespaceStatsProcessor(state)
+	namespaces.PassTwoKeys(map[string]string{KEY_NS_METADATA: "test"})
+	nsStats, err := namespaces.Refresh([]string{nsKey}, map[string]string{
+		nsKey: "objects=5;enable-sindex-equality-filter=false;sindex_equality_filter_bytes=0",
+	})
+	require.NoError(t, err)
+
+	flag, ok := findStat(nsStats, "enable-sindex-equality-filter")
+	require.True(t, ok)
+	assert.Equal(t, 0.0, flag.Value)
+
+	sindexKey := "sindex-stat:namespace=test;indexname=idx"
+	stats, err := NewSindexStatsProcessor(state).Refresh([]string{sindexKey}, map[string]string{
+		sindexKey: "entries=100;equality_filter_state=off;equality_filter_bytes=0;equality_filter_saturated_partitions=0",
+	})
+	require.NoError(t, err)
+
+	state0, ok := equalityFilterState(stats)
+	require.True(t, ok)
+	assert.Equal(t, 0.0, state0.Value)
 }
