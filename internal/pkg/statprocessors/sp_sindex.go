@@ -1,6 +1,7 @@
 package statprocessors
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -11,7 +12,17 @@ import (
 
 const (
 	KEY_SINDEX_COMMAND = "sindex-list:"
+
+	// string-valued stat reported by the server for the equality query filter
+	STAT_SINDEX_EQUALITY_FILTER_STATE = "equality_filter_state"
 )
+
+// numeric representation of equality_filter_state
+var equalityFilterStateValues = map[string]float64{
+	"off":      0,
+	"building": 1,
+	"ready":    2,
+}
 
 type SindexStatsProcessor struct {
 	sindexMetrics map[string]AerospikeStat
@@ -91,9 +102,17 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 
 		stats := commons.ParseStats(rawMetrics[sindex], ";")
 		for stat, value := range stats {
-			pv, err := commons.TryConvert(value)
+			pv, err := siw.convertStatValue(stat, value)
 
 			if err != nil {
+				// A state this exporter does not know would otherwise look the same as a server
+				// that does not report the stat, so say so. Other non-numeric stats are expected.
+				if stat == STAT_SINDEX_EQUALITY_FILTER_STATE {
+					log.Warnf("sindex %s:%s: skipping %s, no metric emitted: %s", nsName, sindexName, stat, err)
+				} else {
+					log.Debugf("sindex %s:%s: skipping %s: %s", nsName, sindexName, stat, err)
+				}
+
 				continue
 			}
 
@@ -115,6 +134,20 @@ func (siw *SindexStatsProcessor) Refresh(infoKeys []string, rawMetrics map[strin
 	}
 
 	return allMetricsToSend, nil
+}
+
+// convertStatValue converts a raw sindex stat value to a float.
+// equality_filter_state is reported by the server as a string (off, building, ready)
+// and is exported as a numeric gauge: off=0, building=1, ready=2.
+func (siw *SindexStatsProcessor) convertStatValue(stat string, value string) (float64, error) {
+	if stat == STAT_SINDEX_EQUALITY_FILTER_STATE {
+		if pv, ok := equalityFilterStateValues[strings.ToLower(strings.TrimSpace(value))]; ok {
+			return pv, nil
+		}
+		return 0, fmt.Errorf("invalid value `%s` for %s. Expected one of off, building, ready", value, stat)
+	}
+
+	return commons.TryConvert(value)
 }
 
 func (siw *SindexStatsProcessor) getNamespaceAndSindexName(sindexInfoKey string) (string, string) {

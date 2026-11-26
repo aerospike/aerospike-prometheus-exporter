@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	GAUGES_NAMESPACES_COUNT = 154
+	GAUGES_NAMESPACES_COUNT = 155
 	GAUGES_NODE_STATS_COUNT = 110
 	GAUGES_SETS_COUNT       = 9
-	GAUGES_SINDEX_COUNT     = 13
+	GAUGES_SINDEX_COUNT     = 16
 	GAUGES_XDR_COUNT        = 10
 )
 
@@ -73,6 +73,8 @@ func TestIsAGaugeTrue(t *testing.T) {
 	gaugeList := config.GaugeStatHandler
 
 	assert.Equal(t, gaugeList.NamespaceStats["cache_read_pct"], true)
+	// no hyphen in the name, so it is a gauge only if the toml key matches the server stat exactly
+	assert.True(t, gaugeList.NamespaceStats["sindex_equality_filter_bytes"])
 	assert.Equal(t, gaugeList.NodeStats["cluster_clock_skew_stop_writes_sec"], true)
 
 	assert.Equal(t, gaugeList.SindexStats["entries_per_rec"], true)
