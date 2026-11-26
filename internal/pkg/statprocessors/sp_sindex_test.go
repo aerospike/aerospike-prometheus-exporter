@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
 	log "github.com/sirupsen/logrus"
 	logtest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -18,9 +17,7 @@ const testSindexInfoKey = "sindex-stat:namespace=test;indexname=idx_state"
 func refreshSindex(t *testing.T, response string) ([]AerospikeStat, []*log.Entry) {
 	t.Helper()
 
-	commons.InitConfigurations(commons.GetWatchersConfigFile(commons.TESTS_DEFAULT_CONFIG_FILE))
-
-	state := NewStatProcessorSharedState()
+	state := useProcessorConfig(t)
 	state.ClusterName = "c1"
 	state.Service = "127.0.0.1:3000"
 
