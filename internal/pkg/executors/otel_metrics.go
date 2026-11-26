@@ -48,17 +48,25 @@ func isBackupRestoreContext(context commons.ContextType) bool {
 	return context == commons.CTX_BACKUP || context == commons.CTX_RESTORE
 }
 
-// isSweepExempt reports whether a series is left alone by the sweep. The index-pressure stats are fetched
-// only every few minutes, so the refreshes in between do not return them by design.
-func isSweepExempt(stat statprocessors.AerospikeStat) bool {
+// isIndexPressureSeries reports whether a series is fetched only every few minutes. The refreshes in between
+// do not return it by design, so it is tracked apart from the other series and swept only by a refresh that
+// fetched it.
+func isIndexPressureSeries(stat statprocessors.AerospikeStat) bool {
 	return statprocessors.IsIntervalFetchedStat(stat)
 }
 
 // isPartialRefresh reports whether the latest server refresh was cut short. While a checkpoint save runs only
 // build and checkpoint-status are requested, so every other series is missing from that refresh, and sweeping
-// would drop all of them for the length of the save.
+// would drop all of them for the length of the save. The state is kept for the whole refresh, also when the
+// save ends between its two passes.
 func (oe *OtelExecutor) isPartialRefresh() bool {
-	return oe.sharedState != nil && oe.sharedState.CheckpointSaveInProgress
+	return oe.sharedState.IsPartialRefresh()
+}
+
+// isIndexPressureFetched reports whether the latest server refresh ran the index-pressure command and got a
+// valid answer, which is the only kind of refresh that confirms a namespace is gone.
+func (oe *OtelExecutor) isIndexPressureFetched() bool {
+	return oe.sharedState != nil && oe.sharedState.IndexPressureFetched
 }
 
 // processAndPushStats records the latest values. When sweep is set, the stats are the result of a server
@@ -70,6 +78,15 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 	commonLabels []attribute.KeyValue, refreshStats []statprocessors.AerospikeStat, sweep bool) {
 
 	seenSweptKeys := map[string]struct{}{}
+	seenIndexPressureKeys := map[string]struct{}{}
+
+	if oe.sweptKeys == nil {
+		oe.sweptKeys = map[string]struct{}{}
+	}
+
+	if oe.indexPressureKeys == nil {
+		oe.indexPressureKeys = map[string]struct{}{}
+	}
 
 	// create the required metered objects
 	for _, stat := range refreshStats {
@@ -104,9 +121,14 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 
 		metricKey := oe.constructMetricKey(qualifiedName, labels)
 
-		if sweep && !isSweepExempt(stat) {
-			seenSweptKeys[metricKey] = struct{}{}
-			oe.sweptKeys[metricKey] = struct{}{}
+		if sweep {
+			if isIndexPressureSeries(stat) {
+				seenIndexPressureKeys[metricKey] = struct{}{}
+				oe.indexPressureKeys[metricKey] = struct{}{}
+			} else {
+				seenSweptKeys[metricKey] = struct{}{}
+				oe.sweptKeys[metricKey] = struct{}{}
+			}
 		}
 
 		// Use or Create Otel metric
@@ -156,14 +178,19 @@ func (oe *OtelExecutor) processAndPushStats(meter metric.Meter,
 	}
 
 	if sweep && !oe.isPartialRefresh() {
-		oe.sweepStaleSeries(seenSweptKeys)
+		oe.sweepStaleSeries(oe.sweptKeys, seenSweptKeys)
+
+		// index-pressure series stay between the scheduled fetches, and go only when a fetch no longer lists them
+		if oe.isIndexPressureFetched() {
+			oe.sweepStaleSeries(oe.indexPressureKeys, seenIndexPressureKeys)
+		}
 	}
 }
 
-// sweepStaleSeries unregisters every series remembered from a server refresh that the latest one did not return.
+// sweepStaleSeries unregisters every series in tracked that the latest refresh did not return (seen), and forgets it.
 // Once its callback stops observing, the SDK no longer exports that attribute set.
-func (oe *OtelExecutor) sweepStaleSeries(seen map[string]struct{}) {
-	for key := range oe.sweptKeys {
+func (oe *OtelExecutor) sweepStaleSeries(tracked map[string]struct{}, seen map[string]struct{}) {
+	for key := range tracked {
 		if _, ok := seen[key]; ok {
 			continue
 		}
@@ -183,7 +210,7 @@ func (oe *OtelExecutor) sweepStaleSeries(seen map[string]struct{}) {
 			delete(oe.counters, key)
 		}
 
-		delete(oe.sweptKeys, key)
+		delete(tracked, key)
 		log.Debugf("otel: stopped reporting series that is no longer returned: %s", key)
 	}
 }

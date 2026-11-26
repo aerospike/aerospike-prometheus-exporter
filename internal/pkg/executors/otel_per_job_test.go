@@ -28,11 +28,12 @@ func useOtelNaming(t *testing.T) {
 // newConnectedExecutor builds an executor the way Initialize does, with a connected server.
 func newConnectedExecutor() *OtelExecutor {
 	return &OtelExecutor{
-		gauges:       map[string]*GaugeMetrics{},
-		floatGauges:  map[string]*FloatGaugeMetrics{},
-		counters:     map[string]*CounterMetrics{},
-		sweptKeys:    map[string]struct{}{},
-		dataProvider: &otelProvider{connected: true},
+		gauges:            map[string]*GaugeMetrics{},
+		floatGauges:       map[string]*FloatGaugeMetrics{},
+		counters:          map[string]*CounterMetrics{},
+		sweptKeys:         map[string]struct{}{},
+		indexPressureKeys: map[string]struct{}{},
+		dataProvider:      &otelProvider{connected: true},
 	}
 }
 
@@ -377,6 +378,7 @@ func TestOtelIntervalFetchedStatsAreNotSwept(t *testing.T) {
 	useOtelNaming(t)
 	meter, reader := testMeter(t)
 	oe := newConnectedExecutor()
+	oe.sharedState = statprocessors.NewStatProcessorSharedState()
 
 	const pressure = "aerospike.server.namespace.index_pressure_total_memory"
 
@@ -420,4 +422,122 @@ func TestOtelCheckpointSaveRefreshDoesNotSweep(t *testing.T) {
 	oe.processAndPushStats(meter, nil, []statprocessors.AerospikeStat{nodeStat}, true)
 	requirePoint(t, reader, clusterSize, 3)
 	requireNoPoint(t, reader, checkpoint, "a series first reported during the save is swept by the next completed refresh")
+}
+
+// indexPressureStat is the total-memory index-pressure series of one namespace.
+func indexPressureStat(ns string, value float64) statprocessors.AerospikeStat {
+	return statprocessors.AerospikeStat{
+		Context:     commons.CTX_NAMESPACE,
+		Name:        "index_pressure_total_memory",
+		MType:       commons.MetricTypeGauge,
+		IsAllowed:   true,
+		Value:       value,
+		Labels:      []string{commons.METRIC_LABEL_NS},
+		LabelValues: []string{ns},
+	}
+}
+
+// collectByNamespace returns the value of every data point of a metric, keyed by its "ns" attribute.
+func collectByNamespace(t *testing.T, reader *sdkmetric.ManualReader, metricName string) map[string]int64 {
+	t.Helper()
+
+	rm := collectMetrics(t, reader)
+	points := map[string]int64{}
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name != metricName {
+				continue
+			}
+
+			if data, ok := m.Data.(metricdata.Gauge[int64]); ok {
+				for _, dp := range data.DataPoints {
+					ns, _ := dp.Attributes.Value(commons.METRIC_LABEL_NS)
+					points[ns.AsString()] = dp.Value
+				}
+			}
+		}
+	}
+
+	return points
+}
+
+// TestOtelIndexPressureIsSweptByTheScheduledFetch checks the whole life of the index-pressure series. They stay
+// across the refreshes that do not fetch them, and go only when a refresh that did fetch them no longer lists the
+// namespace: the server answered the question, so the namespace is gone.
+func TestOtelIndexPressureIsSweptByTheScheduledFetch(t *testing.T) {
+	useOtelNaming(t)
+	meter, reader := testMeter(t)
+	oe := newConnectedExecutor()
+	oe.sharedState = statprocessors.NewStatProcessorSharedState()
+
+	const pressure = "aerospike.server.namespace.index_pressure_total_memory"
+	const clusterSize = "aerospike.server.node_stats.cluster_size"
+
+	nodeStat := statprocessors.AerospikeStat{Context: commons.CTX_NODE_STATS, Name: "cluster_size", MType: commons.MetricTypeGauge, IsAllowed: true, Value: 3}
+
+	// the first scheduled fetch lists test and bar
+	oe.sharedState.IndexPressureFetched = true
+	oe.processAndPushStats(meter, nil, []statprocessors.AerospikeStat{
+		nodeStat, indexPressureStat("test", 100), indexPressureStat("bar", 200),
+	}, true)
+	require.Equal(t, map[string]int64{"test": 100, "bar": 200}, collectByNamespace(t, reader, pressure))
+
+	// the refreshes in between do not fetch index-pressure and keep both
+	oe.sharedState.IndexPressureFetched = false
+	oe.processAndPushStats(meter, nil, []statprocessors.AerospikeStat{nodeStat}, true)
+	oe.processAndPushStats(meter, nil, []statprocessors.AerospikeStat{nodeStat}, true)
+	require.Equal(t, map[string]int64{"test": 100, "bar": 200}, collectByNamespace(t, reader, pressure))
+
+	// a refresh cut short by a checkpoint save cannot confirm anything, even when it says it fetched
+	oe.sharedState.IndexPressureFetched = true
+	oe.sharedState.PartialRefresh = true
+	oe.processAndPushStats(meter, nil, []statprocessors.AerospikeStat{indexPressureStat("bar", 210)}, true)
+	oe.sharedState.PartialRefresh = false
+	require.Equal(t, map[string]int64{"test": 100, "bar": 210}, collectByNamespace(t, reader, pressure))
+
+	// the next scheduled fetch lists only bar: test goes, bar stays with its new value
+	oe.processAndPushStats(meter, nil, []statprocessors.AerospikeStat{
+		nodeStat, indexPressureStat("bar", 220),
+	}, true)
+	require.Equal(t, map[string]int64{"bar": 220}, collectByNamespace(t, reader, pressure))
+	requirePoint(t, reader, clusterSize, 3)
+	require.Len(t, oe.indexPressureKeys, 1)
+
+	// the refreshes after that keep bar
+	oe.sharedState.IndexPressureFetched = false
+	oe.processAndPushStats(meter, nil, []statprocessors.AerospikeStat{nodeStat}, true)
+	require.Equal(t, map[string]int64{"bar": 220}, collectByNamespace(t, reader, pressure))
+}
+
+// TestOtelCheckpointSaveEndingBetweenPassesDoesNotSweep checks a refresh whose first request saw a checkpoint save
+// and whose second request saw a normal build. The refresher then has the save over but the stats missing, and
+// leaves PartialRefresh set. OTel must keep the series it has and sweep again on the next complete refresh.
+func TestOtelCheckpointSaveEndingBetweenPassesDoesNotSweep(t *testing.T) {
+	useOtelNaming(t)
+	meter, reader := testMeter(t)
+	oe := newConnectedExecutor()
+	oe.sharedState = statprocessors.NewStatProcessorSharedState()
+
+	const clusterSize = "aerospike.server.node_stats.cluster_size"
+	const checkpoint = "aerospike.server.namespace.checkpoint_files_total"
+
+	nodeStat := statprocessors.AerospikeStat{Context: commons.CTX_NODE_STATS, Name: "cluster_size", MType: commons.MetricTypeGauge, IsAllowed: true, Value: 3}
+	checkpointStat := statprocessors.AerospikeStat{Context: commons.CTX_NAMESPACE, Name: "checkpoint_files_total", MType: commons.MetricTypeGauge, IsAllowed: true, Value: 4}
+
+	oe.processAndPushStats(meter, nil, []statprocessors.AerospikeStat{nodeStat, checkpointStat}, true)
+	requirePoint(t, reader, clusterSize, 3)
+	requirePoint(t, reader, checkpoint, 4)
+
+	// the state the refresher leaves: the save is over, but this refresh only has the checkpoint stats
+	oe.sharedState.CheckpointSaveInProgress = false
+	oe.sharedState.PartialRefresh = true
+	oe.processAndPushStats(meter, nil, []statprocessors.AerospikeStat{checkpointStat}, true)
+	requirePoint(t, reader, clusterSize, 3)
+	requirePoint(t, reader, checkpoint, 4)
+
+	// the next refresh is complete, and no longer returns the checkpoint stat
+	oe.sharedState.PartialRefresh = false
+	oe.processAndPushStats(meter, nil, []statprocessors.AerospikeStat{nodeStat}, true)
+	requirePoint(t, reader, clusterSize, 3)
+	requireNoPoint(t, reader, checkpoint, "a complete refresh sweeps again")
 }
