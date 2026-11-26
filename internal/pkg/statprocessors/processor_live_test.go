@@ -37,6 +37,7 @@ func TestLiveServerInfoFeedsNamespaceAndNodeProcessors(t *testing.T) {
 	latencyRaw := prepareLiveData(t, conn)
 
 	assertLiveNode(t, conn, state)
+	assertLiveCheckpoint(t, conn, state)
 	assertLiveNamespaces(t, conn, state, namespaces)
 	assertLiveSets(t, conn, state)
 	assertLiveSindex(t, conn, state)
@@ -270,6 +271,53 @@ func assertLiveNode(t *testing.T, conn *aero.Connection, state *StatProcessorSha
 	assert.True(t, ok)
 	_, ok = findStat(metrics, "pseudo_log_detail")
 	assert.True(t, ok)
+}
+
+// assertLiveCheckpoint feeds the live checkpoint-status reply to the node processor. It does not depend on
+// the reply format: older servers put is_parked on every namespace record, and 8.2.2 starts the reply with a
+// node: record. An idle server must not be read as checkpoint-shutdown in either format, and the node record
+// must not become a namespace.
+func assertLiveCheckpoint(t *testing.T, conn *aero.Connection, state *StatProcessorSharedState) {
+	t.Helper()
+
+	newer, err := isBuildVersionGreaterThanOrEqual(state.Build, "8.2.0")
+	require.NoError(t, err)
+	if !newer {
+		return
+	}
+
+	processor := NewNodeStatsProcessor(state)
+	raw := requestInfo(t, conn, CMD_INFOKEY_CHECKPOINT_STATUS, KEY_SERVICE_STATISTICS)
+	body := raw[CMD_INFOKEY_CHECKPOINT_STATUS]
+	require.True(t, isValidResponse(body), "checkpoint-status: %s", body)
+
+	metrics, shutdown := processor.handleCheckpointStatusStats(raw)
+	assert.Zero(t, shutdown, "an idle server is not in checkpoint-shutdown: %s", body)
+
+	for _, metric := range metrics {
+		assert.NotEqual(t, "node", labelValue(metric, commons.METRIC_LABEL_NS), "the node record is not a namespace: %s", metric.Name)
+	}
+
+	// every namespace record carries a state, and an idle server reports none
+	reported := 0
+	for _, record := range strings.Split(body, ";") {
+		ns, stats, found := strings.Cut(record, ":")
+		if !found || !strings.Contains(stats, "state=") {
+			continue
+		}
+		reported++
+
+		files, ok := findStatWithLabel(metrics, "checkpoint_files_total", commons.METRIC_LABEL_NS, ns)
+		require.True(t, ok, "namespace %s has no checkpoint_files_total: %s", ns, body)
+		assertLabel(t, files, commons.METRIC_LABEL_CHECKPOINT_STATUS, "none")
+	}
+	assert.Positive(t, reported, "checkpoint-status named no namespace: %s", body)
+
+	// the rest of the node stats are still refreshed
+	refreshed, err := processor.Refresh(nil, raw)
+	require.NoError(t, err)
+	_, ok := findStat(refreshed, "client_connections")
+	assert.True(t, ok, "node stats were skipped, so the reply was read as a checkpoint save: %s", body)
 }
 
 func assertLiveNamespaces(t *testing.T, conn *aero.Connection, state *StatProcessorSharedState, namespaces []string) {

@@ -211,7 +211,7 @@
 
       # Order of context - namespace, set, latencies, node-stats, xdr, user, jobs, sindex
 
-      # Metrics Allowlist - If specified, only these metrics will be scraped. An empty list will exclude all metrics.
+      # Metrics Allowlist - If specified, only these metrics will be scraped. An empty list will include all metrics.
       # Commenting out the below allowlist configs will disable metrics filtering (i.e. all metrics will be scraped).
 
       # Metrics Blocklist - If specified, these metrics will be NOT be scraped. An empty list will include all metrics.
@@ -254,6 +254,21 @@
       # to exclude or stop all sindex metrics, use ["*"] in blocklist
       # sindex_metrics_allowlist = []
       # sindex_metrics_blocklist = []
+
+      # In-server backup and restore metrics (backup-status and restore-status), available from Aerospike 8.2.1.
+      # Commenting these out collects every backup and restore stat the server emits.
+      # Patterns match the stat name exactly as the server prints it, for example "recs_backed_up" or "bytes_*"
+      # (settings such as "backup-rps" keep their hyphens) -- not the exported name aerospike_backup_recs_backed_up.
+      # Two stats are exported as gauges by the exporter and can be matched too:
+      #   "job"                  -> aerospike_backup_job / aerospike_restore_job (one series per job, labeled with state)
+      #   "achieved_consistency" -> aerospike_backup_achieved_consistency (0 for "-", 1 for fuzzy, 2 for strict)
+      #   "source_consistency"   -> aerospike_restore_source_consistency (same levels; the achieved consistency of the source backups read so far)
+      # to exclude or stop all backup or restore metrics, use ["*"] in the blocklist
+      # example: backup_metrics_allowlist = ["job", "progress_pct", "recs_*", "bytes_*", "start_time", "finish_time"]
+      # backup_metrics_allowlist = []
+      # backup_metrics_blocklist = []
+      # restore_metrics_allowlist = []
+      # restore_metrics_blocklist = []
 
       # interval in minutes to send index-pressure command to server
       # NOTE: 0 means disable, never send the command

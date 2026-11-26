@@ -3,6 +3,7 @@ package executors
 import (
 	"context"
 	"fmt"
+	"math"
 	"sync/atomic"
 
 	"time"
@@ -25,15 +26,29 @@ import (
 )
 
 type GaugeMetrics struct {
-	instrument metric.Int64ObservableGauge
-	labels     []attribute.KeyValue
-	value      atomic.Int64 // int64, avoid read/write race condition
+	instrument   metric.Int64ObservableGauge
+	labels       []attribute.KeyValue
+	value        atomic.Int64 // int64, avoid read/write race condition
+	registration metric.Registration
 }
 
+// FloatGaugeMetrics is a gauge that keeps its fractional part, for stats such as progress-pct=42.50.
+// The value is held as float64 bits so it can be read and written atomically.
+type FloatGaugeMetrics struct {
+	instrument   metric.Float64ObservableGauge
+	labels       []attribute.KeyValue
+	bits         atomic.Uint64
+	registration metric.Registration
+}
+
+func (fg *FloatGaugeMetrics) store(v float64) { fg.bits.Store(math.Float64bits(v)) }
+func (fg *FloatGaugeMetrics) load() float64   { return math.Float64frombits(fg.bits.Load()) }
+
 type CounterMetrics struct {
-	instrument metric.Int64ObservableCounter
-	labels     []attribute.KeyValue
-	value      atomic.Int64 // int64, avoid read/write race condition
+	instrument   metric.Int64ObservableCounter
+	labels       []attribute.KeyValue
+	value        atomic.Int64 // int64, avoid read/write race condition
+	registration metric.Registration
 }
 
 // OTelExecutor is class on its own and also implements and embeds sdkmetric.Exporter interface
@@ -44,8 +59,15 @@ type OtelExecutor struct {
 	// KEY =  one metric + labels
 	// Each measurement/instrument = one metric + labels + latest value
 	gauges           map[string]*GaugeMetrics
+	floatGauges      map[string]*FloatGaugeMetrics
 	counters         map[string]*CounterMetrics
 	nodeUpMetricName string
+
+	// keys of the series a server refresh returned, swept when a later completed refresh no longer returns them
+	sweptKeys map[string]struct{}
+
+	// keys of the index-pressure series, which are fetched only every few minutes and so swept apart from sweptKeys
+	indexPressureKeys map[string]struct{}
 
 	meterProvider *sdkmetric.MeterProvider
 	// metricExporter sdkmetric.Exporter
@@ -88,7 +110,10 @@ func (oe *OtelExecutor) Initialize() error {
 
 	// initialize the metric caches
 	oe.gauges = make(map[string]*GaugeMetrics)
+	oe.floatGauges = make(map[string]*FloatGaugeMetrics)
 	oe.counters = make(map[string]*CounterMetrics)
+	oe.sweptKeys = make(map[string]struct{})
+	oe.indexPressureKeys = make(map[string]struct{})
 
 	defaultContext := context.Background()
 
@@ -298,7 +323,7 @@ func (oe *OtelExecutor) handleAerospikeMetrics(meter metric.Meter, commonLabels 
 	log.Debugf("%s Aerospike refreshCounter incremented to %d", time.Now().Format(time.RFC3339), oe.refreshCounter.Load())
 
 	// process metrics
-	oe.processAndPushStats(meter, commonLabels, asRefreshStats)
+	oe.processAndPushStats(meter, commonLabels, asRefreshStats, true)
 
 }
 
@@ -310,8 +335,8 @@ func (oe *OtelExecutor) handleSystemInfoMetrics(meter metric.Meter, commonLabels
 		return
 	}
 
-	// process metrics
-	oe.processAndPushStats(meter, commonLabels, sysInfoRefreshStats)
+	// process metrics; system info never carries per-job series, so nothing is swept here
+	oe.processAndPushStats(meter, commonLabels, sysInfoRefreshStats, false)
 }
 
 // Utility functions

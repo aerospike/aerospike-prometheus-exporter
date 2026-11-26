@@ -38,10 +38,11 @@ test: ## Run all the test-cases defined in this folder.
 	go test ./...
 
 .PHONY: test-integration
-test-integration: ## Run the laptop Docker suites: Secret Agent, OpenTelemetry, the processor info server, user stats, the 7.2 scrape, and the release image. AWS stays in test-integration-aws.
+test-integration: ## Run the laptop Docker suites: Secret Agent, OpenTelemetry, the Prometheus listener, the processor info server, user stats, the 7.2 scrape, and the release image. AWS stays in test-integration-aws.
 	status=0; \
 	$(MAKE) test-integration-secret-agent || status=$$?; \
 	$(MAKE) test-integration-otel || status=$$?; \
+	$(MAKE) test-integration-prometheus || status=$$?; \
 	$(MAKE) test-integration-processor || status=$$?; \
 	$(MAKE) test-integration-users || status=$$?; \
 	$(MAKE) test-integration-versions || status=$$?; \
@@ -56,11 +57,12 @@ test-integration-secret-agent: ## Run the Docker Secret Agent suite.
 	exit $$status
 
 .PHONY: test-integration-otel
-test-integration-otel: ## Run the OpenTelemetry exporter against an OTel collector.
-	docker compose -f ci/otel/docker-compose.yml up --abort-on-container-exit --exit-code-from tester; \
-	status=$$?; \
-	docker compose -f ci/otel/docker-compose.yml down -v; \
-	exit $$status
+test-integration-otel: ## Run the OpenTelemetry exporter against an OTel collector, before and after a server restart.
+	ci/common/run-restart-suite.sh ci/otel aerospike otel-collector ape
+
+.PHONY: test-integration-prometheus
+test-integration-prometheus: ## Scrape the exporter's HTTP listener: routes, basic auth, and series that stop reporting, before and after a server restart.
+	ci/common/run-restart-suite.sh ci/prometheus aerospike ape
 
 .PHONY: test-integration-processor
 test-integration-processor: ## Feed live asinfo output into the namespace and node processors. Skips when APE_IT_FEATURE_KEY_FILE is unset.

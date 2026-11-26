@@ -2,11 +2,23 @@ name: ape-otel
 
 services:
   aerospike:
-    image: aerospike/aerospike-server:7.2.0.11
-    environment:
-      NAMESPACE: test
-      DATA_IN_MEMORY: "true"
-      MEM_GB: "1"
+    # Enterprise, for the flash indexes behind index-pressure. The image brings its own evaluation feature key.
+    image: aerospike/aerospike-server-enterprise:8.2.0.0
+    user: "0:0"
+    # proto-fd-max needs more open files than the 1024 that GitHub runners give a container by default
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    entrypoint: ["/bin/bash", "-c"]
+    # The restart phase recreates the server with the config that has no bar namespace.
+    command:
+      - |
+        set -euo pipefail
+        mkdir -p /opt/aerospike/data/test_index /opt/aerospike/data/bar_index /var/run/aerospike
+        exec asd --config-file /etc/ape-it/aerospike.conf --foreground
+    volumes:
+      - ../common/${APE_IT_AEROSPIKE_CONF:-aerospike-two-namespaces.conf}:/etc/ape-it/aerospike.conf:ro
     healthcheck:
       test: ["CMD", "asinfo", "-v", "status"]
       interval: 2s
@@ -40,13 +52,14 @@ services:
       otel-collector:
         condition: service_started
 
+  # The tester runs on the server image only for asinfo, which creates and drops a secondary index.
   tester:
-    image: alpine:3.24
+    image: aerospike/aerospike-server:7.2.0.11
     volumes:
       - ./scripts/wait.sh:/scripts/wait.sh:ro
       - otel-output:/output:ro
       - logs:/logs:ro
-    command: ["/bin/sh", "/scripts/wait.sh"]
+    entrypoint: ["/bin/sh", "/scripts/wait.sh"]
     depends_on:
       ape:
         condition: service_started

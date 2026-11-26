@@ -18,3 +18,4 @@ metric_context_separator = "period"
 [Aerospike]
 db_host = "aerospike"
 db_port = 3000
+index_pressure_stats_fetch_interval = 1

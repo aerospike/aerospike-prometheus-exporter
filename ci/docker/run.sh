@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Build the release image, check that docker-entrypoint.sh writes a Secret
-# Agent setting only when its environment variable is set, then start that
-# image against a Community server and scrape /metrics.
+# Agent setting or a backup and restore metric filter only when its environment
+# variable is set, then start that image against a Community server and scrape
+# /metrics.
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
@@ -23,6 +24,8 @@ fail() {
 	echo "$1" >&2
 	echo "----- rendered [Agent.SecretAgent] -----" >&2
 	printf '%s\n' "$2" | section >&2
+	echo "----- rendered metric filters -----" >&2
+	printf '%s\n' "$2" | grep -E '_metrics_(allow|block)list' >&2 || true
 	exit 1
 }
 
@@ -58,6 +61,32 @@ for key in address port tls_name ca_file cert_file key_file key_file_passphrase 
 done
 
 echo "Docker Secret Agent config rendering passed"
+
+# The backup and restore filters are set through environment variables like the other metric filters.
+# A value is written as a list of quoted names, and the line stays commented out when the variable is unset.
+echo "filters: default, no backup or restore filter variables"
+for key in backup_metrics_allowlist backup_metrics_blocklist restore_metrics_allowlist restore_metrics_blocklist; do
+	expect_commented "$plain" "$key"
+done
+
+echo "filters: BACKUP_METRICS_ALLOWLIST alone"
+backup_only=$(render -e BACKUP_METRICS_ALLOWLIST='"progress_pct"')
+expect_active "$backup_only" 'backup_metrics_allowlist = \["progress_pct"\]'
+for key in backup_metrics_blocklist restore_metrics_allowlist restore_metrics_blocklist; do
+	expect_commented "$backup_only" "$key"
+done
+
+echo "filters: all four backup and restore variables"
+filters=$(render \
+	-e BACKUP_METRICS_ALLOWLIST='"progress_pct","recs_*"' \
+	-e BACKUP_METRICS_BLOCKLIST='"bytes_*"' \
+	-e RESTORE_METRICS_ALLOWLIST='"progress_pct","done"' \
+	-e RESTORE_METRICS_BLOCKLIST='"*"')
+expect_active "$filters" 'backup_metrics_allowlist = \["progress_pct","recs_\*"\]'
+expect_active "$filters" 'backup_metrics_blocklist = \["bytes_\*"\]'
+expect_active "$filters" 'restore_metrics_allowlist = \["progress_pct","done"\]'
+expect_active "$filters" 'restore_metrics_blocklist = \["\*"\]'
+echo "Docker backup and restore filter rendering passed"
 
 server=${APE_IT_DOCKER_SERVER:-7.2.0.11}
 echo "scrape: release image against aerospike/aerospike-server:${server}"

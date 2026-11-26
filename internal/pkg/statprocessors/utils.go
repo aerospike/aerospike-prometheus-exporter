@@ -65,6 +65,12 @@ func isMetricAllowed(pContextType commons.ContextType, pRawStatName string) bool
 	case commons.CTX_XDR:
 		pAllowlist = config.Cfg.Aerospike.XdrMetricsAllowlist
 		pBlocklist = config.Cfg.Aerospike.XdrMetricsBlocklist
+	case commons.CTX_BACKUP:
+		pAllowlist = config.Cfg.Aerospike.BackupMetricsAllowlist
+		pBlocklist = config.Cfg.Aerospike.BackupMetricsBlocklist
+	case commons.CTX_RESTORE:
+		pAllowlist = config.Cfg.Aerospike.RestoreMetricsAllowlist
+		pBlocklist = config.Cfg.Aerospike.RestoreMetricsBlocklist
 
 	}
 
@@ -141,6 +147,10 @@ func isGauge(pContextType commons.ContextType, pStat string) bool {
 		return config.GaugeStatHandler.SindexStats[pStat]
 	case commons.CTX_XDR:
 		return config.GaugeStatHandler.XdrStats[pStat]
+	case commons.CTX_BACKUP:
+		return config.GaugeStatHandler.BackupStats[pStat]
+	case commons.CTX_RESTORE:
+		return config.GaugeStatHandler.RestoreStats[pStat]
 	}
 
 	// any sysinfo_ check if it exists in gauge_stats_list.toml

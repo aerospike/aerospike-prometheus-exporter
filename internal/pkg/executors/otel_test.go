@@ -39,17 +39,17 @@ func TestOtelProcessAndPushStats(t *testing.T) {
 
 	stats := []statprocessors.AerospikeStat{
 		{
-			Context: "namespace", Name: "master-objects", MType: commons.MetricTypeGauge, Value: 7,
+			Context: "namespace", Name: "master-objects", MType: commons.MetricTypeGauge, Value: 7, IsAllowed: true,
 			Labels: []string{"ns"}, LabelValues: []string{"test"},
 		},
 		{
-			Context: "namespace", Name: "client_read_success", MType: commons.MetricTypeCounter, Value: 4,
+			Context: "namespace", Name: "client_read_success", MType: commons.MetricTypeCounter, Value: 4, IsAllowed: true,
 			Labels: []string{"ns"}, LabelValues: []string{"test"},
 		},
 	}
-	executor.processAndPushStats(meter, common, stats)
+	executor.processAndPushStats(meter, common, stats, false)
 	stats[0].Value = 9
-	executor.processAndPushStats(meter, common, stats[:1])
+	executor.processAndPushStats(meter, common, stats[:1], false)
 
 	require.Len(t, executor.gauges, 1)
 	require.Len(t, executor.counters, 1)
@@ -78,7 +78,7 @@ func TestOtelProcessAndPushStats(t *testing.T) {
 		counters:     map[string]*CounterMetrics{},
 	}
 	underscoreMeter, underscoreReader := testMeter(t)
-	underscore.processAndPushStats(underscoreMeter, nil, stats[1:])
+	underscore.processAndPushStats(underscoreMeter, nil, stats[1:], false)
 	require.Empty(t, underscore.counters)
 	require.Len(t, underscore.gauges, 1)
 	rm = collectMetrics(t, underscoreReader)

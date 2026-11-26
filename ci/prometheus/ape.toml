@@ -1,0 +1,11 @@
+[Agent]
+bind = ":9145"
+refresh_system_stats = false
+log_level = "info"
+basic_auth_username = "exporter"
+basic_auth_password = "prom-it-9f3c"
+
+[Aerospike]
+db_host = "aerospike"
+db_port = 3000
+timeout = 10

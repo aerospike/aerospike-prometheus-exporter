@@ -143,6 +143,18 @@ type Config struct {
 
 		SindexMetricsAllowlistEnabled bool
 
+		// Backup metrics allow/block
+		BackupMetricsAllowlist []string `toml:"backup_metrics_allowlist"`
+		BackupMetricsBlocklist []string `toml:"backup_metrics_blocklist"`
+
+		BackupMetricsAllowlistEnabled bool
+
+		// Restore metrics allow/block
+		RestoreMetricsAllowlist []string `toml:"restore_metrics_allowlist"`
+		RestoreMetricsBlocklist []string `toml:"restore_metrics_blocklist"`
+
+		RestoreMetricsAllowlistEnabled bool
+
 		// knob to disable sindex metrics collection (for internal use only, will be deprecated)
 		DisableSindexMetrics bool `toml:"disable_sindex_metrics"`
 
@@ -449,6 +461,8 @@ func initAllowlistAndBlocklistConfigs(md toml.MetaData) {
 	Cfg.Aerospike.JobMetricsAllowlistEnabled = md.IsDefined("Aerospike", "job_metrics_allowlist")
 	Cfg.Aerospike.SindexMetricsAllowlistEnabled = md.IsDefined("Aerospike", "sindex_metrics_allowlist")
 	Cfg.Aerospike.LatenciesMetricsAllowlistEnabled = md.IsDefined("Aerospike", "latencies_metrics_allowlist")
+	Cfg.Aerospike.BackupMetricsAllowlistEnabled = md.IsDefined("Aerospike", "backup_metrics_allowlist")
+	Cfg.Aerospike.RestoreMetricsAllowlistEnabled = md.IsDefined("Aerospike", "restore_metrics_allowlist")
 
 	// Tolerate older whitelist and blacklist configurations for a while.
 	// If whitelist and blacklist configs are defined copy them into allowlist and blocklist.

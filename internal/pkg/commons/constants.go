@@ -10,6 +10,8 @@ const (
 	CTX_SINDEX     ContextType = "sindex"
 	CTX_XDR        ContextType = "xdr"
 	CTX_LATENCIES  ContextType = "latencies"
+	CTX_BACKUP     ContextType = "backup"
+	CTX_RESTORE    ContextType = "restore"
 )
 
 // below constant represent the labels we send along with metrics to Prometheus or something
@@ -28,6 +30,16 @@ const (
 	METRIC_LABEL_UA_CLIENT_APP_ID          = "client_app_id"
 	METRIC_LABEL_CHECKPOINT_STATUS         = "cp_status"
 	METRIC_LABEL_SMD_GROUP                 = "smd_group"
+	METRIC_LABEL_JOB_ID                    = "job_id"
+	METRIC_LABEL_STATE                     = "state"
+	METRIC_LABEL_ERROR_REASON              = "error_reason"
+	METRIC_LABEL_ABORT_ORIGIN              = "abort_origin"
+	METRIC_LABEL_KIND                      = "kind"
+	METRIC_LABEL_NS_STATE                  = "ns_state"
+	METRIC_LABEL_BACKUP_ID                 = "backup_id"
+	METRIC_LABEL_CLUSTER_KEY               = "cluster_key"
+	METRIC_LABEL_ACHIEVED_CONSISTENCY      = "achieved_consistency"
+	METRIC_LABEL_SOURCE_CONSISTENCY        = "source_consistency"
 )
 
 // constants used to identify type of metrics

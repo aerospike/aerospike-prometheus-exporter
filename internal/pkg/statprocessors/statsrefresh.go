@@ -22,6 +22,8 @@ type StatsRefresher struct {
 	xdrStatsProcessor       *XdrStatsProcessor
 	latencyStatsProcessor   *LatencyStatsProcessor
 
+	backupRestoreStatsProcessor *BackupRestoreStatsProcessor
+
 	userStatsProcessor *UserStatsProcessor
 }
 
@@ -42,6 +44,7 @@ func NewStatsRefresher(dataProvider dataprovider.DataProvider,
 	statsRefresher.xdrStatsProcessor = NewXdrStatsProcessor(statsRefresher.sharedState)
 	statsRefresher.latencyStatsProcessor = NewLatencyStatsProcessor(statsRefresher.sharedState)
 	statsRefresher.userStatsProcessor = NewUserStatsProcessor(statsRefresher.sharedState)
+	statsRefresher.backupRestoreStatsProcessor = NewBackupRestoreStatsProcessor(statsRefresher.sharedState)
 
 	return statsRefresher
 }
@@ -54,6 +57,7 @@ func (sr *StatsRefresher) GetStatsProcessors() []StatProcessor {
 		sr.sindexStatsProcessor,
 		sr.xdrStatsProcessor,
 		sr.latencyStatsProcessor,
+		sr.backupRestoreStatsProcessor,
 		// Did not include users processor, as it process UserRoles directly and not the stats from server
 	}
 
@@ -64,6 +68,8 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 
 	log.Debugf("Refreshing node %s", commons.GetFullHost())
 	sr.sharedState.CheckpointSaveInProgress = false
+	sr.sharedState.PartialRefresh = false
+	sr.sharedState.IndexPressureFetched = false
 
 	// array to accumulate all metrics, which later will be dispatched by various observers
 	var allStatsToSend = []AerospikeStat{}
@@ -92,6 +98,9 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	sr.sharedState.CheckpointSaveInProgress = isCheckpointSaveInProgress(passOneOutput[sr.sharedState.Infokey_Build])
+
+	// the commands of the second pass are chosen from this answer, so keep the state even if the save is over by then
+	sr.sharedState.PartialRefresh = sr.sharedState.CheckpointSaveInProgress
 
 	// fetch second set of info keys
 	// check and load this only once, to avoid multiple file-reads, so this Infokey assignment will happen only once during restart
@@ -130,6 +139,9 @@ func (sr *StatsRefresher) Refresh() ([]AerospikeStat, error) {
 	}
 
 	sr.sharedState.CheckpointSaveInProgress = isCheckpointSaveInProgress(passTwoResponse[sr.sharedState.Infokey_Build])
+	if sr.sharedState.CheckpointSaveInProgress {
+		sr.sharedState.PartialRefresh = true
+	}
 
 	// from 8.2.0.0, we may have a case where build version may come as ERROR...
 	if !isValidResponse(passTwoResponse[sr.sharedState.Infokey_Build]) {
