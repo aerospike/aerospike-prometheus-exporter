@@ -14,6 +14,9 @@ base=http://ape:9145
 user=exporter
 pass=prom-it-9f3c
 deadline=120
+
+# a stalled request must not keep the polling loops from reaching their deadline
+CURL='curl --connect-timeout 3 --max-time 10'
 sindex_metric='^aerospike_sindex_'
 steady_metric='^aerospike_node_stats_'
 
@@ -27,11 +30,11 @@ dump_and_fail() {
 }
 
 status_of() {
-	curl -s -o /dev/null -w '%{http_code}' "$@"
+	$CURL -s -o /dev/null -w '%{http_code}' "$@"
 }
 
 scrape() {
-	body=$(curl -fsS -u "${user}:${pass}" "${base}/metrics" 2>/dev/null) || body=""
+	body=$($CURL -fsS -u "${user}:${pass}" "${base}/metrics" 2>/dev/null) || body=""
 }
 
 # wait_for present|absent PATTERN DESCRIPTION: the scrape of /metrics matches, or does not match, PATTERN.
@@ -78,15 +81,15 @@ if [ "$i" -ge "$deadline" ]; then
 	dump_and_fail "the exporter did not answer /health within ${deadline}s"
 fi
 
-[ "$(curl -s "${base}/health")" = "OK" ] || dump_and_fail "/health did not answer OK"
-curl -s "${base}/" | grep -q 'Aerospike Prometheus Exporter' || dump_and_fail "/ did not show the exporter page"
+[ "$($CURL -s "${base}/health")" = "OK" ] || dump_and_fail "/health did not answer OK"
+$CURL -s "${base}/" | grep -q 'Aerospike Prometheus Exporter' || dump_and_fail "/ did not show the exporter page"
 echo "/health and / answer without credentials"
 
 # 2. /metrics needs the basic auth credentials
 [ "$(status_of "${base}/metrics")" = "401" ] || dump_and_fail "/metrics without credentials was not 401"
 [ "$(status_of -u "${user}:wrong" "${base}/metrics")" = "401" ] || dump_and_fail "/metrics with a wrong password was not 401"
 [ "$(status_of -u "other:${pass}" "${base}/metrics")" = "401" ] || dump_and_fail "/metrics with a wrong user was not 401"
-curl -s -D - -o /dev/null "${base}/metrics" | grep -qi '^WWW-Authenticate: Basic realm=' || dump_and_fail "401 did not carry WWW-Authenticate"
+$CURL -s -D - -o /dev/null "${base}/metrics" | grep -qi '^WWW-Authenticate: Basic realm=' || dump_and_fail "401 did not carry WWW-Authenticate"
 echo "/metrics answers 401 without the right credentials"
 
 # 3. the exporter reports a live node
