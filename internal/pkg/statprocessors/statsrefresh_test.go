@@ -36,6 +36,10 @@ const (
 type fakeServer struct {
 	responses map[string]string
 	asked     [][]string
+
+	// builds, when set, are the build answers of the next requests in order, one per request, so that the
+	// two passes of one refresh can see different builds. It is used up as the requests come in.
+	builds []string
 }
 
 func newFakeServer(build string, checkpointStatus string) *fakeServer {
@@ -59,6 +63,11 @@ func (f *fakeServer) RequestInfo(keys []string) (map[string]string, error) {
 	out := map[string]string{}
 	for _, key := range keys {
 		out[key] = f.responses[key]
+	}
+
+	if len(f.builds) > 0 {
+		out["build"] = f.builds[0]
+		f.builds = f.builds[1:]
 	}
 
 	return out, nil
@@ -190,4 +199,53 @@ func TestStatsRefresherBeforeBackupRestoreBuild(t *testing.T) {
 	_, ok = findStatWithLabel(stats, "checkpoint_park_ms", commons.METRIC_LABEL_NS, "test")
 	assert.True(t, ok, "the older format still reports park_ms for each namespace")
 	assert.Zero(t, countNamed(stats, STAT_JOB))
+}
+
+// TestStatsRefresherCheckpointSaveEndsBetweenPasses covers a save that is reported by the first request and is
+// over by the second one. The first answer decides the commands of the second request, so the refresh has no
+// namespace, node, latency or backup stats although the second build answer is normal. It must still be seen
+// as partial, so that a consumer does not read the missing stats as removed ones.
+func TestStatsRefresherCheckpointSaveEndsBetweenPasses(t *testing.T) {
+	state := backupState(t)
+	server := newFakeServer("8.2.2.0", checkpointStatus822)
+	refresher := NewStatsRefresher(server, state)
+
+	_, err := refresher.Refresh()
+	require.NoError(t, err)
+	assert.False(t, state.IsPartialRefresh(), "a refresh that saw no save is complete")
+
+	server.builds = []string{buildDuringCheckpointSave, "8.2.2.0"}
+
+	stats, err := refresher.Refresh()
+	require.NoError(t, err)
+
+	keys := server.lastPassTwo()
+	assert.NotContains(t, keys, KEY_BACKUP_STATUS, "the second request was built from the first answer")
+	_, ok := findStat(stats, "client_connections")
+	assert.False(t, ok, "node stats are missing from this refresh")
+
+	assert.False(t, state.CheckpointSaveInProgress, "the second answer says the save is over")
+	assert.True(t, state.PartialRefresh, "the state of the first answer is kept for the whole refresh")
+	assert.True(t, state.IsPartialRefresh())
+
+	// the next refresh is a normal one again
+	stats, err = refresher.Refresh()
+	require.NoError(t, err)
+	assert.False(t, state.IsPartialRefresh())
+	_, ok = findStat(stats, "client_connections")
+	assert.True(t, ok)
+}
+
+// TestStatsRefresherSaveStartsBetweenPasses covers the opposite case: the save is reported only by the second
+// request, so the stats were asked for and the refresh is treated as partial because it may be incomplete.
+func TestStatsRefresherSaveStartsBetweenPasses(t *testing.T) {
+	state := backupState(t)
+	server := newFakeServer("8.2.2.0", checkpointStatus822)
+	server.builds = []string{"8.2.2.0", buildDuringCheckpointSave}
+
+	_, err := NewStatsRefresher(server, state).Refresh()
+	require.NoError(t, err)
+
+	assert.True(t, state.CheckpointSaveInProgress)
+	assert.True(t, state.IsPartialRefresh())
 }

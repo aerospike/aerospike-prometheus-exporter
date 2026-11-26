@@ -21,6 +21,21 @@ type StatProcessorSharedState struct {
 
 	// set when server reports checkpoint-save in progress, only build and checkpoint-status are requested until it clears
 	CheckpointSaveInProgress bool
+
+	// PartialRefresh is set for the whole of a Refresh once either of its two passes saw a checkpoint save.
+	// The first pass decides which commands the second one asks for, so a save that ends between the passes
+	// still leaves a refresh that is missing most of its stats, although CheckpointSaveInProgress is false again.
+	PartialRefresh bool
+
+	// IndexPressureFetched is set when a Refresh ran the index-pressure command and got a valid answer.
+	// Index-pressure is fetched only every few minutes, so only such a refresh says which namespaces are gone.
+	IndexPressureFetched bool
+}
+
+// IsPartialRefresh reports whether the latest refresh was cut short by a checkpoint save, so that its
+// result is missing stats that the server still has.
+func (s *StatProcessorSharedState) IsPartialRefresh() bool {
+	return s != nil && (s.CheckpointSaveInProgress || s.PartialRefresh)
 }
 
 func NewStatProcessorSharedState() *StatProcessorSharedState {

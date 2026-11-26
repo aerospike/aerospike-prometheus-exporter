@@ -52,3 +52,23 @@ func TestIsIntervalFetchedStat(t *testing.T) {
 	assert.False(t, IsIntervalFetchedStat(AerospikeStat{Context: commons.CTX_NODE_STATS, Name: "index_pressure_total_memory"}),
 		"only the namespace context carries index-pressure")
 }
+
+// TestIndexPressureFetchedOnlyByAValidAnswer checks the confirmation that a consumer uses to drop the series of
+// a namespace that is gone: a valid answer gives it, an error or an empty answer does not and gives no stats.
+func TestIndexPressureFetchedOnlyByAValidAnswer(t *testing.T) {
+	for _, answer := range []string{"", "ERROR:4:unrecognized command"} {
+		state := NewStatProcessorSharedState()
+		nw := NewNamespaceStatsProcessor(state)
+
+		stats := nw.refreshIndexPressure(KEY_NS_INDEX_PRESSURE, map[string]string{KEY_NS_INDEX_PRESSURE: answer})
+		assert.Empty(t, stats, "answer %q", answer)
+		assert.False(t, state.IndexPressureFetched, "answer %q is no confirmation", answer)
+	}
+
+	state := NewStatProcessorSharedState()
+	nw := NewNamespaceStatsProcessor(state)
+
+	stats := nw.refreshIndexPressure(KEY_NS_INDEX_PRESSURE, map[string]string{KEY_NS_INDEX_PRESSURE: "bar:7:3"})
+	assert.NotEmpty(t, stats)
+	assert.True(t, state.IndexPressureFetched)
+}

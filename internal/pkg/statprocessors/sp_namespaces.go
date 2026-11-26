@@ -110,6 +110,11 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 
 	log.Tracef("namespaces:%s", s)
 
+	// a namespace that a restarted server no longer has must stop getting latency and roster commands
+	if isValidResponse(s) {
+		nw.forgetRemovedNamespaces(nsList)
+	}
+
 	var infoKeys []string
 	for _, ns := range nsList {
 		// infoKey ==> namespace/test, namespace/bar
@@ -133,6 +138,29 @@ func (nw *NamespaceStatsProcessor) PassTwoKeys(passOneStats map[string]string) [
 	log.Tracef("namespace-passtwokeys:%s", infoKeys)
 
 	return infoKeys
+}
+
+// forgetRemovedNamespaces drops the per-namespace state of every namespace that is not in the latest successful
+// namespaces response. The latency histograms are requested from NamespaceLatencyBenchmarks on every
+// collection, so an entry that is kept for a removed namespace keeps costing info commands that return nothing.
+func (nw *NamespaceStatsProcessor) forgetRemovedNamespaces(current []string) {
+	live := make(map[string]struct{}, len(current))
+	for _, ns := range current {
+		live[ns] = struct{}{}
+	}
+
+	for ns := range nw.sharedState.NamespaceLatencyBenchmarks {
+		if _, ok := live[ns]; !ok {
+			delete(nw.sharedState.NamespaceLatencyBenchmarks, ns)
+			log.Debugf("namespace %s is no longer on the server, its latency commands are dropped", ns)
+		}
+	}
+
+	for ns := range nw.namespaceSCstatus {
+		if _, ok := live[ns]; !ok {
+			delete(nw.namespaceSCstatus, ns)
+		}
+	}
 }
 
 func (nw *NamespaceStatsProcessor) Refresh(infoKeys []string, rawMetrics map[string]string) ([]AerospikeStat, error) {
@@ -165,6 +193,14 @@ func (nw *NamespaceStatsProcessor) refreshIndexPressure(singleInfoKey string, ra
 	indexPresssureStats := rawMetrics[singleInfoKey]
 
 	log.Tracef("namespace-index-pressure-stats:%s:%s", singleInfoKey, indexPresssureStats)
+
+	// an error or an empty answer says nothing about which namespaces exist
+	if !isValidResponse(indexPresssureStats) {
+		return nil
+	}
+
+	// a valid answer is the complete list of namespaces, so series of a namespace missing from it are gone
+	nw.sharedState.IndexPressureFetched = true
 
 	// Server index-pressure output: test:0:0;bar_device:0:0;materials:0:0
 	//  each namespace is split with semi-colon

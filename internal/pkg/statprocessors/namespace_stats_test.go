@@ -1,6 +1,7 @@
 package statprocessors
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/aerospike/aerospike-prometheus-exporter/internal/pkg/commons"
@@ -50,4 +51,67 @@ func TestNamespaceStatsProcessorRefresh(t *testing.T) {
 
 	_, ok = findStat(stats, "storage-engine")
 	assert.False(t, ok, "a non-numeric storage-engine value is a label, not a metric")
+}
+
+// namespaceLatencyCommands returns the histogram commands that the latency processor asks for, one per entry.
+func namespaceLatencyCommands(state *StatProcessorSharedState) []string {
+	return NewLatencyStatsProcessor(state).getLatenciesCommands(nil)
+}
+
+func hasCommandFor(commands []string, ns string) bool {
+	for _, command := range commands {
+		if strings.Contains(command, "{"+ns+"}") {
+			return true
+		}
+	}
+
+	return false
+}
+
+// TestRemovedNamespaceStopsGettingLatencyCommands follows a namespace that a restarted server no longer has:
+// once a successful namespaces response omits it, no latency command for it is sent any more, while the
+// namespaces that remain keep theirs.
+func TestRemovedNamespaceStopsGettingLatencyCommands(t *testing.T) {
+	state := useProcessorConfig(t)
+	state.Build = "8.2.2.0"
+	nw := NewNamespaceStatsProcessor(state)
+
+	refreshNamespaces := func(namespaces ...string) {
+		keys := nw.PassTwoKeys(map[string]string{KEY_NS_METADATA: strings.Join(namespaces, ";")})
+		raw := map[string]string{}
+		for _, ns := range namespaces {
+			raw["namespace/"+ns] = "strong-consistency=true;master_objects=1"
+		}
+		_, err := nw.Refresh(keys, raw)
+		require.NoError(t, err)
+	}
+
+	refreshNamespaces("old", "keep")
+	commands := namespaceLatencyCommands(state)
+	require.True(t, hasCommandFor(commands, "old"))
+	require.True(t, hasCommandFor(commands, "keep"))
+	assert.Contains(t, commands, "latencies:hist={old}-re-repl")
+	assert.Contains(t, commands, "latencies:hist={old}-object-store-put")
+	assert.True(t, nw.namespaceSCstatus["old"])
+
+	// an error answer, or an empty one, does not say which namespaces exist
+	for _, answer := range []string{"", "ERROR:4:unrecognized command"} {
+		nw.PassTwoKeys(map[string]string{KEY_NS_METADATA: answer})
+		assert.True(t, hasCommandFor(namespaceLatencyCommands(state), "old"), "answer %q must keep the namespaces", answer)
+	}
+
+	// a checkpoint save asks for nothing, so it cannot confirm anything either
+	state.CheckpointSaveInProgress = true
+	nw.PassTwoKeys(map[string]string{KEY_NS_METADATA: "keep"})
+	state.CheckpointSaveInProgress = false
+	assert.True(t, hasCommandFor(namespaceLatencyCommands(state), "old"))
+
+	// the restarted server has the new namespace and not the old one
+	refreshNamespaces("keep", "new")
+	commands = namespaceLatencyCommands(state)
+	assert.False(t, hasCommandFor(commands, "old"), "no latency command for old remains: %v", commands)
+	assert.True(t, hasCommandFor(commands, "keep"))
+	assert.True(t, hasCommandFor(commands, "new"))
+	assert.NotContains(t, state.NamespaceLatencyBenchmarks, "old")
+	assert.NotContains(t, nw.namespaceSCstatus, "old")
 }
