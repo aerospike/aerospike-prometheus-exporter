@@ -57,18 +57,12 @@ test-integration-secret-agent: ## Run the Docker Secret Agent suite.
 	exit $$status
 
 .PHONY: test-integration-otel
-test-integration-otel: ## Run the OpenTelemetry exporter against an OTel collector.
-	docker compose -f ci/otel/docker-compose.yml up --abort-on-container-exit --exit-code-from tester; \
-	status=$$?; \
-	docker compose -f ci/otel/docker-compose.yml down -v; \
-	exit $$status
+test-integration-otel: ## Run the OpenTelemetry exporter against an OTel collector, before and after a server restart.
+	ci/common/run-restart-suite.sh ci/otel aerospike otel-collector ape
 
 .PHONY: test-integration-prometheus
-test-integration-prometheus: ## Scrape the exporter's HTTP listener: routes, basic auth, and series that stop reporting.
-	docker compose -f ci/prometheus/docker-compose.yml up --abort-on-container-exit --exit-code-from tester; \
-	status=$$?; \
-	docker compose -f ci/prometheus/docker-compose.yml down -v; \
-	exit $$status
+test-integration-prometheus: ## Scrape the exporter's HTTP listener: routes, basic auth, and series that stop reporting, before and after a server restart.
+	ci/common/run-restart-suite.sh ci/prometheus aerospike ape
 
 .PHONY: test-integration-processor
 test-integration-processor: ## Feed live asinfo output into the namespace and node processors. Skips when APE_IT_FEATURE_KEY_FILE is unset.
