@@ -94,6 +94,8 @@ jobs:
           egress-policy: audit
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Kernel settings for the server's flash index
+        run: sudo sysctl -w vm.dirty_bytes=16777216 vm.dirty_background_bytes=1 vm.dirty_expire_centisecs=1 vm.dirty_writeback_centisecs=10
       - name: OpenTelemetry collector integration
         run: make test-integration-otel
 
@@ -107,6 +109,8 @@ jobs:
           egress-policy: audit
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Kernel settings for the server's flash index
+        run: sudo sysctl -w vm.dirty_bytes=16777216 vm.dirty_background_bytes=1 vm.dirty_expire_centisecs=1 vm.dirty_writeback_centisecs=10
       - name: Prometheus listener integration
         run: make test-integration-prometheus
 
